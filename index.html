@@ -1,0 +1,2293 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0c10">
+<title>LEXICON — Kelime Ustası</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- PWA Icon (Opsiyonel ama iPhone'da Ana Ekrana eklerken güzel görünmesi için) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0c10%22/><text x=%2250%22 y=%2270%22 font-family=%22serif%22 font-size=%2260%22 fill=%22%23c9a84c%22 text-anchor=%22middle%22>L</text></svg>">
+
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #0f1218;
+    --bg3: #161b24;
+    --bg4: #1d2430;
+    --gold: #c9a84c;
+    --gold2: #e8c870;
+    --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e4da;
+    --text2: #9a9589;
+    --text3: #5a5650;
+    --green: #4caf7d;
+    --green-dim: rgba(76,175,125,0.15);
+    --red: #e05c5c;
+    --red-dim: rgba(224,92,92,0.12);
+    --blue: #5b8dee;
+    --purple: #9c27b0;
+    --border: rgba(201,168,76,0.12);
+    --radius: 12px;
+    --shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent; /* Mobil tıklama vurgusunu gizler */
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    z-index: 1000;
+  }
+
+  .logo {
+    padding: 32px 24px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    user-select: none;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+    border-color: rgba(201,168,76,0.2);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .sidebar-bottom {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .stats-mini {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.8;
+  }
+  .stats-mini span { color: var(--gold); font-weight: 500; }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    min-height: 100vh;
+    padding: 40px 48px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    margin-bottom: 36px;
+  }
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .page-title em { color: var(--gold); font-style: italic; }
+  .page-subtitle { color: var(--text2); margin-top: 6px; font-size: 13px; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  /* DASHBOARD */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    opacity: 0.3;
+  }
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-label { color: var(--text2); font-size: 12px; margin-top: 6px; }
+
+  .due-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .bank-progress-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .bank-icon { font-size: 24px; color: var(--gold); opacity: 0.8; }
+  .bank-info { flex: 1; }
+  .bank-title { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+  .bank-desc { font-size: 11px; color: var(--text3); }
+  .bank-bar-wrap { flex: 2; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bank-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 3px; transition: width 0.5s; }
+  .bank-count { font-size: 13px; color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 600; width: 60px; text-align: right; }
+
+  /* WORD LIST */
+  .table-wrapper { width: 100%; overflow-x: auto; }
+  .word-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+  }
+  .word-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 12px 12px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  .word-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .word-table tr:last-child td { border-bottom: none; }
+  .word-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .word-en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .word-tr { color: var(--text2); }
+  .word-note { color: var(--text3); font-size: 12px; }
+
+  .badge-small {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .badge-system { background: rgba(91,141,238,0.15); color: #90caf9; border: 1px solid rgba(144,202,249,0.2); }
+  .badge-phrasal { background: rgba(156,39,176,0.15); color: #e1bee7; border: 1px solid rgba(225,190,231,0.2); }
+  .badge-levelinfo { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+
+  .level-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .level-new { background: rgba(91,141,238,0.15); color: #5b8dee; }
+  .level-learning { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .level-review { background: rgba(76,175,125,0.15); color: var(--green); }
+  .level-due { background: rgba(224,92,92,0.15); color: var(--red); }
+
+  /* INPUT FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    background: var(--bg3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    border-color: rgba(201,168,76,0.4);
+  }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text3); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-gold { background: var(--gold); color: var(--bg); }
+  .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: rgba(201,168,76,0.3); color: var(--text); }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.2); }
+  .btn-danger:hover { background: rgba(224,92,92,0.2); }
+  .btn-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .btn-green:hover { background: rgba(76,175,125,0.25); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* QUIZ Progress */
+  .quiz-container { max-width: 620px; margin: 0 auto; width: 100%; }
+  .quiz-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .progress-bar { flex: 1; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; transition: width 0.4s ease; }
+  .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
+
+  /* QUIZ SETTINGS */
+  .quiz-settings {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .quiz-settings-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .quiz-settings label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: color 0.2s;
+  }
+  .quiz-settings label:hover { color: var(--text); }
+  .quiz-settings input[type="checkbox"], 
+  .quiz-settings input[type="radio"] {
+    accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;
+  }
+
+  /* MCQ CARD */
+  .quiz-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 30px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .quiz-card::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
+  .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.1; word-wrap: break-word; }
+  .quiz-word-sub { color: var(--text3); font-size: 13px; font-style: italic; margin-bottom: 8px; }
+  .quiz-hint { font-size: 12px; color: var(--text3); margin-top: 16px; }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .option-btn {
+    background: var(--bg2); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+    padding: 16px 20px; cursor: pointer; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 12px; position: relative;
+  }
+  .option-btn:hover:not(:disabled) { border-color: rgba(201,168,76,0.35); background: var(--bg3); transform: translateY(-1px); }
+  .option-btn.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .option-btn.wrong { border-color: var(--red); background: var(--red-dim); color: var(--red); }
+  .option-btn:disabled { cursor: default; transform: none; }
+  .option-letter {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--text3); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.06);
+  }
+  .option-btn.correct .option-letter { background: var(--green); color: white; border-color: var(--green); }
+  .option-btn.wrong .option-letter { background: var(--red); color: white; border-color: var(--red); }
+
+  .btn-idk {
+    grid-column: 1 / -1; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; padding: 14px;
+    color: var(--text3); cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 500;
+  }
+  .btn-idk:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: var(--text2); border-color: rgba(255,255,255,0.3); }
+  .btn-idk:disabled { cursor: default; }
+
+  .quiz-feedback { background: var(--bg3); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: none; }
+  .quiz-feedback.show { display: block; }
+  .feedback-correct { color: var(--green); }
+  .feedback-wrong { color: var(--red); }
+  .feedback-detail { color: var(--text2); font-size: 12px; margin-top: 6px; line-height: 1.6; }
+
+  .quiz-actions { display: flex; gap: 12px; justify-content: center; }
+
+  .quiz-empty { text-align: center; padding: 80px 20px; }
+  .quiz-empty-icon { font-size: 56px; margin-bottom: 20px; opacity: 0.3; }
+  .quiz-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--text2); margin-bottom: 10px; }
+  .quiz-empty-text { color: var(--text3); font-size: 13px; line-height: 1.6; }
+
+  /* FLASHCARD STYLES */
+  .flashcard-wrap { perspective: 1000px; margin-bottom: 24px; cursor: pointer; width: 100%; }
+  .flashcard {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 56px 30px; text-align: center;
+    position: relative; overflow: hidden; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: border-color 0.3s;
+  }
+  .flashcard::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 200px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .flashcard.revealed { border-color: rgba(76,175,125,0.3); }
+  .flashcard-front, .flashcard-back { width: 100%; }
+  .flashcard-back { display: none; }
+  .flashcard.revealed .flashcard-back { display: block; }
+  .flashcard.revealed .reveal-hint { display: none; }
+  .reveal-hint { font-size: 11px; color: var(--text3); margin-top: 30px; letter-spacing: 1px; text-transform: uppercase; animation: pulse 2s infinite; }
+  .flashcard-answer { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--green); margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(76,175,125,0.2); word-wrap: break-word;}
+  .flashcard-example { font-size: 14px; color: var(--text2); font-style: italic; margin-top: 16px; line-height: 1.6; }
+  .flashcard-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px; opacity: 0; pointer-events: none; transition: opacity 0.3s; width: 100%; }
+  .flashcard-actions.visible { opacity: 1; pointer-events: all; }
+  .fc-btn { padding: 14px 8px; border-radius: 10px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; transition: all 0.15s; letter-spacing: 0.5px; }
+  .fc-btn:hover { transform: translateY(-2px); }
+  .fc-easy { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .fc-easy:active { background: rgba(76,175,125,0.25); }
+  .fc-idk { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.25); }
+  .fc-idk:active { background: rgba(224,92,92,0.2); }
+  .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+  .fc-hard:active { background: rgba(201,168,76,0.2); }
+
+  /* STATS SECTION */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .chart-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .chart-label { width: 90px; font-size: 12px; color: var(--text2); text-align: right; flex-shrink: 0; }
+  .chart-bar-bg { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+  .chart-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 0.8s ease; }
+  .chart-val { width: 30px; font-size: 12px; color: var(--text3); text-align: right; }
+
+  /* NOTIFICATIONS */
+  .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; font-size: 13px; color: var(--text); z-index: 9999; opacity: 0; transition: all 0.3s; width: max-content; max-width: 90vw; box-shadow: var(--shadow); text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(76,175,125,0.3); }
+  .toast.error { border-color: rgba(224,92,92,0.3); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 500px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin-bottom: 20px; color: var(--text); }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* SEARCH & UTIL */
+  .search-bar { background: var(--bg3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 9px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; width: 100%; max-width: 200px; transition: border-color 0.2s; }
+  .search-bar:focus { border-color: rgba(201,168,76,0.3); }
+  .search-bar::placeholder { color: var(--text3); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); }
+  .empty-state-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state-text { font-size: 13px; line-height: 1.6; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .section.active { animation: fadeUp 0.3s ease; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .delete-btn, .edit-btn { background: transparent; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 6px 8px; border-radius: 4px; transition: all 0.15s; }
+  .delete-btn:hover { color: var(--red); background: var(--red-dim); }
+  .edit-btn:hover { color: var(--gold); background: var(--gold-dim); }
+
+  .quiz-start-card { text-align: center; padding: 40px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; }
+  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
+  .quiz-start-title em { color: var(--gold); font-style: italic; }
+  .quiz-count-badge { display: inline-block; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 4px 16px; font-size: 13px; margin-bottom: 20px; }
+  .info-box { background: rgba(91,141,238,0.08); border: 1px solid rgba(91,141,238,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #90caf9; margin-bottom: 16px; line-height: 1.6; }
+
+  /* ----------------------------------------------------- */
+  /* iPHONE / MOBILE RESPONSIVE OPTIMIZATIONS              */
+  /* ----------------------------------------------------- */
+  @media (max-width: 768px) {
+    .sidebar {
+      top: auto;
+      bottom: 0;
+      width: 100%;
+      height: 70px;
+      height: calc(65px + env(safe-area-inset-bottom));
+      flex-direction: row;
+      border-right: none;
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom); /* iOS Home Indicator Desteği */
+    }
+    .logo, .sidebar-bottom { display: none; }
+    .nav { 
+      flex-direction: row; 
+      padding: 0 8px; 
+      justify-content: space-around; 
+      width: 100%; 
+      gap: 0; 
+      align-items: center;
+    }
+    .nav-item { 
+      flex-direction: column; 
+      gap: 4px; 
+      padding: 6px; 
+      font-size: 10px; 
+      text-align: center; 
+      border-radius: 8px;
+    }
+    .nav-text { display: block; white-space: nowrap; font-size: 9px; }
+    .nav-icon { font-size: 20px; width: auto; margin-bottom: 2px;}
+    .nav-badge { position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 2px 4px; }
+    
+    .main { margin-left: 0; padding: 20px 16px calc(80px + env(safe-area-inset-bottom)) 16px; }
+    .page-title { font-size: 28px; }
+    
+    .dash-grid, .stats-grid, .due-section, .form-grid, .options-grid { grid-template-columns: 1fr; }
+    .bank-progress-container { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .bank-count { text-align: left; width: 100%; }
+    
+    .card { padding: 20px 16px; }
+    .quiz-card { padding: 32px 16px; }
+    .quiz-word { font-size: 32px; }
+    
+    .filter-group { display:flex; flex-direction: column; width: 100%; gap:8px; margin-top: 12px;}
+    .filter-group input, .filter-group select { width: 100%; max-width: none; }
+    .page-header.flex { flex-direction: column; align-items: flex-start; gap: 16px; }
+
+    .table-wrapper { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+    
+    .quiz-settings { padding: 16px; }
+    .quiz-start-card { padding: 32px 16px; }
+    
+    .modal { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -> MOBİLDE ALT MENÜ -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">Lexicon</div>
+    <div class="logo-sub">Kelime Ustası</div>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <span class="nav-icon">◈</span> <span class="nav-text">Panel</span>
+    </div>
+    <div class="nav-item" onclick="navigate('quiz')" id="nav-quiz">
+      <span class="nav-icon">◉</span> <span class="nav-text">Test</span>
+      <span class="nav-badge" id="due-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('flashcard')">
+      <span class="nav-icon">◧</span> <span class="nav-text">Kart Modu</span>
+    </div>
+    <div class="nav-item" onclick="navigate('words')">
+      <span class="nav-icon">≡</span> <span class="nav-text">Sözlük</span>
+    </div>
+    <div class="nav-item" onclick="navigate('add')">
+      <span class="nav-icon">⊕</span> <span class="nav-text">Ekle</span>
+    </div>
+    <div class="nav-item" onclick="navigate('stats')">
+      <span class="nav-icon">◫</span> <span class="nav-text">Ayarlar</span>
+    </div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="stats-mini" id="sidebar-stats">
+      Toplam: <span id="s-total">0</span> kelime<br>
+      Bugün yapıldı: <span id="s-today">0</span><br>
+      Streak: <span id="s-streak">0</span> gün 🔥
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <section class="section active" id="sec-dashboard">
+    <div class="page-header">
+      <div class="page-title">Hoş geldin, <em>Öğrenci.</em></div>
+      <div class="page-subtitle" id="dash-date"></div>
+    </div>
+
+    <div class="bank-progress-container">
+      <div class="bank-icon">❂</div>
+      <div class="bank-info">
+        <div class="bank-title">Sistem Veritabanı (B1/B2 & Phrasal Verbs)</div>
+        <div class="bank-desc">Kelime öğrendikçe dev havuzdan otomatik yenileri eklenir.</div>
+      </div>
+      <div class="bank-bar-wrap">
+        <div class="bank-bar-fill" id="bank-progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="bank-count" id="bank-count-text">0 / 0</div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="d-total">0</div>
+        <div class="stat-label">Aktif Kelimeler</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="d-due" style="color:var(--red)">0</div>
+        <div class="stat-label">Bugün Tekrar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="d-mastered" style="color:var(--green)">0</div>
+        <div class="stat-label">Öğrenildi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="d-streak">0</div>
+        <div class="stat-label">Gün Serisi 🔥</div>
+      </div>
+    </div>
+
+    <div class="due-section">
+      <div class="card">
+        <div class="card-title">Bugün Tekrar Edilecekler</div>
+        <div id="due-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">✦</div>
+            <div class="empty-state-text">Bugün için tekrar yok.<br>Harika gidiyorsun!</div>
+          </div>
+        </div>
+        <div class="mt-4" id="start-quiz-btn-wrapper" style="display:none; display:flex; gap:10px; flex-direction:column;">
+          <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="navigate('quiz')">Şıklı Teste Başla</button>
+          <button class="btn btn-ghost" style="width:100%; justify-content:center;" onclick="navigate('flashcard')">Kart Modu İle Çalış</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Yaklaşan Tekrarlar</div>
+        <div class="timeline" id="upcoming-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">◌</div>
+            <div class="empty-state-text">Kelime ekledikçe<br>program burada görünür.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sana Ait Son Eklenen Kelimeler</div>
+      <div id="recent-words">
+        <div class="empty-state">
+          <div class="empty-state-icon">⊕</div>
+          <div class="empty-state-text">Henüz kendin kelime eklemedin.<br><a href="#" onclick="navigate('add')" style="color:var(--gold);text-decoration:none">İlk kelimenizi ekleyin →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ (ÇOKTAN SEÇMELİ) -->
+  <section class="section" id="sec-quiz">
+    <div class="page-header">
+      <div class="page-title"><em>Şıklı</em> Test Zamanı</div>
+      <div class="page-subtitle">Şıklar arasından doğru çeviriyi bularak ilerle.</div>
+    </div>
+    <div class="quiz-container" id="quiz-area">
+    </div>
+  </section>
+
+  <!-- FLASHCARD MODU -->
+  <section class="section" id="sec-flashcard">
+    <div class="page-header">
+      <div class="page-title"><em>Flashcard</em> Modu</div>
+      <div class="page-subtitle">Zihnini zorla: Kelimeyi gör, hatırla ve kartı çevir.</div>
+    </div>
+    <div class="quiz-container" id="flashcard-area">
+    </div>
+  </section>
+
+  <!-- WORDS -->
+  <section class="section" id="sec-words">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <div class="page-title">Kelime <em>Listem</em></div>
+        <div class="page-subtitle" id="word-count-label">0 kelime</div>
+      </div>
+      <div class="filter-group">
+        <input class="search-bar" type="text" placeholder="Kelime ara..." id="search-input" oninput="renderWords()">
+        <select onchange="renderWords()" id="filter-source">
+          <option value="">Tüm Kaynaklar</option>
+          <option value="user">Benim Eklediklerim</option>
+          <option value="system">Sistem (B1/B2/PV)</option>
+        </select>
+        <select onchange="renderWords()" id="filter-category">
+          <option value="">Tüm Türler</option>
+          <option value="word">Kelimeler</option>
+          <option value="phrasal">Phrasal Verbs</option>
+        </select>
+        <select onchange="renderWords()" id="filter-level">
+          <option value="">Tüm seviyeler</option>
+          <option value="new">Yeni</option>
+          <option value="learning">Öğreniliyor</option>
+          <option value="review">Tekrarda</option>
+          <option value="due">Bugün vadeli</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="word-table">
+          <thead>
+            <tr>
+              <th>İngilizce</th>
+              <th>Türkçe</th>
+              <th>Not</th>
+              <th>Durum</th>
+              <th>Sonraki Tekrar</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="words-tbody"></tbody>
+        </table>
+      </div>
+      <div id="words-empty" class="empty-state" style="display:none">
+        <div class="empty-state-icon">◌</div>
+        <div class="empty-state-text">Sonuç bulunamadı.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD WORD -->
+  <section class="section" id="sec-add">
+    <div class="page-header">
+      <div class="page-title">Kelime <em>Ekle</em></div>
+      <div class="page-subtitle">Sisteme kendi özel kelimelerini dahil et.</div>
+    </div>
+    <div class="card" style="max-width: 600px;">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column: 1/-1">
+          <label>Kategori (Tür) *</label>
+          <select id="inp-category">
+            <option value="word">Normal Kelime</option>
+            <option value="phrasal">Phrasal Verb (Deyimsel İfade)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>İngilizce Kelime / İfade *</label>
+          <input type="text" id="inp-en" placeholder="örn: ephemeral" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Türkçe Anlamı *</label>
+          <input type="text" id="inp-tr" placeholder="örn: geçici, kısa ömürlü">
+        </div>
+        <div class="form-group" style="grid-column: 1/-1">
+          <label>Örnek Cümle (opsiyonel)</label>
+          <textarea id="inp-example" placeholder="örn: The joy of childhood is ephemeral."></textarea>
+        </div>
+        <div class="form-group" style="grid-column: 1/-1">
+          <label>Gramer Türü / Not (opsiyonel)</label>
+          <input type="text" id="inp-type" placeholder="örn: adjective, noun, verb...">
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="flex gap-2">
+        <button class="btn btn-gold" onclick="addWord()">⊕ Sisteme Kaydet</button>
+        <button class="btn btn-ghost" onclick="clearAddForm()">Temizle</button>
+      </div>
+    </div>
+
+    <div class="card mt-6" style="max-width: 600px;">
+      <div class="card-title">Toplu Kelime Ekle (Satır Satır Ekleyin)</div>
+      <div class="info-box" style="margin-bottom:12px;text-align:left">
+        💡 <strong>İpucu:</strong> Not defterindeki listeni buraya kopyala-yapıştır yaparak onlarca kelimeyi tek tıkla uygulamaya çekebilirsin.
+      </div>
+      <div class="form-group">
+        <textarea id="inp-bulk" placeholder="abandon = terk etmek&#10;benevolent = iyi huylu" style="min-height:150px; font-family: monospace; font-size: 13px;"></textarea>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-ghost" onclick="bulkAdd()">⊕ Toplu Ekle</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS & DATA MANAGEMENT -->
+  <section class="section" id="sec-stats">
+    <div class="page-header">
+      <div class="page-title">Ayarlar ve <em>İstatistikler</em></div>
+      <div class="page-subtitle">Öğrenme yolculuğun ve Veri Yönetimi</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="st-total">0</div>
+        <div class="stat-label">Toplam Kelime</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="st-reviews">0</div>
+        <div class="stat-label">Toplam Tekrar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="st-accuracy" style="color:var(--green)">—</div>
+        <div class="stat-label">Doğruluk Oranı</div>
+      </div>
+    </div>
+
+    <div class="due-section">
+      <div class="card">
+        <div class="card-title">Öğrenme Dağılımı</div>
+        <div id="distribution-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">En Zor Kelimeler</div>
+        <div id="hard-words-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">◌</div>
+            <div class="empty-state-text">Yeterli veri yok.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Veri Kurtarma ve Yedekleme (Çok Önemli)</div>
+      <div class="info-box" style="margin-bottom:16px;text-align:left">
+        📌 <strong>Güncelleme Notu:</strong> Cihaz veya uygulama değiştirirken önce <strong>"Yedek Al (JSON)"</strong> butonuna basın. Sonra yeni uygulamada <strong>"Yedekten Yükle"</strong> diyerek dosyanızı seçin. Tüm verileriniz eksiksiz aktarılır!
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-gold btn-sm" onclick="exportBackup()">💾 Tüm Veriyi Yedekle (JSON)</button>
+        <button class="btn btn-ghost btn-sm" style="border-color:var(--green); color:var(--green);" onclick="document.getElementById('import-file').click()">📤 Yedekten Yükle (Kurtar)</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Sadece Kelimeleri İndir (Excel/CSV)</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(this)">
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Kelimeyi Düzenle</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Kategori</label>
+        <select id="edit-category">
+          <option value="word">Normal Kelime</option>
+          <option value="phrasal">Phrasal Verb</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>İngilizce</label>
+        <input type="text" id="edit-en">
+      </div>
+      <div class="form-group">
+        <label>Türkçe</label>
+        <input type="text" id="edit-tr">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Örnek Cümle</label>
+        <textarea id="edit-example"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Kelime Türü / Not</label>
+        <input type="text" id="edit-type">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-gold" onclick="saveEdit()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== DATA LAYER ====================
+const DB_KEY = 'lexicon_words';
+const META_KEY = 'lexicon_meta';
+
+const SYSTEM_WORDS_BANK = [
+  {id:'p1', en:'act up', tr:'yaramazlık yapmak, bozulmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p2', en:'add up', tr:'anlam ifade etmek, mantıklı gelmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p3', en:'back down', tr:'geri adım atmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p4', en:'bear with', tr:'sabretmek, katlanmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p5', en:'blow up', tr:'patlamak, sinirlenmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p6', en:'break down', tr:'bozulmak, ruhsal çöküntü', category:'phrasal', levelInfo:'B1'},
+  {id:'p7', en:'break out', tr:'patlak vermek (savaş, salgın)', category:'phrasal', levelInfo:'B2'},
+  {id:'p8', en:'bring about', tr:'sebep olmak, yol açmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p9', en:'bump into', tr:'rastlamak, çarpışmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p10', en:'call off', tr:'iptal etmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p11', en:'carry out', tr:'gerçekleştirmek, uygulamak', category:'phrasal', levelInfo:'B1'},
+  {id:'p12', en:'catch up', tr:'yetişmek, arayı kapatmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p13', en:'come across', tr:'tesadüfen karşılaşmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p14', en:'come up with', tr:'fikir/çözüm bulmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p15', en:'cope with', tr:'başa çıkmak, üstesinden gelmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p16', en:'count on', tr:'güvenmek, bel bağlamak', category:'phrasal', levelInfo:'B1'},
+  {id:'p17', en:'cut down on', tr:'azaltmak, kısmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p18', en:'deal with', tr:'ilgilenmek, çözmek', category:'phrasal', levelInfo:'A2'},
+  {id:'p19', en:'die out', tr:'nesli tükenmek, yok olmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p20', en:'do away with', tr:'yürürlükten kaldırmak', category:'phrasal', levelInfo:'C1'},
+  {id:'p21', en:'draw up', tr:'hazırlamak, düzenlemek', category:'phrasal', levelInfo:'B2'},
+  {id:'p22', en:'drop by', tr:'habersiz uğramak', category:'phrasal', levelInfo:'B1'},
+  {id:'p23', en:'drop out', tr:'okulu/yarışı bırakmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p24', en:'end up', tr:'sonuçlanmak, kendini bir durumda bulmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p25', en:'face up to', tr:'yüzleşmek, kabullenmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p26', en:'fall apart', tr:'dağılmak, parçalanmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p27', en:'fall through', tr:'suya düşmek, gerçekleşmemek', category:'phrasal', levelInfo:'B2'},
+  {id:'p28', en:'figure out', tr:'çözmek, anlamak', category:'phrasal', levelInfo:'B1'},
+  {id:'p29', en:'fill in for', tr:'yerine bakmak (işte)', category:'phrasal', levelInfo:'B2'},
+  {id:'p30', en:'find out', tr:'öğrenmek, bulmak', category:'phrasal', levelInfo:'A2'},
+  {id:'p31', en:'get along', tr:'iyi geçinmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p32', en:'get away with', tr:'yanına kar kalmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p33', en:'get over', tr:'atlatmak, iyileşmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p34', en:'give in', tr:'pes etmek, boyun eğmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p35', en:'give up', tr:'bırakmak, vazgeçmek', category:'phrasal', levelInfo:'A2'},
+  {id:'p36', en:'go off', tr:'patlamak, alarmın çalması', category:'phrasal', levelInfo:'B2'},
+  {id:'p37', en:'go over', tr:'gözden geçirmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p38', en:'hand in', tr:'teslim etmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p39', en:'hold on', tr:'beklemek, telefonda hatta kalmak', category:'phrasal', levelInfo:'A2'},
+  {id:'p40', en:'hold up', tr:'geciktirmek, soymak', category:'phrasal', levelInfo:'B2'},
+  {id:'p41', en:'keep up with', tr:'ayak uydurmak, hızına yetişmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p42', en:'lay off', tr:'işten çıkarmak (ekonomik sebeple)', category:'phrasal', levelInfo:'B2'},
+  {id:'p43', en:'look after', tr:'ilgilenmek, bakmak', category:'phrasal', levelInfo:'A2'},
+  {id:'p44', en:'look down on', tr:'küçümsemek, hor görmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p45', en:'look forward to', tr:'dört gözle beklemek', category:'phrasal', levelInfo:'B1'},
+  {id:'p46', en:'look into', tr:'incelemek, araştırmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p47', en:'look up to', tr:'hayranlık duymak, saygı duymak', category:'phrasal', levelInfo:'B2'},
+  {id:'p48', en:'make out', tr:'anlamak, zorla seçmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p49', en:'make up', tr:'uydurmak, barışmak, telafi etmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p50', en:'make up for', tr:'telafi etmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p51', en:'pass away', tr:'vefat etmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p52', en:'pass out', tr:'bayılmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p53', en:'pay off', tr:'borcunu ödemek, meyvesini vermek', category:'phrasal', levelInfo:'B2'},
+  {id:'p54', en:'point out', tr:'işaret etmek, dikkat çekmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p55', en:'pull over', tr:'aracı kenara çekmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p56', en:'put aside', tr:'kenara koymak, biriktirmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p57', en:'put off', tr:'ertelemek', category:'phrasal', levelInfo:'B1'},
+  {id:'p58', en:'put up with', tr:'katlanmak, tahammül etmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p59', en:'run into', tr:'karşılaşmak, rastlamak', category:'phrasal', levelInfo:'B1'},
+  {id:'p60', en:'run out of', tr:'tüketmek, bitmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p61', en:'set off', tr:'yola çıkmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p62', en:'set up', tr:'kurmak (iş, sistem)', category:'phrasal', levelInfo:'A2'},
+  {id:'p63', en:'show off', tr:'gösteriş yapmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p64', en:'show up', tr:'çıkagelmek, ortaya çıkmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p65', en:'stand for', tr:'temsil etmek', category:'phrasal', levelInfo:'B2'},
+  {id:'p66', en:'stand out', tr:'göze çarpmak, öne çıkmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p67', en:'take after', tr:'çekmek, benzemek (aileye)', category:'phrasal', levelInfo:'B2'},
+  {id:'p68', en:'take off', tr:'havalanmak, başarılı olmak', category:'phrasal', levelInfo:'A2'},
+  {id:'p69', en:'take over', tr:'devralmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p70', en:'take up', tr:'zaman/yer kaplamak, hobiye başlamak', category:'phrasal', levelInfo:'B1'},
+  {id:'p71', en:'tear down', tr:'yıkmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p72', en:'tell off', tr:'azarlamak', category:'phrasal', levelInfo:'C1'},
+  {id:'p73', en:'turn down', tr:'reddetmek, sesini kısmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p74', en:'turn into', tr:'dönüşmek', category:'phrasal', levelInfo:'B1'},
+  {id:'p75', en:'turn off', tr:'kapatmak', category:'phrasal', levelInfo:'A2'},
+  {id:'p76', en:'turn on', tr:'açmak (cihaz)', category:'phrasal', levelInfo:'A2'},
+  {id:'p77', en:'turn out', tr:'sonuçlanmak, olduğu ortaya çıkmak', category:'phrasal', levelInfo:'B2'},
+  {id:'p78', en:'turn up', tr:'ortaya çıkmak, sesini açmak', category:'phrasal', levelInfo:'B1'},
+  {id:'p79', en:'wear out', tr:'eskimek, çok yormak', category:'phrasal', levelInfo:'B2'},
+  {id:'p80', en:'work out', tr:'çözmek, antrenman yapmak, işe yaramak', category:'phrasal', levelInfo:'B1'},
+
+  {id:'w1', en:'abandon', tr:'terk etmek, vazgeçmek', category:'word', levelInfo:'B2'},
+  {id:'w2', en:'absolute', tr:'mutlak, kesin', category:'word', levelInfo:'B2'},
+  {id:'w3', en:'abstract', tr:'soyut', category:'word', levelInfo:'B2'},
+  {id:'w4', en:'academic', tr:'akademik', category:'word', levelInfo:'B1'},
+  {id:'w5', en:'access', tr:'erişim', category:'word', levelInfo:'B1'},
+  {id:'w6', en:'accommodate', tr:'barındırmak, uyum sağlamak', category:'word', levelInfo:'B2'},
+  {id:'w7', en:'accompany', tr:'eşlik etmek', category:'word', levelInfo:'B2'},
+  {id:'w8', en:'accomplish', tr:'başarmak', category:'word', levelInfo:'B2'},
+  {id:'w9', en:'accumulate', tr:'biriktirmek, çoğalmak', category:'word', levelInfo:'C1'},
+  {id:'w10', en:'accurate', tr:'kesin, doğru', category:'word', levelInfo:'B1'},
+  {id:'w11', en:'achieve', tr:'başarmak, elde etmek', category:'word', levelInfo:'B1'},
+  {id:'w12', en:'acknowledge', tr:'kabul etmek, onaylamak', category:'word', levelInfo:'B2'},
+  {id:'w13', en:'acquire', tr:'edinmek, kazanmak', category:'word', levelInfo:'B2'},
+  {id:'w14', en:'adapt', tr:'uyum sağlamak', category:'word', levelInfo:'B2'},
+  {id:'w15', en:'adequate', tr:'yeterli', category:'word', levelInfo:'B2'},
+  {id:'w16', en:'adjacent', tr:'bitişik, komşu', category:'word', levelInfo:'C1'},
+  {id:'w17', en:'adjust', tr:'ayarlamak, uymak', category:'word', levelInfo:'B2'},
+  {id:'w18', en:'administrate', tr:'yönetmek, idare etmek', category:'word', levelInfo:'B2'},
+  {id:'w19', en:'advocate', tr:'savunmak, desteklemek', category:'word', levelInfo:'B2'},
+  {id:'w20', en:'affect', tr:'etkilemek', category:'word', levelInfo:'B1'},
+  {id:'w21', en:'aggregate', tr:'toplam, birleştirmek', category:'word', levelInfo:'C1'},
+  {id:'w22', en:'allocate', tr:'tahsis etmek, ayırmak', category:'word', levelInfo:'C1'},
+  {id:'w23', en:'alter', tr:'değiştirmek', category:'word', levelInfo:'B2'},
+  {id:'w24', en:'alternative', tr:'alternatif', category:'word', levelInfo:'B1'},
+  {id:'w25', en:'ambiguous', tr:'belirsiz, çok anlamlı', category:'word', levelInfo:'C1'},
+  {id:'w26', en:'amend', tr:'değiştirmek, düzeltmek (yasa vb.)', category:'word', levelInfo:'C1'},
+  {id:'w27', en:'analyze', tr:'analiz etmek', category:'word', levelInfo:'B1'},
+  {id:'w28', en:'annual', tr:'yıllık', category:'word', levelInfo:'B1'},
+  {id:'w29', en:'anticipate', tr:'beklemek, ummak', category:'word', levelInfo:'B2'},
+  {id:'w30', en:'apparent', tr:'açık, bariz', category:'word', levelInfo:'B2'},
+  {id:'w31', en:'append', tr:'eklemek, iliştirmek', category:'word', levelInfo:'C1'},
+  {id:'w32', en:'appreciate', tr:'takdir etmek, değerini bilmek', category:'word', levelInfo:'B2'},
+  {id:'w33', en:'approach', tr:'yaklaşım, yaklaşmak', category:'word', levelInfo:'B1'},
+  {id:'w34', en:'appropriate', tr:'uygun, yerinde', category:'word', levelInfo:'B2'},
+  {id:'w35', en:'approximate', tr:'yaklaşık', category:'word', levelInfo:'B2'},
+  {id:'w36', en:'arbitrary', tr:'keyfi, rastgele', category:'word', levelInfo:'C1'},
+  {id:'w37', en:'assemble', tr:'birleştirmek, toplanmak', category:'word', levelInfo:'B2'},
+  {id:'w38', en:'assess', tr:'değerlendirmek, değer biçmek', category:'word', levelInfo:'B2'},
+  {id:'w39', en:'assign', tr:'atamak, görevlendirmek', category:'word', levelInfo:'B2'},
+  {id:'w40', en:'assist', tr:'yardım etmek', category:'word', levelInfo:'B1'},
+  {id:'w41', en:'assume', tr:'varsaymak, üstlenmek', category:'word', levelInfo:'B2'},
+  {id:'w42', en:'assure', tr:'garanti etmek, inandırmak', category:'word', levelInfo:'B2'},
+  {id:'w43', en:'attach', tr:'eklemek, bağlamak', category:'word', levelInfo:'B1'},
+  {id:'w44', en:'attain', tr:'ulaşmak, elde etmek', category:'word', levelInfo:'C1'},
+  {id:'w45', en:'attitude', tr:'tutum, tavır', category:'word', levelInfo:'B1'},
+  {id:'w46', en:'attribute', tr:'atfetmek, özellik', category:'word', levelInfo:'C1'},
+  {id:'w47', en:'author', tr:'yazar', category:'word', levelInfo:'A2'},
+  {id:'w48', en:'authority', tr:'yetki, otorite', category:'word', levelInfo:'B2'},
+  {id:'w49', en:'automate', tr:'otomatikleştirmek', category:'word', levelInfo:'B2'},
+  {id:'w50', en:'available', tr:'mevcut, müsait', category:'word', levelInfo:'A2'},
+  {id:'w51', en:'aware', tr:'farkında', category:'word', levelInfo:'B1'},
+  {id:'w52', en:'behalf', tr:'adına, namına', category:'word', levelInfo:'B2'},
+  {id:'w53', en:'benefit', tr:'fayda, yararlanmak', category:'word', levelInfo:'B1'},
+  {id:'w54', en:'bias', tr:'ön yargı', category:'word', levelInfo:'B2'},
+  {id:'w55', en:'bond', tr:'bağ, ilişki', category:'word', levelInfo:'B2'},
+  {id:'w56', en:'brief', tr:'kısa, öz', category:'word', levelInfo:'B1'},
+  {id:'w57', en:'bulk', tr:'büyük yığın, hacim', category:'word', levelInfo:'C1'},
+  {id:'w58', en:'capable', tr:'yetenekli, kapasiteli', category:'word', levelInfo:'B2'},
+  {id:'w59', en:'capacity', tr:'kapasite, hacim', category:'word', levelInfo:'B2'},
+  {id:'w60', en:'category', tr:'kategori', category:'word', levelInfo:'B1'},
+  {id:'w61', en:'cease', tr:'durdurmak, sona ermek', category:'word', levelInfo:'C1'},
+  {id:'w62', en:'challenge', tr:'meydan okumak, zorluk', category:'word', levelInfo:'B1'},
+  {id:'w63', en:'channel', tr:'kanal, yönlendirmek', category:'word', levelInfo:'B1'},
+  {id:'w64', en:'chapter', tr:'bölüm', category:'word', levelInfo:'B1'},
+  {id:'w65', en:'chart', tr:'tablo, grafik', category:'word', levelInfo:'B1'},
+  {id:'w66', en:'chemical', tr:'kimyasal', category:'word', levelInfo:'B1'},
+  {id:'w67', en:'circumstance', tr:'durum, koşul', category:'word', levelInfo:'B2'},
+  {id:'w68', en:'cite', tr:'alıntı yapmak, bahsetmek', category:'word', levelInfo:'B2'},
+  {id:'w69', en:'civil', tr:'sivil', category:'word', levelInfo:'B2'},
+  {id:'w70', en:'clarify', tr:'açıklığa kavuşturmak', category:'word', levelInfo:'B2'},
+  {id:'w71', en:'classic', tr:'klasik', category:'word', levelInfo:'B1'},
+  {id:'w72', en:'clause', tr:'madde, fıkra, yantümce', category:'word', levelInfo:'B2'},
+  {id:'w73', en:'code', tr:'kod, şifre', category:'word', levelInfo:'A2'},
+  {id:'w74', en:'coherent', tr:'tutarlı, mantıklı', category:'word', levelInfo:'C1'},
+  {id:'w75', en:'coincide', tr:'tesadüf etmek, aynı zamana denk gelmek', category:'word', levelInfo:'C1'},
+  {id:'w76', en:'collapse', tr:'çökmek', category:'word', levelInfo:'B2'},
+  {id:'w77', en:'colleague', tr:'meslektaş', category:'word', levelInfo:'B1'},
+  {id:'w78', en:'commence', tr:'başlamak', category:'word', levelInfo:'C1'},
+  {id:'w79', en:'commission', tr:'komisyon, kurul', category:'word', levelInfo:'B2'},
+  {id:'w80', en:'commit', tr:'adamak, suç işlemek', category:'word', levelInfo:'B2'},
+  {id:'w81', en:'commodity', tr:'ticari mal, ürün', category:'word', levelInfo:'C1'},
+  {id:'w82', en:'communicate', tr:'iletişim kurmak', category:'word', levelInfo:'B1'},
+  {id:'w83', en:'community', tr:'topluluk', category:'word', levelInfo:'B1'},
+  {id:'w84', en:'compile', tr:'derlemek, toplamak', category:'word', levelInfo:'C1'},
+  {id:'w85', en:'complement', tr:'tamamlamak, tamamlayıcı', category:'word', levelInfo:'C1'},
+  {id:'w86', en:'complex', tr:'karmaşık', category:'word', levelInfo:'B1'},
+  {id:'w87', en:'component', tr:'bileşen, parça', category:'word', levelInfo:'B2'},
+  {id:'w88', en:'compound', tr:'bileşim, birleştirmek', category:'word', levelInfo:'B2'},
+  {id:'w89', en:'comprehensive', tr:'kapsamlı, detaylı', category:'word', levelInfo:'B2'},
+  {id:'w90', en:'comprise', tr:'içermek, kapsamak', category:'word', levelInfo:'C1'},
+  {id:'w91', en:'compute', tr:'hesaplamak', category:'word', levelInfo:'B2'},
+  {id:'w92', en:'conceive', tr:'tasarlamak, kavramak', category:'word', levelInfo:'C1'},
+  {id:'w93', en:'concentrate', tr:'odaklanmak', category:'word', levelInfo:'B1'},
+  {id:'w94', en:'concept', tr:'kavram, fikir', category:'word', levelInfo:'B2'},
+  {id:'w95', en:'conclude', tr:'sonuçlandırmak', category:'word', levelInfo:'B1'},
+  {id:'w96', en:'concurrent', tr:'eşzamanlı', category:'word', levelInfo:'C1'},
+  {id:'w97', en:'conduct', tr:'yürütmek (deney vb.), iletmek', category:'word', levelInfo:'B2'},
+  {id:'w98', en:'confer', tr:'danışmak, görüşmek, vermek', category:'word', levelInfo:'C1'},
+  {id:'w99', en:'confine', tr:'sınırlamak, hapsetmek', category:'word', levelInfo:'C1'},
+  {id:'w100', en:'confirm', tr:'onaylamak', category:'word', levelInfo:'B1'},
+  {id:'w101', en:'conflict', tr:'çatışma, anlaşmazlık', category:'word', levelInfo:'B2'},
+  {id:'w102', en:'conform', tr:'uymak, boyun eğmek', category:'word', levelInfo:'C1'},
+  {id:'w103', en:'consent', tr:'rıza, onay', category:'word', levelInfo:'C1'},
+  {id:'w104', en:'consequent', tr:'sonucunda olan', category:'word', levelInfo:'B2'},
+  {id:'w105', en:'considerable', tr:'dikkate değer, önemli ölçüde', category:'word', levelInfo:'B2'},
+  {id:'w106', en:'consist', tr:'-den oluşmak', category:'word', levelInfo:'B1'},
+  {id:'w107', en:'constant', tr:'sürekli, sabit', category:'word', levelInfo:'B2'},
+  {id:'w108', en:'constitute', tr:'oluşturmak, teşkil etmek', category:'word', levelInfo:'B2'},
+  {id:'w109', en:'constrain', tr:'kısıtlamak, zorlamak', category:'word', levelInfo:'C1'},
+  {id:'w110', en:'construct', tr:'inşa etmek, kurmak', category:'word', levelInfo:'B2'},
+  {id:'w111', en:'consult', tr:'danışmak', category:'word', levelInfo:'B2'},
+  {id:'w112', en:'consume', tr:'tüketmek', category:'word', levelInfo:'B1'},
+  {id:'w113', en:'contact', tr:'iletişim, temas', category:'word', levelInfo:'B1'},
+  {id:'w114', en:'contemporary', tr:'çağdaş, modern', category:'word', levelInfo:'B2'},
+  {id:'w115', en:'context', tr:'bağlam, durum', category:'word', levelInfo:'B2'},
+  {id:'w116', en:'contract', tr:'sözleşme, küçülmek', category:'word', levelInfo:'B2'},
+  {id:'w117', en:'contradict', tr:'çelişmek, itiraz etmek', category:'word', levelInfo:'B2'},
+  {id:'w118', en:'contrary', tr:'aksine, zıt', category:'word', levelInfo:'B2'},
+  {id:'w119', en:'contrast', tr:'zıtlık, karşılaştırmak', category:'word', levelInfo:'B2'},
+  {id:'w120', en:'contribute', tr:'katkıda bulunmak', category:'word', levelInfo:'B2'},
+  {id:'w121', en:'controversy', tr:'tartışma, anlaşmazlık', category:'word', levelInfo:'B2'},
+  {id:'w122', en:'convene', tr:'toplanmak, toplantı yapmak', category:'word', levelInfo:'C1'},
+  {id:'w123', en:'converse', tr:'zıt, konuşmak', category:'word', levelInfo:'B2'},
+  {id:'w124', en:'convert', tr:'dönüştürmek', category:'word', levelInfo:'B2'},
+  {id:'w125', en:'convince', tr:'ikna etmek', category:'word', levelInfo:'B1'},
+  {id:'w126', en:'cooperate', tr:'işbirliği yapmak', category:'word', levelInfo:'B2'},
+  {id:'w127', en:'coordinate', tr:'koordine etmek', category:'word', levelInfo:'B2'},
+  {id:'w128', en:'core', tr:'çekirdek, öz, temel', category:'word', levelInfo:'B2'},
+  {id:'w129', en:'corporate', tr:'kurumsal, şirket', category:'word', levelInfo:'B2'},
+  {id:'w130', en:'correspond', tr:'yazışmak, uymak, tekabül etmek', category:'word', levelInfo:'B2'},
+  {id:'w131', en:'couple', tr:'çift, birkaç', category:'word', levelInfo:'A2'},
+  {id:'w132', en:'create', tr:'yaratmak, oluşturmak', category:'word', levelInfo:'A2'},
+  {id:'w133', en:'credit', tr:'kredi, itibar, güven', category:'word', levelInfo:'B2'},
+  {id:'w134', en:'criteria', tr:'kriter, ölçüt', category:'word', levelInfo:'B2'},
+  {id:'w135', en:'crucial', tr:'çok önemli, kritik', category:'word', levelInfo:'B2'},
+  {id:'w136', en:'cultural', tr:'kültürel', category:'word', levelInfo:'B1'},
+  {id:'w137', en:'currency', tr:'para birimi, geçerlilik', category:'word', levelInfo:'B2'},
+  {id:'w138', en:'cycle', tr:'döngü, bisiklete binmek', category:'word', levelInfo:'B1'},
+  {id:'w139', en:'data', tr:'veri, bilgi', category:'word', levelInfo:'A2'},
+  {id:'w140', en:'debate', tr:'tartışma, müzakere', category:'word', levelInfo:'B2'},
+  {id:'w141', en:'decade', tr:'on yıl', category:'word', levelInfo:'B1'},
+  {id:'w142', en:'decline', tr:'reddetmek, düşüş, azalmak', category:'word', levelInfo:'B2'},
+  {id:'w143', en:'deduce', tr:'sonuç çıkarmak', category:'word', levelInfo:'C1'},
+  {id:'w144', en:'define', tr:'tanımlamak', category:'word', levelInfo:'B1'},
+  {id:'w145', en:'definite', tr:'kesin, belirli', category:'word', levelInfo:'B2'},
+  {id:'w146', en:'demonstrate', tr:'göstermek, kanıtlamak', category:'word', levelInfo:'B2'},
+  {id:'w147', en:'denote', tr:'belirtmek, ifade etmek', category:'word', levelInfo:'C1'},
+  {id:'w148', en:'deny', tr:'inkar etmek, reddetmek', category:'word', levelInfo:'B2'},
+  {id:'w149', en:'depress', tr:'moralini bozmak, bastırmak', category:'word', levelInfo:'B2'},
+  {id:'w150', en:'derive', tr:'türetmek, kaynaklanmak', category:'word', levelInfo:'B2'},
+  {id:'w151', en:'design', tr:'tasarım, tasarlamak', category:'word', levelInfo:'B1'},
+  {id:'w152', en:'despite', tr:'-e rağmen', category:'word', levelInfo:'B1'},
+  {id:'w153', en:'detect', tr:'tespit etmek, sezmek', category:'word', levelInfo:'B2'},
+  {id:'w154', en:'deviate', tr:'sapmak, yön değiştirmek', category:'word', levelInfo:'C1'},
+  {id:'w155', en:'device', tr:'cihaz, alet', category:'word', levelInfo:'B1'},
+  {id:'w156', en:'devote', tr:'adamak, tahsis etmek', category:'word', levelInfo:'B2'},
+  {id:'w157', en:'differentiate', tr:'ayrım yapmak, farklılaştırmak', category:'word', levelInfo:'C1'},
+  {id:'w158', en:'dimension', tr:'boyut, ebat', category:'word', levelInfo:'B2'},
+  {id:'w159', en:'diminish', tr:'azalmak, eksiltmek', category:'word', levelInfo:'C1'},
+  {id:'w160', en:'discrete', tr:'ayrık, bağımsız', category:'word', levelInfo:'C1'}
+];
+
+function loadWords() {
+  try { 
+    let words = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); 
+    let needsSave = false;
+
+    // Geriye Dönük Uyumluluk Sağlama
+    words.forEach(w => {
+      if(!w.category) { w.category = 'word'; needsSave = true; }
+      if(!w.source) { w.source = 'user'; needsSave = true; }
+    });
+    
+    // KADEMELİ ÖĞRENME (Sistem Kasasından Aktarma)
+    const activeSystemWords = words.filter(w => w.source === 'system');
+    const TARGET_NORMAL = 25; 
+    const TARGET_PHRASAL = 15;
+
+    const learningNormal = activeSystemWords.filter(w => w.repetitions < 3 && w.category === 'word');
+    const learningPhrasal = activeSystemWords.filter(w => w.repetitions < 3 && w.category === 'phrasal');
+    
+    if (learningNormal.length < TARGET_NORMAL) {
+      const lockedNormal = SYSTEM_WORDS_BANK.filter(sw => sw.category === 'word' && !words.some(w => w.id === sw.id));
+      const neededNormal = TARGET_NORMAL - learningNormal.length;
+      lockedNormal.slice(0, neededNormal).forEach(sw => {
+        words.push({ id: sw.id, en: sw.en, tr: sw.tr, category: sw.category, type: sw.levelInfo, source: 'system', example: '', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
+        needsSave = true;
+      });
+    }
+
+    if (learningPhrasal.length < TARGET_PHRASAL) {
+      const lockedPhrasal = SYSTEM_WORDS_BANK.filter(sw => sw.category === 'phrasal' && !words.some(w => w.id === sw.id));
+      const neededPhrasal = TARGET_PHRASAL - learningPhrasal.length;
+      lockedPhrasal.slice(0, neededPhrasal).forEach(sw => {
+        words.push({ id: sw.id, en: sw.en, tr: sw.tr, category: sw.category, type: sw.levelInfo, source: 'system', example: '', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
+        needsSave = true;
+      });
+    }
+
+    if (needsSave) saveWords(words);
+    return words;
+  }
+  catch { return []; }
+}
+
+function saveWords(words) { localStorage.setItem(DB_KEY, JSON.stringify(words)); }
+function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
+function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+
+// ==================== SM-2 ALGORITHM ====================
+function sm2(card, quality) {
+  let { interval, repetitions, ef } = card;
+  if (!ef) ef = 2.5;
+  if (!interval) interval = 0;
+  if (!repetitions) repetitions = 0;
+
+  if (quality < 3) {
+    repetitions = 0;
+    interval = 1;
+  } else {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * ef);
+    repetitions++;
+  }
+
+  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if (ef < 1.3) ef = 1.3;
+
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + interval);
+  nextDate.setHours(0,0,0,0);
+
+  return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
+}
+
+function getLevel(card) {
+  if (!card.nextReview) return 'new';
+  const today = todayStr();
+  if (card.nextReview <= today && card.repetitions > 0) return 'due';
+  if (card.repetitions === 0 && !card.nextReview) return 'new';
+  if (card.repetitions <= 2) return 'learning';
+  return 'review';
+}
+
+function isDue(card) {
+  if (!card.nextReview) return true;
+  return card.nextReview <= todayStr();
+}
+
+function todayStr() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+
+function formatDate(str) {
+  if (!str) return '—';
+  const d = new Date(str + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff === 0) return 'Bugün';
+  if (diff === 1) return 'Yarın';
+  if (diff === -1) return 'Dün';
+  if (diff < 0) return `${Math.abs(diff)} gün önce`;
+  if (diff < 7) return `${diff} gün sonra`;
+  return d.toLocaleDateString('tr-TR', {day:'numeric', month:'short'});
+}
+
+// ==================== NAVIGATION ====================
+function navigate(page) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + page).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  const pageIndex = ['dashboard','quiz','flashcard','words','add','stats'];
+  navItems[pageIndex.indexOf(page)]?.classList.add('active');
+  renderPage(page);
+}
+
+function renderPage(page) {
+  updateSidebar();
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'quiz') renderQuizPreStart();
+  if (page === 'flashcard') renderFlashcardPreStart();
+  if (page === 'words') renderWords();
+  if (page === 'add') document.getElementById('add-total-count').textContent = loadWords().length;
+  if (page === 'stats') renderStats();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const words = loadWords();
+  const today = todayStr();
+  const due = words.filter(isDue);
+  const mastered = words.filter(w => w.repetitions >= 5 && w.nextReview > today);
+
+  document.getElementById('d-total').textContent = words.length;
+  document.getElementById('d-due').textContent = due.length;
+  document.getElementById('d-mastered').textContent = mastered.length;
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('tr-TR', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+  const meta = loadMeta();
+  const streak = calcStreak(meta);
+  document.getElementById('d-streak').textContent = streak;
+
+  const activeSystemWords = words.filter(w => w.source === 'system').length;
+  const totalBankWords = SYSTEM_WORDS_BANK.length;
+  document.getElementById('bank-count-text').textContent = `${activeSystemWords} / ${totalBankWords}`;
+  document.getElementById('bank-progress-fill').style.width = `${(activeSystemWords / totalBankWords) * 100}%`;
+
+  const dueList = document.getElementById('due-list');
+  const startBtn = document.getElementById('start-quiz-btn-wrapper');
+  if (due.length === 0) {
+    dueList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✦</div><div class="empty-state-text">Bugün için tekrar yok.<br>Harika gidiyorsun!</div></div>';
+    startBtn.style.display = 'none';
+  } else {
+    dueList.innerHTML = due.slice(0,5).map(w => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text)">${w.en}</span>
+        <span style="color:var(--text3);font-size:12px">→</span>
+        <span style="color:var(--text2);font-size:13px">${w.tr}</span>
+        <span class="level-badge ${getLevel(w) === 'new' ? 'level-new' : 'level-due'}" style="margin-left:auto;font-size:9px">${getLevel(w) === 'new' ? 'YENİ' : 'TEKRAR'}</span>
+      </div>
+    `).join('') + (due.length > 5 ? `<div style="color:var(--text3);font-size:12px;padding:8px 0">+${due.length-5} kelime daha...</div>` : '');
+    startBtn.style.display = 'flex';
+  }
+
+  const upcomingList = document.getElementById('upcoming-list');
+  const upcoming = words.filter(w => w.nextReview && w.nextReview > today).sort((a,b) => a.nextReview.localeCompare(b.nextReview));
+  const grouped = {};
+  upcoming.forEach(w => { if (!grouped[w.nextReview]) grouped[w.nextReview] = []; grouped[w.nextReview].push(w.en); });
+  const keys = Object.keys(grouped).slice(0, 7);
+  if (keys.length === 0) {
+    upcomingList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">◌</div><div class="empty-state-text">Kelime ekledikçe program burada görünür.</div></div>';
+  } else {
+    upcomingList.innerHTML = keys.map(date => `
+      <div class="timeline-row">
+        <div class="timeline-date">${formatDate(date)}</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-words">${grouped[date].slice(0,3).join(', ')}${grouped[date].length > 3 ? ` +${grouped[date].length-3}` : ''}</div>
+      </div>
+    `).join('');
+  }
+
+  const recentEl = document.getElementById('recent-words');
+  const recent = [...words].filter(w => w.source === 'user').sort((a,b) => b.addedAt.localeCompare(a.addedAt)).slice(0, 6);
+  if (recent.length === 0) {
+    recentEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⊕</div><div class="empty-state-text">Henüz kendin kelime eklemedin.<br><a href="#" onclick="navigate(\'add\')" style="color:var(--gold);text-decoration:none">İlk kelimenizi ekleyin →</a></div></div>';
+  } else {
+    recentEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">` +
+      recent.map(w => `
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;border:1px solid rgba(255,255,255,0.04)">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text)">${w.en}</div>
+          <div style="color:var(--text2);font-size:12px;margin-top:2px">${w.tr}</div>
+          <div style="color:var(--text3);font-size:11px;margin-top:6px">${w.addedAt}</div>
+        </div>
+      `).join('') + `</div>`;
+  }
+}
+
+// ==================== QUIZ GLOBAL STATE ====================
+let currentQuizConfig = {}; 
+let quizAskedIds = []; 
+let fcAskedIds = []; 
+
+// ==================== QUIZ (ÇOKTAN SEÇMELİ) ====================
+let quizQueue = [];
+let quizIndex = 0;
+let quizCorrect = 0;
+let quizTotal = 0;
+let quizAnswered = false;
+let sessionWrongIds = [];
+let isMistakesMode = false;
+
+function renderQuizPreStart() {
+  const words = loadWords();
+  const due = words.filter(isDue);
+  const area = document.getElementById('quiz-area');
+
+  if (words.length < 2) {
+    area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-icon">◌</div><div class="quiz-empty-title">Kelime Gerekli</div><div class="quiz-empty-text">Test için en az 2 kelime eklemen gerekiyor.</div><div style="margin-top:24px"><button class="btn btn-gold" onclick="navigate('add')">⊕ Kelime Ekle</button></div></div>`;
+    return;
+  }
+
+  const userWords = words.filter(w => w.source === 'user');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
+      <div class="quiz-count-badge">${due.length > 0 ? `${due.length} kelime bugün vadeli` : 'Bugünkü tekrarlar tamamlandı'}</div>
+
+      <div class="info-box" style="margin-bottom:20px;text-align:left">
+        📌 <strong>Nasıl çalışır?</strong> Varsayılan olarak <em>sadece bugün vadesi gelen</em> kelimeler sorulur (SM-2). 
+        "Tüm Kelimelerden" seçeneği ile vadesi gelmeyenleri de çalışabilirsin.
+      </div>
+
+      <div class="quiz-settings">
+        <div class="quiz-settings-title">1. KAYNAK SEÇİMİ</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px">
+          <label><input type="checkbox" id="q-user" checked> Benim Eklediklerim (${userWords.length})</label>
+          <label><input type="checkbox" id="q-system" checked> Sistem Kelimeleri</label>
+        </div>
+        <div class="quiz-settings-title">2. KELİME TÜRÜ</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px">
+          <label><input type="checkbox" id="q-word" checked> Normal Kelimeler</label>
+          <label><input type="checkbox" id="q-phrasal" checked> Phrasal Verbs</label>
+        </div>
+        <div class="quiz-settings-title">3. KAPSAM (Hangilerini Getirsin?)</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-scope" id="q-scope-due" value="due" checked>
+            <span style="margin-left:4px"><strong style="color:var(--text)">Sadece Bugün Vadeli</strong> <span style="color:var(--text3);font-size:12px">— Algoritma (önerilen)</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-scope" id="q-scope-user" value="user">
+            <span style="margin-left:4px"><strong style="color:var(--text)">Sadece Benim Kelimelerim</strong> <span style="color:var(--text3);font-size:12px">— Seçili tüm özel kelimelerim</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-scope" id="q-scope-all" value="all">
+            <span style="margin-left:4px"><strong style="color:var(--text)">Tüm Kelimelerden</strong> <span style="color:var(--text3);font-size:12px">— Sistem + benim, tümü</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-scope" id="q-scope-hard" value="hard">
+            <span style="margin-left:4px"><strong style="color:var(--red)">Sadece Yanlış Yaptıklarım</strong> <span style="color:var(--text3);font-size:12px">— En zor kelimeler</span></span>
+          </label>
+        </div>
+        <div class="quiz-settings-title">4. SORU SAYISI LİMİTİ</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-limit" value="all" checked> Hepsi
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-limit" value="10"> 10 Kelime
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-limit" value="20"> 20 Kelime
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="q-limit" value="50"> 50 Kelime
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-ghost" onclick="navigate('dashboard')">Geri Dön</button>
+        <button class="btn btn-gold" onclick="startQuiz(false)">▶ Teste Başla</button>
+      </div>
+    </div>`;
+}
+
+function startQuiz(isNextBatch = false) {
+  const words = loadWords();
+  
+  if (!isNextBatch) {
+    quizAskedIds = [];
+    sessionWrongIds = [];
+    currentQuizConfig = {
+      qUser: document.getElementById('q-user').checked,
+      qSystem: document.getElementById('q-system').checked,
+      qWord: document.getElementById('q-word').checked,
+      qPhrasal: document.getElementById('q-phrasal').checked,
+      scope: document.querySelector('input[name="q-scope"]:checked').value,
+      limit: document.querySelector('input[name="q-limit"]:checked').value
+    };
+  }
+
+  let { qUser, qSystem, qWord, qPhrasal, scope, limit } = currentQuizConfig;
+
+  isMistakesMode = (scope === 'hard');
+
+  if (!qUser && !qSystem) { showToast('En az bir kaynak seçin.', 'error'); return; }
+  if (!qWord && !qPhrasal) { showToast('En az bir kelime türü seçin.', 'error'); return; }
+
+  let validWords = words.filter(w => {
+    const matchSource = (w.source === 'user' && qUser) || (w.source === 'system' && qSystem);
+    const matchCategory = (w.category === 'word' && qWord) || (w.category === 'phrasal' && qPhrasal);
+    return matchSource && matchCategory;
+  });
+
+  let pool;
+  if (scope === 'due') { pool = validWords.filter(isDue); } 
+  else if (scope === 'user') { pool = validWords.filter(w => w.source === 'user'); } 
+  else if (scope === 'hard') { pool = validWords.filter(w => (w.wrongCount || 0) > 0); } 
+  else { pool = validWords; }
+
+  if (isNextBatch) {
+    pool = pool.filter(w => !quizAskedIds.includes(w.id));
+    if (pool.length === 0) {
+      showToast('Seçili ayarlardaki sorulmamış tüm kelimeleri bitirdin!', 'success');
+      return;
+    }
+  } else {
+    if (pool.length === 0) { showToast('Seçilen filtrelere uygun kelime bulunamadı.', 'error'); return; }
+    if (pool.length < 2) { showToast('Yeterli kelime yok (en az 2 gerekli).', 'error'); return; }
+  }
+
+  pool = pool.sort(() => Math.random() - 0.5);
+
+  let numLimit = limit === 'all' ? pool.length : parseInt(limit);
+  if (pool.length < numLimit) numLimit = pool.length;
+
+  quizQueue = pool.slice(0, numLimit);
+  quizQueue.forEach(w => quizAskedIds.push(w.id));
+
+  quizIndex = 0;
+  quizCorrect = 0;
+  quizTotal = quizQueue.length;
+  showNextQuestion();
+}
+
+function startMistakesQuiz() {
+  const words = loadWords();
+  isMistakesMode = true;
+  quizQueue = words.filter(w => sessionWrongIds.includes(w.id)).sort(() => Math.random() - 0.5);
+  quizIndex = 0;
+  quizCorrect = 0;
+  quizTotal = quizQueue.length;
+  sessionWrongIds = [];
+  showNextQuestion();
+}
+
+function showNextQuestion() {
+  const area = document.getElementById('quiz-area');
+  const words = loadWords();
+
+  if (quizIndex >= quizQueue.length) { showQuizSummary(); return; }
+
+  const card = quizQueue[quizIndex];
+  quizAnswered = false;
+
+  const askTurkishToEnglish = isMistakesMode && Math.random() > 0.5;
+  
+  let questionText, correctAnswer, distractors;
+  const others = words.filter(w => w.id !== card.id && w.category === card.category);
+  let distractorPool = others.length >= 3 ? others : words.filter(w => w.id !== card.id);
+  const shuffledOthers = distractorPool.sort(() => Math.random() - 0.5).slice(0, 3);
+
+  if (askTurkishToEnglish) {
+    questionText = card.tr.split(',')[0].trim();
+    correctAnswer = card.en;
+    distractors = shuffledOthers.map(w => w.en);
+  } else {
+    questionText = card.en;
+    correctAnswer = card.tr.split(',')[0].trim();
+    distractors = shuffledOthers.map(w => w.tr.split(',')[0].trim());
+  }
+
+  let options = [correctAnswer, ...distractors].sort(() => Math.random() - 0.5);
+  while (options.length < 4 && options.length < words.length) {
+    const extra = words[Math.floor(Math.random() * words.length)];
+    const val = askTurkishToEnglish ? extra.en : extra.tr.split(',')[0].trim();
+    if (!options.includes(val)) options.push(val);
+  }
+  options = options.slice(0, 4);
+  const letters = ['A', 'B', 'C', 'D'];
+  const progress = (quizIndex / quizTotal * 100).toFixed(1);
+  const questionLabel = askTurkishToEnglish
+    ? `Bu Türkçe ${card.category === 'phrasal' ? 'ifadenin' : 'kelimenin'} İngilizce karşılığı nedir?`
+    : `Bu İngilizce ${card.category === 'phrasal' ? 'ifadenin' : 'kelimenin'} Türkçe karşılığı nedir?`;
+
+  area.innerHTML = `
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="progress-text">${quizIndex + 1} / ${quizTotal}</div>
+    </div>
+    <div class="quiz-card">
+      <div class="quiz-mode-label">${questionLabel}</div>
+      <div class="quiz-word" style="${askTurkishToEnglish && questionText.length > 15 ? 'font-size:36px;' : ''}">${questionText}</div>
+      ${!askTurkishToEnglish && card.type ? `<div class="quiz-word-sub">${card.type}</div>` : ''}
+      ${card.example && !askTurkishToEnglish ? `<div class="quiz-hint" style="font-style:italic;color:var(--text3);margin-top:8px">"${card.example}"</div>` : ''}
+    </div>
+    <div class="options-grid">
+      ${options.map((opt, i) => `
+        <button class="option-btn" onclick="selectAnswer('${escapeQuotes(opt)}', '${escapeQuotes(correctAnswer)}', '${card.id}', this)" data-answer="${escapeQuotes(opt)}">
+          <div class="option-letter">${letters[i]}</div>
+          <span>${opt}</span>
+        </button>
+      `).join('')}
+      <button class="btn-idk" onclick="selectAnswer('idk', '${escapeQuotes(correctAnswer)}', '${card.id}', this)" data-answer="idk">
+        Emin Değilim / Bilmiyorum
+      </button>
+    </div>
+    <div class="quiz-feedback" id="q-feedback"></div>
+    <div class="quiz-actions">
+      <div id="next-btn-wrapper" style="display:none">
+        <button class="btn btn-gold" onclick="nextQuestion()">Sonraki →</button>
+      </div>
+    </div>
+  `;
+}
+
+function escapeQuotes(str) {
+  return str.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
+function selectAnswer(chosen, correct, cardId, btnEl) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+
+  const isIdk = chosen === 'idk';
+  const isCorrect = !isIdk && chosen === correct;
+  const allBtns = document.querySelectorAll('.option-btn, .btn-idk');
+  
+  allBtns.forEach(btn => {
+    btn.disabled = true;
+    const val = btn.dataset.answer;
+    if (val === correct) btn.classList.add('correct');
+    else if (btn === btnEl && !isCorrect && !isIdk) btn.classList.add('wrong');
+  });
+
+  const feedback = document.getElementById('q-feedback');
+  const words = loadWords();
+  const card = words.find(w => w.id === cardId);
+  
+  let quality;
+  if (isCorrect) {
+    quality = 5;
+    quizCorrect++;
+    feedback.className = 'quiz-feedback show';
+    feedback.innerHTML = `<div class="feedback-correct">✓ Doğru!</div>${card && card.example ? `<div class="feedback-detail">"${card.example}"</div>` : ''}`;
+  } else {
+    quality = 1;
+    feedback.className = 'quiz-feedback show';
+    feedback.innerHTML = `<div class="feedback-wrong">${isIdk ? 'Dürüstlük harika! Doğru cevap:' : '✗ Yanlış — Doğru cevap:'} <strong>${correct}</strong></div>${card && card.example ? `<div class="feedback-detail">"${card.example}"</div>` : ''}`;
+    if (!sessionWrongIds.includes(cardId)) sessionWrongIds.push(cardId);
+  }
+
+  if (card) {
+    const updated = sm2(card, quality);
+    card.interval = updated.interval;
+    card.repetitions = updated.repetitions;
+    card.ef = updated.ef;
+    card.nextReview = updated.nextReview;
+    card.lastReviewed = todayStr();
+    card.reviewCount = (card.reviewCount || 0) + 1;
+    card.wrongCount = (card.wrongCount || 0) + (isCorrect ? 0 : 1);
+    const idx = words.findIndex(w => w.id === cardId);
+    if (idx >= 0) words[idx] = card;
+    saveWords(words);
+
+    const meta = loadMeta();
+    if (!meta.activity) meta.activity = {};
+    const t = todayStr();
+    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
+    meta.activity[t].reviews++;
+    if (isCorrect) meta.activity[t].correct++;
+    saveMeta(meta);
+  }
+
+  document.getElementById('next-btn-wrapper').style.display = 'block';
+}
+
+function nextQuestion() { quizIndex++; showNextQuestion(); }
+
+function showQuizSummary() {
+  const accuracy = quizTotal > 0 ? Math.round((quizCorrect / quizTotal) * 100) : 0;
+  const area = document.getElementById('quiz-area');
+  
+  const words = loadWords();
+  let remainingInPool = false;
+  if (currentQuizConfig && currentQuizConfig.scope) {
+    let validWords = words.filter(w => {
+      const matchSource = (w.source === 'user' && currentQuizConfig.qUser) || (w.source === 'system' && currentQuizConfig.qSystem);
+      const matchCategory = (w.category === 'word' && currentQuizConfig.qWord) || (w.category === 'phrasal' && currentQuizConfig.qPhrasal);
+      return matchSource && matchCategory;
+    });
+    let pool;
+    if (currentQuizConfig.scope === 'due') pool = validWords.filter(isDue);
+    else if (currentQuizConfig.scope === 'user') pool = validWords.filter(w => w.source === 'user');
+    else if (currentQuizConfig.scope === 'hard') pool = validWords.filter(w => (w.wrongCount || 0) > 0);
+    else pool = validWords;
+    remainingInPool = pool.filter(w => !quizAskedIds.includes(w.id)).length > 0;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 80 ? '🏆' : accuracy >= 50 ? '📚' : '💪'}</div>
+      <div class="quiz-start-title">Oturum <em>Tamamlandı</em></div>
+      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${quizCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Doğru</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${quizTotal - quizCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Yanlış</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
+          <div style="color:var(--text3);font-size:12px">Başarı</div>
+        </div>
+      </div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:24px">
+        ${accuracy >= 80 ? 'Harika iş çıkardın! Devam et.' : accuracy >= 50 ? 'İyi gidiyorsun, pratik yapmaya devam et!' : 'Tekrar etmen gereken kelimeler var, pes etme!'}
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="navigate('dashboard')">Panele Dön</button>
+        ${sessionWrongIds.length > 0 ? `<button class="btn btn-danger" onclick="startMistakesQuiz()">Yanlışlarımı Tekrar Sor (${sessionWrongIds.length})</button>` : ''}
+        ${remainingInPool && sessionWrongIds.length === 0 ? `<button class="btn btn-gold" onclick="startQuiz(true)">Farklı Kelimelerle Devam Et</button>` : ''}
+        ${!remainingInPool && sessionWrongIds.length === 0 ? `<button class="btn btn-ghost" onclick="renderQuizPreStart()">Yeni Ayar Yap</button>` : ''}
+      </div>
+    </div>`;
+  
+  updateSidebar();
+}
+
+// ==================== FLASHCARD MODU (YENİ) ====================
+let fcQueue = [];
+let fcIndex = 0;
+let fcCorrect = 0;
+let fcTotal = 0;
+let fcRevealed = false;
+let currentFcConfig = {};
+
+function renderFlashcardPreStart() {
+  const words = loadWords();
+  const area = document.getElementById('flashcard-area');
+
+  if (words.length < 1) {
+    area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-icon">◌</div><div class="quiz-empty-title">Kelime Gerekli</div><div class="quiz-empty-text">Devam etmek için kelime ekle.</div></div>`;
+    return;
+  }
+
+  const userWords = words.filter(w => w.source === 'user');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title"><em>Flashcard</em> Modu</div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:24px;line-height:1.7">
+        Kelimeyi görürsün. Cevabı aklından geçir, karta tıkla ve doğru/yanlış butonlarıyla dürüstçe değerlendir.
+      </p>
+
+      <div class="quiz-settings">
+        <div class="quiz-settings-title">1. HANGİ KELİMELER ÇALIŞILSIN?</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-scope" value="due" checked>
+            <span style="margin-left:6px"><strong style="color:var(--text)">Sadece Bugün Vadeli</strong> <span style="color:var(--text3);font-size:12px">(${words.filter(isDue).length} kelime)</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-scope" value="user">
+            <span style="margin-left:6px"><strong style="color:var(--text)">Sadece Benim Eklediklerim</strong> <span style="color:var(--text3);font-size:12px">(${userWords.length} kelime, vade yok)</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-scope" value="all">
+            <span style="margin-left:6px"><strong style="color:var(--text)">Tüm Aktif Kelimeler</strong> <span style="color:var(--text3);font-size:12px">(${words.length} kelime)</span></span>
+          </label>
+          <label style="padding:10px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-scope" value="hard">
+            <span style="margin-left:6px"><strong style="color:var(--red)">Sadece Yanlış Yaptıklarım</strong> <span style="color:var(--text3);font-size:12px">(${words.filter(w=>(w.wrongCount||0)>0).length} kelime)</span></span>
+          </label>
+        </div>
+        <div class="quiz-settings-title">2. KART SAYISI (LİMİT)</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-limit" value="all" checked> Hepsi
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-limit" value="10"> 10 Kart
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-limit" value="20"> 20 Kart
+          </label>
+          <label style="padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <input type="radio" name="fc-limit" value="50"> 50 Kart
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-ghost" onclick="navigate('dashboard')">Geri Dön</button>
+        <button class="btn btn-gold" onclick="startFlashcard(false)">▶ Kartlara Başla</button>
+      </div>
+    </div>`;
+}
+
+function startFlashcard(isNextBatch = false) {
+  const words = loadWords();
+  
+  if (!isNextBatch) {
+    fcAskedIds = [];
+    currentFcConfig = {
+      scope: document.querySelector('input[name="fc-scope"]:checked').value,
+      limit: document.querySelector('input[name="fc-limit"]:checked').value
+    };
+  }
+
+  let { scope, limit } = currentFcConfig;
+  
+  let pool;
+  if (scope === 'due') pool = words.filter(isDue);
+  else if (scope === 'user') pool = words.filter(w => w.source === 'user');
+  else if (scope === 'hard') pool = words.filter(w => (w.wrongCount || 0) > 0);
+  else pool = [...words];
+
+  if (isNextBatch) {
+    pool = pool.filter(w => !fcAskedIds.includes(w.id));
+    if (pool.length === 0) {
+      showToast('Seçili ayarlardaki sorulmamış tüm kartları bitirdin!', 'success');
+      return;
+    }
+  } else {
+    if (pool.length === 0) { showToast('Bu filtreye uygun kelime yok.', 'error'); return; }
+  }
+  
+  pool = pool.sort(() => Math.random() - 0.5);
+
+  let numLimit = limit === 'all' ? pool.length : parseInt(limit);
+  if (pool.length < numLimit) numLimit = pool.length;
+
+  fcQueue = pool.slice(0, numLimit);
+  fcQueue.forEach(w => fcAskedIds.push(w.id));
+
+  fcIndex = 0;
+  fcCorrect = 0;
+  fcTotal = fcQueue.length;
+  showNextFlashcard();
+}
+
+function showNextFlashcard() {
+  const area = document.getElementById('flashcard-area');
+  if (fcIndex >= fcQueue.length) { showFlashcardSummary(); return; }
+
+  const card = fcQueue[fcIndex];
+  fcRevealed = false;
+  const progress = (fcIndex / fcTotal * 100).toFixed(1);
+
+  const askTurkishToEnglish = Math.random() > 0.5;
+
+  let questionText, answerText;
+  if (askTurkishToEnglish) {
+    questionText = card.tr.split(',')[0].trim();
+    answerText = card.en;
+  } else {
+    questionText = card.en;
+    answerText = card.tr;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
+    </div>
+
+    <div class="flashcard-wrap" onclick="revealFlashcard('${card.id}')" id="fc-card">
+      <div class="flashcard" id="fc-inner">
+        <div class="flashcard-front">
+          <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+          <div class="quiz-word" style="${askTurkishToEnglish && questionText.length > 15 ? 'font-size:36px;' : ''}">${questionText}</div>
+          ${!askTurkishToEnglish && card.type ? `<div class="quiz-word-sub">${card.type}</div>` : ''}
+          ${card.category === 'phrasal' ? `<div style="margin-top:8px"><span class="badge-small badge-phrasal">PHRASAL VERB</span></div>` : ''}
+        </div>
+        <div class="flashcard-back" id="fc-back" style="display:none">
+          <div class="flashcard-answer">${answerText}</div>
+          ${card.example && !askTurkishToEnglish ? `<div class="flashcard-example">"${card.example}"</div>` : ''}
+        </div>
+        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
+      </div>
+    </div>
+
+    <div class="flashcard-actions" id="fc-actions">
+      <button class="fc-btn fc-idk" onclick="rateFlashcard('${card.id}', 1)">✗ Bilmiyorum</button>
+      <button class="fc-btn fc-hard" onclick="rateFlashcard('${card.id}', 3)">~ Zorlandım</button>
+      <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
+    </div>
+  `;
+}
+
+function revealFlashcard(cardId) {
+  if (fcRevealed) return;
+  fcRevealed = true;
+  const inner = document.getElementById('fc-inner');
+  const back = document.getElementById('fc-back');
+  const actions = document.getElementById('fc-actions');
+  if (inner) inner.classList.add('revealed');
+  if (back) back.style.display = 'block';
+  if (actions) actions.classList.add('visible');
+  const card = document.getElementById('fc-card');
+  if (card) card.onclick = null;
+}
+
+function rateFlashcard(cardId, quality) {
+  const words = loadWords();
+  const card = words.find(w => w.id === cardId);
+  if (card) {
+    const updated = sm2(card, quality);
+    card.interval = updated.interval;
+    card.repetitions = updated.repetitions;
+    card.ef = updated.ef;
+    card.nextReview = updated.nextReview;
+    card.lastReviewed = todayStr();
+    card.reviewCount = (card.reviewCount || 0) + 1;
+    if (quality < 3) card.wrongCount = (card.wrongCount || 0) + 1;
+    if (quality >= 4) fcCorrect++;
+    const idx = words.findIndex(w => w.id === cardId);
+    if (idx >= 0) words[idx] = card;
+    saveWords(words);
+
+    const meta = loadMeta();
+    if (!meta.activity) meta.activity = {};
+    const t = todayStr();
+    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
+    meta.activity[t].reviews++;
+    if (quality >= 4) meta.activity[t].correct++;
+    saveMeta(meta);
+  }
+  fcIndex++;
+  showNextFlashcard();
+}
+
+function showFlashcardSummary() {
+  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
+  const area = document.getElementById('flashcard-area');
+  
+  const words = loadWords();
+  let remainingInPool = false;
+  if (currentFcConfig && currentFcConfig.scope) {
+    let pool;
+    if (currentFcConfig.scope === 'due') pool = words.filter(isDue);
+    else if (currentFcConfig.scope === 'user') pool = words.filter(w => w.source === 'user');
+    else if (currentFcConfig.scope === 'hard') pool = words.filter(w => (w.wrongCount || 0) > 0);
+    else pool = [...words];
+    remainingInPool = pool.filter(w => !fcAskedIds.includes(w.id)).length > 0;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 80 ? '🏆' : accuracy >= 50 ? '📚' : '💪'}</div>
+      <div class="quiz-start-title">Flashcard <em>Tamamlandı</em></div>
+      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Bildim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${fcTotal - fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Zor/Bilmedim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
+          <div style="color:var(--text3);font-size:12px">Başarı</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="navigate('dashboard')">Panele Dön</button>
+        ${remainingInPool ? `<button class="btn btn-gold" onclick="startFlashcard(true)">Farklı Kelimelerle Devam Et</button>` : ''}
+        ${!remainingInPool ? `<button class="btn btn-ghost" onclick="renderFlashcardPreStart()">Yeni Ayar Yap</button>` : ''}
+      </div>
+    </div>`;
+  updateSidebar();
+}
+
+// ==================== WORDS LIST ====================
+function renderWords() {
+  const words = loadWords();
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const levelFilter = document.getElementById('filter-level').value;
+  const sourceFilter = document.getElementById('filter-source').value;
+  const categoryFilter = document.getElementById('filter-category').value;
+
+  let filtered = words;
+  if (search) filtered = filtered.filter(w => w.en.toLowerCase().includes(search) || w.tr.toLowerCase().includes(search));
+  if (sourceFilter) filtered = filtered.filter(w => w.source === sourceFilter);
+  if (categoryFilter) filtered = filtered.filter(w => w.category === categoryFilter);
+  if (levelFilter) filtered = filtered.filter(w => levelFilter === 'due' ? isDue(w) : getLevel(w) === levelFilter);
+  filtered.sort((a,b) => a.en.localeCompare(b.en));
+
+  const tbody = document.getElementById('words-tbody');
+  const empty = document.getElementById('words-empty');
+  document.getElementById('word-count-label').textContent = `${filtered.length} kelime`;
+
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const levelLabels = { new: 'YENİ', learning: 'ÖĞRENİLİYOR', review: 'TEKRARDA', due: 'BUGÜN' };
+  const levelClasses = { new: 'level-new', learning: 'level-learning', review: 'level-review', due: 'level-due' };
+
+  tbody.innerHTML = filtered.map(w => {
+    const level = isDue(w) && w.repetitions > 0 ? 'due' : getLevel(w);
+    const catBadge = w.category === 'phrasal' ? `<span class="badge-small badge-phrasal">PHRASAL</span>` : '';
+    const srcBadge = w.source === 'system' ? `<span class="badge-small badge-system">SİSTEM</span>` : `<span class="badge-small" style="background:rgba(76,175,125,0.15);color:var(--green)">BENİM</span>`;
+    const typeBadge = w.source === 'system' && w.type ? `<span class="badge-small badge-levelinfo">${w.type}</span>` : (w.type ? `<span style="font-size:11px;color:var(--text3)">${w.type}</span>` : '');
+    return `
+      <tr>
+        <td><div class="word-en">${w.en} ${catBadge} ${srcBadge}</div>${typeBadge}</td>
+        <td class="word-tr">${w.tr}</td>
+        <td class="word-note">${w.example || '—'}</td>
+        <td><span class="level-badge ${levelClasses[level]}">${levelLabels[level]}</span></td>
+        <td style="color:var(--text2);font-size:12px">${formatDate(w.nextReview)}<div class="review-info">${w.reviewCount || 0} tekrar • Aralık: ${w.interval || 0}g</div></td>
+        <td style="white-space:nowrap">
+          <button class="edit-btn" onclick="openEdit('${w.id}')" title="Düzenle">✎</button>
+          <button class="delete-btn" onclick="deleteWord('${w.id}')" title="Sil">✕</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ==================== ADD WORD ====================
+function addWord() {
+  const category = document.getElementById('inp-category').value;
+  const en = document.getElementById('inp-en').value.trim();
+  const tr = document.getElementById('inp-tr').value.trim();
+  const example = document.getElementById('inp-example').value.trim();
+  const type = document.getElementById('inp-type').value.trim();
+
+  if (!en || !tr) { showToast('İngilizce ve Türkçe alanları zorunludur.', 'error'); return; }
+
+  const words = loadWords();
+  if (words.find(w => w.en.toLowerCase() === en.toLowerCase())) { showToast('Bu kelime zaten mevcut!', 'error'); return; }
+
+  words.push({ id: Date.now().toString(), en, tr, example, type, category, source: 'user', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
+  saveWords(words);
+  clearAddForm();
+  showToast(`"${en}" eklendi!`, 'success');
+  document.getElementById('add-total-count').textContent = words.length;
+  updateSidebar();
+}
+
+function clearAddForm() {
+  ['inp-en','inp-tr','inp-example','inp-type'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('inp-en').focus();
+}
+
+function bulkAdd() {
+  const text = document.getElementById('inp-bulk').value.trim();
+  if (!text) return;
+  const lines = text.split('\n').filter(l => l.trim());
+  const words = loadWords();
+  let added = 0, skipped = 0;
+  lines.forEach(line => {
+    const parts = line.split('=');
+    if (parts.length < 2) { skipped++; return; }
+    const en = parts[0].trim();
+    const tr = parts.slice(1).join('=').trim();
+    if (!en || !tr) { skipped++; return; }
+    if (words.find(w => w.en.toLowerCase() === en.toLowerCase())) { skipped++; return; }
+    words.push({ id: Date.now().toString() + Math.random(), en, tr, example: '', type: '', category: 'word', source: 'user', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
+    added++;
+  });
+  saveWords(words);
+  document.getElementById('inp-bulk').value = '';
+  document.getElementById('add-total-count').textContent = words.length;
+  showToast(`${added} kelime eklendi${skipped > 0 ? `, ${skipped} atlandı` : ''}.`, 'success');
+  updateSidebar();
+}
+
+// ==================== EDIT / DELETE ====================
+function openEdit(id) {
+  const words = loadWords();
+  const w = words.find(x => x.id === id);
+  if (!w) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-category').value = w.category || 'word';
+  document.getElementById('edit-en').value = w.en;
+  document.getElementById('edit-tr').value = w.tr;
+  document.getElementById('edit-example').value = w.example || '';
+  document.getElementById('edit-type').value = w.type || '';
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('edit-modal').classList.remove('show'); }
+
+function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const words = loadWords();
+  const idx = words.findIndex(w => w.id === id);
+  if (idx < 0) return;
+  words[idx].category = document.getElementById('edit-category').value;
+  words[idx].en = document.getElementById('edit-en').value.trim();
+  words[idx].tr = document.getElementById('edit-tr').value.trim();
+  words[idx].example = document.getElementById('edit-example').value.trim();
+  words[idx].type = document.getElementById('edit-type').value.trim();
+  saveWords(words);
+  closeModal();
+  renderWords();
+  showToast('Kelime güncellendi.', 'success');
+}
+
+function deleteWord(id) {
+  if (!confirm('Bu kelimeyi silmek istediğine emin misin?')) return;
+  let words = loadWords();
+  words = words.filter(w => w.id !== id);
+  saveWords(words);
+  renderWords();
+  updateSidebar();
+  showToast('Kelime silindi.', 'success');
+}
+
+// ==================== STATS ====================
+function renderStats() {
+  const words = loadWords();
+  const meta = loadMeta();
+
+  const totalReviews = words.reduce((s, w) => s + (w.reviewCount || 0), 0);
+  const totalCorrect = words.reduce((s, w) => s + ((w.reviewCount || 0) - (w.wrongCount || 0)), 0);
+  const accuracy = totalReviews > 0 ? Math.round((totalCorrect / totalReviews) * 100) : 100;
+
+  document.getElementById('st-total').textContent = words.length;
+  document.getElementById('st-reviews').textContent = totalReviews;
+  document.getElementById('st-accuracy').textContent = accuracy + '%';
+
+  const levels = { new: 0, learning: 0, review: 0, mastered: 0 };
+  words.forEach(w => {
+    if (w.repetitions === 0) levels.new++;
+    else if (w.repetitions <= 2) levels.learning++;
+    else if (w.repetitions <= 5) levels.review++;
+    else levels.mastered++;
+  });
+  const maxLevel = Math.max(...Object.values(levels), 1);
+  document.getElementById('distribution-chart').innerHTML = [
+    { label: 'Yeni', val: levels.new },
+    { label: 'Öğreniliyor', val: levels.learning },
+    { label: 'Tekrarda', val: levels.review },
+    { label: 'Öğrenildi', val: levels.mastered }
+  ].map(item => `
+    <div class="chart-row">
+      <div class="chart-label">${item.label}</div>
+      <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${maxLevel > 0 ? (item.val/maxLevel*100) : 0}%"></div></div>
+      <div class="chart-val">${item.val}</div>
+    </div>
+  `).join('');
+
+  const hardWords = [...words].filter(w => (w.reviewCount || 0) > 0 && (w.wrongCount || 0) > 0).sort((a,b) => (b.wrongCount/b.reviewCount) - (a.wrongCount/a.reviewCount)).slice(0, 4);
+  const hardEl = document.getElementById('hard-words-list');
+  if (hardWords.length === 0) {
+    hardEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">◌</div><div class="empty-state-text">Yeterli veri yok!</div></div>';
+  } else {
+    hardEl.innerHTML = hardWords.map(w => {
+      const rate = Math.round(((w.wrongCount||0)/(w.reviewCount||1))*100);
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text)">${w.en}</div>
+            <div style="color:var(--text3);font-size:12px">${w.tr}</div>
+          </div>
+          <div style="color:var(--red);font-size:12px;font-weight:600;letter-spacing:1px">${rate}% hata</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ==================== EXPORT / IMPORT ====================
+function exportCSV() {
+  const words = loadWords();
+  const header = 'İngilizce,Türkçe,Kategori,Kaynak,Seviye,Tekrar Sayısı,Sonraki Tekrar\n';
+  const rows = words.map(w => `"${w.en}","${w.tr}","${w.category}","${w.source}","${w.type||''}","${w.reviewCount||0}","${w.nextReview||''}"`).join('\n');
+  const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `lexicon_${todayStr()}.csv`; a.click();
+  showToast('CSV dışa aktarıldı.', 'success');
+}
+
+function exportBackup() {
+  const words = loadWords();
+  const meta = loadMeta();
+  const data = { words, meta, exportDate: todayStr(), version: '2.0' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `lexicon_backup_${todayStr()}.json`; a.click();
+  showToast('Yedek alındı.', 'success');
+}
+
+function importBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      let wordsToSave = [];
+      let metaToSave = {};
+
+      if (Array.isArray(data)) { 
+        wordsToSave = data; 
+      } 
+      else if (data.words && Array.isArray(data.words)) { 
+        wordsToSave = data.words; 
+        metaToSave = data.meta || {}; 
+      } 
+      else { 
+        throw new Error('Geçersiz format'); 
+      }
+
+      if (!confirm(`${wordsToSave.length} kelime yüklenecek. Mevcut verileriniz silinecek. Emin misiniz?`)) return;
+      
+      saveWords(wordsToSave);
+      saveMeta(metaToSave);
+      
+      showToast(`${wordsToSave.length} kelime yüklendi.`, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } catch (err) { showToast('Geçersiz yedek dosyası.', 'error'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ==================== SIDEBAR ====================
+function updateSidebar() {
+  const words = loadWords();
+  const meta = loadMeta();
+  const due = words.filter(isDue);
+  const today = todayStr();
+  const todayActivity = (meta.activity || {})[today];
+
+  document.getElementById('s-total').textContent = words.length;
+  document.getElementById('s-today').textContent = todayActivity?.reviews || 0;
+  document.getElementById('s-streak').textContent = calcStreak(meta);
+
+  const badge = document.getElementById('due-badge');
+  if (due.length > 0) { badge.textContent = due.length; badge.style.display = 'block'; }
+  else badge.style.display = 'none';
+}
+
+function calcStreak(meta) {
+  if (!meta.activity) return 0;
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i <= 365; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    if (meta.activity[key]?.reviews > 0) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('sec-add').classList.contains('active')) {
+    if (e.target.id !== 'inp-bulk' && e.target.id !== 'inp-example') addWord();
+  }
+  if (e.key === 'Escape') closeModal();
+  
+  if (document.getElementById('sec-quiz').classList.contains('active') && quizAnswered) {
+    if (e.key === 'Enter' || e.key === 'ArrowRight') {
+      const nextBtn = document.querySelector('#next-btn-wrapper button');
+      if (nextBtn) nextBtn.click();
+    }
+  }
+  
+  if (document.getElementById('sec-flashcard').classList.contains('active')) {
+    if (e.key === ' ' && !fcRevealed) {
+      e.preventDefault();
+      const card = fcQueue[fcIndex];
+      if (card) revealFlashcard(card.id);
+    }
+    if (fcRevealed) {
+      const card = fcQueue[fcIndex];
+      if (!card) return;
+      if (e.key === '1') rateFlashcard(card.id, 1);
+      if (e.key === '2') rateFlashcard(card.id, 3);
+      if (e.key === '3') rateFlashcard(card.id, 5);
+    }
+  }
+});
+
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-modal')) closeModal();
+});
+
+// ==================== INIT ====================
+document.getElementById('dash-date').textContent = new Date().toLocaleDateString('tr-TR', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+updateSidebar();
+renderDashboard();
+</script>
+</body>
+</html>
