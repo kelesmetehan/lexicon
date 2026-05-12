@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Lexicon Tool v1.0 - Kurtarılmış Veriler</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; display: none; }
+        .visible { display: block !important; }
+        .word { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #333; }
+        .translation { font-size: 18px; color: #666; margin-bottom: 30px; display: none; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 4px; transition: background-color 0.2s; margin: 0 5px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-green { background-color: #28a745; color: white; }
+        .btn-green:hover { background-color: #1e7e34; }
+        .btn-red { background-color: #dc3545; color: white; }
+        .btn-red:hover { background-color: #a71d2a; }
+        #repeat-buttons { display: none; }
+        #finish-container { display: none; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
+        #statistics { margin-bottom: 20px; font-size: 16px; color: #333; }
+    </style>
+</head>
+<body>
+
+<div id="container" class="visible">
+    <div id="statistics"></div>
+    <div class="word" id="word">Yükleniyor...</div>
+    <div class="translation" id="translation"></div>
+    <button class="btn-primary" id="show-btn" onclick="showTranslation()">Anlamını Göster</button>
+    <div id="repeat-buttons">
+        <p>Bildiniz mi?</p>
+        <button class="btn-green" onclick="processResponse(true)">Evet</button>
+        <button class="btn-red" onclick="processResponse(false)">Hayır</button>
+    </div>
+</div>
+
+<div id="finish-container">
+    <div class="word">Harika! Bugünü tamamladınız.</div>
+    <p>Dışa aktarma verileri (Bunu kopyalayıp dosyanızı güncelleyin):</p>
+    <textarea id="export-data" rows="10" style="width: 100%; max-width: 600px;" readonly></textarea>
+</div>
+
+<script>
+// --- VERİ TABANI (Kurtarılmış Listeden Manuel Olarak Oluşturuldu) ---
+// Tarihler ve seviyeler, Leitner sistemine göre metinden tahmin edilerek yerleştirildi.
+let master_wordList = [
+{ en: "accelerateBENİM", tr: "hızlandırmak", repeats: 0, level: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "accumulatedBENİM", tr: "birikmiş", repeats: 0, level: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "acrossBENİM", tr: "karşısında", repeats: 4, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "act out of self-interestBENİM", tr: "kendi çıkarları doğrultusunda hareket etmek", repeats: 0, level: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "almost neverBENİM", tr: "neredeyse hiç", repeats: 4, level: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "along withBENİM", tr: "yanısıra", repeats: 0, level: 0, p_nr: "2024-11-14T12:00:00.000Z" },
+{ en: "alongsideBENİM", tr: "yanında", repeats: 5, level: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "annoyBENİM", tr: "can sıkmak", repeats: 3, level: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "applicantsBENİM", tr: "başvuru sahipleri", repeats: 2, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "applyBENİM", tr: "uygulamak", repeats: 0, level: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "as far asBENİM", tr: "kadarıyla", repeats: 6, level: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "as far as I knowBENİM", tr: "bildiğim kadarıyla", repeats: 2, level: 5, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "as far as I’m concernedBENİM", tr: "bana göre", repeats: 4, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "as long asBENİM", tr: "-dığı sürece", repeats: 3, level: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "as wellBENİM", tr: "ilave olarak", repeats: 4, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "as well asBENİM", tr: "yanı sıra, birlikte", repeats: 5, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "aspireBENİM", tr: "hedeflemek", repeats: 0, level: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "basicallyBENİM", tr: "temelde", repeats: 3, level: 4, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "bitterlyBENİM", tr: "acı bir şekilde", repeats: 4, level: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "blow off steamBENİM", tr: "stres atmak", repeats: 5, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "botherBENİM", tr: "zahmet etmek", repeats: 0, level: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "by the timeBENİM", tr: "zamana kadar", repeats: 5, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "cable carBENİM", tr: "teleferik", repeats: 3, level: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "chronicallyBENİM", tr: "kronik olarak", repeats: 0, level: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "clawsBENİM", tr: "pençeler", repeats: 0, level: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "coincidenceBENİM", tr: "tesadüf", repeats: 1, level: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "conflictBENİM", tr: "çatışma", repeats: 4, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "conscienceBENİM", tr: "vicdan", repeats: 5, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ConsultingBENİM", tr: "Danışmanlık", repeats: 1, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "contributionBENİM", tr: "katkı", repeats: 3, level: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ctiricsBENİM", tr: "eleştirmenler", repeats: 3, level: 4, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "currencyBENİM", tr: "para birimi", repeats: 4, level: 6, p_nr: "2025-06-25T12:00:00.00
