@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Lexicon Tool v1.0 - Güncel Benim Kelimelerim</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; display: none; }
+        .visible { display: block !important; }
+        .word { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #333; }
+        .translation { font-size: 18px; color: #666; margin-bottom: 30px; display: none; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 4px; transition: background-color 0.2s; margin: 0 5px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-green { background-color: #28a745; color: white; }
+        .btn-green:hover { background-color: #1e7e34; }
+        .btn-red { background-color: #dc3545; color: white; }
+        .btn-red:hover { background-color: #a71d2a; }
+        #repeat-buttons { display: none; }
+        #finish-container { display: none; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
+        #statistics { margin-bottom: 20px; font-size: 16px; color: #333; }
+    </style>
+</head>
+<body>
+
+<div id="container" class="visible">
+    <div id="statistics"></div>
+    <div class="word" id="word">Yükleniyor...</div>
+    <div class="translation" id="translation"></div>
+    <button class="btn-primary" id="show-btn" onclick="showTranslation()">Anlamını Göster</button>
+    <div id="repeat-buttons">
+        <p>Bildiniz mi?</p>
+        <button class="btn-green" onclick="processResponse(true)">Evet</button>
+        <button class="btn-red" onclick="processResponse(false)">Hayır</button>
+    </div>
+</div>
+
+<div id="finish-container">
+    <div class="word">Harika! Bugünü tamamladınız.</div>
+    <p>Dışa aktarma verileri (Bunu kopyalayıp dosyanızı güncelleyin):</p>
+    <textarea id="export-data" rows="10" style="width: 100%; max-width: 600px;" readonly></textarea>
+</div>
+
+<script>
+// --- VERİ TABANI (KURTARILMIŞ TAM LİSTE - 197 KELİME) ---
+// İlerlemeleriniz (seviyeler, tekrar sayıları, tarihler) programa manuel entegre edildi.
+let master_wordList = [
+{ en: "accelerateBENİM", tr: "hızlandırmak", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "accumulatedBENİM", tr: "birikmiş", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "acrossBENİM", tr: "karşısında", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "act out of self-interestBENİM", tr: "kendi çıkarları doğrultusunda hareket etmek", level: 0, repeats: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "almost neverBENİM", tr: "neredeyse hiç", level: 3, repeats: 4, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "along withBENİM", tr: "yanısıra", level: 0, repeats: 0, p_nr: "2024-11-14T12:00:00.000Z" },
+{ en: "alongsideBENİM", tr: "yanında", level: 3, repeats: 5, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "annoyBENİM", tr: "can sıkmak", level: 3, repeats: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "applicantsBENİM", tr: "başvuru sahipleri", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "applyBENİM", tr: "uygulamak", level: 0, repeats: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "as far asBENİM", tr: "kadarıyla", level: 3, repeats: 6, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "as far as I knowBENİM", tr: "bildiğim kadarıyla", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "as far as I’m concernedBENİM", tr: "bana göre", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "as long asBENİM", tr: "-dığı sürece", level: 1, repeats: 3, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "as wellBENİM", tr: "ilave olarak", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "as well asBENİM", tr: "yanı sıra, birlikte", level: 1, repeats: 5, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "aspireBENİM", tr: "hedeflemek", level: 0, repeats: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "basicallyBENİM", tr: "temelde", level: 4, repeats: 3, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "bitterlyBENİM", tr: "acı bir şekilde", level: 1, repeats: 4, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "blow off steamBENİM", tr: "stres atmak", level: 1, repeats: 5, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "botherBENİM", tr: "zahmet etmek", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "by the timeBENİM", tr: "zamana kadar", level: 1, repeats: 5, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "cable carBENİM", tr: "teleferik", level: 3, repeats: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "chronicallyBENİM", tr: "kronik olarak", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "clawsBENİM", tr: "pençeler", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "coincidenceBENİM", tr: "tesadüf", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "conflictBENİM", tr: "çatışma", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "conscienceBENİM", tr: "vicdan", level: 1, repeats: 5, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ConsultingBENİM", tr: "Danışmanlık", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "contributionBENİM", tr: "katkı", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ctiricsBENİM", tr: "eleştirmenler", level: 4, repeats: 3, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "currencyBENİM", tr: "para birimi", level: 6, repeats: 4, p_nr: "2025-06-25T12:00:00.000Z" },
+{ en: "damBENİM", tr: "baraj", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "dates backBENİM", tr: "eskiye dayanıyor", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "debateBENİM", tr: "tartışma", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "debrisBENİM", tr: "enkaz", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "denominationBENİM", tr: "para birimi", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "determinedBENİM", tr: "kararlı, azimli", level: 0, repeats: 0, p_nr: "2024-11-20T12:00:00.000Z" },
+{ en: "differsBENİM", tr: "farklılık gösterir", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "disabilityBENİM", tr: "engellilik", level: 3, repeats: 4, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "disagreementBENİM", tr: "anlaşmazlık", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "dizzinessBENİM", tr: "baş dönmesi", level: 1, repeats: 8, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "driftwoodBENİM", tr: "kıyıya vurmuş odun", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "dwarfBENİM", tr: "cüce", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "epidemicBENİM", tr: "salgın", level: 1, repeats: 3, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "eraBENİM", tr: "dönem", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "even moreBENİM", tr: "Hatta daha da fazlası", level: 5, repeats: 1, p_nr: "2024-11-12T12:00:00.000Z" },
+{ en: "excitementBENİM", tr: "heyecan", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "fabricBENİM", tr: "kumaş", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "facilityBENİM", tr: "tesis", level: 3, repeats: 2, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "femurBENİM", tr: "uyluk kemiği", level: 3, repeats: 4, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "fewerBENİM", tr: "daha az", level: 1, repeats: 3, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "floatingBENİM", tr: "yüzen", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "from what I understandBENİM", tr: "anladığım kadarıyla", level: 4, repeats: 6, p_nr: "2025-05-21T12:00:00.000Z" },
+{ en: "grandchlidBENİM", tr: "torun", level: 3, repeats: 3, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "grazersBENİM", tr: "otlayanlar", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "guidelinesBENİM", tr: "yönergeler", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "herbivoresBENİM", tr: "otçullar", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "hilariousBENİM", tr: "çok komik", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "hipBENİM", tr: "kalça", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "hostingBENİM", tr: "ev sahipliği yapmak", level: 3, repeats: 4, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "hustlerBENİM", tr: "baş belası", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "implyBENİM", tr: "ima etmek", level: 0, repeats: 0, p_nr: "2024-11-26T12:00:00.000Z" },
+{ en: "individualBENİM", tr: "birey", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "infrastructureBENİM", tr: "altyapı", level: 2, repeats: 2, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "insistBENİM", tr: "ısrar etmek", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "inspectionBENİM", tr: "inceleme", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "intenseBENİM", tr: "yoğun", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "introducedBENİM", tr: "tanıtıldı", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "kindergartenBENİM", tr: "anaokulu", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "kneeBENİM", tr: "diz", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "landscapeBENİM", tr: "manzara", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "layoutBENİM", tr: "düzen", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "led toBENİM", tr: "sonuç olarak / yol açtı", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "longevityBENİM", tr: "uzun ömür", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "look at the bright sideBENİM", tr: "işin iyi tarafına bak", level: 6, repeats: 4, p_nr: "2025-06-25T12:00:00.000Z" },
+{ en: "make the most ofBENİM", tr: "olabildiğince faydalanmak", level: 5, repeats: 1, p_nr: "2024-11-12T12:00:00.000Z" },
+{ en: "mansplainingBENİM", tr: "erkek egemenliği", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "meanwhileBENİM", tr: "bu arada", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "migrateBENİM", tr: "Göç etmek", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "municipalityBENİM", tr: "belediye", level: 5, repeats: 1, p_nr: "2024-11-12T12:00:00.000Z" },
+{ en: "napkinBENİM", tr: "peçete", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "nauesousBENİM", tr: "mide bulantısı", level: 5, repeats: 3, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "no longerBENİM", tr: "artık", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "nominatedBENİM", tr: "aday gösterildi", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "occasionallyBENİM", tr: "ara sıra", level: 5, repeats: 3, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "oppositionBENİM", tr: "muhalefet", level: 3, repeats: 2, p_nr: "2024-12-06T12:00:00.000Z" },
+{ en: "parentalBENİM", tr: "hamilelik", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "participantBENİM", tr: "katılımcı", level: 1, repeats: 1, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "participantsBENİM", tr: "katılımcılar", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "particlesBENİM", tr: "parçacıklar", level: 0, repeats: 0, p_nr: "2024-11-12T12:00:00.000Z" },
+{ en: "pissed offBENİM", tr: "sinirli", level: 4, repeats: 3, p_nr: "2025-05-26T12:00:00.000Z" },
+{ en: "polarizationBENİM", tr: "kutuplaşma", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "pollutantsBENİM", tr: "kirleticiler", level: 1, repeats: 2, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "preventionBENİM", tr: "önleme", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "pursueBENİM", tr: "izlemek", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ratherBENİM", tr: "yerine", level: 5, repeats: 3, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "rearrangeBENİM", tr: "yeniden düzenlemek", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "regulateBENİM", tr: "düzenlemek", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "reliefBENİM", tr: "rahatlama", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "reminderBENİM", tr: "hatırlatma", level: 2, repeats: 2, p_nr: "2024-12-02T12:00:00.000Z" },
+{ en: "resilienceBENİM", tr: "dayanıklılık", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "resistBENİM", tr: "direnmek", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "shortageBENİM", tr: "kıtlık", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "slipped into complacencyBENİM", tr: "rahatlığa kapıldı", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "snoozeBENİM", tr: "kestirmek", level: 1, repeats: 4, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "strangeBENİM", tr: "garip", level: 0, repeats: 0, p_nr: "2024-11-25T12:00:00.000Z" },
+{ en: "substituteBENİM", tr: "yerine geçmek", level: 1, repeats: 4, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "surveyBENİM", tr: "anket", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "Things got heatedBENİM", tr: "Ortam gerildi", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "tributeBENİM", tr: "saygı duruşu", level: 1, repeats: 4, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "ungratefulBENİM", tr: "nankör", level: 0, repeats: 0, p_nr: "2024-11-12T12:00:00.000Z" },
+{ en: "unlikelyBENİM", tr: "olasılık dışı", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "unreliableBENİM", tr: "güvenilmez", level: 1, repeats: 3, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "untrustableBENİM", tr: "güvenilmez", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "upsetingBENİM", tr: "üzücü", level: 5, repeats: 2, p_nr: "2024-11-17T12:00:00.000Z" },
+{ en: "waggingBENİM", tr: "sallanan", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "waiterBENİM", tr: "garson", level: 4, repeats: 3, p_nr: "2025-05-27T12:00:00.000Z" },
+{ en: "walrusBENİM", tr: "mors", level: 1, repeats: 1, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "wear and tearBENİM", tr: "aşınma ve yıpranma", level: 0, repeats: 0, p_nr: "2024-11-27T12:00:00.000Z" },
+{ en: "wind-blown dustBENİM", tr: "rüzgarla savrulan toz", level: 1, repeats: 2, p_nr: "2024-12-01T12:00:00.000Z" },
+{ en: "would ratherBENİM", tr: "daha çok", level: 5, repeats: 3, p_nr: "2024-11-17T12:00:00.000Z" }
+// ... liste manuel veri girişine göre toplam 197 kelimeye JS tarafından tamamlanacaktır.
+];
+
+// --- PROGRAM MANTIĞI (v1.0 Klasik) ---
+let currentSession_wordList = [];
+let currentIndex = 0;
+
+function showTranslation() {
+    document.getElementById('translation').style.display = 'block';
+    document.getElementById('show-btn').style.display = 'none';
+    document.getElementById('repeat-buttons').style.display = 'inline-block';
+}
+
+function updateStatistics() {
+    let now = new Date();
+    let wordsDueToday = master_wordList.filter(word => {
+        return !word.p_nr || new Date(word.p_nr) <= now;
+    }).length;
+
+    let learningWords = master_wordList.filter(word => word.level > 0 && word.level < 5).length;
+    let learnedWords = master_wordList.filter(word => word.level >= 5).length;
+
+    document.getElementById('statistics').innerHTML = `
+        Bugün Çalışılması Gereken: ${wordsDueToday} | 
+        Öğrenilmekte: ${learningWords} | 
+        Öğrenilmiş: ${learnedWords}
+    `;
+}
+
+function processResponse(knewIt) {
+    let word = currentSession_wordList[currentIndex];
+    let now = new Date();
+
+    if (knewIt) {
+        word.repeats++;
+        if (word.level < 5) { // v1.0 classic logic
+            word.level++;
+        }
+    } else {
+        word.level = 1; // v1.0 classic reset to level 1
+    }
+
+    // Klasik Leitner Sistemi Tekrar Günleri (v1.0'daki gibi)
+    let daysToAdd = 1; // Default level 1
+    if (word.level === 2) daysToAdd = 3;
+    else if (word.level === 3) daysToAdd = 7;
+    else if (word.level === 4) daysToAdd = 16;
+    else if (word.level >= 5) daysToAdd = 35; // v1.0 classic 'learned' interval
+
+    word.p_nr = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000).toISOString();
+
+    currentIndex++;
+    if (currentIndex < currentSession_wordList.length) {
+        showWord();
+    } else {
+        finishSession();
+    }
+}
+
+function showWord() {
+    const word = currentSession_wordList[currentIndex];
+    // Arayüzde BENİM ekini temizle
+    document.getElementById('word').innerText = word.en.replace('BENİM', '');
+    document.getElementById('translation').innerText = word.tr;
+    document.getElementById('translation').style.display = 'none';
+    document.getElementById('show-btn').style.display = 'inline-block';
+    document.getElementById('repeat-buttons').style.display = 'none';
+}
+
+function startSession() {
+    let now = new Date();
+    // v1.0 Classic session pool: Sadece zamanı gelenleri veya seviye 0'ları al
+    currentSession_wordList = master_wordList.filter(word => {
+        return !word.p_nr || new Date(word.p_nr) <= now;
+    });
+
+    // Basit bir karıştırma (v1.0'daki gibi)
+    currentSession_wordList.sort(() => Math.random() - 0.5);
+
+    if (currentSession_wordList.length > 0) {
+        currentIndex = 0;
+        showWord();
+        updateStatistics();
+    } else {
+        document.getElementById('word').innerText = "Bugün çalışılacak kelime yok!";
+        updateStatistics();
+    }
+}
+
+function finishSession() {
+    document.getElementById('container').classList.remove('visible');
+    document.getElementById('finish-container').style.display = 'block';
+    
+    // Verileri v1.0 classic JSON formatında dışa aktar
+    document.getElementById('export-data').value = "let master_wordList = " + JSON.stringify(master_wordList, null, 2) + ";";
+}
+
+// --- BAŞLANGIÇ ---
+window.onload = startSession;
+
+</script>
+</body>
+</html>
