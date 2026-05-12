@@ -2,17 +2,10 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0c10">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LEXICON — Kelime Ustası</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
-<!-- PWA Icon -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0c10%22/><text x=%2250%22 y=%2270%22 font-family=%22serif%22 font-size=%2260%22 fill=%22%23c9a84c%22 text-anchor=%22middle%22>L</text></svg>">
-
 <style>
   :root {
     --bg: #0a0c10;
@@ -44,7 +37,6 @@
     font-size: 14px;
     min-height: 100vh;
     overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent;
   }
 
   body::before {
@@ -57,35 +49,181 @@
     opacity: 0.4;
   }
 
-  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; z-index: 1000; }
-  .logo { padding: 32px 24px 28px; border-bottom: 1px solid var(--border); }
-  .logo-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; }
-  .logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
-  .nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 13px; font-weight: 400; transition: all 0.2s; border: 1px solid transparent; user-select: none; position: relative; }
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    padding: 32px 24px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    user-select: none;
+  }
   .nav-item:hover { background: var(--bg3); color: var(--text); }
-  .nav-item.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(201,168,76,0.2); }
+  .nav-item.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+    border-color: rgba(201,168,76,0.2);
+  }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .nav-badge { margin-left: auto; background: var(--gold); color: var(--bg); font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; }
-  .sidebar-bottom { padding: 16px 12px; border-top: 1px solid var(--border); }
-  .stats-mini { font-size: 11px; color: var(--text3); line-height: 1.8; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .sidebar-bottom {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .stats-mini {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.8;
+  }
   .stats-mini span { color: var(--gold); font-weight: 500; }
-  .main { margin-left: 220px; min-height: 100vh; padding: 40px 48px; }
-  .page-header { margin-bottom: 36px; }
-  .page-title { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300; color: var(--text); line-height: 1.1; }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    min-height: 100vh;
+    padding: 40px 48px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    margin-bottom: 36px;
+  }
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+  }
   .page-title em { color: var(--gold); font-style: italic; }
   .page-subtitle { color: var(--text2); margin-top: 6px; font-size: 13px; }
+
+  /* SECTIONS */
   .section { display: none; }
   .section.active { display: block; }
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
-  .card-title { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); margin-bottom: 16px; }
-  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
-  .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--gold); opacity: 0.3; }
-  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--gold); line-height: 1; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  /* DASHBOARD */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    opacity: 0.3;
+  }
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+  }
   .stat-label { color: var(--text2); font-size: 12px; margin-top: 6px; }
-  .due-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .bank-progress-container { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
+
+  .due-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .bank-progress-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
   .bank-icon { font-size: 24px; color: var(--gold); opacity: 0.8; }
   .bank-info { flex: 1; }
   .bank-title { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 4px; }
@@ -93,161 +231,563 @@
   .bank-bar-wrap { flex: 2; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
   .bank-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 3px; transition: width 0.5s; }
   .bank-count { font-size: 13px; color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 600; width: 60px; text-align: right; }
-  .table-wrapper { width: 100%; overflow-x: auto; }
-  .word-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-  .word-table th { text-align: left; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); padding: 0 12px 12px; font-weight: 500; border-bottom: 1px solid var(--border); }
-  .word-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px; vertical-align: middle; }
+
+  /* WORD LIST */
+  .word-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .word-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 12px 12px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  .word-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 13px;
+    vertical-align: middle;
+  }
   .word-table tr:last-child td { border-bottom: none; }
   .word-table tr:hover td { background: rgba(255,255,255,0.02); }
-  .word-en { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--text); font-weight: 400; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .word-en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .word-tr { color: var(--text2); }
   .word-note { color: var(--text3); font-size: 12px; }
-  .badge-small { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.5px; font-family: 'DM Sans', sans-serif; }
+
+  .badge-small {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-family: 'DM Sans', sans-serif;
+  }
   .badge-system { background: rgba(91,141,238,0.15); color: #90caf9; border: 1px solid rgba(144,202,249,0.2); }
   .badge-phrasal { background: rgba(156,39,176,0.15); color: #e1bee7; border: 1px solid rgba(225,190,231,0.2); }
   .badge-levelinfo { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
-  .level-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+
+  .level-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
   .level-new { background: rgba(91,141,238,0.15); color: #5b8dee; }
   .level-learning { background: rgba(201,168,76,0.15); color: var(--gold); }
   .level-review { background: rgba(76,175,125,0.15); color: var(--green); }
   .level-due { background: rgba(224,92,92,0.15); color: var(--red); }
+
+  /* INPUT FORM */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); font-weight: 500; }
-  .form-group input, .form-group textarea, .form-group select { background: var(--bg3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; width: 100%; }
-  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: rgba(201,168,76,0.4); }
+  .form-group label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    background: var(--bg3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    border-color: rgba(201,168,76,0.4);
+  }
   .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text3); }
   .form-group textarea { resize: vertical; min-height: 70px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; text-decoration: none; }
-  .btn-gold { background: var(--gold); color: var(--bg); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-gold {
+    background: var(--gold);
+    color: var(--bg);
+  }
   .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
-  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
   .btn-ghost:hover { border-color: rgba(201,168,76,0.3); color: var(--text); }
-  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.2); }
+  .btn-danger {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(224,92,92,0.2);
+  }
   .btn-danger:hover { background: rgba(224,92,92,0.2); }
-  .btn-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .btn-green {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(76,175,125,0.3);
+  }
   .btn-green:hover { background: rgba(76,175,125,0.25); }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .quiz-container { max-width: 620px; margin: 0 auto; width: 100%; }
-  .quiz-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-  .progress-bar { flex: 1; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* QUIZ Progress */
+  .quiz-container {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .quiz-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
   .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
-  .quiz-settings { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; text-align: left; }
-  .quiz-settings-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; font-weight: 600; }
-  .quiz-settings label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text2); transition: color 0.2s; }
-  .quiz-settings label:hover { color: var(--text); }
-  .quiz-settings input[type="checkbox"], .quiz-settings input[type="radio"] { accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
-  .quiz-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 48px 30px; text-align: center; margin-bottom: 24px; position: relative; overflow: hidden; transition: border-color 0.3s ease; }
-  .quiz-card::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 200px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-  .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
-  .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.1; word-wrap: break-word; }
-  .quiz-word-sub { color: var(--text3); font-size: 13px; font-style: italic; margin-bottom: 8px; }
-  .quiz-hint { font-size: 12px; color: var(--text3); margin-top: 16px; }
-  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-  .option-btn { background: var(--bg2); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px 20px; cursor: pointer; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 12px; position: relative; }
-  .option-btn:hover:not(:disabled) { border-color: rgba(201,168,76,0.35); background: var(--bg3); transform: translateY(-1px); }
+
+  /* QUIZ SETTINGS */
+  .quiz-settings {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .quiz-settings-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .quiz-settings label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: color 0.2s;
+  }
+  .quiz-settings label:hover {
+    color: var(--text);
+  }
+  .quiz-settings input[type="checkbox"], 
+  .quiz-settings input[type="radio"] {
+    accent-color: var(--gold);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  /* MCQ CARD */
+  .quiz-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .quiz-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .quiz-mode-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+  .quiz-word {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  .quiz-word-sub {
+    color: var(--text3);
+    font-size: 13px;
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+  .quiz-hint {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 16px;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .option-btn {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: rgba(201,168,76,0.35);
+    background: var(--bg3);
+    transform: translateY(-1px);
+  }
   .option-btn.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); }
   .option-btn.wrong { border-color: var(--red); background: var(--red-dim); color: var(--red); }
   .option-btn:disabled { cursor: default; transform: none; }
-  .option-letter { width: 26px; height: 26px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text3); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.06); }
+  .option-letter {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
   .option-btn.correct .option-letter { background: var(--green); color: white; border-color: var(--green); }
   .option-btn.wrong .option-letter { background: var(--red); color: white; border-color: var(--red); }
-  .btn-idk { grid-column: 1 / -1; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; padding: 14px; color: var(--text3); cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
-  .btn-idk:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: var(--text2); border-color: rgba(255,255,255,0.3); }
+
+  .btn-idk {
+    grid-column: 1 / -1;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  .btn-idk:hover:not(:disabled) {
+    background: rgba(255,255,255,0.05);
+    color: var(--text2);
+    border-color: rgba(255,255,255,0.3);
+  }
   .btn-idk:disabled { cursor: default; }
-  .quiz-feedback { background: var(--bg3); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: none; }
+
+  .quiz-feedback {
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: none;
+  }
   .quiz-feedback.show { display: block; }
   .feedback-correct { color: var(--green); }
   .feedback-wrong { color: var(--red); }
   .feedback-detail { color: var(--text2); font-size: 12px; margin-top: 6px; line-height: 1.6; }
+
   .quiz-actions { display: flex; gap: 12px; justify-content: center; }
-  .quiz-empty { text-align: center; padding: 80px 20px; }
+
+  .quiz-empty {
+    text-align: center;
+    padding: 80px 40px;
+  }
   .quiz-empty-icon { font-size: 56px; margin-bottom: 20px; opacity: 0.3; }
   .quiz-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--text2); margin-bottom: 10px; }
   .quiz-empty-text { color: var(--text3); font-size: 13px; line-height: 1.6; }
-  .flashcard-wrap { perspective: 1000px; margin-bottom: 24px; cursor: pointer; width: 100%; }
-  .flashcard { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 56px 30px; text-align: center; position: relative; overflow: hidden; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: border-color 0.3s; }
-  .flashcard::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 200px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  /* FLASHCARD STYLES */
+  .flashcard-wrap {
+    perspective: 1000px;
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+  .flashcard {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 56px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s;
+  }
+  .flashcard::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
   .flashcard.revealed { border-color: rgba(76,175,125,0.3); }
   .flashcard-front, .flashcard-back { width: 100%; }
   .flashcard-back { display: none; }
   .flashcard.revealed .flashcard-back { display: block; }
   .flashcard.revealed .reveal-hint { display: none; }
-  .reveal-hint { font-size: 11px; color: var(--text3); margin-top: 30px; letter-spacing: 1px; text-transform: uppercase; animation: pulse 2s infinite; }
-  .flashcard-answer { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--green); margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(76,175,125,0.2); word-wrap: break-word;}
-  .flashcard-example { font-size: 14px; color: var(--text2); font-style: italic; margin-top: 16px; line-height: 1.6; }
-  .flashcard-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px; opacity: 0; pointer-events: none; transition: opacity 0.3s; width: 100%; }
+  .reveal-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 30px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    animation: pulse 2s infinite;
+  }
+  .flashcard-answer {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--green);
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(76,175,125,0.2);
+  }
+  .flashcard-example {
+    font-size: 14px;
+    color: var(--text2);
+    font-style: italic;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .flashcard-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
   .flashcard-actions.visible { opacity: 1; pointer-events: all; }
-  .fc-btn { padding: 14px 8px; border-radius: 10px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; transition: all 0.15s; letter-spacing: 0.5px; }
+  .fc-btn {
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
   .fc-btn:hover { transform: translateY(-2px); }
   .fc-easy { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
-  .fc-easy:active { background: rgba(76,175,125,0.25); }
+  .fc-easy:hover { background: rgba(76,175,125,0.25); }
   .fc-idk { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.25); }
-  .fc-idk:active { background: rgba(224,92,92,0.2); }
+  .fc-idk:hover { background: rgba(224,92,92,0.2); }
   .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
-  .fc-hard:active { background: rgba(201,168,76,0.2); }
-  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .chart-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .chart-label { width: 90px; font-size: 12px; color: var(--text2); text-align: right; flex-shrink: 0; }
+  .fc-hard:hover { background: rgba(201,168,76,0.2); }
+
+  /* STATS SECTION */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .chart-bar-wrapper { margin-bottom: 24px; }
+  .chart-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .chart-label { width: 100px; font-size: 12px; color: var(--text2); text-align: right; flex-shrink: 0; }
   .chart-bar-bg { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
   .chart-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 0.8s ease; }
   .chart-val { width: 30px; font-size: 12px; color: var(--text3); text-align: right; }
-  .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; font-size: 13px; color: var(--text); z-index: 9999; opacity: 0; transition: all 0.3s; width: max-content; max-width: 90vw; box-shadow: var(--shadow); text-align: center; }
-  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* NOTIFICATIONS */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 9999;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 300px;
+    box-shadow: var(--shadow);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { border-color: rgba(76,175,125,0.3); }
   .toast.error { border-color: rgba(224,92,92,0.3); }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
   .modal-overlay.show { display: flex; }
-  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 500px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 500px;
+    max-width: 90vw;
+    box-shadow: var(--shadow);
+  }
   .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin-bottom: 20px; color: var(--text); }
   .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
-  .search-bar { background: var(--bg3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 9px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; width: 100%; max-width: 200px; transition: border-color 0.2s; }
+
+  /* SEARCH */
+  .search-bar {
+    background: var(--bg3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.2s;
+  }
   .search-bar:focus { border-color: rgba(201,168,76,0.3); }
   .search-bar::placeholder { color: var(--text3); }
+
+  /* UTIL */
+  .flex { display: flex; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .timeline { display: flex; flex-direction: column; gap: 1px; }
+  .timeline-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .timeline-date { width: 90px; font-size: 11px; color: var(--text3); flex-shrink: 0; }
+  .timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bg4); border: 1px solid var(--text3); flex-shrink: 0; }
+  .timeline-dot.today { background: var(--gold); border-color: var(--gold); }
+  .timeline-dot.past { background: var(--green); border-color: var(--green); }
+  .timeline-words { flex: 1; font-size: 12px; color: var(--text2); }
+
   .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); }
   .empty-state-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
   .empty-state-text { font-size: 13px; line-height: 1.6; }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
+
+  ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .section.active { animation: fadeUp 0.3s ease; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-  .delete-btn, .edit-btn { background: transparent; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 6px 8px; border-radius: 4px; transition: all 0.15s; }
+  .pulsing { animation: pulse 2s infinite; }
+
+  .delete-btn, .edit-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
   .delete-btn:hover { color: var(--red); background: var(--red-dim); }
   .edit-btn:hover { color: var(--gold); background: var(--gold-dim); }
-  .quiz-start-card { text-align: center; padding: 40px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; }
-  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
+
+  .quiz-start-card {
+    text-align: center;
+    padding: 48px 40px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
   .quiz-start-title em { color: var(--gold); font-style: italic; }
   .quiz-count-badge { display: inline-block; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 4px 16px; font-size: 13px; margin-bottom: 20px; }
+  .review-info { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .word-count-indicator { font-size: 11px; color: var(--text3); margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  
+  /* INFO BOX */
   .info-box { background: rgba(91,141,238,0.08); border: 1px solid rgba(91,141,238,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #90caf9; margin-bottom: 16px; line-height: 1.6; }
-
-  @media (max-width: 768px) {
-    .sidebar { top: auto; bottom: 0; width: 100%; height: 70px; height: calc(65px + env(safe-area-inset-bottom)); flex-direction: row; border-right: none; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
-    .logo, .sidebar-bottom { display: none; }
-    .nav { flex-direction: row; padding: 0 8px; justify-content: space-around; width: 100%; gap: 0; align-items: center; }
-    .nav-item { flex-direction: column; gap: 4px; padding: 6px; font-size: 10px; text-align: center; border-radius: 8px; }
-    .nav-text { display: block; white-space: nowrap; font-size: 9px; }
-    .nav-icon { font-size: 20px; width: auto; margin-bottom: 2px;}
-    .nav-badge { position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 2px 4px; }
-    .main { margin-left: 0; padding: 20px 16px calc(80px + env(safe-area-inset-bottom)) 16px; }
-    .page-title { font-size: 28px; }
-    .dash-grid, .stats-grid, .due-section, .form-grid, .options-grid { grid-template-columns: 1fr; }
-    .bank-progress-container { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .bank-count { text-align: left; width: 100%; }
-    .card { padding: 20px 16px; }
-    .quiz-card { padding: 32px 16px; }
-    .quiz-word { font-size: 32px; }
-    .filter-group { display:flex; flex-direction: column; width: 100%; gap:8px; margin-top: 12px;}
-    .filter-group input, .filter-group select { width: 100%; max-width: none; }
-    .page-header.flex { flex-direction: column; align-items: flex-start; gap: 16px; }
-    .table-wrapper { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
-    .quiz-settings { padding: 16px; }
-    .quiz-start-card { padding: 32px 16px; }
-    .modal { padding: 24px 20px; }
-  }
 </style>
 </head>
 <body>
@@ -260,23 +800,23 @@
   </div>
   <div class="nav">
     <div class="nav-item active" onclick="navigate('dashboard')">
-      <span class="nav-icon">◈</span> <span class="nav-text">Panel</span>
+      <span class="nav-icon">◈</span> Panel
     </div>
     <div class="nav-item" onclick="navigate('quiz')" id="nav-quiz">
-      <span class="nav-icon">◉</span> <span class="nav-text">Test</span>
+      <span class="nav-icon">◉</span> Çoktan Seçmeli
       <span class="nav-badge" id="due-badge" style="display:none">0</span>
     </div>
     <div class="nav-item" onclick="navigate('flashcard')">
-      <span class="nav-icon">◧</span> <span class="nav-text">Kart Modu</span>
+      <span class="nav-icon">◧</span> Kart Modu (Pro)
     </div>
     <div class="nav-item" onclick="navigate('words')">
-      <span class="nav-icon">≡</span> <span class="nav-text">Sözlük</span>
+      <span class="nav-icon">≡</span> Kelimeler
     </div>
     <div class="nav-item" onclick="navigate('add')">
-      <span class="nav-icon">⊕</span> <span class="nav-text">Ekle</span>
+      <span class="nav-icon">⊕</span> Ekle
     </div>
     <div class="nav-item" onclick="navigate('stats')">
-      <span class="nav-icon">◫</span> <span class="nav-text">Ayarlar</span>
+      <span class="nav-icon">◫</span> İstatistik
     </div>
   </div>
   <div class="sidebar-bottom">
@@ -288,7 +828,9 @@
   </div>
 </nav>
 
+<!-- MAIN CONTENT -->
 <main class="main">
+
   <!-- DASHBOARD -->
   <section class="section active" id="sec-dashboard">
     <div class="page-header">
@@ -330,39 +872,57 @@
     <div class="due-section">
       <div class="card">
         <div class="card-title">Bugün Tekrar Edilecekler</div>
-        <div id="due-list"></div>
-        <div class="mt-4" id="start-quiz-btn-wrapper" style="display:none; display:flex; gap:10px; flex-direction:column;">
-          <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="navigate('quiz')">Şıklı Teste Başla</button>
-          <button class="btn btn-ghost" style="width:100%; justify-content:center;" onclick="navigate('flashcard')">Kart Modu İle Çalış</button>
+        <div id="due-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">✦</div>
+            <div class="empty-state-text">Bugün için tekrar yok.<br>Harika gidiyorsun!</div>
+          </div>
+        </div>
+        <div class="mt-4" id="start-quiz-btn-wrapper" style="display:none; display:flex; gap:10px;">
+          <button class="btn btn-gold" style="flex:1; justify-content:center;" onclick="navigate('quiz')">Şıklı Test</button>
+          <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="navigate('flashcard')">Kart Modu</button>
         </div>
       </div>
       <div class="card">
         <div class="card-title">Yaklaşan Tekrarlar</div>
-        <div class="timeline" id="upcoming-list"></div>
+        <div class="timeline" id="upcoming-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">◌</div>
+            <div class="empty-state-text">Kelime ekledikçe<br>program burada görünür.</div>
+          </div>
+        </div>
       </div>
     </div>
+
     <div class="card">
       <div class="card-title">Sana Ait Son Eklenen Kelimeler</div>
-      <div id="recent-words"></div>
+      <div id="recent-words">
+        <div class="empty-state">
+          <div class="empty-state-icon">⊕</div>
+          <div class="empty-state-text">Henüz kendin kelime eklemedin.<br><a href="#" onclick="navigate('add')" style="color:var(--gold);text-decoration:none">İlk kelimenizi ekleyin →</a></div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- QUIZ -->
+  <!-- QUIZ (ÇOKTAN SEÇMELİ) -->
   <section class="section" id="sec-quiz">
     <div class="page-header">
-      <div class="page-title"><em>Şıklı</em> Test Zamanı</div>
+      <div class="page-title"><em>Çoktan Seçmeli</em> Test</div>
       <div class="page-subtitle">Şıklar arasından doğru çeviriyi bularak ilerle.</div>
     </div>
-    <div class="quiz-container" id="quiz-area"></div>
+    <div class="quiz-container" id="quiz-area">
+    </div>
   </section>
 
-  <!-- FLASHCARD -->
+  <!-- FLASHCARD MODU -->
   <section class="section" id="sec-flashcard">
     <div class="page-header">
       <div class="page-title"><em>Flashcard</em> Modu</div>
-      <div class="page-subtitle">Zihnini zorla: Kelimeyi gör, hatırla ve kartı çevir.</div>
+      <div class="page-subtitle">Kelimeyi gör → cevabı kendin düşün → kartı çevir → dürüstçe değerlendir.</div>
     </div>
-    <div class="quiz-container" id="flashcard-area"></div>
+    <div class="quiz-container" id="flashcard-area">
+    </div>
   </section>
 
   <!-- WORDS -->
@@ -372,7 +932,7 @@
         <div class="page-title">Kelime <em>Listem</em></div>
         <div class="page-subtitle" id="word-count-label">0 kelime</div>
       </div>
-      <div class="filter-group">
+      <div class="flex gap-2 items-center">
         <input class="search-bar" type="text" placeholder="Kelime ara..." id="search-input" oninput="renderWords()">
         <select onchange="renderWords()" id="filter-source">
           <option value="">Tüm Kaynaklar</option>
@@ -394,16 +954,22 @@
       </div>
     </div>
     <div class="card">
-      <div class="table-wrapper">
-        <table class="word-table">
-          <thead>
-            <tr><th>İngilizce</th><th>Türkçe</th><th>Not</th><th>Durum</th><th>Sonraki Tekrar</th><th>İşlem</th></tr>
-          </thead>
-          <tbody id="words-tbody"></tbody>
-        </table>
-      </div>
+      <table class="word-table">
+        <thead>
+          <tr>
+            <th>İngilizce</th>
+            <th>Türkçe</th>
+            <th>Not</th>
+            <th>Durum</th>
+            <th>Sonraki Tekrar</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="words-tbody"></tbody>
+      </table>
       <div id="words-empty" class="empty-state" style="display:none">
-        <div class="empty-state-icon">◌</div><div class="empty-state-text">Sonuç bulunamadı.</div>
+        <div class="empty-state-icon">◌</div>
+        <div class="empty-state-text">Sonuç bulunamadı.</div>
       </div>
     </div>
   </section>
@@ -412,18 +978,33 @@
   <section class="section" id="sec-add">
     <div class="page-header">
       <div class="page-title">Kelime <em>Ekle</em></div>
-      <div class="page-subtitle">Sisteme kendi özel kelimelerini dahil et.</div>
+      <div class="page-subtitle">Yeni kelime ekle, sistem otomatik olarak tekrar programı oluşturur</div>
     </div>
     <div class="card" style="max-width: 600px;">
       <div class="form-grid">
         <div class="form-group" style="grid-column: 1/-1">
           <label>Kategori (Tür) *</label>
-          <select id="inp-category"><option value="word">Normal Kelime</option><option value="phrasal">Phrasal Verb (Deyimsel İfade)</option></select>
+          <select id="inp-category">
+            <option value="word">Normal Kelime</option>
+            <option value="phrasal">Phrasal Verb (Deyimsel İfade)</option>
+          </select>
         </div>
-        <div class="form-group"><label>İngilizce Kelime / İfade *</label><input type="text" id="inp-en" placeholder="örn: ephemeral" autocomplete="off"></div>
-        <div class="form-group"><label>Türkçe Anlamı *</label><input type="text" id="inp-tr" placeholder="örn: geçici, kısa ömürlü"></div>
-        <div class="form-group" style="grid-column: 1/-1"><label>Örnek Cümle (opsiyonel)</label><textarea id="inp-example" placeholder="örn: The joy of childhood is ephemeral."></textarea></div>
-        <div class="form-group" style="grid-column: 1/-1"><label>Gramer Türü / Not (opsiyonel)</label><input type="text" id="inp-type" placeholder="örn: adjective, noun, verb..."></div>
+        <div class="form-group">
+          <label>İngilizce Kelime / İfade *</label>
+          <input type="text" id="inp-en" placeholder="e.g. ephemeral" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Türkçe Anlamı *</label>
+          <input type="text" id="inp-tr" placeholder="e.g. geçici, kısa ömürlü">
+        </div>
+        <div class="form-group" style="grid-column: 1/-1">
+          <label>Örnek Cümle (opsiyonel)</label>
+          <textarea id="inp-example" placeholder="e.g. The joy of childhood is ephemeral."></textarea>
+        </div>
+        <div class="form-group" style="grid-column: 1/-1">
+          <label>Gramer Türü / Not (opsiyonel)</label>
+          <input type="text" id="inp-type" placeholder="e.g. adjective, noun, verb...">
+        </div>
       </div>
       <hr class="divider">
       <div class="flex gap-2">
@@ -431,44 +1012,73 @@
         <button class="btn btn-ghost" onclick="clearAddForm()">Temizle</button>
       </div>
     </div>
+
     <div class="card mt-6" style="max-width: 600px;">
       <div class="card-title">Toplu Kelime Ekle (Satır Satır Ekleyin)</div>
       <div class="info-box" style="margin-bottom:12px;text-align:left">
-        💡 <strong>İpucu:</strong> Not defterindeki listeni buraya kopyala-yapıştır yaparak onlarca kelimeyi tek tıkla uygulamaya çekebilirsin.
+        💡 <strong>İpucu:</strong> Kopyaladığın listeyi buraya yapıştırıp tüm kelimelerini tek tıkla geri yükleyebilirsin.
       </div>
-      <div class="form-group"><textarea id="inp-bulk" placeholder="abandon = terk etmek&#10;benevolent = iyi huylu" style="min-height:150px; font-family: monospace; font-size: 13px;"></textarea></div>
-      <div class="mt-4"><button class="btn btn-ghost" onclick="bulkAdd()">⊕ Toplu Ekle</button></div>
+      <div class="form-group">
+        <textarea id="inp-bulk" placeholder="abandon = terk etmek&#10;benevolent = iyi huylu&#10;ephemeral = geçici" style="min-height:120px; font-family: monospace; font-size: 13px;"></textarea>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-ghost" onclick="bulkAdd()">⊕ Toplu Ekle</button>
+      </div>
     </div>
   </section>
 
-  <!-- STATS -->
+  <!-- STATS & DATA MANAGEMENT -->
   <section class="section" id="sec-stats">
     <div class="page-header">
-      <div class="page-title">Ayarlar ve <em>İstatistikler</em></div>
-      <div class="page-subtitle">Öğrenme yolculuğun ve Veri Yönetimi</div>
+      <div class="page-title">İlerleme <em>İstatistikleri</em></div>
+      <div class="page-subtitle">Öğrenme yolculuğunun özeti ve Veri Yönetimi</div>
     </div>
+
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value" id="st-total">0</div><div class="stat-label">Toplam Kelime</div></div>
-      <div class="stat-card"><div class="stat-value" id="st-reviews">0</div><div class="stat-label">Toplam Tekrar</div></div>
-      <div class="stat-card"><div class="stat-value" id="st-accuracy" style="color:var(--green)">—</div><div class="stat-label">Doğruluk Oranı</div></div>
+      <div class="stat-card">
+        <div class="stat-value" id="st-total">0</div>
+        <div class="stat-label">Toplam Kelime</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="st-reviews">0</div>
+        <div class="stat-label">Toplam Tekrar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="st-accuracy" style="color:var(--green)">—</div>
+        <div class="stat-label">Doğruluk Oranı</div>
+      </div>
     </div>
-    <div class="due-section">
-      <div class="card"><div class="card-title">Öğrenme Dağılımı</div><div id="distribution-chart"></div></div>
-      <div class="card"><div class="card-title">En Zor Kelimeler</div><div id="hard-words-list"></div></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+      <div class="card">
+        <div class="card-title">Öğrenme Dağılımı</div>
+        <div id="distribution-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">En Zor Kelimeler</div>
+        <div id="hard-words-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">◌</div>
+            <div class="empty-state-text">Yeterli veri yok.</div>
+          </div>
+        </div>
+      </div>
     </div>
+
     <div class="card">
       <div class="card-title">Veri Kurtarma ve Yedekleme (Çok Önemli)</div>
       <div class="info-box" style="margin-bottom:16px;text-align:left">
-        📌 <strong>Güncelleme Notu:</strong> Cihaz veya uygulama değiştirirken önce <strong>"Yedek Al (JSON)"</strong> butonuna basın. Sonra yeni uygulamada <strong>"Yedekten Yükle"</strong> diyerek dosyanızı seçin. Tüm verileriniz eksiksiz aktarılır!
+        📌 <strong>Güncelleme Notu:</strong> Eğer uygulamanın <code>.exe</code> veya <code>.html</code> dosyasını güncelleyecekseniz, eski versiyonda mutlaka <strong>"Yedek Al (JSON)"</strong> butonuna basın. Yeni versiyona geçtiğinizde <strong>"Yedekten Yükle"</strong> diyerek verilerinizi eksiksiz geri getirebilirsiniz!
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-gold btn-sm" onclick="exportBackup()">💾 Tüm Veriyi Yedekle (JSON)</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 CSV Olarak İndir</button>
+        <button class="btn btn-gold btn-sm" onclick="exportBackup()">💾 Yedek Al (JSON)</button>
         <button class="btn btn-ghost btn-sm" style="border-color:var(--green); color:var(--green);" onclick="document.getElementById('import-file').click()">📤 Yedekten Yükle (Kurtar)</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Sadece Kelimeleri İndir (Excel/CSV)</button>
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(this)">
       </div>
     </div>
   </section>
+
 </main>
 
 <!-- EDIT MODAL -->
@@ -477,11 +1087,29 @@
     <div class="modal-title">Kelimeyi Düzenle</div>
     <input type="hidden" id="edit-id">
     <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1"><label>Kategori</label><select id="edit-category"><option value="word">Normal Kelime</option><option value="phrasal">Phrasal Verb</option></select></div>
-      <div class="form-group"><label>İngilizce</label><input type="text" id="edit-en"></div>
-      <div class="form-group"><label>Türkçe</label><input type="text" id="edit-tr"></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Örnek Cümle</label><textarea id="edit-example"></textarea></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Kelime Türü / Not</label><input type="text" id="edit-type"></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Kategori</label>
+        <select id="edit-category">
+          <option value="word">Normal Kelime</option>
+          <option value="phrasal">Phrasal Verb</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>İngilizce</label>
+        <input type="text" id="edit-en">
+      </div>
+      <div class="form-group">
+        <label>Türkçe</label>
+        <input type="text" id="edit-tr">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Örnek Cümle</label>
+        <textarea id="edit-example"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Kelime Türü / Not</label>
+        <input type="text" id="edit-type">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
@@ -490,6 +1118,7 @@
   </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -579,6 +1208,7 @@ const SYSTEM_WORDS_BANK = [
   {id:'p78', en:'turn up', tr:'ortaya çıkmak, sesini açmak', category:'phrasal', levelInfo:'B1'},
   {id:'p79', en:'wear out', tr:'eskimek, çok yormak', category:'phrasal', levelInfo:'B2'},
   {id:'p80', en:'work out', tr:'çözmek, antrenman yapmak, işe yaramak', category:'phrasal', levelInfo:'B1'},
+
   {id:'w1', en:'abandon', tr:'terk etmek, vazgeçmek', category:'word', levelInfo:'B2'},
   {id:'w2', en:'absolute', tr:'mutlak, kesin', category:'word', levelInfo:'B2'},
   {id:'w3', en:'abstract', tr:'soyut', category:'word', levelInfo:'B2'},
@@ -741,116 +1371,18 @@ const SYSTEM_WORDS_BANK = [
   {id:'w160', en:'discrete', tr:'ayrık, bağımsız', category:'word', levelInfo:'C1'}
 ];
 
-// KULLANICININ ESKİ KAYBOLAN KELİMELERİ (OTOMATİK KURTARMA HAVUZU)
-const RECOVERED_USER_WORDS = [
-  {en:"alongside", tr:"yanında", rep:2, int:6, next:"2026-05-02"},
-  {en:"applicants", tr:"başvuru sahipleri", rep:5, int:1, next:"2026-04-29"},
-  {en:"as far as", tr:"kadarıyla", rep:2, int:6, next:"2026-05-02"},
-  {en:"as far as I know", tr:"bildiğim kadarıyla", rep:2, int:6, next:"2026-05-02"},
-  {en:"as far as I’m concerned", tr:"bana göre", rep:3, int:1, next:"2026-04-29"},
-  {en:"as long as", tr:"-dığı sürece", rep:4, int:1, next:"2026-04-29"},
-  {en:"as well", tr:"ilave olarak", rep:2, int:6, next:"2026-05-04"},
-  {en:"as well as", tr:"yanı sıra, birlikte", rep:3, int:1, next:"2026-04-29"},
-  {en:"basically", tr:"temelde", rep:2, int:6, next:"2026-05-02"},
-  {en:"bitterly", tr:"acı bir şekilde", rep:2, int:6, next:"2026-05-02"},
-  {en:"blow off steam", tr:"stres atmak", rep:4, int:1, next:"2026-04-29"},
-  {en:"by the time", tr:"zamana kadar", rep:2, int:6, next:"2026-05-02"},
-  {en:"cable car", tr:"teleferik", rep:0, int:0, next:"2026-04-29"},
-  {en:"coincidence", tr:"tesadüf", rep:0, int:0, next:"2026-04-29"},
-  {en:"conscience", tr:"vicdan", rep:1, int:1, next:"2026-04-29"},
-  {en:"Consulting", tr:"Danışmanlık", rep:0, int:0, next:"2026-04-29"},
-  {en:"ctirics", tr:"eleştirmenler", rep:2, int:6, next:"2026-05-02"},
-  {en:"currency", tr:"para birimi", rep:2, int:6, next:"2026-05-02"},
-  {en:"dam", tr:"baraj", rep:2, int:6, next:"2026-05-02"},
-  {en:"denomination", tr:"para birimi", rep:3, int:1, next:"2026-04-29"},
-  {en:"differs", tr:"farklılık gösterir", rep:0, int:0, next:"2026-04-29"},
-  {en:"disability", tr:"engellilik", rep:3, int:1, next:"2026-04-29"},
-  {en:"dizziness", tr:"baş dönmesi", rep:2, int:6, next:"2026-05-02"},
-  {en:"epidemic", tr:"salgın", rep:1, int:1, next:"2026-04-29"},
-  {en:"even more", tr:"Hatta daha da fazlası", rep:1, int:1, next:"2026-04-29"},
-  {en:"facility", tr:"tesis", rep:1, int:1, next:"2026-04-29"},
-  {en:"fewer", tr:"daha az", rep:2, int:1, next:"2026-04-29"},
-  {en:"from what I understand", tr:"anladığım kadarıyla", rep:2, int:6, next:"2026-04-29"},
-  {en:"grandchlid", tr:"torun", rep:0, int:0, next:"2026-04-29"},
-  {en:"guidelines", tr:"yönergeler", rep:0, int:0, next:"2026-04-29"},
-  {en:"hilarious", tr:"çok komik", rep:1, int:1, next:"2026-04-29"},
-  {en:"hosting", tr:"ev sahipliği yapmak", rep:3, int:1, next:"2026-04-29"},
-  {en:"introduced", tr:"tanıtıldı", rep:2, int:1, next:"2026-04-29"},
-  {en:"landscape", tr:"manzara", rep:2, int:6, next:"2026-05-02"},
-  {en:"layout", tr:"düzen", rep:0, int:0, next:"2026-04-29"},
-  {en:"look at the bright side", tr:"işin iyi tarafına bak", rep:1, int:1, next:"2026-04-29"},
-  {en:"make the most of", tr:"olabildiğince faydalanmak", rep:1, int:1, next:"2026-04-29"},
-  {en:"mansplaining", tr:"erkek egemenliği", rep:2, int:1, next:"2026-04-29"},
-  {en:"migrate", tr:"Göç etmek", rep:0, int:0, next:"2026-04-29"},
-  {en:"municipality", tr:"belediye", rep:1, int:1, next:"2026-04-29"},
-  {en:"nauesous", tr:"mide bulantısı", rep:3, int:1, next:"2026-04-29"},
-  {en:"nominated", tr:"aday gösterildi", rep:2, int:1, next:"2026-04-29"},
-  {en:"occasionally", tr:"ara sıra", rep:2, int:1, next:"2026-04-29"},
-  {en:"parental", tr:"hamilelik", rep:1, int:1, next:"2026-04-29"},
-  {en:"participants", tr:"katılımcılar", rep:1, int:1, next:"2026-04-29"},
-  {en:"particles", tr:"parçacıklar", rep:0, int:0, next:"2026-04-29"},
-  {en:"pissed off", tr:"sinirli", rep:1, int:1, next:"2026-04-29"},
-  {en:"pollutants", tr:"kirleticiler", rep:0, int:0, next:"2026-04-29"},
-  {en:"prevention", tr:"önleme", rep:1, int:1, next:"2026-04-29"},
-  {en:"pursue", tr:"izlemek", rep:0, int:0, next:"2026-04-29"},
-  {en:"rather", tr:"yerine", rep:3, int:1, next:"2026-04-29"},
-  {en:"regulate", tr:"düzenlemek", rep:2, int:6, next:"2026-05-02"},
-  {en:"relief", tr:"rahatlama", rep:2, int:1, next:"2026-04-29"},
-  {en:"reminder", tr:"hatırlatma", rep:1, int:1, next:"2026-04-29"},
-  {en:"resist", tr:"direnmek", rep:2, int:6, next:"2026-05-02"},
-  {en:"shortage", tr:"kıtlık", rep:3, int:16, next:"2026-04-20"},
-  {en:"snooze", tr:"kestirmek", rep:3, int:6, next:"2026-05-02"},
-  {en:"substitute", tr:"yerine geçmek", rep:3, int:16, next:"2026-04-25"},
-  {en:"survey", tr:"anket", rep:3, int:16, next:"2026-04-25"},
-  {en:"Things got heated", tr:"Ortam gerildi", rep:0, int:0, next:"2026-04-29"},
-  {en:"tribute", tr:"saygı duruşu", rep:3, int:1, next:"2026-04-29"},
-  {en:"ungrateful", tr:"nankör", rep:0, int:0, next:"2026-04-29"},
-  {en:"unreliable", tr:"güvenilmez", rep:2, int:6, next:"2026-05-02"},
-  {en:"untrustable", tr:"güvenilmez", rep:1, int:1, next:"2026-04-29"},
-  {en:"upseting", tr:"üzücü", rep:2, int:6, next:"2026-05-02"},
-  {en:"waiter", tr:"garson", rep:2, int:6, next:"2026-05-02"},
-  {en:"wind-blown dust", tr:"rüzgarla savrulan toz", rep:0, int:0, next:"2026-04-29"},
-  {en:"would rather", tr:"daha çok", rep:2, int:1, next:"2026-04-29"},
-  {en:"across", tr:"karşısında", rep:1, int:1, next:"2026-04-29"},
-  {en:"almost never", tr:"neredeyse hiç", rep:1, int:1, next:"2026-04-29"}
-];
-
 function loadWords() {
   try { 
     let words = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); 
     let needsSave = false;
 
-    // Geriye Dönük Uyumluluk Sağlama
+    // Geriye Dönük Uyumluluk
     words.forEach(w => {
       if(!w.category) { w.category = 'word'; needsSave = true; }
       if(!w.source) { w.source = 'user'; needsSave = true; }
     });
-
-    // 1. KULLANICININ ESKİ KAYIP KELİMELERİNİ KURTARMA (Otomatik Enjeksiyon)
-    RECOVERED_USER_WORDS.forEach((rw, index) => {
-      // Eğer bu kelime kullanıcının listesinde zaten yoksa, tam SM-2 istatistikleriyle geri ekle
-      if (!words.some(w => w.en.toLowerCase() === rw.en.toLowerCase() && w.source === 'user')) {
-        words.push({
-          id: 'usr_rec_' + index + '_' + Date.now(),
-          en: rw.en,
-          tr: rw.tr,
-          category: rw.en.includes(' ') ? 'phrasal' : 'word',
-          type: 'B1',
-          source: 'user',
-          example: '',
-          addedAt: '2026-04-20', // Geçmişte eklendiğini varsayıyoruz
-          repetitions: rw.rep,
-          interval: rw.int,
-          ef: 2.5,
-          nextReview: rw.next,
-          reviewCount: rw.rep + 1,
-          wrongCount: 0 // Varsayılan
-        });
-        needsSave = true;
-      }
-    });
     
-    // 2. KADEMELİ ÖĞRENME (Sistem Kasasından Aktarma)
+    // KADEMELİ ÖĞRENME
     const activeSystemWords = words.filter(w => w.source === 'system');
     const TARGET_NORMAL = 25; 
     const TARGET_PHRASAL = 15;
@@ -886,7 +1418,7 @@ function saveWords(words) { localStorage.setItem(DB_KEY, JSON.stringify(words));
 function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
 function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
 
-// ==================== SM-2 ALGORITHM ====================
+// ==================== SM-2 ====================
 function sm2(card, quality) {
   let { interval, repetitions, ef } = card;
   if (!ef) ef = 2.5;
@@ -1686,7 +2218,7 @@ function addWord() {
   if (!en || !tr) { showToast('İngilizce ve Türkçe alanları zorunludur.', 'error'); return; }
 
   const words = loadWords();
-  if (words.find(w => w.en.toLowerCase() === en.toLowerCase() && w.source === 'user')) { showToast('Bu kelime zaten mevcut!', 'error'); return; }
+  if (words.find(w => w.en.toLowerCase() === en.toLowerCase())) { showToast('Bu kelime zaten mevcut!', 'error'); return; }
 
   words.push({ id: Date.now().toString(), en, tr, example, type, category, source: 'user', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
   saveWords(words);
@@ -1713,7 +2245,7 @@ function bulkAdd() {
     const en = parts[0].trim();
     const tr = parts.slice(1).join('=').trim();
     if (!en || !tr) { skipped++; return; }
-    if (words.find(w => w.en.toLowerCase() === en.toLowerCase() && w.source === 'user')) { skipped++; return; }
+    if (words.find(w => w.en.toLowerCase() === en.toLowerCase())) { skipped++; return; }
     words.push({ id: Date.now().toString() + Math.random(), en, tr, example: '', type: '', category: 'word', source: 'user', addedAt: todayStr(), repetitions: 0, interval: 0, ef: 2.5, nextReview: todayStr(), reviewCount: 0, wrongCount: 0 });
     added++;
   });
@@ -1850,6 +2382,7 @@ function importBackup(input) {
       let wordsToSave = [];
       let metaToSave = {};
 
+      // ESKİ VE YENİ FORMATLAR İÇİN AKILLI KURTARMA ALGORİTMASI
       if (Array.isArray(data)) { 
         wordsToSave = data; 
       } 
