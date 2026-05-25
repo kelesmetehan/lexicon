@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEXICON — Flashcard Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #0f1218;
+    --bg3: #161b24;
+    --bg4: #1d2430;
+    --gold: #c9a84c;
+    --gold2: #e8c870;
+    --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e4da;
+    --text2: #9a9589;
+    --text3: #5a5650;
+    --green: #4caf7d;
+    --green-dim: rgba(76,175,125,0.15);
+    --red: #e05c5c;
+    --red-dim: rgba(224,92,92,0.12);
+    --border: rgba(201,168,76,0.12);
+    --radius: 12px;
+    --shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 620px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .page-title em { color: var(--gold); font-style: italic; }
+  .page-subtitle { color: var(--text2); margin-top: 6px; font-size: 13px; }
+
+  .quiz-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
+
+  .quiz-start-card {
+    text-align: center;
+    padding: 48px 40px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
+  .quiz-start-title em { color: var(--gold); font-style: italic; }
+  .quiz-count-badge { display: inline-block; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 4px 16px; font-size: 13px; margin-bottom: 20px; }
+  
+  .info-box { background: rgba(91,141,238,0.08); border: 1px solid rgba(91,141,238,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #90caf9; margin-bottom: 24px; line-height: 1.6; text-align: left; }
+
+  .quiz-settings-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .quiz-settings {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .quiz-settings label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: color 0.2s;
+    padding: 8px 12px;
+    background: var(--bg2);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .quiz-settings label:hover { color: var(--text); }
+  .quiz-settings input[type="radio"] { accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer; }
+
+  .flashcard-wrap {
+    perspective: 1000px;
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+  .flashcard {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 56px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-shadow: var(--shadow);
+  }
+  .flashcard::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .flashcard.revealed { border-color: rgba(76,175,125,0.3); }
+  .flashcard-front, .flashcard-back { width: 100%; }
+  .flashcard-back { display: none; }
+  .flashcard.revealed .flashcard-back { display: block; }
+  .flashcard.revealed .reveal-hint { display: none; }
+  
+  .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
+  .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.2; word-break: break-word; }
+  
+  .reveal-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 30px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    animation: pulse 2s infinite;
+  }
+  .flashcard-answer {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--green);
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(76,175,125,0.2);
+    word-break: break-word;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-gold { background: var(--gold); color: var(--bg); font-weight: 600; }
+  .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
+
+  .flashcard-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .flashcard-actions.visible { opacity: 1; pointer-events: all; }
+  
+  .fc-btn {
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  .fc-btn:hover { transform: translateY(-2px); }
+  .fc-easy { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .fc-easy:hover { background: rgba(76,175,125,0.25); }
+  .fc-idk { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.25); }
+  .fc-idk:hover { background: rgba(224,92,92,0.2); }
+  .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+  .fc-hard:hover { background: rgba(201,168,76,0.2); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header class="page-header">
+    <h1 class="page-title">Lexicon <em>Flashcard</em></h1>
+    <p class="page-subtitle">Sadece bana ait kelimeler ile çalışma modu</p>
+  </header>
+
+  <div id="flashcard-area"></div>
+</div>
+
+<script>
+const DB_KEY = 'lexicon_words';
+const META_KEY = 'lexicon_meta';
+
+let fcQueue = [];
+let fcIndex = 0;
+let fcCorrect = 0;
+let fcTotal = 0;
+let fcRevealed = false;
+
+// 172 KELİMELİK GÜNCEL VERİ SETİ
+const NATIVE_USER_DATA = [
+  {en:"accelerate", tr:"hızlandırmak", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"accumulated", tr:"birikmiş", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"across", tr:"karşısında", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"act out of self-interest", tr:"kendi çıkarları doğrultusunda hareket etmek", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"almost never", tr:"neredeyse hiç", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"along with", tr:"yanı sıra", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"alongside", tr:"yanında", repetitions:6, interval:1, reviewCount:6, state:"learning"},
+  {en:"annoy", tr:"can sıkmak", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"applicants", tr:"başvuru sahipleri", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"apply", tr:"uygulamak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"apprehended", tr:"yakalanmış", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"as far as", tr:"kadarıyla", repetitions:8, interval:1, reviewCount:8, state:"learning"},
+  {en:"as far as I know", tr:"bildiğim kadarıyla", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"as far as I’m concerned", tr:"bana göre", repetitions:5, interval:1, reviewCount:5, state:"learning"},
+  {en:"as long as", tr:"-dığı sürece", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"as well", tr:"ilave olarak", repetitions:5, interval:1, reviewCount:5, state:"learning"},
+  {en:"as well as", tr:"yanı sıra, birlikte", repetitions:6, interval:1, reviewCount:6, state:"learning"},
+  {en:"aspire", tr:"hedeflemek", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"assume", tr:"varsaymak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"basically", tr:"temelde", repetitions:3, interval:16, reviewCount:3, state:"due"},
+  {en:"bitterly", tr:"acı bir şekilde", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"blow off steam", tr:"stres atmak", repetitions:5, interval:1, reviewCount:5, state:"learning"},
+  {en:"bother", tr:"zahmet etmek", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"break-in", tr:"hırsızlık", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"by the time", tr:"zamana kadar", repetitions:6, interval:1, reviewCount:6, state:"due"},
+  {en:"cable car", tr:"teleferik", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"catfishing", tr:"sahte kimlikle kandırma", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"chronically", tr:"kronik olarak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"claws", tr:"pençeler", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"clown", tr:"palyaço", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"coincidence", tr:"tesadüf", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"collections", tr:"koleksiyonlar", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"confidence", tr:"özgüven", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"confident", tr:"kendinden emin", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"conflict", tr:"çatışma", repetitions:5, interval:6, reviewCount:5, state:"learning"},
+  {en:"conscience", tr:"vicdan", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"constant", tr:"sabit / sürekli", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"consulting", tr:"danışmanlık", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"continent", tr:"kıta", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"contribution", tr:"katkı", repetitions:4, interval:6, reviewCount:4, state:"learning"},
+  {en:"controversial", tr:"tartışmalı", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"critics", tr:"eleştirmenler", repetitions:4, interval:41, reviewCount:4, state:"review"},
+  {en:"currency", tr:"para birimi", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"dam", tr:"baraj", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"dates back", tr:"eskiye dayanıyor", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"debate", tr:"tartışma", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"debris", tr:"enkaz", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"deceive", tr:"aldatmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"deception", tr:"aldatma", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"denomination", tr:"para birimi", repetitions:3, interval:6, reviewCount:3, state:"learning"},
+  {en:"determined", tr:"kararlı, azimli", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"diadem", tr:"taç", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"differs", tr:"farklılık gösterir", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"disability", tr:"engellilik", repetitions:5, interval:14, reviewCount:5, state:"review"},
+  {en:"disagreement", tr:"anlaşmazlık", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"dizziness", tr:"baş dönmesi", repetitions:9, interval:1, reviewCount:9, state:"due"},
+  {en:"driftwood", tr:"kıyıya vurmuş odun", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"dwarf", tr:"cüce", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"encounter", tr:"karşılaşmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"encourage", tr:"teşvik etmek", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"epidemic", tr:"salgın", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"era", tr:"dönem", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"eternity", tr:"sonsuzluk", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"even more", tr:"hatta daha da fazlası", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"excitement", tr:"heyecan", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"expensive", tr:"pahalı", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"extensive", tr:"geniş", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"fabric", tr:"kumaş", repetitions:3, interval:6, reviewCount:3, state:"learning"},
+  {en:"facility", tr:"tesis", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"femur", tr:"uyluk kemiği", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"fewer", tr:"daha az", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"flee", tr:"kaçmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"floating", tr:"yüzen", repetitions:2, interval:6, reviewCount:2, state:"learning"},
+  {en:"forecast", tr:"tahmin", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"fraudster", tr:"dolandırıcı", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"from scratch", tr:"sıfırdan", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"from what I understand", tr:"anladığım kadarıyla", repetitions:7, interval:17, reviewCount:7, state:"review"},
+  {en:"getting to know each other", tr:"birbirini tanımak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"goldsmith", tr:"kuyumcu", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"grandchild", tr:"torun", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"grazers", tr:"otlayanlar", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"guidelines", tr:"yönergeler", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"gullible", tr:"kolayca kanan", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"herbivores", tr:"otçullar", repetitions:3, interval:6, reviewCount:3, state:"learning"},
+  {en:"hilarious", tr:"çok komik", repetitions:5, interval:12, reviewCount:5, state:"review"},
+  {en:"hip", tr:"kalça", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"hosting", tr:"ev sahipliği yapmak", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"hunted", tr:"avlanmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"hustler", tr:"baş belası", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"identity", tr:"kimlik", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"imply", tr:"ima etmek", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"individual", tr:"birey", repetitions:2, interval:6, reviewCount:2, state:"learning"},
+  {en:"infected", tr:"bulaşmış", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"infrastructure", tr:"altyapı", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"insist", tr:"ısrar etmek", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"inspection", tr:"inceleme", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"intense", tr:"yoğun", repetitions:2, interval:6, reviewCount:2, state:"learning"},
+  {en:"introduced", tr:"tanıtıldı", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"kindergarten", tr:"anaokulu", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"knee", tr:"diz", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"landscape", tr:"manzara", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"layout", tr:"düzen", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"led to", tr:"sonuç olarak / yol açtı", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"longevity", tr:"uzun ömür", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"look at the bright side", tr:"işin iyi tarafına bak", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"made off", tr:"kaçıp gitmek", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"make the most of", tr:"olabildiğince faydalanmak", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"mansplaining", tr:"erkek egemenliği", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"meanwhile", tr:"bu arada", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"memorable", tr:"unutulmaz", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"migrate", tr:"göç etmek", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"mind-blowing", tr:"akıllara durgunluk veren", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"municipality", tr:"belediye", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"naivety", tr:"saflık", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"napkin", tr:"peçete", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"nauseous", tr:"mide bulantısı", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"neither nor", tr:"ne de", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"no longer", tr:"artık", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"nominated", tr:"aday gösterildi", repetitions:3, interval:6, reviewCount:3, state:"learning"},
+  {en:"notorious", tr:"kötü şöhretli", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"occasionally", tr:"ara sıra", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"opposition", tr:"muhalefet", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"parental", tr:"ebeveynle ilgili", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"participant", tr:"katılımcı", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"participants", tr:"katılımcılar", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"particles", tr:"parçacıklar", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"pissed off", tr:"sinirli", repetitions:4, interval:38, reviewCount:4, state:"review"},
+  {en:"polarization", tr:"kutuplaşma", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"pollutants", tr:"kirleticiler", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"precious", tr:"değerli", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"prevention", tr:"önleme", repetitions:4, interval:6, reviewCount:4, state:"learning"},
+  {en:"pursue", tr:"izlemek", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"rather", tr:"yerine", repetitions:5, interval:1, reviewCount:5, state:"learning"},
+  {en:"rearrange", tr:"yeniden düzenlemek", repetitions:1, interval:1, reviewCount:1, state:"due"},
+  {en:"regulate", tr:"düzenlemek", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"reignited", tr:"yeniden alevlenmek", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"relief", tr:"rahatlama", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"reminder", tr:"hatırlatma", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"resilience", tr:"dayanıklılık", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"resist", tr:"direnmek", repetitions:3, interval:15, reviewCount:3, state:"review"},
+  {en:"reunite", tr:"yeniden bir araya gelmek", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"run away", tr:"kaçmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"scam", tr:"dolandırıcılık", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"shortage", tr:"kıtlık", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"slipped into complacency", tr:"rahatlığa kapıldı", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"snooze", tr:"kestirmek", repetitions:5, interval:1, reviewCount:5, state:"learning"},
+  {en:"strange", tr:"garip", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"stranger", tr:"yabancı", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"stuck in a rut", tr:"rutin bir hayatın içinde sıkışıp kalmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"stumble upon", tr:"tesadüfen rastlamak", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"substitute", tr:"yerine geçmek", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"subtract a habit", tr:"bir alışkanlığı bırakmak", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"survey", tr:"anket", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"sustainable", tr:"sürdürülebilir", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"Things got heated", tr:"ortam gerildi", repetitions:2, interval:1, reviewCount:2, state:"learning"},
+  {en:"torture", tr:"işkence", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"tribute", tr:"saygı duruşu", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"turn on the hazard lights", tr:"tehlike ışıklarını yakmak", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"uncovered", tr:"ortaya çıkarılan", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"ungrateful", tr:"nankör", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"unlikely", tr:"olasılık dışı", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"unreliable", tr:"güvenilmez", repetitions:4, interval:1, reviewCount:4, state:"learning"},
+  {en:"untrustable", tr:"güvenilmez", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"unwittingly", tr:"bilmeden / farkında olmadan", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"upsetting", tr:"üzücü", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"wagging", tr:"sallanan", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"waiter", tr:"garson", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"walrus", tr:"mors", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"wear and tear", tr:"aşınma ve yıpranma", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"wind-blown dust", tr:"rüzgarla savrulan toz", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"would like to", tr:"şunu yapmak isterim", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"would rather", tr:"daha çok", repetitions:3, interval:1, reviewCount:3, state:"learning"}
+];
+
+// GELİŞMİŞ SENKRONİZASYON MECHANIZMASI
+function initDatabase() {
+  try {
+    let existingWords = [];
+    try {
+      existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    } catch(e) {
+      existingWords = [];
+    }
+
+    // Her durumda 172 kelimenin eksiksiz yüklenmesini sağlayan senkronizasyon haritası
+    const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
+      // Tarayıcı hafızasında bu kelime zaten var mı?
+      const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
+      
+      if (foundMatch) {
+        // Varsa, ilerleme durumunu (kart çevrimlerini) koru ama Türkçe anlam düzeltmelerini güncelle
+        foundMatch.tr = w.tr;
+        return foundMatch;
+      } else {
+        // Yoksa, yeni kelime formatında SM-2 değerleriyle listeye ekle
+        const nextReviewDate = new Date();
+        if (w.state !== "due") {
+          nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
+        }
+        return {
+          id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
+          en: w.en,
+          tr: w.tr,
+          category: "word",
+          source: "user",
+          addedAt: todayStr(),
+          repetitions: w.repetitions,
+          interval: w.interval,
+          ef: 2.5,
+          nextReview: nextReviewDate.toISOString().split('T')[0],
+          reviewCount: w.reviewCount,
+          wrongCount: 0,
+          example: "",
+          type: ""
+        };
+      }
+    });
+
+    localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
+  } catch(e) {
+    console.error("Veritabanı senkronizasyon hatası:", e);
+  }
+}
+
+function loadUserWords() {
+  try {
+    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    return allWords.filter(w => w.source === 'user');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveWordsToStorage(updatedWords) {
+  try {
+    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    const mergedWords = allWords.map(w => {
+      const updated = updatedWords.find(u => u.id === w.id);
+      return updated ? updated : w;
+    });
+    localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
+  } catch (e) {
+    console.error("Hafıza güncellenemedi", e);
+  }
+}
+
+function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
+function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+
+function sm2(card, quality) {
+  let { interval, repetitions, ef } = card;
+  if (!ef) ef = 2.5;
+  if (!interval) interval = 0;
+  if (!repetitions) repetitions = 0;
+
+  if (quality < 3) {
+    repetitions = 0;
+    interval = 1;
+  } else {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * ef);
+    repetitions++;
+  }
+
+  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if (ef < 1.3) ef = 1.3;
+
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + interval);
+  nextDate.setHours(0,0,0,0);
+
+  return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
+}
+
+function todayStr() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+
+function renderPreStart() {
+  const userWords = loadUserWords();
+  const area = document.getElementById('flashcard-area');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
+      <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
+
+      <div class="info-box">
+        📌 <strong>Çalışma Prensibi:</strong> Bu modda sistem havuzundaki ortak kelimeler tamamen elenir. Seçtiğiniz kart sayısına göre kelimeler karıştırılarak karşınıza getirilir.
+      </div>
+
+      <div class="quiz-settings">
+        <div class="quiz-settings-title">KAÇ KART ÇALIŞMAK İSTERSİNİZ?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label><input type="radio" name="fc-limit" value="10"> 10 Kart</label>
+          <label><input type="radio" name="fc-limit" value="20"> 20 Kart</label>
+          <label><input type="radio" name="fc-limit" value="30" checked> 30 Kart</label>
+          <label><input type="radio" name="fc-limit" value="50"> 50 Kart</label>
+          <label><input type="radio" name="fc-limit" value="all"> Hepsi</label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-gold" onclick="startFlashcard()">▶ Kartları Karıştır ve Başla</button>
+      </div>
+    </div>`;
+}
+
+function startFlashcard() {
+  let pool = loadUserWords();
+  pool = pool.sort(() => Math.random() - 0.5);
+
+  const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
+  let numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
+  if (pool.length < numLimit) numLimit = pool.length;
+
+  fcQueue = pool.slice(0, numLimit);
+  fcIndex = 0;
+  fcCorrect = 0;
+  fcTotal = fcQueue.length;
+  showNextFlashcard();
+}
+
+function showNextFlashcard() {
+  const area = document.getElementById('flashcard-area');
+  if (fcIndex >= fcQueue.length) { showFlashcardSummary(); return; }
+
+  const card = fcQueue[fcIndex];
+  fcRevealed = false;
+  const progress = (fcIndex / fcTotal * 100).toFixed(1);
+
+  const askTurkishToEnglish = Math.random() > 0.5;
+  let questionText, answerText;
+  
+  if (askTurkishToEnglish) {
+    questionText = card.tr.split(',')[0].trim();
+    answerText = card.en;
+  } else {
+    questionText = card.en;
+    answerText = card.tr;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
+    </div>
+
+    <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
+      <div class="flashcard" id="fc-inner">
+        <div class="flashcard-front">
+          <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+          <div class="quiz-word">${questionText}</div>
+        </div>
+        <div class="flashcard-back" id="fc-back" style="display:none">
+          <div class="flashcard-answer">${answerText}</div>
+        </div>
+        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
+      </div>
+    </div>
+
+    <div class="flashcard-actions" id="fc-actions">
+      <button class="fc-btn fc-idk" onclick="rateFlashcard('${card.id}', 1)">✗ Bilmiyorum</button>
+      <button class="fc-btn fc-hard" onclick="rateFlashcard('${card.id}', 3)">~ Zorlandım</button>
+      <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
+    </div>
+  `;
+}
+
+function revealFlashcard() {
+  if (fcRevealed) return;
+  fcRevealed = true;
+  document.getElementById('fc-inner').classList.add('revealed');
+  document.getElementById('fc-back').style.display = 'block';
+  document.getElementById('fc-actions').classList.add('visible');
+  document.getElementById('fc-card').onclick = null;
+}
+
+function rateFlashcard(cardId, quality) {
+  const userWords = loadUserWords();
+  const card = userWords.find(w => w.id === cardId);
+  
+  if (card) {
+    const updated = sm2(card, quality);
+    card.interval = updated.interval;
+    card.repetitions = updated.repetitions;
+    card.ef = updated.ef;
+    card.nextReview = updated.nextReview;
+    card.lastReviewed = todayStr();
+    card.reviewCount = (card.reviewCount || 0) + 1;
+    
+    if (quality < 3) card.wrongCount = (card.wrongCount || 0) + 1;
+    if (quality >= 4) fcCorrect++;
+
+    saveWordsToStorage(userWords);
+
+    const meta = loadMeta();
+    if (!meta.activity) meta.activity = {};
+    const t = todayStr();
+    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
+    meta.activity[t].reviews++;
+    if (quality >= 4) meta.activity[t].correct++;
+    saveMeta(meta);
+  }
+  
+  fcIndex++;
+  showNextFlashcard();
+}
+
+function showFlashcardSummary() {
+  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
+  const area = document.getElementById('flashcard-area');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 75 ? '🏆' : '📚'}</div>
+      <div class="quiz-start-title">Oturum <em>Tamamlandı</em></div>
+      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Bildim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${fcTotal - fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Bilmedim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
+          <div style="color:var(--text3);font-size:12px">Başarı Oranı</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-gold" onclick="renderPreStart()">▶ Yeni Oturum Başlat</button>
+      </div>
+    </div>`;
+}
+
+document.addEventListener('keydown', e => {
+  if (fcQueue.length === 0 || fcIndex >= fcQueue.length) return;
+  
+  if (e.key === ' ' && !fcRevealed) {
+    e.preventDefault();
+    revealFlashcard();
+  }
+  if (fcRevealed) {
+    const card = fcQueue[fcIndex];
+    if (!card) return;
+    if (e.key === '1') rateFlashcard(card.id, 1);
+    if (e.key === '2') rateFlashcard(card.id, 3);
+    if (e.key === '3') rateFlashcard(card.id, 5);
+  }
+});
+
+// BAŞLANGIÇ ÇALIŞTIRMALARI
+initDatabase();
+renderPreStart();
+</script>
+</body>
+</html>
