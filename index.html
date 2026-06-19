@@ -211,6 +211,14 @@
   }
   .btn-gold { background: var(--gold); color: var(--bg); font-weight: 600; }
   .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
+  
+  /* YENİ BUTON VE İSTATİSTİK TASARIMLARI */
+  .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
+  .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .stat-box { background: var(--bg3); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
+  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold); line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
   .flashcard-actions {
     display: grid;
@@ -485,7 +493,6 @@ const NATIVE_USER_DATA = [
   {en:"would rather", tr:"daha çok", repetitions:6, interval:6, reviewCount:6, state:"due"}
 ];
 
-// GELİŞMİŞ SENKRONİZASYON MECHANIZMASI
 function initDatabase() {
   try {
     let existingWords = [];
@@ -495,17 +502,12 @@ function initDatabase() {
       existingWords = [];
     }
 
-    // Her durumda kelimenin eksiksiz yüklenmesini sağlayan senkronizasyon haritası
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
-      // Tarayıcı hafızasında bu kelime zaten var mı?
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
-      
       if (foundMatch) {
-        // Varsa, ilerleme durumunu (kart çevrimlerini) koru ama Türkçe anlam düzeltmelerini güncelle
-        foundMatch.tr = w.tr;
+        foundMatch.tr = w.tr; // Anlam değiştiyse güncelle, istatistikleri koru
         return foundMatch;
       } else {
-        // Yoksa, yeni kelime formatında SM-2 değerleriyle listeye ekle
         const nextReviewDate = new Date();
         if (w.state !== "due") {
           nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
@@ -523,6 +525,7 @@ function initDatabase() {
           nextReview: nextReviewDate.toISOString().split('T')[0],
           reviewCount: w.reviewCount,
           wrongCount: 0,
+          isActiveMistake: false,
           example: "",
           type: ""
         };
@@ -602,7 +605,7 @@ function renderPreStart() {
       <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
 
       <div class="info-box">
-        📌 <strong>Çalışma Prensibi:</strong> Bu modda sistem havuzundaki ortak kelimeler tamamen elenir. Seçtiğiniz kart sayısına göre kelimeler karıştırılarak karşınıza getirilir.
+        📌 <strong>Çalışma Prensibi:</strong> Yeni kelimeler eklediğinde verilerin kaybolmaz. Artık "İstatistikler" ekranından durumunu görebilir veya sadece zorlandığın kelimeleri tekrar edebilirsin.
       </div>
 
       <div class="quiz-settings">
@@ -616,14 +619,80 @@ function renderPreStart() {
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn btn-gold" onclick="startFlashcard()">▶ Kartları Karıştır ve Başla</button>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="startFlashcard(false)">▶ Karıştır ve Başla</button>
+        <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
+        <button class="btn btn-outline" onclick="renderStats()">📊 İstatistikler</button>
       </div>
     </div>`;
 }
 
-function startFlashcard() {
+function renderStats() {
+  const words = loadUserWords();
+  const area = document.getElementById('flashcard-area');
+  
+  let totalReviews = 0;
+  let totalWrongHistory = 0;
+  let activeMistakes = 0;
+
+  words.forEach(w => {
+    totalReviews += (w.reviewCount || 0);
+    totalWrongHistory += (w.wrongCount || 0);
+    // Aktif zorlanılan kelimeler: isActiveMistake bayrağı olanlar veya yakın zamanda bilemeyip 1 güne düşenler
+    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) {
+      activeMistakes++;
+    }
+  });
+
+  const totalCorrectHistory = totalReviews - totalWrongHistory;
+  const accuracy = totalReviews > 0 ? Math.round((totalCorrectHistory / totalReviews) * 100) : 0;
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title">Senin <em>İstatistiklerin</em></div>
+      <div class="quiz-count-badge" style="margin-bottom:24px">Genel Öğrenme Özeti</div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value">${words.length}</div>
+          <div class="stat-label">Toplam Kelime</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${totalReviews}</div>
+          <div class="stat-label">Yapılan Tekrar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" style="color:var(--red)">${activeMistakes}</div>
+          <div class="stat-label">Zorlanılan Kelime</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" style="color:var(--green)">%${accuracy}</div>
+          <div class="stat-label">Genel Başarı</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        📌 <strong>Bilgi:</strong> "Zorlanılan Kelime" sayısı, son testlerde bilemediğin kelimeleri gösterir. Ana menüden "Yanlışları Çalış" diyerek bunları eritebilirsin.
+      </div>
+
+      <div style="display:flex;justify-content:center">
+        <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
+      </div>
+    </div>`;
+}
+
+function startFlashcard(onlyMistakes = false) {
   let pool = loadUserWords();
+  
+  if (onlyMistakes) {
+    // Sadece aktif hatası olan kelimeleri filtrele
+    pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
+    if (pool.length === 0) {
+      alert("Harika! 🎉 Şu an tekrar etmen gereken güncel bir yanlışın bulunmuyor.");
+      return;
+    }
+  }
+
   pool = pool.sort(() => Math.random() - 0.5);
 
   const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
@@ -705,7 +774,14 @@ function rateFlashcard(cardId, quality) {
     card.lastReviewed = todayStr();
     card.reviewCount = (card.reviewCount || 0) + 1;
     
-    if (quality < 3) card.wrongCount = (card.wrongCount || 0) + 1;
+    // YANLIŞLARI ÇALIŞ LOGİC'İ
+    if (quality < 3) {
+      card.wrongCount = (card.wrongCount || 0) + 1; // Toplam hata geçmişi
+      card.isActiveMistake = true; // "Yanlışları Çalış" listesine al
+    } else if (quality >= 4) {
+      card.isActiveMistake = false; // Bildiği için listeden çıkar
+    }
+    
     if (quality >= 4) fcCorrect++;
 
     saveWordsToStorage(userWords);
@@ -746,7 +822,7 @@ function showFlashcardSummary() {
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn btn-gold" onclick="renderPreStart()">▶ Yeni Oturum Başlat</button>
+        <button class="btn btn-gold" onclick="renderPreStart()">▶ Ana Menüye Dön</button>
       </div>
     </div>`;
 }
