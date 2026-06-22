@@ -413,4 +413,561 @@ const NATIVE_USER_DATA = [
   {en:"hip", tr:"kalça", example:"The old man fell and broke his hip.", repetitions:2, interval:1, reviewCount:2, state:"due"},
   {en:"hosting", tr:"ev sahipliği yapmak", example:"We are hosting a dinner party this weekend.", repetitions:6, interval:25, reviewCount:6, state:"review"},
   {en:"hunted", tr:"avlanmak", example:"The wolves hunted as a pack.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"hustler", tr:"baş belası", example:"Be careful, he is a known street hustler.", repetitions:3, interval:1
+  {en:"hustler", tr:"baş belası", example:"Be careful, he is a known street hustler.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"identity", tr:"kimlik", example:"The witness wanted to keep her identity a secret.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"imply", tr:"ima etmek", example:"Are you trying to imply that I'm lying?", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"imprisoned by", tr:"tarafından hapsedilmiş", example:"He felt imprisoned by his own fears.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"in contrast to/with", tr:"-in aksine / -ile karşılaştırıldığında", example:"In contrast to her sister, she is very shy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"individual", tr:"birey", example:"Every individual has the right to free speech.", repetitions:4, interval:38, reviewCount:4, state:"review"},
+  {en:"infected", tr:"bulaşmış", example:"Make sure the wound doesn't get infected.", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"infrastructure", tr:"altyapı", example:"The city is spending millions to improve its infrastructure.", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"insist", tr:"ısrar etmek", example:"I insist that you let me pay the bill.", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"inspection", tr:"inceleme", example:"The restaurant failed its health inspection.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"intense", tr:"yoğun", example:"The heat in the desert was very intense.", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"introduced", tr:"tanıtıldı", example:"My friend introduced me to his brother.", repetitions:6, interval:9, reviewCount:6, state:"due"},
+  {en:"kindergarten", tr:"anaokulu", example:"My daughter is starting kindergarten this year.", repetitions:5, interval:14, reviewCount:5, state:"due"},
+  {en:"knee", tr:"diz", example:"I tripped and scraped my knee.", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"landscape", tr:"manzara", example:"The snowy landscape looked like a painting.", repetitions:6, interval:393, reviewCount:6, state:"review"},
+  {en:"layout", tr:"düzen", example:"I really like the new layout of this website.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"led to", tr:"sonuç olarak / yol açtı", example:"His poor decisions led to his failure.", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"liberal-leaning", tr:"liberal eğilimli", example:"It is a liberal-leaning newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"likely", tr:"muhtemelen", example:"It is highly likely to rain this afternoon.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"literally", tr:"kelimenin tam anlamıyla / gerçekten", example:"I was literally jumping for joy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"longevity", tr:"uzun ömür", example:"A healthy diet increases human longevity.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"look at the bright side", tr:"işin iyi tarafına bak", example:"Look at the bright side, at least we are safe.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
+  {en:"made off", tr:"kaçıp gitmek", example:"The thieves made off with the stolen diamonds.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"make the most of", tr:"olabildiğince faydalanmak", example:"You should make the most of your vacation.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"mansplaining", tr:"erkek egemenliği", example:"She rolled her eyes at his constant mansplaining.", repetitions:6, interval:9, reviewCount:6, state:"due"},
+  {en:"meanwhile", tr:"bu arada", example:"I cooked dinner; meanwhile, he set the table.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"memorable", tr:"unutulmaz", example:"Our trip to Paris was a truly memorable experience.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"migrate", tr:"Göç etmek", example:"Many birds migrate south for the winter.", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"mind-blowing", tr:"akıllara durgunluk veren", example:"The special effects in that movie were mind-blowing.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"municipality", tr:"belediye", example:"The local municipality is repairing the roads.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"naivety", tr:"saflık", example:"His naivety makes him an easy target for scammers.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"napkin", tr:"peçete", example:"Could you pass me a paper napkin, please?", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"nauesous", tr:"mide bulantısı", example:"The smell of the garbage made me feel nauseous.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"neither nor", tr:"ne de", example:"He is neither rich nor famous.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"no longer", tr:"artık", example:"I no longer live in that city.", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"nominated", tr:"aday gösterildi", example:"The film was nominated for three Oscars.", repetitions:5, interval:29, reviewCount:5, state:"review"},
+  {en:"notorious", tr:"kötü şöhretli", example:"He is a notorious hacker.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"occasionally", tr:"ara sıra", example:"We occasionally go out for dinner on Fridays.", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"opposition", tr:"muhalefet", example:"There was strong opposition to the new law.", repetitions:4, interval:35, reviewCount:4, state:"review"},
+  {en:"outside", tr:"dışarıda / dışında", example:"Please leave your shoes outside.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"parental", tr:"hamilelik", example:"The company offers generous parental leave.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"participant", tr:"katılımcı", example:"She was an active participant in the debate.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"participants", tr:"katılımcılar", example:"All participants must sign a waiver.", repetitions:6, interval:393, reviewCount:6, state:"review"},
+  {en:"particles", tr:"parçacıklar", example:"You can see dust particles floating in the light.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"people in need", tr:"ihtiyaç sahipleri", example:"We organized a charity event for people in need.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"pissed off", tr:"sinirli", example:"He was really pissed off when his flight was canceled.", repetitions:6, interval:279, reviewCount:6, state:"review"},
+  {en:"plenty of", tr:"bol miktarda / çok sayıda", example:"Don't rush, we have plenty of time.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"polarization", tr:"kutuplaşma", example:"There is a growing political polarization in the country.", repetitions:5, interval:10, reviewCount:5, state:"due"},
+  {en:"pollutants", tr:"kirleticiler", example:"Factories release harmful pollutants into the air.", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"precious", tr:"değerli", example:"Time is our most precious resource.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"prevention", tr:"önleme", example:"Crime prevention is a top priority for the mayor.", repetitions:6, interval:18, reviewCount:6, state:"review"},
+  {en:"profound", tr:"derin / etkileyici", example:"The book had a profound impact on my thinking.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"pursue", tr:"izlemek", example:"I want to pursue a career in technology.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"rather", tr:"yerine", example:"I would rather stay home tonight.", repetitions:7, interval:1, reviewCount:7, state:"due"},
+  {en:"rearrange", tr:"yeniden düzenlemek", example:"I need to rearrange the furniture in my room.", repetitions:3, interval:16, reviewCount:3, state:"review"},
+  {en:"regulate", tr:"düzenlemek", example:"The government tries to regulate the prices of medicine.", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"reignited", tr:"yeniden alevlenmek", example:"The recent news reignited the old debate.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"relief", tr:"rahatlama", example:"It was a huge relief to finally pass the exam.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"reminder", tr:"hatırlatma", example:"I set a reminder on my phone for the meeting.", repetitions:4, interval:41, reviewCount:4, state:"review"},
+  {en:"reporter", tr:"muhabir", example:"The news reporter asked the mayor a tough question.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"resilience", tr:"dayanıklılık", example:"She showed incredible resilience after the accident.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"resist", tr:"direnmek", example:"I couldn't resist eating another slice of pizza.", repetitions:5, interval:92, reviewCount:5, state:"review"},
+  {en:"reunite", tr:"yeniden bir araya gelmek / kavuşmak", example:"The band plans to reunite for a final concert.", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"roughly", tr:"kabaca / yaklaşık olarak", example:"There were roughly 500 people at the concert.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"run away", tr:"kaçmak", example:"You can't just run away from your problems.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"scam", tr:"dolandırıcılık", example:"I ignored the email because it looked like a scam.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"shortage", tr:"kıtlık", example:"There is a severe water shortage in the region.", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"sleep in", tr:"geç kalkmak / normalden fazla uyumak", example:"I love to sleep in on Sunday mornings.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"slipped into complacency", tr:"rahatlığa kapıldı", example:"The team slipped into complacency and lost the final match.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"smallish", tr:"biraz küçük / küçük sayılır", example:"They live in a smallish apartment downtown.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"snooze", tr:"kestirmek", example:"I hit the snooze button three times this morning.", repetitions:7, interval:6, reviewCount:7, state:"due"},
+  {en:"spoiled", tr:"şımarık", example:"He is a very spoiled child who gets everything he wants.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"strange", tr:"garip", example:"I heard a strange noise coming from the attic.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"stranger", tr:"yabancı", example:"My parents told me never to talk to a stranger.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"stuck in a rut", tr:"rutin bir hayatın içinde sıkışıp kalmak", example:"I need a new job; I feel completely stuck in a rut.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"stumble upon", tr:"tesadüfen rastlamak", example:"I happened to stumble upon an amazing little cafe.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"substitute", tr:"yerine geçmek", example:"You can use honey as a substitute for sugar.", repetitions:6, interval:1, reviewCount:6, state:"due"},
+  {en:"subtract a habit", tr:"bir alışkanlığı bırakmak", example:"It is very difficult to subtract a habit from your daily life.", repetitions:3, interval:6, reviewCount:3, state:"due"},
+  {en:"suburbs", tr:"banliyöler / şehir dışı yerleşim yerleri", example:"They moved to the suburbs to have a bigger garden.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"survey", tr:"anket", example:"Please fill out this short survey about our service.", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"sustainable", tr:"sürdürülebilir", example:"We must invest in sustainable energy sources.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"tend to + verb", tr:"genelde yapmak / -meye eğilimli olmak", example:"I tend to eat too much when I'm stressed.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"tend to someone/something", tr:"biriyle/bir şeyle ilgilenmek", example:"The nurse will tend to the patient shortly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"Things got heated", tr:"Ortam gerildi", example:"Things got heated during the political debate.", repetitions:4, interval:1, reviewCount:4, state:"due"},
+  {en:"to edit", tr:"düzenlemek", example:"I need to edit this video before posting it.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"to fold away", tr:"katlayıp kaldırmak", example:"Don't forget to fold away your clothes.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"to stem the inflow", tr:"akışı azaltmak", example:"They built a dam to stem the inflow of water.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"torture", tr:"işkence", example:"Waiting for the exam results was pure torture.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
+  {en:"tribute", tr:"saygı duruşu", example:"The concert was a tribute to the late musician.", repetitions:6, interval:1, reviewCount:6, state:"due"},
+  {en:"turn on the hazard lights", tr:"tehlike ışıklarını yakmak", example:"Turn on the hazard lights if your car breaks down.", repetitions:3, interval:1, reviewCount:3, state:"due"},
+  {en:"uncovered", tr:"ortaya çıkarılan", example:"The journalist uncovered a huge scandal.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"ungrateful", tr:"nankör", example:"Don't be ungrateful for all the help they gave you.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"unify / unifies", tr:"birleştirmek / birleştirir", example:"A common goal unifies the entire team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"unlikely", tr:"olasılık dışı", example:"It is highly unlikely that he will win the race.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"unreliable", tr:"güvenilmez", example:"The public transport in this city is very unreliable.", repetitions:6, interval:1, reviewCount:6, state:"due"},
+  {en:"untrustable", tr:"güvenilmez", example:"That website is a totally untrustable source of information.", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"unwittingly", tr:"bilmeden / farkında olmadan", example:"He unwittingly revealed the surprise party.", repetitions:2, interval:1, reviewCount:2, state:"due"},
+  {en:"upseting", tr:"üzücü", example:"Hearing the bad news was a very upsetting experience.", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"utilities", tr:"faturalar / temel hizmetler", example:"My rent is cheap, but the utilities are expensive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"variety of", tr:"çeşitlilik / çeşitli", example:"The store sells a wide variety of fresh fruits.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"wagging", tr:"sallanan", example:"The happy dog was wagging its tail.", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"waiter", tr:"garson", example:"The waiter brought us the dessert menu.", repetitions:5, interval:131, reviewCount:5, state:"review"},
+  {en:"walrus", tr:"mors", example:"The walrus has two long, sharp tusks.", repetitions:4, interval:6, reviewCount:4, state:"due"},
+  {en:"wear and tear", tr:"aşınma ve yıpranma", example:"The old sofa shows obvious signs of wear and tear.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"wind-blown dust", tr:"rüzgarla savrulan toz", example:"The sky was grey with wind-blown dust.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"would like to", tr:"şunu yapmak isterim", example:"I would like to order a cup of tea, please.", repetitions:2, interval:6, reviewCount:2, state:"due"},
+  {en:"would rather", tr:"daha çok", example:"I would rather read a book than watch television.", repetitions:6, interval:6, reviewCount:6, state:"due"}
+];
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function initDatabase() {
+  try {
+    let existingWords = [];
+    try {
+      existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    } catch(e) {
+      existingWords = [];
+    }
+
+    const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
+      const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
+      if (foundMatch) {
+        foundMatch.tr = w.tr;
+        foundMatch.example = w.example; 
+        return foundMatch;
+      } else {
+        const nextReviewDate = new Date();
+        if (w.state !== "due") {
+          nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
+        }
+        return {
+          id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
+          en: w.en,
+          tr: w.tr,
+          example: w.example || "",
+          category: "word",
+          source: "user",
+          addedAt: todayStr(),
+          repetitions: w.repetitions,
+          interval: w.interval,
+          ef: 2.5,
+          nextReview: nextReviewDate.toISOString().split('T')[0],
+          reviewCount: w.reviewCount,
+          wrongCount: 0,
+          isActiveMistake: false,
+          type: ""
+        };
+      }
+    });
+    
+    existingWords.forEach(ex => {
+      const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
+      if (!existsInNative && ex.source === 'user') {
+        synchronizedPool.push(ex);
+      }
+    });
+
+    localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
+  } catch(e) {
+    console.error("Veritabanı senkronizasyon hatası:", e);
+  }
+}
+
+function loadUserWords() {
+  try {
+    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    return allWords.filter(w => w.source === 'user');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveWordsToStorage(updatedWords) {
+  try {
+    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    const mergedWords = allWords.map(w => {
+      const updated = updatedWords.find(u => u.id === w.id);
+      return updated ? updated : w;
+    });
+    
+    updatedWords.forEach(uw => {
+        if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw);
+    })
+    
+    localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
+  } catch (e) {
+    console.error("Hafıza güncellenemedi", e);
+  }
+}
+
+function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
+function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+
+function sm2(card, quality) {
+  let { interval, repetitions, ef } = card;
+  if (!ef) ef = 2.5;
+  if (!interval) interval = 0;
+  if (!repetitions) repetitions = 0;
+
+  if (quality < 3) {
+    repetitions = 0;
+    interval = 1;
+  } else {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * ef);
+    repetitions++;
+  }
+
+  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if (ef < 1.3) ef = 1.3;
+
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + interval);
+  nextDate.setHours(0,0,0,0);
+
+  return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
+}
+
+function todayStr() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+
+function renderPreStart() {
+  const userWords = loadUserWords();
+  const area = document.getElementById('flashcard-area');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
+      <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
+
+      <div class="quiz-settings">
+        <div class="quiz-settings-title">KAÇ KART ÇALIŞMAK İSTERSİNİZ?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label><input type="radio" name="fc-limit" value="10"> 10 Kart</label>
+          <label><input type="radio" name="fc-limit" value="20"> 20 Kart</label>
+          <label><input type="radio" name="fc-limit" value="30" checked> 30 Kart</label>
+          <label><input type="radio" name="fc-limit" value="50"> 50 Kart</label>
+          <label><input type="radio" name="fc-limit" value="all"> Hepsi</label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="startFlashcard(false)">🧠 Akıllı Sırala ve Başla</button>
+        <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
+      </div>
+      
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
+        <button class="btn btn-outline" style="border-color: var(--bg4); color: var(--text2); width: 100%; max-width: 320px;" onclick="renderWordList()">📖 Tüm Kelimeler & İstatistikler</button>
+      </div>
+    </div>`;
+}
+
+function renderWordList() {
+  const words = loadUserWords();
+  const area = document.getElementById('flashcard-area');
+  
+  let totalReviews = 0;
+  let totalWrongHistory = 0;
+  let activeMistakes = 0;
+
+  words.forEach(w => {
+    totalReviews += (w.reviewCount || 0);
+    totalWrongHistory += (w.wrongCount || 0);
+    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) {
+      activeMistakes++;
+    }
+  });
+
+  const totalCorrectHistory = totalReviews - totalWrongHistory;
+  const accuracy = totalReviews > 0 ? Math.round((totalCorrectHistory / totalReviews) * 100) : 0;
+
+  let listHTML = `<div class="word-list-container">`;
+  
+  words.sort((a,b) => a.en.localeCompare(b.en)).forEach(w => {
+    const wTotal = w.reviewCount || 0;
+    const wWrong = w.wrongCount || 0;
+    const wCorrect = wTotal - wWrong;
+    const wAcc = wTotal > 0 ? Math.round((wCorrect / wTotal) * 100) : 0;
+    
+    let accColor = "var(--text)";
+    if(wTotal > 0) {
+        if(wAcc >= 80) accColor = "var(--green)";
+        else if(wAcc < 50) accColor = "var(--red)";
+        else accColor = "var(--gold)";
+    }
+
+    listHTML += `
+      <div class="word-item">
+        <div class="word-info">
+          <div class="word-en">${w.en}</div>
+          <div class="word-tr">${w.tr}</div>
+          ${w.example ? `<div class="word-ex">"${w.example}"</div>` : ''}
+        </div>
+        <div class="word-stats">
+          <div class="w-stat">
+            <span class="w-stat-val">${wTotal}</span>
+            <span class="w-stat-lbl">Tekrar</span>
+          </div>
+          <div class="w-stat">
+            <span class="w-stat-val" style="color: var(--red)">${wWrong}</span>
+            <span class="w-stat-lbl">Yanlış</span>
+          </div>
+          <div class="w-stat">
+            <span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span>
+            <span class="w-stat-lbl">Başarı</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  listHTML += `</div>`;
+
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding: 32px 24px;">
+      <div class="quiz-start-title">Sözlük & <em>İstatistikler</em></div>
+      
+      <div class="stats-grid" style="margin-top: 24px;">
+        <div class="stat-box">
+          <div class="stat-value">${words.length}</div>
+          <div class="stat-label">Toplam Kelime</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${totalReviews}</div>
+          <div class="stat-label">Yapılan Tekrar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" style="color:var(--red)">${activeMistakes}</div>
+          <div class="stat-label">Zorlanılan</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" style="color:var(--green)">%${accuracy}</div>
+          <div class="stat-label">Genel Başarı</div>
+        </div>
+      </div>
+
+      ${listHTML}
+
+      <div style="display:flex;justify-content:center; margin-top: 16px;">
+        <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
+      </div>
+    </div>`;
+}
+
+function startFlashcard(onlyMistakes = false) {
+  let pool = loadUserWords();
+  
+  if (onlyMistakes) {
+    pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
+    if (pool.length === 0) {
+      alert("Harika! 🎉 Şu an tekrar etmen gereken güncel bir yanlışın bulunmuyor.");
+      return;
+    }
+  }
+
+  // AKILLI SIRALAMA ALGORİTMASI
+  pool.forEach(w => {
+    let score = 0;
+    const totalReviews = w.reviewCount || 0;
+    const totalWrong = w.wrongCount || 0;
+    const reps = w.repetitions || 0;
+
+    // 1. Hiç görülmemiş kelimeler en yüksek öncelikte
+    if (totalReviews === 0) score += 1000;
+    
+    // 2. Aktif olarak yanlış bilinenler çok yüksek öncelikte
+    if (w.isActiveMistake) score += 800;
+    
+    // 3. Genel hata oranı yüksek olanlar
+    if (totalReviews > 0) {
+        const errorRate = totalWrong / totalReviews;
+        score += errorRate * 500;
+    }
+    
+    // 4. Tekrar sayısı az olanlar (10 tekrara kadar kademeli puan)
+    if (reps < 10) {
+        score += (10 - reps) * 10;
+    }
+    
+    // 5. Her testin birebir aynı sırada olmasını engellemek için küçük bir şans faktörü
+    score += Math.random() * 50;
+
+    w.priorityScore = score;
+  });
+
+  // Puanı yüksek olanları en başa alacak şekilde sırala
+  pool.sort((a, b) => b.priorityScore - a.priorityScore);
+
+  const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
+  let numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
+  if (pool.length < numLimit) numLimit = pool.length;
+
+  fcQueue = pool.slice(0, numLimit);
+  fcIndex = 0;
+  fcCorrect = 0;
+  fcTotal = fcQueue.length;
+  showNextFlashcard();
+}
+
+function showNextFlashcard() {
+  const area = document.getElementById('flashcard-area');
+  if (fcIndex >= fcQueue.length) { showFlashcardSummary(); return; }
+
+  const card = fcQueue[fcIndex];
+  fcRevealed = false;
+  const progress = (fcIndex / fcTotal * 100).toFixed(1);
+
+  const askTurkishToEnglish = Math.random() > 0.5;
+  let questionText, answerText;
+  let exampleDisplay = "";
+  
+  if (card.example) {
+    if (askTurkishToEnglish) {
+      const regex = new RegExp(escapeRegExp(card.en), "gi");
+      let hiddenExample = card.example.replace(regex, "_____");
+      exampleDisplay = `<div class="quiz-example">"${hiddenExample}"</div>`;
+    } else {
+      exampleDisplay = `<div class="quiz-example">"${card.example}"</div>`;
+    }
+  }
+
+  if (askTurkishToEnglish) {
+    questionText = card.tr.split(',')[0].trim();
+    answerText = card.en;
+  } else {
+    questionText = card.en;
+    answerText = card.tr;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
+    </div>
+
+    <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
+      <div class="flashcard" id="fc-inner">
+        <div class="flashcard-front">
+          <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+          <div class="quiz-word">${questionText}</div>
+          ${exampleDisplay}
+        </div>
+        <div class="flashcard-back" id="fc-back" style="display:none">
+          <div class="flashcard-answer">${answerText}</div>
+        </div>
+        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
+      </div>
+    </div>
+
+    <div class="flashcard-actions" id="fc-actions">
+      <button class="fc-btn fc-idk" onclick="rateFlashcard('${card.id}', 1)">✗ Bilmiyorum</button>
+      <button class="fc-btn fc-hard" onclick="rateFlashcard('${card.id}', 3)">~ Zorlandım</button>
+      <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
+    </div>
+  `;
+}
+
+function revealFlashcard() {
+  if (fcRevealed) return;
+  fcRevealed = true;
+  document.getElementById('fc-inner').classList.add('revealed');
+  document.getElementById('fc-back').style.display = 'block';
+  document.getElementById('fc-actions').classList.add('visible');
+  document.getElementById('fc-card').onclick = null;
+}
+
+function rateFlashcard(cardId, quality) {
+  const userWords = loadUserWords();
+  const card = userWords.find(w => w.id === cardId);
+  
+  if (card) {
+    const updated = sm2(card, quality);
+    card.interval = updated.interval;
+    card.repetitions = updated.repetitions;
+    card.ef = updated.ef;
+    card.nextReview = updated.nextReview;
+    card.lastReviewed = todayStr();
+    card.reviewCount = (card.reviewCount || 0) + 1;
+    
+    if (quality < 3) {
+      card.wrongCount = (card.wrongCount || 0) + 1;
+      card.isActiveMistake = true;
+    } else if (quality >= 4) {
+      card.isActiveMistake = false;
+    }
+    
+    if (quality >= 4) fcCorrect++;
+
+    saveWordsToStorage(userWords);
+
+    const meta = loadMeta();
+    if (!meta.activity) meta.activity = {};
+    const t = todayStr();
+    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
+    meta.activity[t].reviews++;
+    if (quality >= 4) meta.activity[t].correct++;
+    saveMeta(meta);
+  }
+  
+  fcIndex++;
+  showNextFlashcard();
+}
+
+function showFlashcardSummary() {
+  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
+  const area = document.getElementById('flashcard-area');
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 75 ? '🏆' : '📚'}</div>
+      <div class="quiz-start-title">Oturum <em>Tamamlandı</em></div>
+      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Bildim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${fcTotal - fcCorrect}</div>
+          <div style="color:var(--text3);font-size:12px">Bilmedim</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
+          <div style="color:var(--text3);font-size:12px">Başarı Oranı</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-gold" onclick="renderPreStart()">▶ Ana Menüye Dön</button>
+      </div>
+    </div>`;
+}
+
+document.addEventListener('keydown', e => {
+  if (fcQueue.length === 0 || fcIndex >= fcQueue.length) return;
+  
+  if (e.key === ' ' && !fcRevealed) {
+    e.preventDefault();
+    revealFlashcard();
+  }
+  if (fcRevealed) {
+    const card = fcQueue[fcIndex];
+    if (!card) return;
+    if (e.key === '1') rateFlashcard(card.id, 1);
+    if (e.key === '2') rateFlashcard(card.id, 3);
+    if (e.key === '3') rateFlashcard(card.id, 5);
+  }
+});
+
+initDatabase();
+renderPreStart();
+</script>
+</body>
+</html>
