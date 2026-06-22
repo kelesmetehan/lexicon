@@ -91,6 +91,22 @@
     transition: width 0.4s ease;
   }
   .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
+  
+  .btn-end-early {
+    background: transparent;
+    border: 1px solid var(--text3);
+    color: var(--text2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-end-early:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
 
   .quiz-start-card {
     text-align: center;
@@ -774,37 +790,26 @@ function startFlashcard(onlyMistakes = false) {
     }
   }
 
-  // AKILLI SIRALAMA ALGORİTMASI
   pool.forEach(w => {
     let score = 0;
     const totalReviews = w.reviewCount || 0;
     const totalWrong = w.wrongCount || 0;
     const reps = w.repetitions || 0;
 
-    // 1. Hiç görülmemiş kelimeler en yüksek öncelikte
     if (totalReviews === 0) score += 1000;
-    
-    // 2. Aktif olarak yanlış bilinenler çok yüksek öncelikte
     if (w.isActiveMistake) score += 800;
-    
-    // 3. Genel hata oranı yüksek olanlar
     if (totalReviews > 0) {
         const errorRate = totalWrong / totalReviews;
         score += errorRate * 500;
     }
-    
-    // 4. Tekrar sayısı az olanlar (10 tekrara kadar kademeli puan)
     if (reps < 10) {
         score += (10 - reps) * 10;
     }
-    
-    // 5. Her testin birebir aynı sırada olmasını engellemek için küçük bir şans faktörü
     score += Math.random() * 50;
 
     w.priorityScore = score;
   });
 
-  // Puanı yüksek olanları en başa alacak şekilde sırala
   pool.sort((a, b) => b.priorityScore - a.priorityScore);
 
   const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
@@ -816,6 +821,15 @@ function startFlashcard(onlyMistakes = false) {
   fcCorrect = 0;
   fcTotal = fcQueue.length;
   showNextFlashcard();
+}
+
+function endQuizEarly() {
+  if (fcIndex === 0) {
+    renderPreStart(); 
+    return;
+  }
+  fcTotal = fcIndex; 
+  showFlashcardSummary();
 }
 
 function showNextFlashcard() {
@@ -849,9 +863,10 @@ function showNextFlashcard() {
   }
 
   area.innerHTML = `
-    <div class="quiz-progress">
-      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+    <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${progress}%"></div></div>
       <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
+      <button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>
     </div>
 
     <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
