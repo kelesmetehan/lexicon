@@ -176,7 +176,6 @@
   .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
   .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.2; word-break: break-word; }
   
-  /* YENİ ÖRNEK CÜMLE TASARIMI */
   .quiz-example {
     font-size: 15px;
     color: var(--text2);
@@ -226,10 +225,33 @@
   
   .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
   .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
+  
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
   .stat-box { background: var(--bg3); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
   .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold); line-height: 1; margin-bottom: 6px; }
   .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+  /* YENİ: KELİME LİSTESİ VE FORM TASARIMLARI */
+  .word-list-container { max-height: 400px; overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 10px; }
+  .word-list-container::-webkit-scrollbar { width: 6px; }
+  .word-list-container::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+  
+  .word-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .word-info { flex: 1; }
+  .word-en { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
+  .word-tr { font-size: 13px; color: var(--gold); margin-bottom: 4px; }
+  .word-ex { font-size: 12px; color: var(--text3); font-style: italic; }
+  
+  .word-stats { display: flex; gap: 12px; text-align: center; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 16px; margin-left: 16px; }
+  .w-stat { display: flex; flex-direction: column; }
+  .w-stat-val { font-size: 16px; font-weight: 600; color: var(--text); }
+  .w-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; }
+  
+  .form-group { text-align: left; margin-bottom: 16px; }
+  .form-label { display: block; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
+  .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .form-input:focus { border-color: var(--gold); }
+  textarea.form-input { resize: vertical; min-height: 80px; }
 
   .flashcard-actions {
     display: grid;
@@ -287,7 +309,7 @@ let fcCorrect = 0;
 let fcTotal = 0;
 let fcRevealed = false;
 
-// 213 KELİME + ÖRNEK CÜMLELER
+// İlk açılışta havuzu besleyen ana veri seti (Burayı kalıcı kelimeler için kullanabilirsin)
 const NATIVE_USER_DATA = [
   {en:"accelerate", tr:"hızlandırmak", example:"Press the gas pedal to accelerate the car.", repetitions:3, interval:15, reviewCount:3, state:"due"},
   {en:"accumulated", tr:"birikmiş", example:"Dust had accumulated on the old books.", repetitions:3, interval:6, reviewCount:3, state:"due"},
@@ -505,7 +527,7 @@ const NATIVE_USER_DATA = [
 ];
 
 function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Regex özel karakterlerini kaçırır
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function initDatabase() {
@@ -521,7 +543,7 @@ function initDatabase() {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
       if (foundMatch) {
         foundMatch.tr = w.tr;
-        foundMatch.example = w.example; // Örnek cümleyi hafızaya GÜNCELLE
+        foundMatch.example = w.example; 
         return foundMatch;
       } else {
         const nextReviewDate = new Date();
@@ -547,6 +569,14 @@ function initDatabase() {
         };
       }
     });
+    
+    // Varolan ancak NATIVE listede olmayan (örneğin UI'dan manuel eklenen) kelimeleri koru
+    existingWords.forEach(ex => {
+      const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
+      if (!existsInNative && ex.source === 'user') {
+        synchronizedPool.push(ex);
+      }
+    });
 
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
   } catch(e) {
@@ -570,6 +600,12 @@ function saveWordsToStorage(updatedWords) {
       const updated = updatedWords.find(u => u.id === w.id);
       return updated ? updated : w;
     });
+    
+    // Yeni eklenenleri kontrol et
+    updatedWords.forEach(uw => {
+        if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw);
+    })
+    
     localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
   } catch (e) {
     console.error("Hafıza güncellenemedi", e);
@@ -620,10 +656,6 @@ function renderPreStart() {
       <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
       <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
 
-      <div class="info-box">
-        📌 <strong>Yenilik:</strong> Artık her kelimenin altında ipucu olarak kısa örnek cümleler görebilirsin. Öğrenmeni hızlandırmak için tasarlandı!
-      </div>
-
       <div class="quiz-settings">
         <div class="quiz-settings-title">KAÇ KART ÇALIŞMAK İSTERSİNİZ?</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -638,12 +670,84 @@ function renderPreStart() {
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-gold" onclick="startFlashcard(false)">▶ Karıştır ve Başla</button>
         <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
-        <button class="btn btn-outline" onclick="renderStats()">📊 İstatistikler</button>
+      </div>
+      
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
+        <button class="btn btn-outline" style="border-color: var(--bg4); color: var(--text2);" onclick="renderAddWordForm()">+ Kelime Ekle</button>
+        <button class="btn btn-outline" style="border-color: var(--bg4); color: var(--text2);" onclick="renderWordList()">📖 Sözlük & İstatistikler</button>
       </div>
     </div>`;
 }
 
-function renderStats() {
+// YENİ: KELİME EKLEME FORMU
+function renderAddWordForm() {
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-start-title">Yeni Kelime <em>Ekle</em></div>
+      <div class="quiz-count-badge" style="margin-bottom:24px">Kendi Kelime Havuzunu Büyüt</div>
+      
+      <div class="form-group">
+        <label class="form-label">İngilizce Kelime</label>
+        <input type="text" id="new-word-en" class="form-input" placeholder="Örn: resilience" autocomplete="off">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Türkçe Anlamı</label>
+        <input type="text" id="new-word-tr" class="form-input" placeholder="Örn: dayanıklılık, direnç" autocomplete="off">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Örnek Cümle (İsteğe Bağlı)</label>
+        <textarea id="new-word-ex" class="form-input" placeholder="Örn: She showed incredible resilience after the accident."></textarea>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center; margin-top: 24px;">
+        <button class="btn btn-outline" onclick="renderPreStart()">İptal</button>
+        <button class="btn btn-gold" onclick="saveManualWord()">Kaydet</button>
+      </div>
+    </div>
+  `;
+}
+
+function saveManualWord() {
+  const enInput = document.getElementById('new-word-en').value.trim();
+  const trInput = document.getElementById('new-word-tr').value.trim();
+  const exInput = document.getElementById('new-word-ex').value.trim();
+
+  if (!enInput || !trInput) {
+    alert("Lütfen İngilizce kelimeyi ve Türkçe anlamını doldurunuz.");
+    return;
+  }
+
+  const newWord = {
+    id: "usr_manual_" + Date.now(),
+    en: enInput,
+    tr: trInput,
+    example: exInput,
+    category: "word",
+    source: "user",
+    addedAt: todayStr(),
+    repetitions: 0,
+    interval: 0,
+    ef: 2.5,
+    nextReview: todayStr(),
+    reviewCount: 0,
+    wrongCount: 0,
+    isActiveMistake: false,
+    type: ""
+  };
+
+  const currentWords = loadUserWords();
+  currentWords.push(newWord);
+  saveWordsToStorage(currentWords);
+  
+  alert("Kelime başarıyla eklendi!");
+  renderPreStart();
+}
+
+// YENİ: SÖZLÜK VE İSTATİSTİK LİSTESİ
+function renderWordList() {
   const words = loadUserWords();
   const area = document.getElementById('flashcard-area');
   
@@ -662,12 +766,52 @@ function renderStats() {
   const totalCorrectHistory = totalReviews - totalWrongHistory;
   const accuracy = totalReviews > 0 ? Math.round((totalCorrectHistory / totalReviews) * 100) : 0;
 
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-start-title">Senin <em>İstatistiklerin</em></div>
-      <div class="quiz-count-badge" style="margin-bottom:24px">Genel Öğrenme Özeti</div>
+  let listHTML = `<div class="word-list-container">`;
+  
+  words.sort((a,b) => a.en.localeCompare(b.en)).forEach(w => {
+    const wTotal = w.reviewCount || 0;
+    const wWrong = w.wrongCount || 0;
+    const wCorrect = wTotal - wWrong;
+    const wAcc = wTotal > 0 ? Math.round((wCorrect / wTotal) * 100) : 0;
+    
+    let accColor = "var(--text)";
+    if(wTotal > 0) {
+        if(wAcc >= 80) accColor = "var(--green)";
+        else if(wAcc < 50) accColor = "var(--red)";
+        else accColor = "var(--gold)";
+    }
 
-      <div class="stats-grid">
+    listHTML += `
+      <div class="word-item">
+        <div class="word-info">
+          <div class="word-en">${w.en}</div>
+          <div class="word-tr">${w.tr}</div>
+          ${w.example ? `<div class="word-ex">"${w.example}"</div>` : ''}
+        </div>
+        <div class="word-stats">
+          <div class="w-stat">
+            <span class="w-stat-val">${wTotal}</span>
+            <span class="w-stat-lbl">Tekrar</span>
+          </div>
+          <div class="w-stat">
+            <span class="w-stat-val" style="color: var(--red)">${wWrong}</span>
+            <span class="w-stat-lbl">Yanlış</span>
+          </div>
+          <div class="w-stat">
+            <span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span>
+            <span class="w-stat-lbl">Başarı</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  listHTML += `</div>`;
+
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding: 32px 24px;">
+      <div class="quiz-start-title">Sözlük & <em>İstatistikler</em></div>
+      
+      <div class="stats-grid" style="margin-top: 24px;">
         <div class="stat-box">
           <div class="stat-value">${words.length}</div>
           <div class="stat-label">Toplam Kelime</div>
@@ -678,7 +822,7 @@ function renderStats() {
         </div>
         <div class="stat-box">
           <div class="stat-value" style="color:var(--red)">${activeMistakes}</div>
-          <div class="stat-label">Zorlanılan Kelime</div>
+          <div class="stat-label">Zorlanılan</div>
         </div>
         <div class="stat-box">
           <div class="stat-value" style="color:var(--green)">%${accuracy}</div>
@@ -686,11 +830,9 @@ function renderStats() {
         </div>
       </div>
 
-      <div class="info-box">
-        📌 <strong>Bilgi:</strong> "Zorlanılan Kelime" sayısı, son testlerde bilemediğin kelimeleri gösterir. Ana menüden "Yanlışları Çalış" diyerek bunları eritebilirsin.
-      </div>
+      ${listHTML}
 
-      <div style="display:flex;justify-content:center">
+      <div style="display:flex;justify-content:center; margin-top: 16px;">
         <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
       </div>
     </div>`;
@@ -732,15 +874,12 @@ function showNextFlashcard() {
   let questionText, answerText;
   let exampleDisplay = "";
   
-  // Örnek cümle ipucu mantığı
   if (card.example) {
     if (askTurkishToEnglish) {
-      // Türkçe sorulduysa cevabı (İngilizce kelimeyi) örnekte "_____" ile gizle
       const regex = new RegExp(escapeRegExp(card.en), "gi");
       let hiddenExample = card.example.replace(regex, "_____");
       exampleDisplay = `<div class="quiz-example">"${hiddenExample}"</div>`;
     } else {
-      // İngilizce sorulduysa cümleyi tam göster
       exampleDisplay = `<div class="quiz-example">"${card.example}"</div>`;
     }
   }
