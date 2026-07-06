@@ -321,7 +321,7 @@ let fcCorrect = 0;
 let fcTotal = 0;
 let fcRevealed = false;
 
-// YENİDEN DÜZENLENMİŞ KELİME VERİ TABANI
+// KELİME VERİ TABANI
 const NATIVE_USER_DATA = [
   {en:"accelerate", tr:"hızlandırmak", example:"Press the gas pedal to accelerate the car.", repetitions:3, interval:15, reviewCount:3, state:"due"},
   {en:"accumulated", tr:"birikmiş", example:"Dust had accumulated on the old books.", repetitions:3, interval:6, reviewCount:3, state:"due"},
@@ -820,15 +820,35 @@ function startFlashcard(onlyMistakes = false) {
     const totalWrong = w.wrongCount || 0;
     const reps = w.repetitions || 0;
 
-    if (totalReviews === 0) score += 1000;
-    if (w.isActiveMistake) score += 800;
+    // 1. Hiç görülmemiş kartlar en yüksek önceliğe sahip olsun
+    if (totalReviews === 0) {
+        score += 1500; 
+    }
+
+    // 2. Aktif olarak yanlış bilinenler çok yüksek öncelikli
+    if (w.isActiveMistake) {
+        score += 1200;
+    }
+
     if (totalReviews > 0) {
         const errorRate = totalWrong / totalReviews;
-        score += errorRate * 500;
+        // Hata oranı ne kadar yüksekse puan o kadar artar (Max +800)
+        score += errorRate * 800;
+        
+        const correctRate = (totalReviews - totalWrong) / totalReviews;
+        // 3. Eğer çok tekrar edilmiş (10'dan fazla) ve çok doğru bilinmişse (%80+), puanını eksiye düşür ki sona gitsin
+        if (reps > 10 && correctRate > 0.8) {
+            score -= 500; 
+        }
     }
+
+    // 4. Tekrar sayısı az olanlara kademeli puan ekle (Yeniler ve az tekrar edilenler öne çıksın)
+    // Örn: reps = 0 ise +500 puan, reps = 5 ise +250 puan, reps >= 10 ise +0 puan
     if (reps < 10) {
-        score += (10 - reps) * 10;
+        score += (10 - reps) * 50; 
     }
+
+    // Aynı puandaki kartları kendi içinde rastgele karıştırmak için ufak bir şans faktörü
     score += Math.random() * 50;
 
     w.priorityScore = score;
