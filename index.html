@@ -238,6 +238,8 @@
   }
   .btn-gold { background: var(--gold); color: var(--bg); font-weight: 600; }
   .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-wc { background: linear-gradient(135deg, #1d4ed8, #4f46e5); color: #fff; font-weight: 600; width: 100%; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);}
+  .btn-wc:hover { background: linear-gradient(135deg, #1e40af, #4338ca); transform: translateY(-2px); }
   
   .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
   .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
@@ -247,7 +249,6 @@
   .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold); line-height: 1; margin-bottom: 6px; }
   .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
-  /* KELİME LİSTESİ TASARIMLARI */
   .word-list-container { max-height: 420px; overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 10px; }
   .word-list-container::-webkit-scrollbar { width: 6px; }
   .word-list-container::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
@@ -294,9 +295,22 @@
   .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
   .fc-hard:hover { background: rgba(201,168,76,0.2); }
 
+  /* WC Tablo Stilleri */
+  .wc-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  .wc-table th { color: var(--text3); padding: 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
+  .wc-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .wc-table tr.advanced { background: rgba(76,175,125,0.05); }
+  .wc-table tr.player { font-weight: bold; color: var(--gold); }
+  .wc-score-box { background: var(--bg3); padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin: 20px 0; border: 1px solid rgba(255,255,255,0.08); }
+  .wc-team { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+  .wc-flag { font-size: 32px; }
+  .wc-team-name { font-size: 14px; font-weight: 600; text-align: center; }
+  .wc-score { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; color: var(--text); padding: 0 20px; }
+
   @media (max-width: 480px) {
     .word-item { flex-direction: column; align-items: flex-start; }
     .word-stats { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); padding-left: 0; margin-left: 0; padding-top: 12px; margin-top: 12px; width: 100%; justify-content: flex-start; }
+    .wc-score-box { flex-direction: column; gap: 16px; }
   }
 </style>
 </head>
@@ -560,6 +574,39 @@ const NATIVE_USER_DATA = [
   {en:"would rather", tr:"daha çok", example:"I would rather read a book than watch television.", repetitions:6, interval:6, reviewCount:6, state:"due"}
 ];
 
+// 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
+const WC_TEAMS = [
+  { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
+  { name: "Canada", group: "B", stars: 2, flag: "🇨🇦" }, { name: "Bosnia & Herz.", group: "B", stars: 1, flag: "🇧🇦" }, { name: "Qatar", group: "B", stars: 1, flag: "🇶🇦" }, { name: "Switzerland", group: "B", stars: 3, flag: "🇨🇭" },
+  { name: "Brazil", group: "C", stars: 3, flag: "🇧🇷" }, { name: "Morocco", group: "C", stars: 2, flag: "🇲🇦" }, { name: "Haiti", group: "C", stars: 1, flag: "🇭🇹" }, { name: "Scotland", group: "C", stars: 2, flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+  { name: "United States", group: "D", stars: 2, flag: "🇺🇸" }, { name: "Paraguay", group: "D", stars: 2, flag: "🇵🇾" }, { name: "Australia", group: "D", stars: 2, flag: "🇦🇺" }, { name: "Türkiye", group: "D", stars: 2, flag: "🇹🇷" },
+  { name: "Germany", group: "E", stars: 3, flag: "🇩🇪" }, { name: "Curaçao", group: "E", stars: 1, flag: "🇨🇼" }, { name: "Ivory Coast", group: "E", stars: 2, flag: "🇨🇮" }, { name: "Ecuador", group: "E", stars: 2, flag: "🇪🇨" },
+  { name: "Netherlands", group: "F", stars: 3, flag: "🇳🇱" }, { name: "Japan", group: "F", stars: 2, flag: "🇯🇵" }, { name: "Sweden", group: "F", stars: 2, flag: "🇸🇪" }, { name: "Tunisia", group: "F", stars: 1, flag: "🇹🇳" },
+  { name: "Belgium", group: "G", stars: 3, flag: "🇧🇪" }, { name: "Egypt", group: "G", stars: 2, flag: "🇪🇬" }, { name: "Iran", group: "G", stars: 2, flag: "🇮🇷" }, { name: "New Zealand", group: "G", stars: 1, flag: "🇳🇿" },
+  { name: "Spain", group: "H", stars: 3, flag: "🇪🇸" }, { name: "Cape Verde", group: "H", stars: 1, flag: "🇨🇻" }, { name: "Saudi Arabia", group: "H", stars: 1, flag: "🇸🇦" }, { name: "Uruguay", group: "H", stars: 3, flag: "🇺🇾" },
+  { name: "France", group: "I", stars: 3, flag: "🇫🇷" }, { name: "Senegal", group: "I", stars: 2, flag: "🇸🇳" }, { name: "Iraq", group: "I", stars: 1, flag: "🇮🇶" }, { name: "Norway", group: "I", stars: 2, flag: "🇳🇴" },
+  { name: "Argentina", group: "J", stars: 3, flag: "🇦🇷" }, { name: "Algeria", group: "J", stars: 2, flag: "🇩🇿" }, { name: "Austria", group: "J", stars: 2, flag: "🇦🇹" }, { name: "Jordan", group: "J", stars: 1, flag: "🇯🇴" },
+  { name: "Portugal", group: "K", stars: 3, flag: "🇵🇹" }, { name: "Congo DR", group: "K", stars: 1, flag: "🇨🇩" }, { name: "Uzbekistan", group: "K", stars: 1, flag: "🇺🇿" }, { name: "Colombia", group: "K", stars: 3, flag: "🇨🇴" },
+  { name: "England", group: "L", stars: 3, flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" }, { name: "Croatia", group: "L", stars: 3, flag: "🇭🇷" }, { name: "Ghana", group: "L", stars: 2, flag: "🇬🇭" }, { name: "Panama", group: "L", stars: 1, flag: "🇵🇦" }
+];
+
+let wc = {
+  active: false,
+  playerTeam: null,
+  groupTeams: [],
+  standings: {},
+  stage: 'group', // group, ro32, ro16, qf, sf, final
+  matchIndex: 0,
+  opponent: null,
+  wordCount: 10,
+  inPenalties: false,
+  basePlayerScore: 0,
+  baseOppScore: 0,
+  schedule: [] // T0vT1, T2vT3 vb.
+};
+
+const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
+
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -569,61 +616,38 @@ function initDatabase() {
     let existingWords = [];
     try {
       existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    } catch(e) {
-      existingWords = [];
-    }
+    } catch(e) { existingWords = []; }
 
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
       if (foundMatch) {
-        foundMatch.tr = w.tr;
-        foundMatch.example = w.example; 
-        return foundMatch;
+        foundMatch.tr = w.tr; foundMatch.example = w.example; return foundMatch;
       } else {
         const nextReviewDate = new Date();
-        if (w.state !== "due") {
-          nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
-        }
+        if (w.state !== "due") nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
         return {
           id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
-          en: w.en,
-          tr: w.tr,
-          example: w.example || "",
-          category: "word",
-          source: "user",
-          addedAt: todayStr(),
-          repetitions: w.repetitions,
-          interval: w.interval,
-          ef: 2.5,
-          nextReview: nextReviewDate.toISOString().split('T')[0],
-          reviewCount: w.reviewCount,
-          wrongCount: 0,
-          isActiveMistake: false,
-          type: ""
+          en: w.en, tr: w.tr, example: w.example || "", category: "word", source: "user",
+          addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
+          nextReview: nextReviewDate.toISOString().split('T')[0], reviewCount: w.reviewCount, wrongCount: 0, isActiveMistake: false, type: ""
         };
       }
     });
     
     existingWords.forEach(ex => {
       const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
-      if (!existsInNative && ex.source === 'user') {
-        synchronizedPool.push(ex);
-      }
+      if (!existsInNative && ex.source === 'user') synchronizedPool.push(ex);
     });
 
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
-  } catch(e) {
-    console.error("Veritabanı senkronizasyon hatası:", e);
-  }
+  } catch(e) { console.error(e); }
 }
 
 function loadUserWords() {
   try {
     const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
     return allWords.filter(w => w.source === 'user');
-  } catch (e) {
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
 function saveWordsToStorage(updatedWords) {
@@ -633,15 +657,9 @@ function saveWordsToStorage(updatedWords) {
       const updated = updatedWords.find(u => u.id === w.id);
       return updated ? updated : w;
     });
-    
-    updatedWords.forEach(uw => {
-        if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw);
-    })
-    
+    updatedWords.forEach(uw => { if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw); });
     localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
-  } catch (e) {
-    console.error("Hafıza güncellenemedi", e);
-  }
+  } catch (e) {}
 }
 
 function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
@@ -649,37 +667,27 @@ function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); 
 
 function sm2(card, quality) {
   let { interval, repetitions, ef } = card;
-  if (!ef) ef = 2.5;
-  if (!interval) interval = 0;
-  if (!repetitions) repetitions = 0;
+  if (!ef) ef = 2.5; if (!interval) interval = 0; if (!repetitions) repetitions = 0;
 
-  if (quality < 3) {
-    repetitions = 0;
-    interval = 1;
-  } else {
-    if (repetitions === 0) interval = 1;
-    else if (repetitions === 1) interval = 6;
-    else interval = Math.round(interval * ef);
+  if (quality < 3) { repetitions = 0; interval = 1; } 
+  else {
+    if (repetitions === 0) interval = 1; else if (repetitions === 1) interval = 6; else interval = Math.round(interval * ef);
     repetitions++;
   }
-
   ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
   if (ef < 1.3) ef = 1.3;
 
-  const nextDate = new Date();
-  nextDate.setDate(nextDate.getDate() + interval);
-  nextDate.setHours(0,0,0,0);
-
+  const nextDate = new Date(); nextDate.setDate(nextDate.getDate() + interval); nextDate.setHours(0,0,0,0);
   return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
 }
 
 function todayStr() {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().split('T')[0];
 }
 
 function renderPreStart() {
+  wc.active = false; // Reset WC mode
   const userWords = loadUserWords();
   const area = document.getElementById('flashcard-area');
 
@@ -699,9 +707,13 @@ function renderPreStart() {
         </div>
       </div>
 
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-bottom: 12px;">
         <button class="btn btn-gold" onclick="startFlashcard(false)">🧠 Akıllı Sırala ve Başla</button>
         <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-wc" onclick="startWCTournament()">🏆 WC 2026 Turnuvası Başlat</button>
       </div>
       
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
@@ -714,16 +726,11 @@ function renderWordList() {
   const words = loadUserWords();
   const area = document.getElementById('flashcard-area');
   
-  let totalReviews = 0;
-  let totalWrongHistory = 0;
-  let activeMistakes = 0;
+  let totalReviews = 0; let totalWrongHistory = 0; let activeMistakes = 0;
 
   words.forEach(w => {
-    totalReviews += (w.reviewCount || 0);
-    totalWrongHistory += (w.wrongCount || 0);
-    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) {
-      activeMistakes++;
-    }
+    totalReviews += (w.reviewCount || 0); totalWrongHistory += (w.wrongCount || 0);
+    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) activeMistakes++;
   });
 
   const totalCorrectHistory = totalReviews - totalWrongHistory;
@@ -732,9 +739,7 @@ function renderWordList() {
   let listHTML = `<div class="word-list-container">`;
   
   words.sort((a,b) => a.en.localeCompare(b.en)).forEach(w => {
-    const wTotal = w.reviewCount || 0;
-    const wWrong = w.wrongCount || 0;
-    const wCorrect = wTotal - wWrong;
+    const wTotal = w.reviewCount || 0; const wWrong = w.wrongCount || 0; const wCorrect = wTotal - wWrong;
     const wAcc = wTotal > 0 ? Math.round((wCorrect / wTotal) * 100) : 0;
     
     let accColor = "var(--text)";
@@ -747,61 +752,319 @@ function renderWordList() {
     listHTML += `
       <div class="word-item">
         <div class="word-info">
-          <div class="word-en">${w.en}</div>
-          <div class="word-tr">${w.tr}</div>
+          <div class="word-en">${w.en}</div><div class="word-tr">${w.tr}</div>
           ${w.example ? `<div class="word-ex">"${w.example}"</div>` : ''}
         </div>
         <div class="word-stats">
-          <div class="w-stat">
-            <span class="w-stat-val">${wTotal}</span>
-            <span class="w-stat-lbl">Tekrar</span>
-          </div>
-          <div class="w-stat">
-            <span class="w-stat-val" style="color: var(--red)">${wWrong}</span>
-            <span class="w-stat-lbl">Yanlış</span>
-          </div>
-          <div class="w-stat">
-            <span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span>
-            <span class="w-stat-lbl">Başarı</span>
-          </div>
+          <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
+          <div class="w-stat"><span class="w-stat-val" style="color: var(--red)">${wWrong}</span><span class="w-stat-lbl">Yanlış</span></div>
+          <div class="w-stat"><span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span><span class="w-stat-lbl">Başarı</span></div>
         </div>
-      </div>
-    `;
+      </div>`;
   });
   listHTML += `</div>`;
 
   area.innerHTML = `
     <div class="quiz-start-card" style="padding: 32px 24px;">
       <div class="quiz-start-title">Sözlük & <em>İstatistikler</em></div>
-      
       <div class="stats-grid" style="margin-top: 24px;">
-        <div class="stat-box">
-          <div class="stat-value">${words.length}</div>
-          <div class="stat-label">Toplam Kelime</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value">${totalReviews}</div>
-          <div class="stat-label">Yapılan Tekrar</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" style="color:var(--red)">${activeMistakes}</div>
-          <div class="stat-label">Zorlanılan</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" style="color:var(--green)">%${accuracy}</div>
-          <div class="stat-label">Genel Başarı</div>
-        </div>
+        <div class="stat-box"><div class="stat-value">${words.length}</div><div class="stat-label">Toplam Kelime</div></div>
+        <div class="stat-box"><div class="stat-value">${totalReviews}</div><div class="stat-label">Yapılan Tekrar</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--red)">${activeMistakes}</div><div class="stat-label">Zorlanılan</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--green)">%${accuracy}</div><div class="stat-label">Genel Başarı</div></div>
       </div>
-
       ${listHTML}
-
       <div style="display:flex;justify-content:center; margin-top: 16px;">
         <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
       </div>
     </div>`;
 }
 
-function startFlashcard(onlyMistakes = false) {
+// ----------------------------------------------------
+// WC 2026 OYUN MANTIĞI
+// ----------------------------------------------------
+
+function startWCTournament() {
+  wc.active = true;
+  wc.stage = 'group';
+  wc.matchIndex = 0;
+  
+  // Rastgele takım ata
+  const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
+  wc.playerTeam = WC_TEAMS[randomTeamIndex];
+  
+  // Grubunu bul ve takımları sırala (0. index her zaman Player)
+  let groupAll = WC_TEAMS.filter(t => t.group === wc.playerTeam.group);
+  wc.groupTeams = [wc.playerTeam, ...groupAll.filter(t => t.name !== wc.playerTeam.name)];
+  
+  // Puan tablosunu oluştur (P: Puan, W: Galibiyet, D: Beraberlik, L: Mağlubiyet, GF: Atılan, GA: Yenilen, GD: Averaj)
+  wc.standings = {};
+  wc.groupTeams.forEach(t => {
+    wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0 };
+  });
+
+  // 3 maçlık fikstür:
+  // Maç 0: (Player vs T1), (T2 vs T3)
+  // Maç 1: (Player vs T2), (T1 vs T3)
+  // Maç 2: (Player vs T3), (T1 vs T2)
+  wc.schedule = [
+    { playerMatch: 1, otherMatch: [2, 3] },
+    { playerMatch: 2, otherMatch: [1, 3] },
+    { playerMatch: 3, otherMatch: [1, 2] }
+  ];
+
+  renderWCIntro();
+}
+
+function renderWCIntro() {
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size: 48px; margin-bottom:12px;">🏆</div>
+      <div class="quiz-start-title">WC 2026 <em>Başlıyor</em></div>
+      <p style="color:var(--text2); margin-bottom:24px;">Takımın kura ile belirlendi!</p>
+      
+      <div class="wc-score-box" style="justify-content:center;">
+        <div class="wc-team">
+          <div class="wc-flag">${wc.playerTeam.flag}</div>
+          <div class="wc-team-name">${wc.playerTeam.name}</div>
+          <div style="color:var(--gold); font-size:12px;">Grup ${wc.playerTeam.group}</div>
+          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.playerTeam.stars)}</div>
+        </div>
+      </div>
+      
+      <button class="btn btn-wc" onclick="prepareNextWCMatch()">İlk Maça Çık ➔</button>
+    </div>
+  `;
+}
+
+function prepareNextWCMatch() {
+  wc.inPenalties = false;
+  wc.basePlayerScore = 0;
+  wc.baseOppScore = 0;
+
+  if (wc.stage === 'group') {
+    wc.wordCount = STAGE_WORDS['group']; // 10
+    const nextFix = wc.schedule[wc.matchIndex];
+    wc.opponent = wc.groupTeams[nextFix.playerMatch];
+  } else {
+    wc.wordCount = STAGE_WORDS[wc.stage];
+    // Rastgele bir rakip bul (Kendisi hariç)
+    let possibleOpponents = WC_TEAMS.filter(t => t.name !== wc.playerTeam.name);
+    // İleriki turlarda çok zayıf (1 yıldız) takımların gelme ihtimalini azaltabiliriz ama tamamen rastgele de iyi
+    wc.opponent = possibleOpponents[Math.floor(Math.random() * possibleOpponents.length)];
+  }
+
+  const area = document.getElementById('flashcard-area');
+  let stageText = wc.stage === 'group' ? `Grup Aşaması - ${wc.matchIndex + 1}. Maç` : 
+                  wc.stage === 'ro32' ? 'Son 32 Turu' :
+                  wc.stage === 'ro16' ? 'Son 16 Turu' :
+                  wc.stage === 'qf' ? 'Çeyrek Final' :
+                  wc.stage === 'sf' ? 'Yarı Final' : 'Büyük Final';
+
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-settings-title" style="text-align:center;">${stageText}</div>
+      <div class="quiz-start-title" style="font-size:32px;">Sıradaki Rakip</div>
+      
+      <div class="wc-score-box">
+        <div class="wc-team">
+          <div class="wc-flag">${wc.playerTeam.flag}</div>
+          <div class="wc-team-name">${wc.playerTeam.name}</div>
+        </div>
+        <div class="wc-score">VS</div>
+        <div class="wc-team">
+          <div class="wc-flag">${wc.opponent.flag}</div>
+          <div class="wc-team-name">${wc.opponent.name}</div>
+          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.opponent.stars)}</div>
+        </div>
+      </div>
+      
+      <p style="color:var(--text2); font-size:12px; margin-bottom:20px;">Bu maç ${wc.wordCount} kelime üzerinden oynanacak.</p>
+      
+      <button class="btn btn-wc" onclick="startFlashcard(false, ${wc.wordCount})">Maça Başla ⚽</button>
+    </div>
+  `;
+}
+
+function getSimulatedGoals(totalWords, stars) {
+  // Yıldız gücüne göre atılacak gol aralığı hesabı
+  // 10 kelime için -> 1 Yıldız: 5-8 | 2 Yıldız: 6-9 | 3 Yıldız: 7-10
+  const minRatio = 0.5 + (stars - 1) * 0.1;
+  const rangeRatio = 0.3; // %30'luk rastgele esneklik (10 kelimede 3 gol fark yaratır)
+  
+  let minGoals = Math.floor(totalWords * minRatio);
+  let randomExtra = Math.floor(Math.random() * (totalWords * rangeRatio + 1));
+  
+  let goals = minGoals + randomExtra;
+  if (goals > totalWords) goals = totalWords;
+  return goals;
+}
+
+function updateStandings(t1, t2, g1, g2) {
+  let s1 = wc.standings[t1.name];
+  let s2 = wc.standings[t2.name];
+  
+  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
+  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
+  
+  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
+  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
+  else { s1.D++; s1.P += 1; s2.D++; s2.P += 1; }
+}
+
+function startWCPenalty() {
+  wc.inPenalties = true;
+  wc.wordCount = 5; // Penaltı için ekstra 5 kelime
+  startFlashcard(false, 5); // 5 kelime ile oyunu başlat
+}
+
+function showWCSummary() {
+  const area = document.getElementById('flashcard-area');
+  
+  let oppGoals = 0;
+  let playerGoals = fcCorrect;
+
+  if (wc.inPenalties) {
+    // Sadece yeni elde edilen doğru sayısı penaltı skorudur
+    let pPen = fcCorrect;
+    // Rakibin penaltı skoru (5 üzerinden, yıldız gücüne göre)
+    let oPenBase = wc.opponent.stars === 3 ? 3 : wc.opponent.stars === 2 ? 2 : 1;
+    let oPen = oPenBase + Math.floor(Math.random() * (5 - oPenBase + 1));
+    if (oPen > 5) oPen = 5;
+    
+    // Eğer penaltılarda da beraberlik olursa (nadir), oyuncuya bir güzellik yapıp maçı verelim :)
+    if (pPen === oPen) pPen += 1;
+
+    // Uzatma skorlarını ana skora parantez içi format için kaydediyoruz
+    wc.penaltyStr = ` (P: ${pPen} - ${oPen})`;
+    playerGoals = wc.basePlayerScore + (pPen > oPen ? 1 : 0); // Kazanan ana skora +1 gol yazdırır mantığı
+    oppGoals = wc.baseOppScore + (oPen > pPen ? 1 : 0);
+    
+  } else {
+    // Normal maç sonu
+    oppGoals = getSimulatedGoals(wc.wordCount, wc.opponent.stars);
+    wc.basePlayerScore = playerGoals;
+    wc.baseOppScore = oppGoals;
+    wc.penaltyStr = "";
+  }
+
+  // Eleme turunda berabere bittiyse ve henüz penaltılarda değilsek
+  if (wc.stage !== 'group' && playerGoals === oppGoals && !wc.inPenalties) {
+    area.innerHTML = `
+      <div class="quiz-start-card">
+        <div style="font-size:48px; margin-bottom:12px;">⚖️</div>
+        <div class="quiz-start-title">Maç <em>Berabere!</em></div>
+        <p style="color:var(--text2); margin-bottom:20px;">Normal süre <b>${playerGoals} - ${oppGoals}</b> bitti. Turu geçmek için penaltı atışlarına (5 kelime) geçiyoruz.</p>
+        <button class="btn btn-wc" onclick="startWCPenalty()">Penaltılara Geç ➔</button>
+      </div>`;
+    return;
+  }
+
+  let tableHTML = "";
+  let actionButton = "";
+
+  if (wc.stage === 'group') {
+    // Gruptaki diğer maçın simülasyonu
+    const nextFix = wc.schedule[wc.matchIndex];
+    let otherTeam1 = wc.groupTeams[nextFix.otherMatch[0]];
+    let otherTeam2 = wc.groupTeams[nextFix.otherMatch[1]];
+    let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
+    let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
+    
+    // Puan tablosunu güncelle
+    updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
+    updateStandings(otherTeam1, otherTeam2, og1, og2);
+    
+    // Sıralama (Önce Puan, Sonra Averaj(GD), Sonra Atılan Gol(GF))
+    let sortedStandings = Object.values(wc.standings).sort((a, b) => {
+      if (b.P !== a.P) return b.P - a.P;
+      if (b.GD !== a.GD) return b.GD - a.GD;
+      return b.GF - a.GF;
+    });
+
+    tableHTML = `
+      <table class="wc-table">
+        <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
+        ${sortedStandings.map((row, idx) => `
+          <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === wc.playerTeam.name ? 'player' : ''}">
+            <td>${row.team.flag} ${row.team.name}</td>
+            <td>${row.W + row.D + row.L}</td>
+            <td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
+            <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td>
+            <td style="font-weight:bold; color:var(--text);">${row.P}</td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+
+    if (wc.matchIndex < 2) {
+      wc.matchIndex++;
+      actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">Sonraki Maç</button>`;
+    } else {
+      // Grup bitti. İlk 2 çıkıyor
+      let isAdvanced = sortedStandings.findIndex(r => r.team.name === wc.playerTeam.name) < 2;
+      if (isAdvanced) {
+        wc.stage = 'ro32';
+        actionButton = `<button class="btn btn-green" style="background:var(--green); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="prepareNextWCMatch()">Son 32 Turuna Geç 🎉</button>`;
+      } else {
+        actionButton = `<button class="btn btn-red" style="background:var(--red); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="renderPreStart()">Elendin. Ana Menüye Dön</button>`;
+      }
+    }
+  } else {
+    // Eleme turu sonuç ekranı
+    if (playerGoals > oppGoals) {
+      let nextStageText = "";
+      if (wc.stage === 'ro32') { wc.stage = 'ro16'; nextStageText = "Son 16 Turuna Geç"; }
+      else if (wc.stage === 'ro16') { wc.stage = 'qf'; nextStageText = "Çeyrek Finale Geç"; }
+      else if (wc.stage === 'qf') { wc.stage = 'sf'; nextStageText = "Yarı Finale Geç"; }
+      else if (wc.stage === 'sf') { wc.stage = 'final'; nextStageText = "BÜYÜK FİNALE GEÇ"; }
+      else if (wc.stage === 'final') { wc.stage = 'won'; nextStageText = "KUPAYI KALDIR 🏆"; }
+      
+      if (wc.stage === 'won') {
+        actionButton = `<button class="btn btn-gold" style="width:100%; font-size:16px; padding:14px;" onclick="renderPreStart()">Ana Menüye Dön</button>`;
+      } else {
+        actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">${nextStageText} ➔</button>`;
+      }
+    } else {
+      // Yenildi
+      actionButton = `<button class="btn btn-outline" style="width:100%;" onclick="renderPreStart()">Turnuvaya Veda Ettin. (Ana Menü)</button>`;
+    }
+  }
+
+  let titleMsg = playerGoals > oppGoals ? "Harika Bir Galibiyet! 🎉" : playerGoals < oppGoals ? "Maalesef Kaybettik... 💔" : "Maç Berabere! 🤝";
+  if (wc.stage === 'won') titleMsg = "DÜNYA ŞAMPİYONUSUN! 🏆🌍";
+
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding: 32px 24px;">
+      <div class="quiz-start-title" style="font-size:28px;">${titleMsg}</div>
+      
+      <div class="wc-score-box">
+        <div class="wc-team">
+          <div class="wc-flag">${wc.playerTeam.flag}</div>
+          <div class="wc-team-name">${wc.playerTeam.name}</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="wc-score">${playerGoals} - ${oppGoals}</div>
+          <div style="font-size:12px; color:var(--text3);">${wc.penaltyStr}</div>
+        </div>
+        <div class="wc-team">
+          <div class="wc-flag">${wc.opponent.flag}</div>
+          <div class="wc-team-name">${wc.opponent.name}</div>
+        </div>
+      </div>
+
+      ${tableHTML}
+      <div style="margin-top:24px;">${actionButton}</div>
+    </div>
+  `;
+}
+
+// ----------------------------------------------------
+// CORE KELİME MOTORU ENTEGRASYONU
+// ----------------------------------------------------
+
+function startFlashcard(onlyMistakes = false, limitOverride = null) {
   let pool = loadUserWords();
   
   if (onlyMistakes) {
@@ -818,44 +1081,29 @@ function startFlashcard(onlyMistakes = false) {
     const totalWrong = w.wrongCount || 0;
     const reps = w.repetitions || 0;
 
-    // 1. Hiç görülmemiş kartlar en yüksek önceliğe sahip olsun
-    if (totalReviews === 0) {
-        score += 1500; 
-    }
-
-    // 2. Aktif olarak yanlış bilinenler çok yüksek öncelikli
-    if (w.isActiveMistake) {
-        score += 1200;
-    }
+    if (totalReviews === 0) score += 1500; 
+    if (w.isActiveMistake) score += 1200;
 
     if (totalReviews > 0) {
         const errorRate = totalWrong / totalReviews;
-        // Hata oranı ne kadar yüksekse puan o kadar artar (Max +800)
         score += errorRate * 800;
-        
         const correctRate = (totalReviews - totalWrong) / totalReviews;
-        // 3. Eğer çok tekrar edilmiş (10'dan fazla) ve çok doğru bilinmişse (%80+), puanını eksiye düşür ki sona gitsin
-        if (reps > 10 && correctRate > 0.8) {
-            score -= 500; 
-        }
+        if (reps > 10 && correctRate > 0.8) score -= 500; 
     }
 
-    // 4. Tekrar sayısı az olanlara kademeli puan ekle (Yeniler ve az tekrar edilenler öne çıksın)
-    // Örn: reps = 0 ise +500 puan, reps = 5 ise +250 puan, reps >= 10 ise +0 puan
-    if (reps < 10) {
-        score += (10 - reps) * 50; 
-    }
-
-    // Aynı puandaki kartları kendi içinde rastgele karıştırmak için ufak bir şans faktörü
+    if (reps < 10) score += (10 - reps) * 50; 
     score += Math.random() * 50;
-
     w.priorityScore = score;
   });
 
   pool.sort((a, b) => b.priorityScore - a.priorityScore);
 
-  const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
-  let numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
+  let numLimit = limitOverride;
+  if (!limitOverride) {
+    const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
+    numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
+  }
+  
   if (pool.length < numLimit) numLimit = pool.length;
 
   fcQueue = pool.slice(0, numLimit);
@@ -866,17 +1114,17 @@ function startFlashcard(onlyMistakes = false) {
 }
 
 function endQuizEarly() {
-  if (fcIndex === 0) {
-    renderPreStart(); 
-    return;
-  }
+  if (fcIndex === 0) { renderPreStart(); return; }
   fcTotal = fcIndex; 
-  showFlashcardSummary();
+  if (wc.active) showWCSummary(); else showFlashcardSummary();
 }
 
 function showNextFlashcard() {
   const area = document.getElementById('flashcard-area');
-  if (fcIndex >= fcQueue.length) { showFlashcardSummary(); return; }
+  if (fcIndex >= fcQueue.length) { 
+    if (wc.active) showWCSummary(); else showFlashcardSummary(); 
+    return; 
+  }
 
   const card = fcQueue[fcIndex];
   fcRevealed = false;
@@ -896,13 +1144,8 @@ function showNextFlashcard() {
     }
   }
 
-  if (askTurkishToEnglish) {
-    questionText = card.tr.split(',')[0].trim();
-    answerText = card.en;
-  } else {
-    questionText = card.en;
-    answerText = card.tr;
-  }
+  if (askTurkishToEnglish) { questionText = card.tr.split(',')[0].trim(); answerText = card.en; } 
+  else { questionText = card.en; answerText = card.tr; }
 
   area.innerHTML = `
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
@@ -955,12 +1198,8 @@ function rateFlashcard(cardId, quality) {
     card.lastReviewed = todayStr();
     card.reviewCount = (card.reviewCount || 0) + 1;
     
-    if (quality < 3) {
-      card.wrongCount = (card.wrongCount || 0) + 1;
-      card.isActiveMistake = true;
-    } else if (quality >= 4) {
-      card.isActiveMistake = false;
-    }
+    if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
+    else if (quality >= 4) { card.isActiveMistake = false; }
     
     if (quality >= 4) fcCorrect++;
 
@@ -1009,11 +1248,7 @@ function showFlashcardSummary() {
 
 document.addEventListener('keydown', e => {
   if (fcQueue.length === 0 || fcIndex >= fcQueue.length) return;
-  
-  if (e.key === ' ' && !fcRevealed) {
-    e.preventDefault();
-    revealFlashcard();
-  }
+  if (e.key === ' ' && !fcRevealed) { e.preventDefault(); revealFlashcard(); }
   if (fcRevealed) {
     const card = fcQueue[fcIndex];
     if (!card) return;
