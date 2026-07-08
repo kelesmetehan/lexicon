@@ -602,7 +602,8 @@ let wc = {
   inPenalties: false,
   basePlayerScore: 0,
   baseOppScore: 0,
-  schedule: [] // T0vT1, T2vT3 vb.
+  schedule: [],
+  usedWords: [] // TURNUVA BOYUNCA ÇIKAN KELİMELERİ TAKİP EDECEK DİZİ
 };
 
 const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
@@ -688,6 +689,7 @@ function todayStr() {
 
 function renderPreStart() {
   wc.active = false; // Reset WC mode
+  wc.usedWords = []; // Ana menüye dönünce hafızayı temizle
   const userWords = loadUserWords();
   const area = document.getElementById('flashcard-area');
 
@@ -788,6 +790,7 @@ function startWCTournament() {
   wc.active = true;
   wc.stage = 'group';
   wc.matchIndex = 0;
+  wc.usedWords = []; // Kupa başında kelime hafızasını tamamen sıfırla
   
   // Rastgele takım ata
   const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
@@ -797,16 +800,13 @@ function startWCTournament() {
   let groupAll = WC_TEAMS.filter(t => t.group === wc.playerTeam.group);
   wc.groupTeams = [wc.playerTeam, ...groupAll.filter(t => t.name !== wc.playerTeam.name)];
   
-  // Puan tablosunu oluştur (P: Puan, W: Galibiyet, D: Beraberlik, L: Mağlubiyet, GF: Atılan, GA: Yenilen, GD: Averaj)
+  // Puan tablosunu oluştur
   wc.standings = {};
   wc.groupTeams.forEach(t => {
     wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0 };
   });
 
-  // 3 maçlık fikstür:
-  // Maç 0: (Player vs T1), (T2 vs T3)
-  // Maç 1: (Player vs T2), (T1 vs T3)
-  // Maç 2: (Player vs T3), (T1 vs T2)
+  // 3 maçlık fikstür
   wc.schedule = [
     { playerMatch: 1, otherMatch: [2, 3] },
     { playerMatch: 2, otherMatch: [1, 3] },
@@ -844,14 +844,12 @@ function prepareNextWCMatch() {
   wc.baseOppScore = 0;
 
   if (wc.stage === 'group') {
-    wc.wordCount = STAGE_WORDS['group']; // 10
+    wc.wordCount = STAGE_WORDS['group']; 
     const nextFix = wc.schedule[wc.matchIndex];
     wc.opponent = wc.groupTeams[nextFix.playerMatch];
   } else {
     wc.wordCount = STAGE_WORDS[wc.stage];
-    // Rastgele bir rakip bul (Kendisi hariç)
     let possibleOpponents = WC_TEAMS.filter(t => t.name !== wc.playerTeam.name);
-    // İleriki turlarda çok zayıf (1 yıldız) takımların gelme ihtimalini azaltabiliriz ama tamamen rastgele de iyi
     wc.opponent = possibleOpponents[Math.floor(Math.random() * possibleOpponents.length)];
   }
 
@@ -888,14 +886,10 @@ function prepareNextWCMatch() {
 }
 
 function getSimulatedGoals(totalWords, stars) {
-  // Yıldız gücüne göre atılacak gol aralığı hesabı
-  // 10 kelime için -> 1 Yıldız: 5-8 | 2 Yıldız: 6-9 | 3 Yıldız: 7-10
   const minRatio = 0.5 + (stars - 1) * 0.1;
-  const rangeRatio = 0.3; // %30'luk rastgele esneklik (10 kelimede 3 gol fark yaratır)
-  
+  const rangeRatio = 0.3; 
   let minGoals = Math.floor(totalWords * minRatio);
   let randomExtra = Math.floor(Math.random() * (totalWords * rangeRatio + 1));
-  
   let goals = minGoals + randomExtra;
   if (goals > totalWords) goals = totalWords;
   return goals;
@@ -904,10 +898,8 @@ function getSimulatedGoals(totalWords, stars) {
 function updateStandings(t1, t2, g1, g2) {
   let s1 = wc.standings[t1.name];
   let s2 = wc.standings[t2.name];
-  
   s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
   s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
-  
   if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
   else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
   else { s1.D++; s1.P += 1; s2.D++; s2.P += 1; }
@@ -915,8 +907,8 @@ function updateStandings(t1, t2, g1, g2) {
 
 function startWCPenalty() {
   wc.inPenalties = true;
-  wc.wordCount = 5; // Penaltı için ekstra 5 kelime
-  startFlashcard(false, 5); // 5 kelime ile oyunu başlat
+  wc.wordCount = 5; 
+  startFlashcard(false, 5); 
 }
 
 function showWCSummary() {
@@ -926,30 +918,22 @@ function showWCSummary() {
   let playerGoals = fcCorrect;
 
   if (wc.inPenalties) {
-    // Sadece yeni elde edilen doğru sayısı penaltı skorudur
     let pPen = fcCorrect;
-    // Rakibin penaltı skoru (5 üzerinden, yıldız gücüne göre)
     let oPenBase = wc.opponent.stars === 3 ? 3 : wc.opponent.stars === 2 ? 2 : 1;
     let oPen = oPenBase + Math.floor(Math.random() * (5 - oPenBase + 1));
     if (oPen > 5) oPen = 5;
-    
-    // Eğer penaltılarda da beraberlik olursa (nadir), oyuncuya bir güzellik yapıp maçı verelim :)
-    if (pPen === oPen) pPen += 1;
+    if (pPen === oPen) pPen += 1; // Eşitlik bozucu güzellik
 
-    // Uzatma skorlarını ana skora parantez içi format için kaydediyoruz
     wc.penaltyStr = ` (P: ${pPen} - ${oPen})`;
-    playerGoals = wc.basePlayerScore + (pPen > oPen ? 1 : 0); // Kazanan ana skora +1 gol yazdırır mantığı
+    playerGoals = wc.basePlayerScore + (pPen > oPen ? 1 : 0); 
     oppGoals = wc.baseOppScore + (oPen > pPen ? 1 : 0);
-    
   } else {
-    // Normal maç sonu
     oppGoals = getSimulatedGoals(wc.wordCount, wc.opponent.stars);
     wc.basePlayerScore = playerGoals;
     wc.baseOppScore = oppGoals;
     wc.penaltyStr = "";
   }
 
-  // Eleme turunda berabere bittiyse ve henüz penaltılarda değilsek
   if (wc.stage !== 'group' && playerGoals === oppGoals && !wc.inPenalties) {
     area.innerHTML = `
       <div class="quiz-start-card">
@@ -965,18 +949,15 @@ function showWCSummary() {
   let actionButton = "";
 
   if (wc.stage === 'group') {
-    // Gruptaki diğer maçın simülasyonu
     const nextFix = wc.schedule[wc.matchIndex];
     let otherTeam1 = wc.groupTeams[nextFix.otherMatch[0]];
     let otherTeam2 = wc.groupTeams[nextFix.otherMatch[1]];
     let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
     let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
     
-    // Puan tablosunu güncelle
     updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
     updateStandings(otherTeam1, otherTeam2, og1, og2);
     
-    // Sıralama (Önce Puan, Sonra Averaj(GD), Sonra Atılan Gol(GF))
     let sortedStandings = Object.values(wc.standings).sort((a, b) => {
       if (b.P !== a.P) return b.P - a.P;
       if (b.GD !== a.GD) return b.GD - a.GD;
@@ -1002,7 +983,6 @@ function showWCSummary() {
       wc.matchIndex++;
       actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">Sonraki Maç</button>`;
     } else {
-      // Grup bitti. İlk 2 çıkıyor
       let isAdvanced = sortedStandings.findIndex(r => r.team.name === wc.playerTeam.name) < 2;
       if (isAdvanced) {
         wc.stage = 'ro32';
@@ -1012,7 +992,6 @@ function showWCSummary() {
       }
     }
   } else {
-    // Eleme turu sonuç ekranı
     if (playerGoals > oppGoals) {
       let nextStageText = "";
       if (wc.stage === 'ro32') { wc.stage = 'ro16'; nextStageText = "Son 16 Turuna Geç"; }
@@ -1027,7 +1006,6 @@ function showWCSummary() {
         actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">${nextStageText} ➔</button>`;
       }
     } else {
-      // Yenildi
       actionButton = `<button class="btn btn-outline" style="width:100%;" onclick="renderPreStart()">Turnuvaya Veda Ettin. (Ana Menü)</button>`;
     }
   }
@@ -1066,6 +1044,18 @@ function showWCSummary() {
 
 function startFlashcard(onlyMistakes = false, limitOverride = null) {
   let pool = loadUserWords();
+
+  // YENİ: Kupa Modundaysak, bu turnuvada daha önce çıkan kelimeleri havuzdan çıkar
+  if (wc.active) {
+    let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
+    
+    // Güvenlik: Eğer turnuva sonuna kadar kelimeler yetmezse (veri tabanı küçükse), listeyi sessizce sıfırla ki oyun çökmesin
+    if (limitOverride && unusedPool.length < limitOverride) {
+      wc.usedWords = []; // Hafızayı boşalt
+      unusedPool = pool; // Her şeye baştan başla
+    }
+    pool = unusedPool;
+  }
   
   if (onlyMistakes) {
     pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
@@ -1107,6 +1097,12 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   if (pool.length < numLimit) numLimit = pool.length;
 
   fcQueue = pool.slice(0, numLimit);
+  
+  // YENİ: Seçilen bu kelimelerin ID'lerini kupa hafızasına ekle ki bir dahaki maçta çıkmasınlar
+  if (wc.active) {
+    fcQueue.forEach(card => wc.usedWords.push(card.id));
+  }
+
   fcIndex = 0;
   fcCorrect = 0;
   fcTotal = fcQueue.length;
