@@ -3,18 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEXICON — WC 2026 Edition</title>
+<title>LEXICON — WC 2026 Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0c10; --bg2: #0f1218; --bg3: #161b24; --bg4: #1d2430;
-    --gold: #c9a84c; --gold2: #e8c870; --gold-dim: rgba(201,168,76,0.15);
-    --text: #e8e4da; --text2: #9a9589; --text3: #5a5650;
-    --green: #4caf7d; --green-dim: rgba(76,175,125,0.15);
-    --red: #e05c5c; --red-dim: rgba(224,92,92,0.12);
-    --border: rgba(201,168,76,0.12); --shadow: 0 8px 40px rgba(0,0,0,0.6);
-  }
+  :root { --bg: #0a0c10; --bg2: #0f1218; --bg3: #161b24; --bg4: #1d2430; --gold: #c9a84c; --gold2: #e8c870; --gold-dim: rgba(201,168,76,0.15); --text: #e8e4da; --text2: #9a9589; --text3: #5a5650; --green: #4caf7d; --green-dim: rgba(76,175,125,0.15); --red: #e05c5c; --red-dim: rgba(224,92,92,0.12); --border: rgba(201,168,76,0.12); --shadow: 0 8px 40px rgba(0,0,0,0.6); }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
   .container { width: 100%; max-width: 620px; }
@@ -24,396 +17,105 @@
   .btn-gold { background: var(--gold); color: var(--bg); }
   .btn-wc { background: linear-gradient(135deg, #1d4ed8, #4f46e5); color: #fff; width: 100%; }
   .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+  .flashcard { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 56px 48px; text-align: center; cursor: pointer; }
   .wc-score-box { background: var(--bg3); padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin: 20px 0; border: 1px solid rgba(255,255,255,0.08); }
   .wc-team { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
   .wc-score { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; padding: 0 20px; }
+  .wc-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  .wc-table th { color: var(--text3); padding: 8px; border-bottom: 1px solid var(--border); }
+  .wc-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
 </style>
 </head>
 <body>
 <div class="container" id="flashcard-area"></div>
 <script>
 const DB_KEY = 'lexicon_words';
-const META_KEY = 'lexicon_meta';
-const WC_USED_KEY = 'wc_used_words';
-
-let fcQueue = []; let fcIndex = 0; let fcCorrect = 0; let fcTotal = 0; let fcRevealed = false;
-
-let wc = {
-  active: false, playerTeam: null, groupTeams: [], standings: {}, stage: 'group',
-  matchIndex: 0, opponent: null, wordCount: 10, inPenalties: false,
-  basePlayerScore: 0, baseOppScore: 0, schedule: [], usedWords: []
-};
-
+let fcQueue = [], fcIndex = 0, fcCorrect = 0, fcTotal = 0;
+let wc = { active: false, playerTeam: null, groupTeams: [], standings: {}, stage: 'group', matchIndex: 0, opponent: null, usedWords: [] };
 const NATIVE_USER_DATA = [
-  {en:"accelerate", tr:"hızlandırmak", example:"Press the gas pedal to accelerate the car.", repetitions:3, interval:15, reviewCount:3, state:"due"},
-  {en:"accumulated", tr:"birikmiş", example:"Dust had accumulated on the old books.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"across", tr:"karşısında", example:"The bakery is right across the street.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"act out of self-interest", tr:"kendi çıkarları doğrultusunda hareket etmek", example:"Many politicians act out of self-interest.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"advertisement", tr:"reklam", example:"I saw a funny advertisement on TV.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"almost never", tr:"neredeyse hiç", example:"She almost never eats fast food.", repetitions:5, interval:14, reviewCount:5, state:"due"},
-  {en:"along with", tr:"yanısıra", example:"He brought his guitar along with him.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"alongside", tr:"yanında", example:"The dog ran alongside his owner.", repetitions:8, interval:6, reviewCount:8, state:"due"},
-  {en:"ambition", tr:"hırs", example:"His main ambition is to become a doctor.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"annoy", tr:"can sıkmak", example:"Loud noises really annoy me.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"anonymity", tr:"anonimlik / kimliğin gizli kalması", example:"The winner asked for complete anonymity.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"apparently", tr:"görünüşe göre / anlaşılan", example:"Apparently, the meeting was canceled.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"applicants", tr:"başvuru sahipleri", example:"There are over fifty applicants for this job.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"apply", tr:"uygulamak", example:"You should apply pressure to the wound.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"apprehended", tr:"yakalanmış", example:"The suspect was apprehended by the police.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"as far as", tr:"kadarıyla", example:"We walked as far as the river.", repetitions:10, interval:6, reviewCount:10, state:"due"},
-  {en:"as far as I know", tr:"bildiğim kadarıyla", example:"As far as I know, he is not coming.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"as far as I’m concerned", tr:"bana göre", example:"As far as I’m concerned, the problem is solved.", repetitions:7, interval:1, reviewCount:7, state:"due"},
-  {en:"as long as", tr:"-dığı sürece", example:"You can stay here as long as you want.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"as well", tr:"ilave olarak", example:"I would like a cup of coffee as well.", repetitions:7, interval:6, reviewCount:7, state:"due"},
-  {en:"as well as", tr:"yanı sıra, birlikte", example:"She speaks French as well as English.", repetitions:8, interval:1, reviewCount:8, state:"learning"},
-  {en:"aspire", tr:"hedeflemek", example:"I aspire to be a successful writer one day.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"assume", tr:"varsaymak", example:"Don't just assume that everyone agrees with you.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"attract", tr:"çekmek / cezbetmek", example:"Bright flowers attract many bees.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"attract attention", tr:"dikkat çekmek", example:"Try not to attract attention to yourself.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"author", tr:"yazar", example:"Who is the author of this famous book?", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"basically", tr:"temelde", example:"Basically, we just need more time.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"be attracted to", tr:"-e ilgi duymak / -den etkilenmek", example:"He tends to be attracted to confident people.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"beforehand", tr:"önceden", example:"We should buy the tickets beforehand.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"bet prediction", tr:"bahis tahmini / iddaa tahmini", example:"I checked the bet prediction before the match.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"bitterly", tr:"acı bir şekilde", example:"She was bitterly disappointed by the results.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"blow off steam", tr:"stres atmak", example:"I go to the gym to blow off steam.", repetitions:6, interval:1, reviewCount:6, state:"learning"},
-  {en:"bother", tr:"zahmet etmek", example:"Please don't bother me while I'm studying.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"break-in", tr:"hırsızlık", example:"There was a break-in at the jewelry store.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"by the time", tr:"zamana kadar", example:"By the time we arrived, the movie had started.", repetitions:8, interval:9, reviewCount:8, state:"due"},
-  {en:"cable car", tr:"teleferik", example:"We took a cable car to the top of the mountain.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"candidate", tr:"aday", example:"She is the best candidate for the job.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"catfishing", tr:"sahte kimlikle birini kandırma / internetten sahte biri gibi davranma", example:"He was a victim of catfishing on a dating app.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"charity", tr:"yardım kuruluşu / hayır işi", example:"She donates money to charity every month.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"chronically", tr:"kronik olarak", example:"He is chronically late for work.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"claws", tr:"pençeler", example:"The cat has very sharp claws.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"clown", tr:"palyaço", example:"The clown made all the children laugh.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"coffin", tr:"tabut", example:"They slowly lowered the coffin into the grave.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"coincidence", tr:"tesadüf", example:"Meeting you here is a complete coincidence!", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"collections", tr:"koleksiyonlar", example:"The museum has amazing art collections.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"commentator", tr:"yorumcu", example:"The sports commentator was very excited.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"confidence", tr:"özgüven", example:"You need confidence to speak in public.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"confident", tr:"kendinden emin", example:"She felt confident about passing the exam.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"conflict", tr:"çatışma", example:"There is a serious conflict between the two countries.", repetitions:7, interval:11, reviewCount:7, state:"due"},
-  {en:"conscience", tr:"vicdan", example:"My conscience is clear because I told the truth.", repetitions:7, interval:8, reviewCount:7, state:"due"},
-  {en:"consternation", tr:"şaşkınlık / dehşet / telaş", example:"To my consternation, I realized I had lost my wallet.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"constant", tr:"sabit / sürekli", example:"The fridge makes a constant humming noise.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"Consulting", tr:"Danışmanlık", example:"She works for a financial consulting firm.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"continent", tr:"kıta", example:"Asia is the largest continent in the world.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"contribution", tr:"katkı", example:"Thank you for your generous contribution.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"controversial", tr:"tartışmalı", example:"It is a very controversial topic in politics.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"crossword", tr:"kare bulmaca / çengel bulmaca", example:"He loves solving the crossword in the Sunday newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"ctirics", tr:"eleştirmenler", example:"The movie was highly praised by critics.", repetitions:6, interval:301, reviewCount:6, state:"review"},
-  {en:"currency", tr:"para birimi", example:"The local currency is the Turkish Lira.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
-  {en:"dam", tr:"baraj", example:"The dam holds back millions of gallons of water.", repetitions:4, interval:13, reviewCount:4, state:"due"},
-  {en:"dates back", tr:"eskiye dayanıyor", example:"This ancient castle dates back to the 15th century.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"debate", tr:"tartışma", example:"They had a long debate about climate change.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"debris", tr:"enkaz", example:"The street was covered in debris after the storm.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"debt", tr:"borç", example:"He is working hard to pay off his debt.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"deceive", tr:"aldatmak", example:"He tried to deceive his boss with a fake report.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"deception", tr:"aldatma", example:"Her deception was finally uncovered by the police.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"denomination", tr:"para birimi", example:"The ATM only gives bills in small denominations.", repetitions:5, interval:26, reviewCount:5, state:"review"},
-  {en:"determined", tr:"kararlı, azimli", example:"She is determined to finish the marathon.", repetitions:4, interval:12, reviewCount:4, state:"due"},
-  {en:"diadem", tr:"taç", example:"The queen wore a beautiful diamond diadem.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"different store", tr:"farklı mağaza", example:"I couldn't find it here, let's try a different store.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"differs", tr:"farklılık gösterir", example:"My opinion greatly differs from yours.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"disability", tr:"engellilik", example:"The building has a ramp for people with a physical disability.", repetitions:7, interval:1, reviewCount:7, state:"due"},
-  {en:"disagreement", tr:"anlaşmazlık", example:"We had a minor disagreement about the budget.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"disrupting", tr:"bozma / aksatma / kesintiye uğratma", example:"The bad weather is disrupting the flight schedule.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"district", tr:"bölge / ilçe", example:"They live in a quiet residential district.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"dizziness", tr:"baş dönmesi", example:"She experienced dizziness after standing up too fast.", repetitions:11, interval:1, reviewCount:11, state:"due"},
-  {en:"doomscrolling", tr:"internette sürekli kötü haber okuma", example:"I spent hours doomscrolling on my phone last night.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"dorm", tr:"yurt", example:"I share a room in the college dorm.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"driftwood", tr:"kıyıya vurmuş odun", example:"We collected driftwood on the beach for a fire.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"dwarf", tr:"cüce", example:"In the story, he met a friendly dwarf in the forest.", repetitions:5, interval:10, reviewCount:5, state:"due"},
-  {en:"encounter", tr:"karşılaşmak", example:"We had a strange encounter with a wild animal.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"encourage", tr:"teşvik etmek", example:"I always encourage my students to ask questions.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"epidemic", tr:"salgın", example:"There was a terrible flu epidemic last winter.", repetitions:6, interval:6, reviewCount:6, state:"due"},
-  {en:"era", tr:"dönem", example:"We are currently living in the digital era.", repetitions:4, interval:13, reviewCount:4, state:"due"},
-  {en:"eternity", tr:"sonsuzluk", example:"Waiting for the test results felt like an eternity.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"even more", tr:"Hatta daha da fazlası", example:"I love this city even more than before.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"excitement", tr:"heyecan", example:"The children jumped with excitement.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"expensive", tr:"pahalı", example:"That restaurant is too expensive for us.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"expose", tr:"ortaya çıkarmak", example:"The journalist wants to expose the truth.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"extensive", tr:"geniş", example:"He has extensive knowledge of Roman history.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"extraneous", tr:"gereksiz / alakasız", example:"Please edit out any extraneous details from the report.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"extraordinary day", tr:"olağanüstü bir gün", example:"We had an extraordinary day at the theme park.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"fabric", tr:"kumaş", example:"This dress is made of a very soft fabric.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"facility", tr:"tesis", example:"The new sports facility has a huge pool.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"fancy people", tr:"sosyetik / şık ve gösterişli insanlar", example:"The gala was full of fancy people.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"femur", tr:"uyluk kemiği", example:"The femur is the longest bone in the human body.", repetitions:6, interval:17, reviewCount:6, state:"due"},
-  {en:"fewer", tr:"daha az", example:"There are fewer people here today than yesterday.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"flatline", tr:"düz çizgiye dönmek / durma noktasına gelmek", example:"Sales began to flatline after the holidays.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"flee", tr:"kaçmak", example:"They had to flee their homes because of the war.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"floating", tr:"yüzen", example:"I saw a plastic bottle floating in the sea.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"forecast", tr:"tahmin", example:"The weather forecast predicts heavy rain tomorrow.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"fraudster", tr:"dolandırıcı", example:"The fraudster stole thousands of dollars online.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"from scratch", tr:"sıfırdan", example:"She baked this delicious cake entirely from scratch.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"from what I understand", tr:"anladığım kadarıyla", example:"From what I understand, the event is postponed.", repetitions:9, interval:60, reviewCount:9, state:"review"},
-  {en:"getting to know each other", tr:"birbirini tanımak", example:"They spent the evening getting to know each other.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"goldsmith", tr:"kuyumcu", example:"The goldsmith crafted a beautiful gold necklace.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"grandchlid", tr:"torun", example:"She bought a toy for her new grandchild.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"grazers", tr:"otlayanlar", example:"Cows and sheep are typical grazers.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"guidelines", tr:"yönergeler", example:"Please follow the safety guidelines closely.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"gullible", tr:"kolayca kanan", example:"He is so gullible that he believes every rumor.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"herbivores", tr:"otçullar", example:"Rabbits and deer are herbivores.", repetitions:5, interval:24, reviewCount:5, state:"review"},
-  {en:"hilarious", tr:"çok komik", example:"That comedian's new show was absolutely hilarious!", repetitions:7, interval:56, reviewCount:7, state:"review"},
-  {en:"hip", tr:"kalça", example:"The old man fell and broke his hip.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"hosting", tr:"ev sahipliği yapmak", example:"We are hosting a dinner party this weekend.", repetitions:6, interval:25, reviewCount:6, state:"review"},
-  {en:"hunted", tr:"avlanmak", example:"The wolves hunted as a pack.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"hustler", tr:"baş belası", example:"Be careful, he is a known street hustler.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"identity", tr:"kimlik", example:"The witness wanted to keep her identity a secret.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"imply", tr:"ima etmek", example:"Are you trying to imply that I'm lying?", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"imprisoned by", tr:"tarafından hapsedilmiş", example:"He felt imprisoned by his own fears.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"in a rush", tr:"aceleyle / acele içinde", example:"I can't talk right now, I'm in a rush.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"in contrast to/with", tr:"-in aksine / -ile karşılaştırıldığında", example:"In contrast to her sister, she is very shy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"individual", tr:"birey", example:"Every individual has the right to free speech.", repetitions:4, interval:38, reviewCount:4, state:"review"},
-  {en:"infected", tr:"bulaşmış", example:"Make sure the wound doesn't get infected.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"infrastructure", tr:"altyapı", example:"The city is spending millions to improve its infrastructure.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"insist", tr:"ısrar etmek", example:"I insist that you let me pay the bill.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"inspection", tr:"inceleme", example:"The restaurant failed its health inspection.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"intense", tr:"yoğun", example:"The heat in the desert was very intense.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"interruptions", tr:"kesintiler / araya girmeler", example:"Please work quietly to avoid any interruptions.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"introduced", tr:"tanıtıldı", example:"My friend introduced me to his brother.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"jeering", tr:"alay etme / yuhalama", example:"The jeering from the crowd made the referee nervous.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"kindergarten", tr:"anaokulu", example:"My daughter is starting kindergarten this year.", repetitions:5, interval:14, reviewCount:5, state:"due"},
-  {en:"knee", tr:"diz", example:"I tripped and scraped my knee.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"lamented", tr:"yakındı / üzüntüyle söyledi", example:"He lamented the fact that he didn't study for the test.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"landlord", tr:"ev sahibi / kiraya veren", example:"My landlord just increased the rent.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"landscape", tr:"manzara", example:"The snowy landscape looked like a painting.", repetitions:6, interval:393, reviewCount:6, state:"review"},
-  {en:"layout", tr:"düzen", example:"I really like the new layout of this website.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"led to", tr:"sonuç olarak / yol açtı", example:"His poor decisions led to his failure.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"liberal-leaning", tr:"liberal eğilimli", example:"It is a liberal-leaning newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"likely", tr:"muhtemelen", example:"It is highly likely to rain this afternoon.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"literally", tr:"kelimenin tam anlamıyla / gerçekten", example:"I was literally jumping for joy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"longevity", tr:"uzun ömür", example:"A healthy diet increases human longevity.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"look at the bright side", tr:"işin iyi tarafına bak", example:"Look at the bright side, at least we are safe.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
-  {en:"lose track of time", tr:"zamanın nasıl geçtiğini unutmak", example:"When I play video games, I completely lose track of time.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"luxury", tr:"lüks", example:"They spent their holiday in pure luxury.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"made off", tr:"kaçıp gitmek", example:"The thieves made off with the stolen diamonds.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"make the most of", tr:"olabildiğince faydalanmak", example:"You should make the most of your vacation.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"mansplaining", tr:"erkek egemenliği", example:"She rolled her eyes at his constant mansplaining.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"meanwhile", tr:"bu arada", example:"I cooked dinner; meanwhile, he set the table.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"memorable", tr:"unutulmaz", example:"Our trip to Paris was a truly memorable experience.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"migrate", tr:"Göç etmek", example:"Many birds migrate south for the winter.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"mind-blowing", tr:"akıllara durgunluk veren", example:"The special effects in that movie were mind-blowing.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"momentum", tr:"ivme / hız kazanmış gidişat", example:"The team gained momentum in the second half of the game.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"municipality", tr:"belediye", example:"The local municipality is repairing the roads.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"naivety", tr:"saflık", example:"His naivety makes him an easy target for scammers.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"napkin", tr:"peçete", example:"Could you pass me a paper napkin, please?", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"nauesous", tr:"mide bulantısı", example:"The smell of the garbage made me feel nauseous.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"neither nor", tr:"ne de", example:"He is neither rich nor famous.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"no longer", tr:"artık", example:"I no longer live in that city.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"nominated", tr:"aday gösterildi", example:"The film was nominated for three Oscars.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"notorious", tr:"kötü şöhretli", example:"He is a notorious hacker.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"occasionally", tr:"ara sıra", example:"We occasionally go out for dinner on Fridays.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"opposition", tr:"muhalefet", example:"There was strong opposition to the new law.", repetitions:4, interval:35, reviewCount:4, state:"review"},
-  {en:"outside", tr:"dışarıda / dışında", example:"Please leave your shoes outside.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"parental", tr:"hamilelik", example:"The company offers generous parental leave.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"participant", tr:"katılımcı", example:"She was an active participant in the debate.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"participants", tr:"katılımcılar", example:"All participants must sign a waiver.", repetitions:6, interval:393, reviewCount:6, state:"review"},
-  {en:"particles", tr:"parçacıklar", example:"You can see dust particles floating in the light.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"people in need", tr:"ihtiyaç sahipleri", example:"We organized a charity event for people in need.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"pissed off", tr:"sinirli", example:"He was really pissed off when his flight was canceled.", repetitions:6, interval:279, reviewCount:6, state:"review"},
-  {en:"plenty of", tr:"bol miktarda / çok sayıda", example:"Don't rush, we have plenty of time.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"polarization", tr:"kutuplaşma", example:"There is a growing political polarization in the country.", repetitions:5, interval:10, reviewCount:5, state:"due"},
-  {en:"pollutants", tr:"kirleticiler", example:"Factories release harmful pollutants into the air.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"precious", tr:"değerli", example:"Time is our most precious resource.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"prevention", tr:"önleme", example:"Crime prevention is a top priority for the mayor.", repetitions:6, interval:18, reviewCount:6, state:"due"},
-  {en:"profound", tr:"derin / etkileyici", example:"The book had a profound impact on my thinking.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"properly", tr:"düzgünce / gerektiği gibi", example:"Make sure you lock the door properly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"pursue", tr:"izlemek", example:"I want to pursue a career in technology.", repetitions:5, interval:1, reviewCount:5, state:"learning"},
-  {en:"rather", tr:"yerine", example:"I would rather stay home tonight.", repetitions:7, interval:1, reviewCount:7, state:"learning"},
-  {en:"rearrange", tr:"yeniden düzenlemek", example:"I need to rearrange the furniture in my room.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"regulate", tr:"düzenlemek", example:"The government tries to regulate the prices of medicine.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"reignited", tr:"yeniden alevlenmek", example:"The recent news reignited the old debate.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"relief", tr:"rahatlama", example:"It was a huge relief to finally pass the exam.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"reminder", tr:"hatırlatma", example:"I set a reminder on my phone for the meeting.", repetitions:4, interval:41, reviewCount:4, state:"review"},
-  {en:"reporter", tr:"muhabir", example:"The news reporter asked the mayor a tough question.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"resilience", tr:"dayanıklılık", example:"She showed incredible resilience after the accident.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"resist", tr:"direnmek", example:"I couldn't resist eating another slice of pizza.", repetitions:5, interval:92, reviewCount:5, state:"review"},
-  {en:"reunite", tr:"yeniden bir araya gelmek / kavuşmak", example:"The band plans to reunite for a final concert.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"roughly", tr:"kabaca / yaklaşık olarak", example:"There were roughly 500 people at the concert.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"run away", tr:"kaçmak", example:"You can't just run away from your problems.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"scam", tr:"dolandırıcılık", example:"I ignored the email because it looked like a scam.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"shortage", tr:"kıtlık", example:"There is a severe water shortage in the region.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"sickening", tr:"iğrenç / mide bulandırıcı", example:"The smell coming from the old garbage bag was sickening.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"sleep in", tr:"geç kalkmak / normalden fazla uyumak", example:"I love to sleep in on Sunday mornings.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"slipped into complacency", tr:"rahatlığa kapıldı", example:"The team slipped into complacency and lost the final match.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"smallish", tr:"biraz küçük / küçük sayılır", example:"They live in a smallish apartment downtown.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"snooze", tr:"kestirmek", example:"I hit the snooze button three times this morning.", repetitions:7, interval:6, reviewCount:7, state:"due"},
-  {en:"spectators", tr:"seyirciler / izleyiciler", example:"The spectators cheered when the home team scored.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"spoiled", tr:"şımarık", example:"He is a very spoiled child who gets everything he wants.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"strange", tr:"garip", example:"I heard a strange noise coming from the attic.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"stranger", tr:"yabancı", example:"My parents told me never to talk to a stranger.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"stuck in a rut", tr:"rutin bir hayatın içinde sıkışıp kalmak", example:"I need a new job; I feel completely stuck in a rut.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"stumble upon", tr:"tesadüfen rastlamak", example:"I happened to stumble upon an amazing little cafe.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"substitute", tr:"yerine geçmek", example:"You can use honey as a substitute for sugar.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"subtract a habit", tr:"bir alışkanlığı bırakmak", example:"It is very difficult to subtract a habit from your daily life.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"suburbs", tr:"banliyöler / şehir dışı yerleşim yerleri", example:"They moved to the suburbs to have a bigger garden.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"suitcase", tr:"bavul / valiz", example:"I packed my clothes into the suitcase.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"survey", tr:"anket", example:"Please fill out this short survey about our service.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"sustainable", tr:"sürdürülebilir", example:"We must invest in sustainable energy sources.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"temporarly", tr:"geçici olarak", example:"The website is temporarly down for maintenance.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"tend to + verb", tr:"genelde yapmak / -meye eğilimli olmak", example:"I tend to eat too much when I'm stressed.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"tend to someone/something", tr:"biriyle/bir şeyle ilgilenmek", example:"The nurse will tend to the patient shortly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"Things got heated", tr:"Ortam gerildi", example:"Things got heated during the political debate.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"to edit", tr:"düzenlemek", example:"I need to edit this video before posting it.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"to fold away", tr:"katlayıp kaldırmak", example:"Don't forget to fold away your clothes.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"to stem the inflow", tr:"akışı azaltmak", example:"They built a dam to stem the inflow of water.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"torture", tr:"işkence", example:"Waiting for the exam results was pure torture.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"tribute", tr:"saygı duruşu", example:"The concert was a tribute to the late musician.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"turn on the hazard lights", tr:"tehlike ışıklarını yakmak", example:"Turn on the hazard lights if your car breaks down.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"uncovered", tr:"ortaya çıkarılan", example:"The journalist uncovered a huge scandal.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"ungrateful", tr:"nankör", example:"Don't be ungrateful for all the help they gave you.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"unify / unifies", tr:"birleştirmek / birleştirir", example:"A common goal unifies the entire team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unlikely", tr:"olasılık dışı", example:"It is highly unlikely that he will win the race.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"unreliable", tr:"güvenilmez", example:"The public transport in this city is very unreliable.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"untrustable", tr:"güvenilmez", example:"That website is a totally untrustable source of information.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"unwittingly", tr:"bilmeden / farkında olmadan", example:"He unwittingly revealed the surprise party.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"upseting", tr:"üzücü", example:"Hearing the bad news was a very upsetting experience.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"utilities", tr:"faturalar / temel hizmetler", example:"My rent is cheap, but the utilities are expensive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"variety of", tr:"çeşitlilik / çeşitli", example:"The store sells a wide variety of fresh fruits.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"wagging", tr:"sallanan", example:"The happy dog was wagging its tail.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"waiter", tr:"garson", example:"The waiter brought us the dessert menu.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"walrus", tr:"mors", example:"The walrus has two long, sharp tusks.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"wear and tear", tr:"aşınma ve yıpranma", example:"The old sofa shows obvious signs of wear and tear.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"wind-blown dust", tr:"rüzgarla savrulan toz", example:"The sky was grey with wind-blown dust.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"would like to", tr:"şunu yapmak isterim", example:"I would like to order a cup of tea, please.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"would rather", tr:"daha çok", example:"I would rather read a book than watch television.", repetitions:6, interval:6, reviewCount:6, state:"due"}
+  {en:"accelerate", tr:"hızlandırmak"}, {en:"accumulated", tr:"birikmiş"}, {en:"across", tr:"karşısında"}, {en:"ambition", tr:"hırs"}, {en:"annoy", tr:"can sıkmak"}, {en:"applicants", tr:"başvuru sahipleri"}, {en:"apply", tr:"uygulamak"}, {en:"apprehended", tr:"yakalanmış"}, {en:"aspire", tr:"hedeflemek"}, {en:"assume", tr:"varsaymak"}, {en:"basically", tr:"temelde"}, {en:"bitterly", tr:"acı bir şekilde"}, {en:"bother", tr:"zahmet etmek"}, {en:"by the time", tr:"zamana kadar"}, {en:"candidate", tr:"aday"}, {en:"charity", tr:"yardım kuruluşu"}, {en:"chronically", tr:"kronik olarak"}, {en:"claws", tr:"pençeler"}, {en:"conflict", tr:"çatışma"}, {en:"conscience", tr:"vicdan"}, {en:"constant", tr:"sabit"}, {en:"continent", tr:"kıta"}, {en:"contribution", tr:"katkı"}, {en:"controversial", tr:"tartışmalı"}, {en:"currency", tr:"para birimi"}, {en:"dam", tr:"baraj"}, {en:"debris", tr:"enkaz"}, {en:"deceive", tr:"aldatmak"}, {en:"deception", tr:"aldatma"}, {en:"determined", tr:"kararlı"}, {en:"diadem", tr:"taç"}, {en:"district", tr:"bölge / ilçe"}, {en:"dizziness", tr:"baş dönmesi"}, {en:"doomscrolling", tr:"internette sürekli kötü haber okuma"}, {en:"dwarf", tr:"cüce"}, {en:"encounter", tr:"karşılaşmak"}, {en:"encourage", tr:"teşvik etmek"}, {en:"epidemic", tr:"salgın"}, {en:"era", tr:"dönem"}, {en:"eternity", tr:"sonsuzluk"}, {en:"excitement", tr:"heyecan"}, {en:"expensive", tr:"pahalı"}, {en:"extensive", tr:"geniş"}, {en:"fabric", tr:"kumaş"}, {en:"facility", tr:"tesis"}, {en:"fancy people", tr:"sosyetik insanlar"}, {en:"femur", tr:"uyluk kemiği"}, {en:"fewer", tr:"daha az"}, {en:"flee", tr:"kaçmak"}, {en:"forecast", tr:"tahmin"}, {en:"fraudster", tr:"dolandırıcı"}, {en:"from scratch", tr:"sıfırdan"}, {en:"gullible", tr:"kolayca kanan"}, {en:"hilarious", tr:"çok komik"}, {en:"hunted", tr:"avlanmak"}, {en:"hustler", tr:"baş belası"}, {en:"identity", tr:"kimlik"}, {en:"imply", tr:"ima etmek"}, {en:"individual", tr:"birey"}, {en:"infected", tr:"bulaşmış"}, {en:"infrastructure", tr:"altyapı"}, {en:"insist", tr:"ısrar etmek"}, {en:"inspection", tr:"inceleme"}, {en:"intense", tr:"yoğun"}, {en:"introduced", tr:"tanıtıldı"}, {en:"kindergarten", tr:"anaokulu"}, {en:"knee", tr:"diz"}, {en:"landscape", tr:"manzara"}, {en:"layout", tr:"düzen"}, {en:"led to", tr:"yol açtı"}, {en:"likely", tr:"muhtemelen"}, {en:"longevity", tr:"uzun ömür"}, {en:"luxury", tr:"lüks"}, {en:"migrate", tr:"göç etmek"}, {en:"municipality", tr:"belediye"}, {en:"naivety", tr:"saflık"}, {en:"napkin", tr:"peçete"}, {en:"nominated", tr:"aday gösterildi"}, {en:"occasionally", tr:"ara sıra"}, {en:"opposition", tr:"muhalefet"}, {en:"parental", tr:"hamilelik"}, {en:"participant", tr:"katılımcı"}, {en:"prevention", tr:"önleme"}, {en:"properly", tr:"düzgünce"}, {en:"pursue", tr:"izlemek"}, {en:"rearrange", tr:"yeniden düzenlemek"}, {en:"regulate", tr:"düzenlemek"}, {en:"relief", tr:"rahatlama"}, {en:"resilience", tr:"dayanıklılık"}, {en:"resist", tr:"direnmek"}, {en:"reunite", tr:"yeniden bir araya gelmek"}, {en:"roughly", tr:"kabaca"}, {en:"run away", tr:"kaçmak"}, {en:"scam", tr:"dolandırıcılık"}, {en:"shortage", tr:"kıtlık"}, {en:"snooze", tr:"kestirmek"}, {en:"strange", tr:"garip"}, {en:"stranger", tr:"yabancı"}, {en:"stuck in a rut", tr:"rutin hayat"}, {en:"substitute", tr:"yerine geçmek"}, {en:"sustainable", tr:"sürdürülebilir"}, {en:"torture", tr:"işkence"}, {en:"tribute", tr:"saygı duruşu"}, {en:"uncovered", tr:"ortaya çıkarılan"}, {en:"unlikely", tr:"olasılık dışı"}, {en:"unreliable", tr:"güvenilmez"}, {en:"unwittingly", tr:"farkında olmadan"}, {en:"upseting", tr:"üzücü"}, {en:"utilities", tr:"faturalar"}, {en:"variety of", tr:"çeşitlilik"}, {en:"walrus", tr:"mors"}, {en:"wear and tear", tr:"aşınma ve yıpranma"}
 ];
 
 const WC_TEAMS = [
-  { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
-  { name: "Canada", group: "B", stars: 2, flag: "🇨🇦" }, { name: "Bosnia & Herz.", group: "B", stars: 1, flag: "🇧🇦" }, { name: "Qatar", group: "B", stars: 1, flag: "🇶🇦" }, { name: "Switzerland", group: "B", stars: 3, flag: "🇨🇭" },
-  { name: "Brazil", group: "C", stars: 3, flag: "🇧🇷" }, { name: "Morocco", group: "C", stars: 2, flag: "🇲🇦" }, { name: "Haiti", group: "C", stars: 1, flag: "🇭🇹" }, { name: "Scotland", group: "C", stars: 2, flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
-  { name: "United States", group: "D", stars: 2, flag: "🇺🇸" }, { name: "Paraguay", group: "D", stars: 2, flag: "🇵🇾" }, { name: "Australia", group: "D", stars: 2, flag: "🇦🇺" }, { name: "Türkiye", group: "D", stars: 2, flag: "🇹🇷" },
-  { name: "Germany", group: "E", stars: 3, flag: "🇩🇪" }, { name: "Curaçao", group: "E", stars: 1, flag: "🇨🇼" }, { name: "Ivory Coast", group: "E", stars: 2, flag: "🇨🇮" }, { name: "Ecuador", group: "E", stars: 2, flag: "🇪🇨" },
-  { name: "Netherlands", group: "F", stars: 3, flag: "🇳🇱" }, { name: "Japan", group: "F", stars: 2, flag: "🇯🇵" }, { name: "Sweden", group: "F", stars: 2, flag: "🇸🇪" }, { name: "Tunisia", group: "F", stars: 1, flag: "🇹🇳" },
-  { name: "Belgium", group: "G", stars: 3, flag: "🇧🇪" }, { name: "Egypt", group: "G", stars: 2, flag: "🇪🇬" }, { name: "Iran", group: "G", stars: 2, flag: "🇮🇷" }, { name: "New Zealand", group: "G", stars: 1, flag: "🇳🇿" },
-  { name: "Spain", group: "H", stars: 3, flag: "🇪🇸" }, { name: "Cape Verde", group: "H", stars: 1, flag: "🇨🇻" }, { name: "Saudi Arabia", group: "H", stars: 1, flag: "🇸🇦" }, { name: "Uruguay", group: "H", stars: 3, flag: "🇺🇾" },
-  { name: "France", group: "I", stars: 3, flag: "🇫🇷" }, { name: "Senegal", group: "I", stars: 2, flag: "🇸🇳" }, { name: "Iraq", group: "I", stars: 1, flag: "🇮🇶" }, { name: "Norway", group: "I", stars: 2, flag: "🇳🇴" },
-  { name: "Argentina", group: "J", stars: 3, flag: "🇦🇷" }, { name: "Algeria", group: "J", stars: 2, flag: "🇩🇿" }, { name: "Austria", group: "J", stars: 2, flag: "🇦🇹" }, { name: "Jordan", group: "J", stars: 1, flag: "🇯🇴" },
-  { name: "Portugal", group: "K", stars: 3, flag: "🇵🇹" }, { name: "Congo DR", group: "K", stars: 1, flag: "🇨🇩" }, { name: "Uzbekistan", group: "K", stars: 1, flag: "🇺🇿" }, { name: "Colombia", group: "K", stars: 3, flag: "🇨🇴" },
-  { name: "England", group: "L", stars: 3, flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" }, { name: "Croatia", group: "L", stars: 3, flag: "🇭🇷" }, { name: "Ghana", group: "L", stars: 2, flag: "🇬🇭" }, { name: "Panama", group: "L", stars: 1, flag: "🇵🇦" }
+  { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "Switzerland", group: "B", stars: 3, flag: "🇨🇭" },
+  { name: "Brazil", group: "C", stars: 3, flag: "🇧🇷" }, { name: "Türkiye", group: "D", stars: 2, flag: "🇹🇷" },
+  { name: "Germany", group: "E", stars: 3, flag: "🇩🇪" }, { name: "Netherlands", group: "F", stars: 3, flag: "🇳🇱" },
+  { name: "Belgium", group: "G", stars: 3, flag: "🇧🇪" }, { name: "Spain", group: "H", stars: 3, flag: "🇪🇸" },
+  { name: "France", group: "I", stars: 3, flag: "🇫🇷" }, { name: "Argentina", group: "J", stars: 3, flag: "🇦🇷" },
+  { name: "Portugal", group: "K", stars: 3, flag: "🇵🇹" }, { name: "England", group: "L", stars: 3, flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" }
 ];
 
-function initDatabase() {
-  try {
-    let existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
-      const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
-      if (foundMatch) { foundMatch.tr = w.tr; foundMatch.example = w.example; return foundMatch; }
-      else {
-        return {
-          id: "usr_" + Date.now() + "_" + idx,
-          en: w.en, tr: w.tr, example: w.example || "", source: "user",
-          repetitions: w.repetitions || 0, interval: w.interval || 0, reviewCount: w.reviewCount || 0,
-          wrongCount: 0, isActiveMistake: false
-        };
-      }
-    });
-    localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
-  } catch(e) { console.error(e); }
+function initDB() {
+  if (!localStorage.getItem(DB_KEY)) {
+    const data = NATIVE_USER_DATA.map((w,i) => ({ ...w, id: i, reviewCount:0, wrongCount:0, repetitions:0, isActiveMistake:false }));
+    localStorage.setItem(DB_KEY, JSON.stringify(data));
+  }
 }
-
-function loadUserWords() { return JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(w => w.source === 'user'); }
-function saveWordsToStorage(updatedWords) {
-  const all = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-  const merged = all.map(w => updatedWords.find(u => u.id === w.id) || w);
-  localStorage.setItem(DB_KEY, JSON.stringify(merged));
-}
-function todayStr() { return new Date().toISOString().split('T')[0]; }
 
 function startWCTournament() {
-  wc.active = true; wc.stage = 'group'; wc.matchIndex = 0; wc.usedWords = [];
-  wc.playerTeam = WC_TEAMS[Math.floor(Math.random() * WC_TEAMS.length)];
+  wc = { active: true, stage: 'group', matchIndex: 0, usedWords: [], playerTeam: WC_TEAMS[Math.floor(Math.random()*WC_TEAMS.length)], standings: {} };
   let groupAll = WC_TEAMS.filter(t => t.group === wc.playerTeam.group);
   wc.groupTeams = [wc.playerTeam, ...groupAll.filter(t => t.name !== wc.playerTeam.name)];
-  wc.standings = {}; wc.groupTeams.forEach(t => wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GD: 0 });
-  wc.schedule = [{ playerMatch: 1, otherMatch: [2, 3] }, { playerMatch: 2, otherMatch: [1, 3] }, { playerMatch: 3, otherMatch: [1, 2] }];
-  renderWCIntro();
+  wc.groupTeams.forEach(t => wc.standings[t.name] = { P:0, W:0, D:0, L:0, GD:0 });
+  renderIntro();
 }
 
-function renderWCIntro() {
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
+function renderIntro() {
+  document.getElementById('flashcard-area').innerHTML = `
     <div class="quiz-start-card">
       <div class="quiz-start-title">WC 2026 <em>Başlıyor</em></div>
       <div class="wc-score-box" style="justify-content:center;">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-        </div>
-      </div>
-      <button class="btn btn-wc" onclick="prepareNextWCMatch()">İlk Maça Çık ➔</button>
-    </div>`;
-}
-
-function prepareNextWCMatch() {
-  wc.inPenalties = false;
-  wc.wordCount = wc.stage === 'group' ? STAGE_WORDS['group'] : STAGE_WORDS[wc.stage];
-  wc.opponent = wc.stage === 'group' ? wc.groupTeams[wc.schedule[wc.matchIndex].playerMatch] : WC_TEAMS.filter(t => t.name !== wc.playerTeam.name)[Math.floor(Math.random() * 47)];
-  
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="wc-score-box">
         <div class="wc-team"><div class="wc-flag">${wc.playerTeam.flag}</div><div class="wc-team-name">${wc.playerTeam.name}</div></div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team"><div class="wc-flag">${wc.opponent.flag}</div><div class="wc-team-name">${wc.opponent.name}</div></div>
       </div>
-      <button class="btn btn-wc" onclick="startFlashcard(false, ${wc.wordCount})">Maça Başla ⚽</button>
+      <button class="btn btn-wc" onclick="nextMatch()">İlk Maça Çık ➔</button>
     </div>`;
 }
 
-function startFlashcard(onlyMistakes, limitOverride) {
-  let pool = loadUserWords();
-  
-  // Kullanılmamış kelimeleri al
-  let poolFiltered = wc.active ? pool.filter(w => !wc.usedWords.includes(w.id)) : pool;
-  if (wc.active && poolFiltered.length < (limitOverride || 10)) { wc.usedWords = []; poolFiltered = pool; }
+function nextMatch() {
+  wc.wordCount = wc.stage === 'group' ? 10 : (wc.stage === 'ro32' ? 15 : (wc.stage === 'ro16' ? 18 : (wc.stage === 'qf' ? 20 : 25)));
+  wc.opponent = wc.stage === 'group' ? wc.groupTeams[wc.matchIndex + 1] : WC_TEAMS[Math.floor(Math.random()*WC_TEAMS.length)];
+  startQuiz(wc.wordCount);
+}
 
-  // WC modu için dinamik sıralama
-  poolFiltered.forEach(w => {
-    let score = Math.random() * 50;
-    if (wc.active) {
-      let stageDiff = wc.stage === 'group' ? 0.0 : wc.stage === 'ro32' ? 0.2 : wc.stage === 'ro16' ? 0.4 : wc.stage === 'qf' ? 0.6 : wc.stage === 'sf' ? 0.8 : 1.0;
-      let easyScore = (w.reviewCount || 0) * 30 + ((w.reviewCount - (w.wrongCount || 0)) / (w.reviewCount || 1)) * 1000;
-      let hardScore = (w.isActiveMistake ? 1000 : 0) + ((w.wrongCount || 0) / (w.reviewCount || 1)) * 800;
-      score = (easyScore * (1 - stageDiff)) + (hardScore * stageDiff);
-    }
-    w.priority = score;
+function startQuiz(limit) {
+  let all = JSON.parse(localStorage.getItem(DB_KEY));
+  // Turnuvada hiç çıkmamışları filtrele
+  let pool = all.filter(w => !wc.usedWords.includes(w.id));
+  if (pool.length < limit) { wc.usedWords = []; pool = all; } // Kelime biterse sıfırla
+  
+  // Grup aşamasında kolaydan zora (doğruluk oranı yüksekler), elemede zorlar gelsin
+  let stageDiff = wc.stage === 'group' ? 0.0 : 0.5;
+  pool.sort((a,b) => {
+    let scoreA = (a.reviewCount - a.wrongCount) * (1 - stageDiff);
+    let scoreB = (b.reviewCount - b.wrongCount) * (1 - stageDiff);
+    return scoreB - scoreA;
   });
 
-  poolFiltered.sort((a,b) => b.priority - a.priority);
-  fcQueue = poolFiltered.slice(0, limitOverride || 10);
-  if (wc.active) fcQueue.forEach(c => wc.usedWords.push(c.id));
-  
+  fcQueue = pool.slice(0, limit);
+  fcQueue.forEach(c => wc.usedWords.push(c.id));
   fcIndex = 0; fcCorrect = 0; fcTotal = fcQueue.length;
-  showNextFlashcard();
+  showCard();
 }
 
-function showNextFlashcard() {
-  if (fcIndex >= fcQueue.length) { wc.active ? showWCSummary() : showFlashcardSummary(); return; }
-  const card = fcQueue[fcIndex];
+function showCard() {
+  if (fcIndex >= fcQueue.length) { showSummary(); return; }
+  let card = fcQueue[fcIndex];
   document.getElementById('flashcard-area').innerHTML = `
-    <div class="flashcard-wrap" onclick="reveal()" id="fc-card">
-      <div class="flashcard" id="fc-inner">
-        <div class="quiz-word">${card.en}</div>
-        <div class="flashcard-back" id="fc-back" style="display:none"><div class="flashcard-answer">${card.tr}</div></div>
-      </div>
-    </div>
-    <div class="flashcard-actions" id="fc-actions"><button class="fc-btn fc-idk" onclick="rate(1)">✗ Bilmiyorum</button><button class="fc-btn fc-easy" onclick="rate(5)">✓ Bildim</button></div>
-  `;
+    <div class="flashcard" onclick="this.innerHTML+='<div style=margin-top:20px;color:var(--green)>${card.tr}</div>'; setTimeout(()=>rate(true), 1500)">
+      <div class="quiz-word">${card.en}</div>
+    </div>`;
 }
-
-function reveal() { document.getElementById('fc-inner').classList.add('revealed'); document.getElementById('fc-back').style.display='block'; document.getElementById('fc-actions').classList.add('visible'); }
-function rate(q) { if(q>=4) fcCorrect++; fcIndex++; showNextFlashcard(); }
-function showWCSummary() { /* Önceki mantık aynı */ location.reload(); } // Basitlik için reset
-function showFlashcardSummary() { renderPreStart(); }
-
-initDatabase();
-renderPreStart();
+function rate(isCorrect) { if(isCorrect) fcCorrect++; fcIndex++; showCard(); }
+function showSummary() { 
+  let opponentScore = Math.floor(Math.random() * (fcTotal/2)) + (fcTotal/2 - 2);
+  document.getElementById('flashcard-area').innerHTML = `
+    <div class="quiz-start-card">
+      <div class="wc-score-box"><div class="wc-score">${fcCorrect} - ${opponentScore}</div></div>
+      <button class="btn btn-wc" onclick="${wc.stage==='group' && wc.matchIndex < 2 ? 'wc.matchIndex++; nextMatch()' : 'renderPreStart()'}">Devam Et</button>
+    </div>`;
+}
+function renderPreStart() { location.reload(); }
+initDB(); renderPreStart();
 </script>
 </body>
 </html>
