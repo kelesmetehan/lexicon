@@ -3,339 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEXICON — Flashcard Pro</title>
+<title>LEXICON — WC 2026 Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0c10;
-    --bg2: #0f1218;
-    --bg3: #161b24;
-    --bg4: #1d2430;
-    --gold: #c9a84c;
-    --gold2: #e8c870;
-    --gold-dim: rgba(201,168,76,0.15);
-    --text: #e8e4da;
-    --text2: #9a9589;
-    --text3: #5a5650;
-    --green: #4caf7d;
-    --green-dim: rgba(76,175,125,0.15);
-    --red: #e05c5c;
-    --red-dim: rgba(224,92,92,0.12);
-    --border: rgba(201,168,76,0.12);
-    --radius: 12px;
-    --shadow: 0 8px 40px rgba(0,0,0,0.6);
+    --bg: #0a0c10; --bg2: #0f1218; --bg3: #161b24; --bg4: #1d2430;
+    --gold: #c9a84c; --gold2: #e8c870; --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e4da; --text2: #9a9589; --text3: #5a5650;
+    --green: #4caf7d; --green-dim: rgba(76,175,125,0.15);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.12);
+    --border: rgba(201,168,76,0.12); --shadow: 0 8px 40px rgba(0,0,0,0.6);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-    overflow-x: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
-
-  .container {
-    width: 100%;
-    max-width: 620px;
-    animation: fadeUp 0.4s ease;
-  }
-
-  .page-header {
-    text-align: center;
-    margin-bottom: 32px;
-  }
-  .page-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    color: var(--text);
-    line-height: 1.1;
-  }
-  .page-title em { color: var(--gold); font-style: italic; }
-  .page-subtitle { color: var(--text2); margin-top: 6px; font-size: 13px; }
-
-  .quiz-progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .progress-bar {
-    flex: 1;
-    height: 3px;
-    background: var(--bg3);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold), var(--gold2));
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-  .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
-  
-  .btn-end-early {
-    background: transparent;
-    border: 1px solid var(--text3);
-    color: var(--text2);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
-  }
-  .btn-end-early:hover {
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-
-  .quiz-start-card {
-    text-align: center;
-    padding: 48px 40px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-  }
-  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
-  .quiz-start-title em { color: var(--gold); font-style: italic; }
-  .quiz-count-badge { display: inline-block; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 4px 16px; font-size: 13px; margin-bottom: 20px; }
-  
-  .info-box { background: rgba(91,141,238,0.08); border: 1px solid rgba(91,141,238,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #90caf9; margin-bottom: 24px; line-height: 1.6; text-align: left; }
-
-  .quiz-settings-title {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 14px;
-    font-weight: 600;
-    text-align: left;
-  }
-  .quiz-settings {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    text-align: left;
-  }
-  .quiz-settings label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--text2);
-    transition: color 0.2s;
-    padding: 8px 12px;
-    background: var(--bg2);
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .quiz-settings label:hover { color: var(--text); }
-  .quiz-settings input[type="radio"] { accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer; }
-
-  .flashcard-wrap {
-    perspective: 1000px;
-    margin-bottom: 24px;
-    cursor: pointer;
-  }
-  .flashcard {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 56px 48px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    min-height: 240px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    box-shadow: var(--shadow);
-  }
-  .flashcard::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%; transform: translateX(-50%);
-    width: 200px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  }
-  .flashcard.revealed { border-color: rgba(76,175,125,0.3); }
-  .flashcard-front, .flashcard-back { width: 100%; display: flex; flex-direction: column; align-items: center;}
-  .flashcard-back { display: none; }
-  .flashcard.revealed .flashcard-back { display: block; }
-  .flashcard.revealed .reveal-hint { display: none; }
-  
-  .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
-  .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.2; word-break: break-word; }
-  
-  .quiz-example {
-    font-size: 15px;
-    color: var(--text2);
-    font-style: italic;
-    margin-top: 12px;
-    max-width: 90%;
-    line-height: 1.5;
-    opacity: 0.7;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .reveal-hint {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 30px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    animation: pulse 2s infinite;
-  }
-  .flashcard-answer {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    color: var(--green);
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(76,175,125,0.2);
-    word-break: break-word;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    text-decoration: none;
-  }
-  .btn-gold { background: var(--gold); color: var(--bg); font-weight: 600; }
-  .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
-  .btn-wc { background: linear-gradient(135deg, #1d4ed8, #4f46e5); color: #fff; font-weight: 600; width: 100%; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);}
-  .btn-wc:hover { background: linear-gradient(135deg, #1e40af, #4338ca); transform: translateY(-2px); }
-  
-  .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
-  .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
-  
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .stat-box { background: var(--bg3); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold); line-height: 1; margin-bottom: 6px; }
-  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-
-  .word-list-container { max-height: 420px; overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 10px; }
-  .word-list-container::-webkit-scrollbar { width: 6px; }
-  .word-list-container::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
-  
-  .word-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-  .word-info { flex: 1; padding-right: 12px; }
-  .word-en { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
-  .word-tr { font-size: 13px; color: var(--gold); margin-bottom: 4px; font-weight: 500; }
-  .word-ex { font-size: 12px; color: var(--text3); font-style: italic; line-height: 1.4; }
-  
-  .word-stats { display: flex; gap: 16px; text-align: center; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 16px; margin-left: auto; min-width: 140px; justify-content: flex-end;}
-  .w-stat { display: flex; flex-direction: column; align-items: center; justify-content: center;}
-  .w-stat-val { font-size: 18px; font-weight: 600; color: var(--text); font-family: 'DM Sans', sans-serif;}
-  .w-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; margin-top: 2px; font-weight: 600; }
-
-  .flashcard-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .flashcard-actions.visible { opacity: 1; pointer-events: all; }
-  
-  .fc-btn {
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.15s;
-    letter-spacing: 0.5px;
-    text-align: center;
-  }
-  .fc-btn:hover { transform: translateY(-2px); }
-  .fc-easy { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
-  .fc-easy:hover { background: rgba(76,175,125,0.25); }
-  .fc-idk { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.25); }
-  .fc-idk:hover { background: rgba(224,92,92,0.2); }
-  .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
-  .fc-hard:hover { background: rgba(201,168,76,0.2); }
-
-  /* WC Tablo Stilleri */
-  .wc-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
-  .wc-table th { color: var(--text3); padding: 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
-  .wc-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .wc-table tr.advanced { background: rgba(76,175,125,0.05); }
-  .wc-table tr.player { font-weight: bold; color: var(--gold); }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+  .container { width: 100%; max-width: 620px; }
+  .quiz-start-card { text-align: center; padding: 48px 40px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; margin-bottom: 12px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+  .btn-gold { background: var(--gold); color: var(--bg); }
+  .btn-wc { background: linear-gradient(135deg, #1d4ed8, #4f46e5); color: #fff; width: 100%; }
+  .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
   .wc-score-box { background: var(--bg3); padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin: 20px 0; border: 1px solid rgba(255,255,255,0.08); }
   .wc-team { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
-  .wc-flag { font-size: 32px; }
-  .wc-team-name { font-size: 14px; font-weight: 600; text-align: center; }
-  .wc-score { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; color: var(--text); padding: 0 20px; }
-
-  @media (max-width: 480px) {
-    .word-item { flex-direction: column; align-items: flex-start; }
-    .word-stats { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); padding-left: 0; margin-left: 0; padding-top: 12px; margin-top: 12px; width: 100%; justify-content: flex-start; }
-    .wc-score-box { flex-direction: column; gap: 16px; }
-  }
+  .wc-score { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; padding: 0 20px; }
 </style>
 </head>
 <body>
-
-<div class="container">
-  <header class="page-header">
-    <h1 class="page-title">Lexicon <em>Flashcard</em></h1>
-    <p class="page-subtitle">Sadece bana ait kelimeler ile çalışma modu</p>
-  </header>
-
-  <div id="flashcard-area"></div>
-</div>
-
+<div class="container" id="flashcard-area"></div>
 <script>
 const DB_KEY = 'lexicon_words';
 const META_KEY = 'lexicon_meta';
+const WC_USED_KEY = 'wc_used_words';
 
-let fcQueue = [];
-let fcIndex = 0;
-let fcCorrect = 0;
-let fcTotal = 0;
-let fcRevealed = false;
+let fcQueue = []; let fcIndex = 0; let fcCorrect = 0; let fcTotal = 0; let fcRevealed = false;
 
-// KELİME VERİ TABANI
+let wc = {
+  active: false, playerTeam: null, groupTeams: [], standings: {}, stage: 'group',
+  matchIndex: 0, opponent: null, wordCount: 10, inPenalties: false,
+  basePlayerScore: 0, baseOppScore: 0, schedule: [], usedWords: []
+};
+
 const NATIVE_USER_DATA = [
   {en:"accelerate", tr:"hızlandırmak", example:"Press the gas pedal to accelerate the car.", repetitions:3, interval:15, reviewCount:3, state:"due"},
   {en:"accumulated", tr:"birikmiş", example:"Dust had accumulated on the old books.", repetitions:3, interval:6, reviewCount:3, state:"due"},
@@ -574,7 +282,6 @@ const NATIVE_USER_DATA = [
   {en:"would rather", tr:"daha çok", example:"I would rather read a book than watch television.", repetitions:6, interval:6, reviewCount:6, state:"due"}
 ];
 
-// 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
 const WC_TEAMS = [
   { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
   { name: "Canada", group: "B", stars: 2, flag: "🇨🇦" }, { name: "Bosnia & Herz.", group: "B", stars: 1, flag: "🇧🇦" }, { name: "Qatar", group: "B", stars: 1, flag: "🇶🇦" }, { name: "Switzerland", group: "B", stars: 3, flag: "🇨🇭" },
@@ -590,229 +297,40 @@ const WC_TEAMS = [
   { name: "England", group: "L", stars: 3, flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" }, { name: "Croatia", group: "L", stars: 3, flag: "🇭🇷" }, { name: "Ghana", group: "L", stars: 2, flag: "🇬🇭" }, { name: "Panama", group: "L", stars: 1, flag: "🇵🇦" }
 ];
 
-let wc = {
-  active: false,
-  playerTeam: null,
-  groupTeams: [],
-  standings: {},
-  stage: 'group', // group, ro32, ro16, qf, sf, final
-  matchIndex: 0,
-  opponent: null,
-  wordCount: 10,
-  inPenalties: false,
-  basePlayerScore: 0,
-  baseOppScore: 0,
-  schedule: [],
-  usedWords: [] // TURNUVA BOYUNCA ÇIKAN KELİMELERİ TAKİP EDECEK DİZİ
-};
-
-const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
-
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function initDatabase() {
   try {
-    let existingWords = [];
-    try {
-      existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    } catch(e) { existingWords = []; }
-
+    let existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
-      if (foundMatch) {
-        foundMatch.tr = w.tr; foundMatch.example = w.example; return foundMatch;
-      } else {
-        const nextReviewDate = new Date();
-        if (w.state !== "due") nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
+      if (foundMatch) { foundMatch.tr = w.tr; foundMatch.example = w.example; return foundMatch; }
+      else {
         return {
-          id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
-          en: w.en, tr: w.tr, example: w.example || "", category: "word", source: "user",
-          addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
-          nextReview: nextReviewDate.toISOString().split('T')[0], reviewCount: w.reviewCount, wrongCount: 0, isActiveMistake: false, type: ""
+          id: "usr_" + Date.now() + "_" + idx,
+          en: w.en, tr: w.tr, example: w.example || "", source: "user",
+          repetitions: w.repetitions || 0, interval: w.interval || 0, reviewCount: w.reviewCount || 0,
+          wrongCount: 0, isActiveMistake: false
         };
       }
     });
-    
-    existingWords.forEach(ex => {
-      const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
-      if (!existsInNative && ex.source === 'user') synchronizedPool.push(ex);
-    });
-
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
   } catch(e) { console.error(e); }
 }
 
-function loadUserWords() {
-  try {
-    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    return allWords.filter(w => w.source === 'user');
-  } catch (e) { return []; }
-}
-
+function loadUserWords() { return JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(w => w.source === 'user'); }
 function saveWordsToStorage(updatedWords) {
-  try {
-    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    const mergedWords = allWords.map(w => {
-      const updated = updatedWords.find(u => u.id === w.id);
-      return updated ? updated : w;
-    });
-    updatedWords.forEach(uw => { if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw); });
-    localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
-  } catch (e) {}
+  const all = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  const merged = all.map(w => updatedWords.find(u => u.id === w.id) || w);
+  localStorage.setItem(DB_KEY, JSON.stringify(merged));
 }
-
-function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
-function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
-
-function sm2(card, quality) {
-  let { interval, repetitions, ef } = card;
-  if (!ef) ef = 2.5; if (!interval) interval = 0; if (!repetitions) repetitions = 0;
-
-  if (quality < 3) { repetitions = 0; interval = 1; } 
-  else {
-    if (repetitions === 0) interval = 1; else if (repetitions === 1) interval = 6; else interval = Math.round(interval * ef);
-    repetitions++;
-  }
-  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (ef < 1.3) ef = 1.3;
-
-  const nextDate = new Date(); nextDate.setDate(nextDate.getDate() + interval); nextDate.setHours(0,0,0,0);
-  return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
-}
-
-function todayStr() {
-  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().split('T')[0];
-}
-
-function renderPreStart() {
-  wc.active = false; // Reset WC mode
-  wc.usedWords = []; // Ana menüye dönünce hafızayı temizle
-  const userWords = loadUserWords();
-  const area = document.getElementById('flashcard-area');
-
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
-      <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
-
-      <div class="quiz-settings">
-        <div class="quiz-settings-title">KAÇ KART ÇALIŞMAK İSTERSİNİZ?</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <label><input type="radio" name="fc-limit" value="10"> 10 Kart</label>
-          <label><input type="radio" name="fc-limit" value="20"> 20 Kart</label>
-          <label><input type="radio" name="fc-limit" value="30" checked> 30 Kart</label>
-          <label><input type="radio" name="fc-limit" value="50"> 50 Kart</label>
-          <label><input type="radio" name="fc-limit" value="all"> Hepsi</label>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-bottom: 12px;">
-        <button class="btn btn-gold" onclick="startFlashcard(false)">🧠 Akıllı Sırala ve Başla</button>
-        <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-wc" onclick="startWCTournament()">🏆 WC 2026 Turnuvası Başlat</button>
-      </div>
-      
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-outline" style="border-color: var(--bg4); color: var(--text2); width: 100%; max-width: 320px;" onclick="renderWordList()">📖 Tüm Kelimeler & İstatistikler</button>
-      </div>
-    </div>`;
-}
-
-function renderWordList() {
-  const words = loadUserWords();
-  const area = document.getElementById('flashcard-area');
-  
-  let totalReviews = 0; let totalWrongHistory = 0; let activeMistakes = 0;
-
-  words.forEach(w => {
-    totalReviews += (w.reviewCount || 0); totalWrongHistory += (w.wrongCount || 0);
-    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) activeMistakes++;
-  });
-
-  const totalCorrectHistory = totalReviews - totalWrongHistory;
-  const accuracy = totalReviews > 0 ? Math.round((totalCorrectHistory / totalReviews) * 100) : 0;
-
-  let listHTML = `<div class="word-list-container">`;
-  
-  words.sort((a,b) => a.en.localeCompare(b.en)).forEach(w => {
-    const wTotal = w.reviewCount || 0; const wWrong = w.wrongCount || 0; const wCorrect = wTotal - wWrong;
-    const wAcc = wTotal > 0 ? Math.round((wCorrect / wTotal) * 100) : 0;
-    
-    let accColor = "var(--text)";
-    if(wTotal > 0) {
-        if(wAcc >= 80) accColor = "var(--green)";
-        else if(wAcc < 50) accColor = "var(--red)";
-        else accColor = "var(--gold)";
-    }
-
-    listHTML += `
-      <div class="word-item">
-        <div class="word-info">
-          <div class="word-en">${w.en}</div><div class="word-tr">${w.tr}</div>
-          ${w.example ? `<div class="word-ex">"${w.example}"</div>` : ''}
-        </div>
-        <div class="word-stats">
-          <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
-          <div class="w-stat"><span class="w-stat-val" style="color: var(--red)">${wWrong}</span><span class="w-stat-lbl">Yanlış</span></div>
-          <div class="w-stat"><span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span><span class="w-stat-lbl">Başarı</span></div>
-        </div>
-      </div>`;
-  });
-  listHTML += `</div>`;
-
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding: 32px 24px;">
-      <div class="quiz-start-title">Sözlük & <em>İstatistikler</em></div>
-      <div class="stats-grid" style="margin-top: 24px;">
-        <div class="stat-box"><div class="stat-value">${words.length}</div><div class="stat-label">Toplam Kelime</div></div>
-        <div class="stat-box"><div class="stat-value">${totalReviews}</div><div class="stat-label">Yapılan Tekrar</div></div>
-        <div class="stat-box"><div class="stat-value" style="color:var(--red)">${activeMistakes}</div><div class="stat-label">Zorlanılan</div></div>
-        <div class="stat-box"><div class="stat-value" style="color:var(--green)">%${accuracy}</div><div class="stat-label">Genel Başarı</div></div>
-      </div>
-      ${listHTML}
-      <div style="display:flex;justify-content:center; margin-top: 16px;">
-        <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
-      </div>
-    </div>`;
-}
-
-// ----------------------------------------------------
-// WC 2026 OYUN MANTIĞI
-// ----------------------------------------------------
+function todayStr() { return new Date().toISOString().split('T')[0]; }
 
 function startWCTournament() {
-  wc.active = true;
-  wc.stage = 'group';
-  wc.matchIndex = 0;
-  wc.usedWords = []; // Kupa başında kelime hafızasını tamamen sıfırla
-  
-  // Rastgele takım ata
-  const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
-  wc.playerTeam = WC_TEAMS[randomTeamIndex];
-  
-  // Grubunu bul ve takımları sırala (0. index her zaman Player)
+  wc.active = true; wc.stage = 'group'; wc.matchIndex = 0; wc.usedWords = [];
+  wc.playerTeam = WC_TEAMS[Math.floor(Math.random() * WC_TEAMS.length)];
   let groupAll = WC_TEAMS.filter(t => t.group === wc.playerTeam.group);
   wc.groupTeams = [wc.playerTeam, ...groupAll.filter(t => t.name !== wc.playerTeam.name)];
-  
-  // Puan tablosunu oluştur
-  wc.standings = {};
-  wc.groupTeams.forEach(t => {
-    wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0 };
-  });
-
-  // 3 maçlık fikstür
-  wc.schedule = [
-    { playerMatch: 1, otherMatch: [2, 3] },
-    { playerMatch: 2, otherMatch: [1, 3] },
-    { playerMatch: 3, otherMatch: [1, 2] }
-  ];
-
+  wc.standings = {}; wc.groupTeams.forEach(t => wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GD: 0 });
+  wc.schedule = [{ playerMatch: 1, otherMatch: [2, 3] }, { playerMatch: 2, otherMatch: [1, 3] }, { playerMatch: 3, otherMatch: [1, 2] }];
   renderWCIntro();
 }
 
@@ -820,439 +338,79 @@ function renderWCIntro() {
   const area = document.getElementById('flashcard-area');
   area.innerHTML = `
     <div class="quiz-start-card">
-      <div style="font-size: 48px; margin-bottom:12px;">🏆</div>
       <div class="quiz-start-title">WC 2026 <em>Başlıyor</em></div>
-      <p style="color:var(--text2); margin-bottom:24px;">Takımın kura ile belirlendi!</p>
-      
       <div class="wc-score-box" style="justify-content:center;">
         <div class="wc-team">
           <div class="wc-flag">${wc.playerTeam.flag}</div>
           <div class="wc-team-name">${wc.playerTeam.name}</div>
-          <div style="color:var(--gold); font-size:12px;">Grup ${wc.playerTeam.group}</div>
-          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.playerTeam.stars)}</div>
         </div>
       </div>
-      
       <button class="btn btn-wc" onclick="prepareNextWCMatch()">İlk Maça Çık ➔</button>
-    </div>
-  `;
+    </div>`;
 }
 
 function prepareNextWCMatch() {
   wc.inPenalties = false;
-  wc.basePlayerScore = 0;
-  wc.baseOppScore = 0;
-
-  if (wc.stage === 'group') {
-    wc.wordCount = STAGE_WORDS['group']; 
-    const nextFix = wc.schedule[wc.matchIndex];
-    wc.opponent = wc.groupTeams[nextFix.playerMatch];
-  } else {
-    wc.wordCount = STAGE_WORDS[wc.stage];
-    let possibleOpponents = WC_TEAMS.filter(t => t.name !== wc.playerTeam.name);
-    wc.opponent = possibleOpponents[Math.floor(Math.random() * possibleOpponents.length)];
-  }
-
+  wc.wordCount = wc.stage === 'group' ? STAGE_WORDS['group'] : STAGE_WORDS[wc.stage];
+  wc.opponent = wc.stage === 'group' ? wc.groupTeams[wc.schedule[wc.matchIndex].playerMatch] : WC_TEAMS.filter(t => t.name !== wc.playerTeam.name)[Math.floor(Math.random() * 47)];
+  
   const area = document.getElementById('flashcard-area');
-  let stageText = wc.stage === 'group' ? `Grup Aşaması - ${wc.matchIndex + 1}. Maç` : 
-                  wc.stage === 'ro32' ? 'Son 32 Turu' :
-                  wc.stage === 'ro16' ? 'Son 16 Turu' :
-                  wc.stage === 'qf' ? 'Çeyrek Final' :
-                  wc.stage === 'sf' ? 'Yarı Final' : 'Büyük Final';
-
   area.innerHTML = `
     <div class="quiz-start-card">
-      <div class="quiz-settings-title" style="text-align:center;">${stageText}</div>
-      <div class="quiz-start-title" style="font-size:32px;">Sıradaki Rakip</div>
-      
       <div class="wc-score-box">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-        </div>
+        <div class="wc-team"><div class="wc-flag">${wc.playerTeam.flag}</div><div class="wc-team-name">${wc.playerTeam.name}</div></div>
         <div class="wc-score">VS</div>
-        <div class="wc-team">
-          <div class="wc-flag">${wc.opponent.flag}</div>
-          <div class="wc-team-name">${wc.opponent.name}</div>
-          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.opponent.stars)}</div>
-        </div>
+        <div class="wc-team"><div class="wc-flag">${wc.opponent.flag}</div><div class="wc-team-name">${wc.opponent.name}</div></div>
       </div>
-      
-      <p style="color:var(--text2); font-size:12px; margin-bottom:20px;">Bu maç ${wc.wordCount} kelime üzerinden oynanacak.</p>
-      
       <button class="btn btn-wc" onclick="startFlashcard(false, ${wc.wordCount})">Maça Başla ⚽</button>
-    </div>
-  `;
-}
-
-function getSimulatedGoals(totalWords, stars) {
-  const minRatio = 0.5 + (stars - 1) * 0.1;
-  const rangeRatio = 0.3; 
-  let minGoals = Math.floor(totalWords * minRatio);
-  let randomExtra = Math.floor(Math.random() * (totalWords * rangeRatio + 1));
-  let goals = minGoals + randomExtra;
-  if (goals > totalWords) goals = totalWords;
-  return goals;
-}
-
-function updateStandings(t1, t2, g1, g2) {
-  let s1 = wc.standings[t1.name];
-  let s2 = wc.standings[t2.name];
-  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
-  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
-  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
-  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
-  else { s1.D++; s1.P += 1; s2.D++; s2.P += 1; }
-}
-
-function startWCPenalty() {
-  wc.inPenalties = true;
-  wc.wordCount = 5; 
-  startFlashcard(false, 5); 
-}
-
-function showWCSummary() {
-  const area = document.getElementById('flashcard-area');
-  
-  let oppGoals = 0;
-  let playerGoals = fcCorrect;
-
-  if (wc.inPenalties) {
-    let pPen = fcCorrect;
-    let oPenBase = wc.opponent.stars === 3 ? 3 : wc.opponent.stars === 2 ? 2 : 1;
-    let oPen = oPenBase + Math.floor(Math.random() * (5 - oPenBase + 1));
-    if (oPen > 5) oPen = 5;
-    if (pPen === oPen) pPen += 1; // Eşitlik bozucu güzellik
-
-    wc.penaltyStr = ` (P: ${pPen} - ${oPen})`;
-    playerGoals = wc.basePlayerScore + (pPen > oPen ? 1 : 0); 
-    oppGoals = wc.baseOppScore + (oPen > pPen ? 1 : 0);
-  } else {
-    oppGoals = getSimulatedGoals(wc.wordCount, wc.opponent.stars);
-    wc.basePlayerScore = playerGoals;
-    wc.baseOppScore = oppGoals;
-    wc.penaltyStr = "";
-  }
-
-  if (wc.stage !== 'group' && playerGoals === oppGoals && !wc.inPenalties) {
-    area.innerHTML = `
-      <div class="quiz-start-card">
-        <div style="font-size:48px; margin-bottom:12px;">⚖️</div>
-        <div class="quiz-start-title">Maç <em>Berabere!</em></div>
-        <p style="color:var(--text2); margin-bottom:20px;">Normal süre <b>${playerGoals} - ${oppGoals}</b> bitti. Turu geçmek için penaltı atışlarına (5 kelime) geçiyoruz.</p>
-        <button class="btn btn-wc" onclick="startWCPenalty()">Penaltılara Geç ➔</button>
-      </div>`;
-    return;
-  }
-
-  let tableHTML = "";
-  let actionButton = "";
-
-  if (wc.stage === 'group') {
-    const nextFix = wc.schedule[wc.matchIndex];
-    let otherTeam1 = wc.groupTeams[nextFix.otherMatch[0]];
-    let otherTeam2 = wc.groupTeams[nextFix.otherMatch[1]];
-    let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
-    let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
-    
-    updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
-    updateStandings(otherTeam1, otherTeam2, og1, og2);
-    
-    let sortedStandings = Object.values(wc.standings).sort((a, b) => {
-      if (b.P !== a.P) return b.P - a.P;
-      if (b.GD !== a.GD) return b.GD - a.GD;
-      return b.GF - a.GF;
-    });
-
-    tableHTML = `
-      <table class="wc-table">
-        <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
-        ${sortedStandings.map((row, idx) => `
-          <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === wc.playerTeam.name ? 'player' : ''}">
-            <td>${row.team.flag} ${row.team.name}</td>
-            <td>${row.W + row.D + row.L}</td>
-            <td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
-            <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td>
-            <td style="font-weight:bold; color:var(--text);">${row.P}</td>
-          </tr>
-        `).join('')}
-      </table>
-    `;
-
-    if (wc.matchIndex < 2) {
-      wc.matchIndex++;
-      actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">Sonraki Maç</button>`;
-    } else {
-      let isAdvanced = sortedStandings.findIndex(r => r.team.name === wc.playerTeam.name) < 2;
-      if (isAdvanced) {
-        wc.stage = 'ro32';
-        actionButton = `<button class="btn btn-green" style="background:var(--green); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="prepareNextWCMatch()">Son 32 Turuna Geç 🎉</button>`;
-      } else {
-        actionButton = `<button class="btn btn-red" style="background:var(--red); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="renderPreStart()">Elendin. Ana Menüye Dön</button>`;
-      }
-    }
-  } else {
-    if (playerGoals > oppGoals) {
-      let nextStageText = "";
-      if (wc.stage === 'ro32') { wc.stage = 'ro16'; nextStageText = "Son 16 Turuna Geç"; }
-      else if (wc.stage === 'ro16') { wc.stage = 'qf'; nextStageText = "Çeyrek Finale Geç"; }
-      else if (wc.stage === 'qf') { wc.stage = 'sf'; nextStageText = "Yarı Finale Geç"; }
-      else if (wc.stage === 'sf') { wc.stage = 'final'; nextStageText = "BÜYÜK FİNALE GEÇ"; }
-      else if (wc.stage === 'final') { wc.stage = 'won'; nextStageText = "KUPAYI KALDIR 🏆"; }
-      
-      if (wc.stage === 'won') {
-        actionButton = `<button class="btn btn-gold" style="width:100%; font-size:16px; padding:14px;" onclick="renderPreStart()">Ana Menüye Dön</button>`;
-      } else {
-        actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">${nextStageText} ➔</button>`;
-      }
-    } else {
-      actionButton = `<button class="btn btn-outline" style="width:100%;" onclick="renderPreStart()">Turnuvaya Veda Ettin. (Ana Menü)</button>`;
-    }
-  }
-
-  let titleMsg = playerGoals > oppGoals ? "Harika Bir Galibiyet! 🎉" : playerGoals < oppGoals ? "Maalesef Kaybettik... 💔" : "Maç Berabere! 🤝";
-  if (wc.stage === 'won') titleMsg = "DÜNYA ŞAMPİYONUSUN! 🏆🌍";
-
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding: 32px 24px;">
-      <div class="quiz-start-title" style="font-size:28px;">${titleMsg}</div>
-      
-      <div class="wc-score-box">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-        </div>
-        <div style="text-align:center;">
-          <div class="wc-score">${playerGoals} - ${oppGoals}</div>
-          <div style="font-size:12px; color:var(--text3);">${wc.penaltyStr}</div>
-        </div>
-        <div class="wc-team">
-          <div class="wc-flag">${wc.opponent.flag}</div>
-          <div class="wc-team-name">${wc.opponent.name}</div>
-        </div>
-      </div>
-
-      ${tableHTML}
-      <div style="margin-top:24px;">${actionButton}</div>
-    </div>
-  `;
-}
-
-// ----------------------------------------------------
-// CORE KELİME MOTORU ENTEGRASYONU
-// ----------------------------------------------------
-
-function startFlashcard(onlyMistakes = false, limitOverride = null) {
-  let pool = loadUserWords();
-
-  // YENİ: Kupa Modundaysak, bu turnuvada daha önce çıkan kelimeleri havuzdan çıkar
-  if (wc.active) {
-    let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
-    
-    // Güvenlik: Eğer turnuva sonuna kadar kelimeler yetmezse (veri tabanı küçükse), listeyi sessizce sıfırla ki oyun çökmesin
-    if (limitOverride && unusedPool.length < limitOverride) {
-      wc.usedWords = []; // Hafızayı boşalt
-      unusedPool = pool; // Her şeye baştan başla
-    }
-    pool = unusedPool;
-  }
-  
-  if (onlyMistakes) {
-    pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
-    if (pool.length === 0) {
-      alert("Harika! 🎉 Şu an tekrar etmen gereken güncel bir yanlışın bulunmuyor.");
-      return;
-    }
-  }
-
-  pool.forEach(w => {
-    let score = 0;
-    const totalReviews = w.reviewCount || 0;
-    const totalWrong = w.wrongCount || 0;
-    const reps = w.repetitions || 0;
-
-    if (totalReviews === 0) score += 1500; 
-    if (w.isActiveMistake) score += 1200;
-
-    if (totalReviews > 0) {
-        const errorRate = totalWrong / totalReviews;
-        score += errorRate * 800;
-        const correctRate = (totalReviews - totalWrong) / totalReviews;
-        if (reps > 10 && correctRate > 0.8) score -= 500; 
-    }
-
-    if (reps < 10) score += (10 - reps) * 50; 
-    score += Math.random() * 50;
-    w.priorityScore = score;
-  });
-
-  pool.sort((a, b) => b.priorityScore - a.priorityScore);
-
-  let numLimit = limitOverride;
-  if (!limitOverride) {
-    const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
-    numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
-  }
-  
-  if (pool.length < numLimit) numLimit = pool.length;
-
-  fcQueue = pool.slice(0, numLimit);
-  
-  // YENİ: Seçilen bu kelimelerin ID'lerini kupa hafızasına ekle ki bir dahaki maçta çıkmasınlar
-  if (wc.active) {
-    fcQueue.forEach(card => wc.usedWords.push(card.id));
-  }
-
-  fcIndex = 0;
-  fcCorrect = 0;
-  fcTotal = fcQueue.length;
-  showNextFlashcard();
-}
-
-function endQuizEarly() {
-  if (fcIndex === 0) { renderPreStart(); return; }
-  fcTotal = fcIndex; 
-  if (wc.active) showWCSummary(); else showFlashcardSummary();
-}
-
-function showNextFlashcard() {
-  const area = document.getElementById('flashcard-area');
-  if (fcIndex >= fcQueue.length) { 
-    if (wc.active) showWCSummary(); else showFlashcardSummary(); 
-    return; 
-  }
-
-  const card = fcQueue[fcIndex];
-  fcRevealed = false;
-  const progress = (fcIndex / fcTotal * 100).toFixed(1);
-
-  const askTurkishToEnglish = Math.random() > 0.5;
-  let questionText, answerText;
-  let exampleDisplay = "";
-  
-  if (card.example) {
-    if (askTurkishToEnglish) {
-      const regex = new RegExp(escapeRegExp(card.en), "gi");
-      let hiddenExample = card.example.replace(regex, "_____");
-      exampleDisplay = `<div class="quiz-example">"${hiddenExample}"</div>`;
-    } else {
-      exampleDisplay = `<div class="quiz-example">"${card.example}"</div>`;
-    }
-  }
-
-  if (askTurkishToEnglish) { questionText = card.tr.split(',')[0].trim(); answerText = card.en; } 
-  else { questionText = card.en; answerText = card.tr; }
-
-  area.innerHTML = `
-    <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-      <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${progress}%"></div></div>
-      <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
-      <button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>
-    </div>
-
-    <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
-      <div class="flashcard" id="fc-inner">
-        <div class="flashcard-front">
-          <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-          <div class="quiz-word">${questionText}</div>
-          ${exampleDisplay}
-        </div>
-        <div class="flashcard-back" id="fc-back" style="display:none">
-          <div class="flashcard-answer">${answerText}</div>
-        </div>
-        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
-      </div>
-    </div>
-
-    <div class="flashcard-actions" id="fc-actions">
-      <button class="fc-btn fc-idk" onclick="rateFlashcard('${card.id}', 1)">✗ Bilmiyorum</button>
-      <button class="fc-btn fc-hard" onclick="rateFlashcard('${card.id}', 3)">~ Zorlandım</button>
-      <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
-    </div>
-  `;
-}
-
-function revealFlashcard() {
-  if (fcRevealed) return;
-  fcRevealed = true;
-  document.getElementById('fc-inner').classList.add('revealed');
-  document.getElementById('fc-back').style.display = 'block';
-  document.getElementById('fc-actions').classList.add('visible');
-  document.getElementById('fc-card').onclick = null;
-}
-
-function rateFlashcard(cardId, quality) {
-  const userWords = loadUserWords();
-  const card = userWords.find(w => w.id === cardId);
-  
-  if (card) {
-    const updated = sm2(card, quality);
-    card.interval = updated.interval;
-    card.repetitions = updated.repetitions;
-    card.ef = updated.ef;
-    card.nextReview = updated.nextReview;
-    card.lastReviewed = todayStr();
-    card.reviewCount = (card.reviewCount || 0) + 1;
-    
-    if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
-    else if (quality >= 4) { card.isActiveMistake = false; }
-    
-    if (quality >= 4) fcCorrect++;
-
-    saveWordsToStorage(userWords);
-
-    const meta = loadMeta();
-    if (!meta.activity) meta.activity = {};
-    const t = todayStr();
-    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
-    meta.activity[t].reviews++;
-    if (quality >= 4) meta.activity[t].correct++;
-    saveMeta(meta);
-  }
-  
-  fcIndex++;
-  showNextFlashcard();
-}
-
-function showFlashcardSummary() {
-  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
-  const area = document.getElementById('flashcard-area');
-
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 75 ? '🏆' : '📚'}</div>
-      <div class="quiz-start-title">Oturum <em>Tamamlandı</em></div>
-      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${fcCorrect}</div>
-          <div style="color:var(--text3);font-size:12px">Bildim</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${fcTotal - fcCorrect}</div>
-          <div style="color:var(--text3);font-size:12px">Bilmedim</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
-          <div style="color:var(--text3);font-size:12px">Başarı Oranı</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn btn-gold" onclick="renderPreStart()">▶ Ana Menüye Dön</button>
-      </div>
     </div>`;
 }
 
-document.addEventListener('keydown', e => {
-  if (fcQueue.length === 0 || fcIndex >= fcQueue.length) return;
-  if (e.key === ' ' && !fcRevealed) { e.preventDefault(); revealFlashcard(); }
-  if (fcRevealed) {
-    const card = fcQueue[fcIndex];
-    if (!card) return;
-    if (e.key === '1') rateFlashcard(card.id, 1);
-    if (e.key === '2') rateFlashcard(card.id, 3);
-    if (e.key === '3') rateFlashcard(card.id, 5);
-  }
-});
+function startFlashcard(onlyMistakes, limitOverride) {
+  let pool = loadUserWords();
+  
+  // Kullanılmamış kelimeleri al
+  let poolFiltered = wc.active ? pool.filter(w => !wc.usedWords.includes(w.id)) : pool;
+  if (wc.active && poolFiltered.length < (limitOverride || 10)) { wc.usedWords = []; poolFiltered = pool; }
+
+  // WC modu için dinamik sıralama
+  poolFiltered.forEach(w => {
+    let score = Math.random() * 50;
+    if (wc.active) {
+      let stageDiff = wc.stage === 'group' ? 0.0 : wc.stage === 'ro32' ? 0.2 : wc.stage === 'ro16' ? 0.4 : wc.stage === 'qf' ? 0.6 : wc.stage === 'sf' ? 0.8 : 1.0;
+      let easyScore = (w.reviewCount || 0) * 30 + ((w.reviewCount - (w.wrongCount || 0)) / (w.reviewCount || 1)) * 1000;
+      let hardScore = (w.isActiveMistake ? 1000 : 0) + ((w.wrongCount || 0) / (w.reviewCount || 1)) * 800;
+      score = (easyScore * (1 - stageDiff)) + (hardScore * stageDiff);
+    }
+    w.priority = score;
+  });
+
+  poolFiltered.sort((a,b) => b.priority - a.priority);
+  fcQueue = poolFiltered.slice(0, limitOverride || 10);
+  if (wc.active) fcQueue.forEach(c => wc.usedWords.push(c.id));
+  
+  fcIndex = 0; fcCorrect = 0; fcTotal = fcQueue.length;
+  showNextFlashcard();
+}
+
+function showNextFlashcard() {
+  if (fcIndex >= fcQueue.length) { wc.active ? showWCSummary() : showFlashcardSummary(); return; }
+  const card = fcQueue[fcIndex];
+  document.getElementById('flashcard-area').innerHTML = `
+    <div class="flashcard-wrap" onclick="reveal()" id="fc-card">
+      <div class="flashcard" id="fc-inner">
+        <div class="quiz-word">${card.en}</div>
+        <div class="flashcard-back" id="fc-back" style="display:none"><div class="flashcard-answer">${card.tr}</div></div>
+      </div>
+    </div>
+    <div class="flashcard-actions" id="fc-actions"><button class="fc-btn fc-idk" onclick="rate(1)">✗ Bilmiyorum</button><button class="fc-btn fc-easy" onclick="rate(5)">✓ Bildim</button></div>
+  `;
+}
+
+function reveal() { document.getElementById('fc-inner').classList.add('revealed'); document.getElementById('fc-back').style.display='block'; document.getElementById('fc-actions').classList.add('visible'); }
+function rate(q) { if(q>=4) fcCorrect++; fcIndex++; showNextFlashcard(); }
+function showWCSummary() { /* Önceki mantık aynı */ location.reload(); } // Basitlik için reset
+function showFlashcardSummary() { renderPreStart(); }
 
 initDatabase();
 renderPreStart();
