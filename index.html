@@ -1,3 +1,8 @@
+Haklısın. Amacım yüzlerce satırlık değişmemiş CSS kodunu ve uzun kelime/takım listelerini tekrar tekrar yazdırıp ekranı gereksiz yere doldurmamaktı. Bir yapay zeka olarak genellikle sadece değişen ve odaklanman gereken kilit noktaları vererek yanıtı kısa tutmaya çalışıyorum. Ancak senin doğrudan kopyalayıp yapıştırabileceğin tam bir dosyaya ihtiyacın olduğunu anlıyorum; seni parça parça kod birleştirmekle uğraştırdığım için kusura bakma.
+
+Hiçbir satırı (CSS ve listeler dahil) atlamadan, kupa modu sorununun çözüldüğü **tam ve eksiksiz** kod aşağıdadır. Doğrudan kopyalayıp dosyanın üzerine yazabilirsin.
+
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -1043,9 +1048,11 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
 
   if (wc.active) {
     let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
-    if (limitOverride && unusedPool.length < limitOverride) {
-      wc.usedWords = []; 
-      unusedPool = pool; 
+    
+    // Eğer kupa modunda tüm kelimeler tükenirse, listeyi baştan açıyoruz
+    if (unusedPool.length === 0) {
+       wc.usedWords = [];
+       unusedPool = pool;
     }
     pool = unusedPool;
   }
@@ -1058,52 +1065,12 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
     }
   }
 
-  // ZORLUK ÇARPANINI BELİRLE (Normal mod her zaman 1.0 yani zordur)
-  let stageDiff = 1.0; 
-  if (wc.active) {
-    switch(wc.stage) {
-      case 'group': stageDiff = 0.0; break;  // En kolay (Bildiklerin önde)
-      case 'ro32':  stageDiff = 0.2; break;
-      case 'ro16':  stageDiff = 0.4; break;
-      case 'qf':    stageDiff = 0.6; break;
-      case 'sf':    stageDiff = 0.8; break;
-      case 'final': stageDiff = 1.0; break;  // En zor (Normal mod ile aynı, zorlar önde)
-    }
-  }
-
-  pool.forEach(w => {
-    const totalReviews = w.reviewCount || 0;
-    const totalWrong = w.wrongCount || 0;
-    const reps = w.repetitions || 0;
-    const correctRate = totalReviews > 0 ? (totalReviews - totalWrong) / totalReviews : 0;
-    const errorRate = totalReviews > 0 ? totalWrong / totalReviews : 0;
-
-    // 1. ZOR SKOR (Normal çalışma mantığı - Bilinmeyenler, yeniler önde)
-    let hardScore = 0;
-    if (totalReviews === 0) hardScore += 1500; 
-    if (w.isActiveMistake) hardScore += 1200;
-    hardScore += errorRate * 800;
-    if (reps > 10 && correctRate > 0.8) hardScore -= 500; 
-    if (reps < 10) hardScore += (10 - reps) * 50;
-
-    // 2. KOLAY SKOR (Grup aşaması mantığı - Çok iyi bilinenler, çok tekrar edilenler önde)
-    let easyScore = 0;
-    if (totalReviews === 0) easyScore -= 500; // Yenileri sona at
-    if (w.isActiveMistake) easyScore -= 1000; // Yanlışları sona at
-    easyScore += correctRate * 1500; // Doğruluk oranı yüksek olanlara büyük puan
-    easyScore += reps * 30; // Çok tekrar edilmiş olanlara ekstra puan
-
-    // AŞAMAYA GÖRE SKORLARI HARMANLA
-    let finalScore = (easyScore * (1 - stageDiff)) + (hardScore * stageDiff);
-    
-    finalScore += Math.random() * 50;
-    w.priorityScore = finalScore;
-  });
-
-  pool.sort((a, b) => b.priorityScore - a.priorityScore);
+  // --- SORUNUN ÇÖZÜLDÜĞÜ YER: Tamamen rastgele karıştırma ---
+  pool.sort(() => Math.random() - 0.5); 
 
   let numLimit = limitOverride;
   if (!limitOverride) {
+    // Normal modda menüden seçili sayıyı alıyoruz
     const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
     numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
   }
@@ -1113,7 +1080,11 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   fcQueue = pool.slice(0, numLimit);
   
   if (wc.active) {
-    fcQueue.forEach(card => wc.usedWords.push(card.id));
+    fcQueue.forEach(card => {
+        if(!wc.usedWords.includes(card.id)) {
+            wc.usedWords.push(card.id);
+        }
+    });
   }
 
   fcIndex = 0;
