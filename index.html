@@ -349,12 +349,15 @@
   }
   .die.rolling { animation: diceShake .16s linear infinite; color: var(--text3); background: var(--bg4); }
   .die.rerolled { outline: 3px solid var(--gold); animation: dicePop .45s ease; }
+  .die.selectable { cursor:pointer; transition:transform .16s ease, outline-color .16s ease, box-shadow .16s ease; padding:0; }
+  .die.selectable:hover { transform:translateY(-3px) scale(1.04); box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 10px 24px rgba(124,58,237,.42); }
+  .die.selected { outline:4px solid #a78bfa; box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 0 0 6px rgba(124,58,237,.18), 0 10px 24px rgba(0,0,0,.42); transform:scale(1.06); }
   .dice-pair-status { height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; color:var(--text3); text-align:center; }
   .dice-pair-status.player-win { color:var(--green); }
   .dice-pair-status.opp-win { color:var(--red); }
   .dice-pair-status.draw { color:var(--gold); }
   .dice-rule-box { background:rgba(124,58,237,.10); border:1px solid rgba(167,139,250,.28); color:#c4b5fd; border-radius:10px; padding:13px 15px; font-size:12px; line-height:1.65; text-align:left; margin:18px 0; }
-  .dice-rescue-box { background:var(--red-dim); border:1px solid rgba(224,92,92,.28); border-radius:12px; padding:16px; margin-top:16px; }
+  .dice-rescue-box { background:rgba(124,58,237,.10); border:1px solid rgba(167,139,250,.30); border-radius:12px; padding:16px; margin-top:16px; }
   .dice-rescue-progress { display:flex; gap:7px; justify-content:center; margin-bottom:18px; }
   .dice-rescue-dot { width:30px; height:6px; border-radius:99px; background:var(--bg4); }
   .dice-rescue-dot.done { background:var(--green); }
@@ -678,13 +681,15 @@ const DICE_STAGE_NAMES = {
 let diceCup = {
   active: false,
   playerTeam: null,
-  selectedTeamName: null,
   stage: 'group',
   matchIndex: 0,
   groupTeams: [],
   standings: {},
   schedule: [],
   opponent: null,
+  wordCount: 10,
+  preMatchCorrect: 0,
+  preMatchTotal: 0,
   playerDice: [],
   opponentDice: [],
   playerScore: 0,
@@ -693,11 +698,12 @@ let diceCup = {
   extraTimeOpponent: 0,
   rolled: false,
   rolling: false,
-  rescueUsed: false,
-  rescueFailed: false,
-  rescueQueue: [],
-  rescueIndex: 0,
-  rescueRevealed: false,
+  rerollUsed: false,
+  rerollFailed: false,
+  rerollQueue: [],
+  rerollIndex: 0,
+  rerollRevealed: false,
+  selectedRerollIndex: -1,
   usedWords: [],
   rerolledValue: null,
   rerolledIndex: -1,
@@ -819,7 +825,7 @@ function renderPreStart() {
       </div>
 
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-dice" onclick="renderDiceCupTeamSelect()">🎲 Zar Kupası Modu</button>
+        <button class="btn btn-dice" onclick="renderDiceCupTeamSelect()">🎲 Zar Kupası Modu · Rastgele Takım</button>
       </div>
       
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
@@ -895,13 +901,15 @@ function resetDiceCupState() {
   diceCup = {
     active: true,
     playerTeam: null,
-    selectedTeamName: null,
     stage: 'group',
     matchIndex: 0,
     groupTeams: [],
     standings: {},
     schedule: [],
     opponent: null,
+    wordCount: 10,
+    preMatchCorrect: 0,
+    preMatchTotal: 0,
     playerDice: [],
     opponentDice: [],
     playerScore: 0,
@@ -910,11 +918,12 @@ function resetDiceCupState() {
     extraTimeOpponent: 0,
     rolled: false,
     rolling: false,
-    rescueUsed: false,
-    rescueFailed: false,
-    rescueQueue: [],
-    rescueIndex: 0,
-    rescueRevealed: false,
+    rerollUsed: false,
+    rerollFailed: false,
+    rerollQueue: [],
+    rerollIndex: 0,
+    rerollRevealed: false,
+    selectedRerollIndex: -1,
     usedWords: [],
     rerolledValue: null,
     rerolledIndex: -1,
@@ -924,60 +933,33 @@ function resetDiceCupState() {
   };
 }
 
+// Ana menüdeki buton bu ekrana gelir. Takım seçilmez; turnuva başlayınca kura çekilir.
 function renderDiceCupTeamSelect() {
   wc.active = false;
   fcQueue = [];
   resetDiceCupState();
   const area = document.getElementById('flashcard-area');
-  const groups = [...new Set(WC_TEAMS.map(t => t.group))];
   area.innerHTML = `
-    <div class="quiz-start-card" style="padding:32px 24px; max-width:760px; margin:0 auto;">
-      <div style="font-size:48px;margin-bottom:10px">🎲</div>
+    <div class="quiz-start-card">
+      <div style="font-size:52px;margin-bottom:10px">🎲🏆</div>
       <div class="quiz-start-title">Zar <em>Kupası</em></div>
-      <p style="color:var(--text2);line-height:1.6;">Takımını seç. Grup maçlarından başlayıp finale kadar ilerle.</p>
+      <p style="color:var(--text2);line-height:1.7;margin-bottom:18px">
+        Turnuva başladığında 48 Dünya Kupası takımından biri sana otomatik olarak atanır.
+      </p>
       <div class="dice-rule-box">
-        Her maçta iki tarafa da 3 zar atılır. Zarlar büyükten küçüğe sıralanır ve aynı sıradaki zarlar karşılaşır. Büyük zar 1 gol kazandırır; eşitlikte gol çıkmaz. Kaybediyorsan 5 kelimelik tek bir kurtuluş hakkın açılır.
+        Her maç önce Dünya Kupası modundaki kadar kelimeyle oynanır: grup maçları 10 kelime; sonraki turlar 15, 18, 20, 22 ve 25 kelime. Kelimeler tamamlanınca iki takımın üçer zarı atılır. Zarlarından birini seçip tek kullanımlık 5/5 sınavıyla yeniden atabilirsin.
       </div>
-      <div class="dice-group-grid">
-        ${groups.map(group => `
-          <div class="dice-group-card">
-            <div class="dice-group-title">Grup ${group}</div>
-            ${WC_TEAMS.filter(t => t.group === group).map(team => `
-              <button class="dice-team-option" data-team="${team.name.replace(/"/g, '&quot;')}" onclick="selectDiceCupTeam('${team.name.replace(/'/g, "\\'")}')">
-                <span>${team.flag} ${team.name}</span><span>Seç</span>
-              </button>
-            `).join('')}
-          </div>
-        `).join('')}
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button id="dice-start-btn" class="btn btn-dice" style="max-width:320px;opacity:.45;pointer-events:none;" onclick="startDiceCupTournament()">Kupayı Başlat 🎲</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-dice" style="max-width:340px" onclick="startDiceCupTournament()">Rastgele Takımla Kupayı Başlat 🎲</button>
         <button class="btn btn-outline" onclick="renderPreStart()">← Ana Menü</button>
       </div>
     </div>`;
 }
 
-function selectDiceCupTeam(teamName) {
-  diceCup.selectedTeamName = teamName;
-  document.querySelectorAll('.dice-team-option').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.team === teamName);
-    const right = btn.querySelector('span:last-child');
-    if (right) right.textContent = btn.dataset.team === teamName ? '✓' : 'Seç';
-  });
-  const startBtn = document.getElementById('dice-start-btn');
-  if (startBtn) {
-    startBtn.style.opacity = '1';
-    startBtn.style.pointerEvents = 'auto';
-  }
-}
-
 function startDiceCupTournament() {
-  if (!diceCup.selectedTeamName) return;
-  const chosenName = diceCup.selectedTeamName;
   resetDiceCupState();
-  diceCup.selectedTeamName = chosenName;
-  diceCup.playerTeam = WC_TEAMS.find(t => t.name === chosenName);
-  if (!diceCup.playerTeam) return renderDiceCupTeamSelect();
+  const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
+  diceCup.playerTeam = WC_TEAMS[randomTeamIndex];
 
   const groupAll = WC_TEAMS.filter(t => t.group === diceCup.playerTeam.group);
   diceCup.groupTeams = [diceCup.playerTeam, ...groupAll.filter(t => t.name !== diceCup.playerTeam.name)];
@@ -997,8 +979,9 @@ function renderDiceCupIntro() {
   area.innerHTML = `
     <div class="quiz-start-card">
       <div style="font-size:52px;margin-bottom:10px">🎲🏆</div>
-      <div class="quiz-start-title">Zar Kupası <em>Başlıyor</em></div>
-      <div class="wc-score-box" style="justify-content:center;">
+      <div class="quiz-start-title">Takımın <em>Belirlendi</em></div>
+      <p style="color:var(--text2);margin-bottom:20px">Kura sonucunda Zar Kupası takımın:</p>
+      <div class="wc-score-box" style="justify-content:center">
         <div class="wc-team">
           <div class="wc-flag">${diceCup.playerTeam.flag}</div>
           <div class="wc-team-name">${diceCup.playerTeam.name}</div>
@@ -1030,13 +1013,17 @@ function pickDiceCupKnockoutOpponent() {
 }
 
 function prepareNextDiceCupMatch() {
+  diceCup.wordCount = STAGE_WORDS[diceCup.stage] || STAGE_WORDS.group;
+  diceCup.preMatchCorrect = 0;
+  diceCup.preMatchTotal = 0;
   diceCup.rolled = false;
   diceCup.rolling = false;
-  diceCup.rescueUsed = false;
-  diceCup.rescueFailed = false;
-  diceCup.rescueQueue = [];
-  diceCup.rescueIndex = 0;
-  diceCup.rescueRevealed = false;
+  diceCup.rerollUsed = false;
+  diceCup.rerollFailed = false;
+  diceCup.rerollQueue = [];
+  diceCup.rerollIndex = 0;
+  diceCup.rerollRevealed = false;
+  diceCup.selectedRerollIndex = -1;
   diceCup.rerolledValue = null;
   diceCup.rerolledIndex = -1;
   diceCup.eventNote = '';
@@ -1058,14 +1045,46 @@ function prepareNextDiceCupMatch() {
   area.innerHTML = `
     <div class="quiz-start-card">
       <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
-      <div class="quiz-start-title" style="font-size:32px">Sıradaki Zar Düellosu</div>
+      <div class="quiz-start-title" style="font-size:32px">Sıradaki Rakip</div>
       <div class="wc-score-box">
         <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
         <div class="wc-score">VS</div>
         <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
       </div>
-      <p style="color:var(--text2);font-size:12px;line-height:1.6;margin-bottom:20px">3 zar otomatik atılacak, büyükten küçüğe sıralanacak ve bire bir karşılaştırılacak.</p>
-      <button class="btn btn-dice" onclick="rollDiceCupMatch()">Maçı Başlat · Zarları At 🎲</button>
+      <p style="color:var(--text2);font-size:13px;line-height:1.65;margin-bottom:20px">
+        Önce <b style="color:var(--gold)">${diceCup.wordCount} kelime</b> gelecek. Kelimeler tamamlanınca maç zarları atılacak.
+      </p>
+      <button class="btn btn-dice" onclick="startDiceCupMatchWords()">${diceCup.wordCount} Kelimelik Maça Başla 📚</button>
+    </div>`;
+}
+
+function startDiceCupMatchWords() {
+  const words = loadUserWords();
+  if (!words.length) {
+    alert('Zar Kupası için en az bir kelime gerekiyor.');
+    return;
+  }
+  const unusedCount = words.filter(w => !diceCup.usedWords.includes(w.id)).length;
+  if (unusedCount < Math.min(diceCup.wordCount, words.length)) diceCup.usedWords = [];
+  startFlashcard(false, diceCup.wordCount);
+}
+
+function showDiceCupWordSummary() {
+  diceCup.preMatchCorrect = fcCorrect;
+  diceCup.preMatchTotal = fcTotal;
+  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:10px">📚✓</div>
+      <div class="quiz-start-title">Kelimeler <em>Tamamlandı</em></div>
+      <p style="color:var(--text2);margin-bottom:18px">${fcTotal} kelimede ${fcCorrect} doğru · Başarı %${accuracy}</p>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
+        <div class="wc-score">VS</div>
+        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
+      </div>
+      <button class="btn btn-dice" onclick="rollDiceCupMatch()">Şimdi Zarları At 🎲</button>
     </div>`;
 }
 
@@ -1099,8 +1118,8 @@ function rollDiceCupMatch() {
     diceCup.playerDice = rollThreeDice();
     diceCup.opponentDice = rollThreeDice();
     const scored = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
-    diceCup.playerScore = scored.playerScore + (diceCup.extraTimePlayer || 0);
-    diceCup.opponentScore = scored.opponentScore + (diceCup.extraTimeOpponent || 0);
+    diceCup.playerScore = scored.playerScore;
+    diceCup.opponentScore = scored.opponentScore;
     diceCup.rolling = false;
     diceCup.rolled = true;
     renderDiceCupBattle(false);
@@ -1111,7 +1130,21 @@ function dieHtml(value, options = {}) {
   const classes = ['die'];
   if (options.rolling) classes.push('rolling');
   if (options.rerolled) classes.push('rerolled');
-  return `<div class="${classes.join(' ')}">${options.rolling ? '↻' : DICE_FACES[value]}</div>`;
+  if (options.selectable) classes.push('selectable');
+  if (options.selected) classes.push('selected');
+  const content = options.rolling ? '↻' : DICE_FACES[value];
+  if (options.selectable) {
+    return `<button type="button" class="${classes.join(' ')}" onclick="selectDiceCupRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
+  }
+  return `<div class="${classes.join(' ')}">${content}</div>`;
+}
+
+function selectDiceCupRerollDie(index) {
+  if (!diceCup.rolled || diceCup.rolling || diceCup.rerollUsed) return;
+  if (index < 0 || index >= diceCup.playerDice.length) return;
+  diceCup.selectedRerollIndex = index;
+  diceCup.eventNote = `${index + 1}. zar seçildi: ${DICE_FACES[diceCup.playerDice[index]]} (${diceCup.playerDice[index]}). Reroll için 5 kelimenin tamamını bilmelisin.`;
+  renderDiceCupBattle(false);
 }
 
 function renderDiceCupBattle(isRolling = false) {
@@ -1134,20 +1167,28 @@ function renderDiceCupBattle(isRolling = false) {
   let controls = '';
   if (isRolling) {
     controls = `<div style="color:var(--text2);font-size:13px;margin-top:18px">Zarlar atılıyor...</div>`;
-  } else if (diceCup.playerScore < diceCup.opponentScore && !diceCup.rescueUsed) {
+  } else if (!diceCup.rerollUsed) {
+    const hasSelection = diceCup.selectedRerollIndex >= 0;
+    const selectedText = hasSelection
+      ? `Seçili zar: ${DICE_FACES[diceCup.playerDice[diceCup.selectedRerollIndex]]} (${diceCup.playerDice[diceCup.selectedRerollIndex]})`
+      : 'Yeniden atmak istediğin kendi zarına dokun.';
+    const secondaryAction = diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore
+      ? `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="resolveDiceCupExtraTime()">Reroll Kullanma · Uzatma Zarına Geç</button>`
+      : `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceCupMatch()">Reroll Kullanma · Maçı Bitir</button>`;
     controls = `
       <div class="dice-rescue-box">
-        <div style="font-weight:700;color:var(--red);margin-bottom:6px">Maçı şu anda kaybediyorsun.</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">5 kelimenin tamamını bilirsen, kaybeden en düşük zarın bir kez yeniden atılır. Tek yanlışta kurtuluş hakkın biter.</div>
-        <button class="btn btn-dice" onclick="startDiceCupRescue()">🛟 Kurtuluş Şansı: 5 Kelime</button>
+        <div style="font-weight:700;color:#c4b5fd;margin-bottom:6px">İsteğe Bağlı Reroll Hakkı</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">${selectedText} Beş kelimede 5/5 yaparsan seçtiğin zar yeniden atılır. Tek yanlışta bu maçtaki reroll hakkın yanar.</div>
+        <button class="btn btn-dice" ${hasSelection ? '' : 'disabled'} style="${hasSelection ? '' : 'opacity:.45;pointer-events:none'}" onclick="startDiceCupReroll()">🎯 Seçili Zarı Reroll Et · 5 Kelime</button>
       </div>
-      <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceCupMatch()">Kurtuluşu Kullanma · Maçı Bitir</button>`;
+      ${secondaryAction}`;
   } else if (diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore) {
     controls = `<button class="btn btn-dice" onclick="resolveDiceCupExtraTime()">⚡ Uzatma Zarını At</button>`;
   } else {
     controls = `<button class="btn ${diceCup.playerScore > diceCup.opponentScore ? 'btn-dice' : 'btn-outline'}" style="width:100%" onclick="finishDiceCupMatch()">Maç Sonucunu Onayla ➔</button>`;
   }
 
+  const canSelect = !isRolling && !diceCup.rerollUsed;
   area.innerHTML = `
     <div class="quiz-start-card" style="padding:30px 22px">
       <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
@@ -1159,7 +1200,13 @@ function renderDiceCupBattle(isRolling = false) {
       <div class="dice-arena">
         <div class="dice-columns">
           <div class="dice-side">
-            ${[0,1,2].map(i => dieHtml(diceCup.playerDice[i], {rolling:isRolling, rerolled:!isRolling && diceCup.rerolledIndex === i})).join('')}
+            ${[0,1,2].map(i => dieHtml(diceCup.playerDice[i], {
+              rolling:isRolling,
+              rerolled:!isRolling && diceCup.rerolledIndex === i,
+              selectable:canSelect,
+              selected:canSelect && diceCup.selectedRerollIndex === i,
+              index:i
+            })).join('')}
           </div>
           <div class="dice-side">
             ${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}
@@ -1186,29 +1233,33 @@ function getUnusedDiceCupWords(count) {
   return chosen;
 }
 
-function startDiceCupRescue() {
-  diceCup.rescueUsed = true;
-  diceCup.rescueFailed = false;
-  diceCup.rescueQueue = getUnusedDiceCupWords(5);
-  diceCup.rescueIndex = 0;
-  diceCup.rescueRevealed = false;
-  if (diceCup.rescueQueue.length < 5) {
-    alert('Kurtuluş modu için en az 5 kelime gerekiyor.');
-    diceCup.rescueUsed = false;
+function startDiceCupReroll() {
+  if (diceCup.rerollUsed || diceCup.selectedRerollIndex < 0) return;
+  diceCup.rerollUsed = true;
+  diceCup.rerollFailed = false;
+  diceCup.rerollQueue = getUnusedDiceCupWords(5);
+  diceCup.rerollIndex = 0;
+  diceCup.rerollRevealed = false;
+  if (diceCup.rerollQueue.length < 5) {
+    alert('Reroll sınavı için en az 5 kelime gerekiyor.');
+    diceCup.rerollUsed = false;
     renderDiceCupBattle(false);
     return;
   }
-  showNextDiceCupRescueWord();
+  showNextDiceCupRerollWord();
 }
 
-function showNextDiceCupRescueWord() {
-  if (diceCup.rescueIndex >= 5) {
-    completeDiceCupRescue();
+// Eski buton adını kullanan kayıtlı bir ekran varsa uyumluluk için bırakıldı.
+function startDiceCupRescue() { startDiceCupReroll(); }
+
+function showNextDiceCupRerollWord() {
+  if (diceCup.rerollIndex >= 5) {
+    completeDiceCupReroll();
     return;
   }
   const area = document.getElementById('flashcard-area');
-  const card = diceCup.rescueQueue[diceCup.rescueIndex];
-  diceCup.rescueRevealed = false;
+  const card = diceCup.rerollQueue[diceCup.rerollIndex];
+  diceCup.rerollRevealed = false;
   const askTrToEn = Math.random() > 0.5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
@@ -1221,36 +1272,38 @@ function showNextDiceCupRescueWord() {
       example = `<div class="quiz-example">"${card.example}"</div>`;
     }
   }
+  const selectedValue = diceCup.playerDice[diceCup.selectedRerollIndex];
   area.innerHTML = `
     <div class="dice-rescue-progress">
-      ${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceCup.rescueIndex ? 'done' : i === diceCup.rescueIndex ? 'current' : ''}"></div>`).join('')}
+      ${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceCup.rerollIndex ? 'done' : i === diceCup.rerollIndex ? 'current' : ''}"></div>`).join('')}
     </div>
-    <div class="flashcard-wrap" id="dice-rescue-card" onclick="revealDiceCupRescueWord()">
-      <div class="flashcard" id="dice-rescue-inner">
-        <div class="quiz-mode-label">KURTULUŞ ${diceCup.rescueIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+    <div style="text-align:center;color:#c4b5fd;font-size:12px;margin-bottom:12px">Hedef zar: ${DICE_FACES[selectedValue]} (${selectedValue})</div>
+    <div class="flashcard-wrap" id="dice-reroll-card" onclick="revealDiceCupRerollWord()">
+      <div class="flashcard" id="dice-reroll-inner">
+        <div class="quiz-mode-label">REROLL ${diceCup.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
         <div class="quiz-word">${question}</div>
         ${example}
-        <div class="flashcard-back" id="dice-rescue-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
+        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
     </div>
-    <div class="flashcard-actions" id="dice-rescue-actions" style="grid-template-columns:1fr 1fr">
-      <button class="fc-btn fc-idk" onclick="answerDiceCupRescue(false)">✗ Yanlış Bildim</button>
-      <button class="fc-btn fc-easy" onclick="answerDiceCupRescue(true)">✓ Doğru Bildim</button>
+    <div class="flashcard-actions" id="dice-reroll-actions" style="grid-template-columns:1fr 1fr">
+      <button class="fc-btn fc-idk" onclick="answerDiceCupReroll(false)">✗ Yanlış Bildim</button>
+      <button class="fc-btn fc-easy" onclick="answerDiceCupReroll(true)">✓ Doğru Bildim</button>
     </div>
-    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, kurtuluş hakkını tamamen bitirir.</div>`;
+    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, bu maçtaki reroll hakkını tamamen bitirir.</div>`;
 }
 
-function revealDiceCupRescueWord() {
-  if (diceCup.rescueRevealed) return;
-  diceCup.rescueRevealed = true;
-  const inner = document.getElementById('dice-rescue-inner');
-  const back = document.getElementById('dice-rescue-back');
-  const actions = document.getElementById('dice-rescue-actions');
+function revealDiceCupRerollWord() {
+  if (diceCup.rerollRevealed) return;
+  diceCup.rerollRevealed = true;
+  const inner = document.getElementById('dice-reroll-inner');
+  const back = document.getElementById('dice-reroll-back');
+  const actions = document.getElementById('dice-reroll-actions');
   if (inner) inner.classList.add('revealed');
   if (back) back.style.display = 'block';
   if (actions) actions.classList.add('visible');
-  const card = document.getElementById('dice-rescue-card');
+  const card = document.getElementById('dice-reroll-card');
   if (card) card.onclick = null;
 }
 
@@ -1281,49 +1334,59 @@ function recordDiceCupWordResult(cardId, quality) {
   saveMeta(meta);
 }
 
-function answerDiceCupRescue(isCorrect) {
-  if (!diceCup.rescueRevealed) return;
-  const card = diceCup.rescueQueue[diceCup.rescueIndex];
+function answerDiceCupReroll(isCorrect) {
+  if (!diceCup.rerollRevealed) return;
+  const card = diceCup.rerollQueue[diceCup.rerollIndex];
   recordDiceCupWordResult(card.id, isCorrect ? 5 : 1);
   if (!isCorrect) {
-    diceCup.rescueFailed = true;
-    diceCup.eventNote = `Kurtuluşun ${diceCup.rescueIndex + 1}. kelimede sona erdi. Maç ilk zar sonucu ile kaybedildi.`;
-    renderDiceCupRescueFailed();
+    diceCup.rerollFailed = true;
+    diceCup.eventNote = `Reroll sınavı ${diceCup.rerollIndex + 1}. kelimede başarısız oldu. Zarlar değişmedi.`;
+    renderDiceCupRerollFailed();
     return;
   }
-  diceCup.rescueIndex++;
-  showNextDiceCupRescueWord();
+  diceCup.rerollIndex++;
+  showNextDiceCupRerollWord();
 }
 
-function renderDiceCupRescueFailed() {
+function renderDiceCupRerollFailed() {
   const area = document.getElementById('flashcard-area');
   area.innerHTML = `
     <div class="quiz-start-card">
       <div style="font-size:52px;margin-bottom:12px">💥</div>
-      <div class="quiz-start-title">Kurtuluş <em>Yandı</em></div>
-      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için reroll yapılmadı. Maç ${diceCup.playerScore} - ${diceCup.opponentScore} sona erdi.</p>
-      <button class="btn btn-outline" style="width:100%" onclick="finishDiceCupMatch()">Maç Sonucuna Geç ➔</button>
+      <div class="quiz-start-title">Reroll Hakkı <em>Yandı</em></div>
+      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için seçtiğin zar yeniden atılmadı. Mevcut maç skoru korunuyor.</p>
+      <button class="btn btn-outline" style="width:100%" onclick="renderDiceCupBattle(false)">Zarlara ve Maç Sonucuna Dön ➔</button>
     </div>`;
 }
 
-function completeDiceCupRescue() {
+function completeDiceCupReroll() {
+  const targetIndex = diceCup.selectedRerollIndex;
+  if (targetIndex < 0 || targetIndex >= diceCup.playerDice.length) {
+    diceCup.eventNote = 'Reroll uygulanamadı: seçili zar bulunamadı.';
+    renderDiceCupBattle(false);
+    return;
+  }
   const beforeDice = [...diceCup.playerDice];
-  const beforeScore = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
-  const losingPairs = beforeScore.pairs.filter(pair => pair.result === 'opponent');
-  const target = losingPairs.sort((a,b) => a.player - b.player || b.index - a.index)[0];
-  const targetIndex = target ? target.index : diceCup.playerDice.length - 1;
   const oldValue = diceCup.playerDice[targetIndex];
   const newValue = randomDie();
   diceCup.playerDice[targetIndex] = newValue;
   diceCup.playerDice.sort((a,b) => b-a);
   diceCup.rerolledValue = newValue;
-  diceCup.rerolledIndex = diceCup.playerDice.indexOf(newValue);
+  diceCup.rerolledIndex = diceCup.playerDice.findIndex(v => v === newValue);
+  diceCup.selectedRerollIndex = -1;
   const after = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
   diceCup.playerScore = after.playerScore;
   diceCup.opponentScore = after.opponentScore;
-  diceCup.eventNote = `5/5 doğru! Kaybeden en düşük zar ${DICE_FACES[oldValue]} (${oldValue}) yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. Zarların yeniden sıralandı: ${beforeDice.join(' · ')} → ${diceCup.playerDice.join(' · ')}.`;
+  diceCup.eventNote = `5/5 doğru! Seçtiğin ${DICE_FACES[oldValue]} (${oldValue}) zarı yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. Zarların yeniden sıralandı: ${beforeDice.join(' · ')} → ${diceCup.playerDice.join(' · ')}.`;
   renderDiceCupBattle(false);
 }
+
+// Eski fonksiyon adlarıyla geriye dönük uyumluluk.
+function showNextDiceCupRescueWord() { showNextDiceCupRerollWord(); }
+function revealDiceCupRescueWord() { revealDiceCupRerollWord(); }
+function answerDiceCupRescue(isCorrect) { answerDiceCupReroll(isCorrect); }
+function renderDiceCupRescueFailed() { renderDiceCupRerollFailed(); }
+function completeDiceCupRescue() { completeDiceCupReroll(); }
 
 function resolveDiceCupExtraTime() {
   let player = randomDie();
@@ -1371,6 +1434,10 @@ function diceCupStandingsHtml(rows) {
 
 function finishDiceCupMatch() {
   if (diceCup.resultCommitted) return;
+  if (diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore) {
+    resolveDiceCupExtraTime();
+    return;
+  }
   diceCup.resultCommitted = true;
   const playerWon = diceCup.playerScore > diceCup.opponentScore;
   const playerLost = diceCup.playerScore < diceCup.opponentScore;
@@ -1423,6 +1490,7 @@ function finishDiceCupMatch() {
         <div class="wc-score">${diceCup.playerScore} - ${diceCup.opponentScore}</div>
         <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
       </div>
+      <div style="color:var(--text3);font-size:12px;margin-bottom:12px">Maç öncesi kelimeler: ${diceCup.preMatchCorrect}/${diceCup.preMatchTotal}</div>
       ${diceCup.eventNote ? `<div class="dice-event-note">${diceCup.eventNote}</div>` : ''}
       ${table}
       <div style="margin-top:24px">${action}</div>
@@ -1691,11 +1759,17 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
 
   if (wc.active) {
     let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
-    
-    // Eğer kupa modunda tüm kelimeler tükenirse, listeyi baştan açıyoruz
     if (unusedPool.length === 0) {
-       wc.usedWords = [];
-       unusedPool = pool;
+      wc.usedWords = [];
+      unusedPool = pool;
+    }
+    pool = unusedPool;
+  } else if (diceCup.active) {
+    let unusedPool = pool.filter(w => !diceCup.usedWords.includes(w.id));
+    const requested = limitOverride || 0;
+    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
+      diceCup.usedWords = [];
+      unusedPool = pool;
     }
     pool = unusedPool;
   }
@@ -1724,9 +1798,11 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   
   if (wc.active) {
     fcQueue.forEach(card => {
-        if(!wc.usedWords.includes(card.id)) {
-            wc.usedWords.push(card.id);
-        }
+      if (!wc.usedWords.includes(card.id)) wc.usedWords.push(card.id);
+    });
+  } else if (diceCup.active) {
+    fcQueue.forEach(card => {
+      if (!diceCup.usedWords.includes(card.id)) diceCup.usedWords.push(card.id);
     });
   }
 
@@ -1737,16 +1813,22 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
 }
 
 function endQuizEarly() {
+  if (diceCup.active) {
+    alert('Zar Kupası maçında zarların açılması için bu turun kelimelerini tamamlamalısın.');
+    return;
+  }
   if (fcIndex === 0) { renderPreStart(); return; }
-  fcTotal = fcIndex; 
+  fcTotal = fcIndex;
   if (wc.active) showWCSummary(); else showFlashcardSummary();
 }
 
 function showNextFlashcard() {
   const area = document.getElementById('flashcard-area');
-  if (fcIndex >= fcQueue.length) { 
-    if (wc.active) showWCSummary(); else showFlashcardSummary(); 
-    return; 
+  if (fcIndex >= fcQueue.length) {
+    if (wc.active) showWCSummary();
+    else if (diceCup.active) showDiceCupWordSummary();
+    else showFlashcardSummary();
+    return;
   }
 
   const card = fcQueue[fcIndex];
@@ -1774,7 +1856,7 @@ function showNextFlashcard() {
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
       <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${progress}%"></div></div>
       <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
-      <button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>
+      ${diceCup.active ? '' : '<button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>'}
     </div>
 
     <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
