@@ -314,6 +314,35 @@
   }
 
   /* ZAR KUPASI */
+
+  .btn-ucl {
+    background: linear-gradient(135deg, #071952, #4338ca 55%, #7c3aed);
+    color: #fff;
+    font-weight: 700;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 6px 22px rgba(67,56,202,.34);
+  }
+  .btn-ucl:hover { transform: translateY(-2px); filter: brightness(1.09); }
+  .ucl-pot-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0; text-align:left; }
+  .ucl-pot-card { background:var(--bg3); border:1px solid rgba(129,140,248,.22); border-radius:12px; padding:14px; }
+  .ucl-pot-title { color:#a5b4fc; font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; margin-bottom:9px; }
+  .ucl-team-line { color:var(--text2); font-size:12px; line-height:1.7; }
+  .ucl-fixtures { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:18px 0; text-align:left; }
+  .ucl-fixture { background:var(--bg3); border:1px solid var(--border); border-radius:9px; padding:11px 12px; font-size:12px; color:var(--text2); }
+  .ucl-fixture b { color:var(--text); }
+  .ucl-table-wrap { max-height:520px; overflow:auto; margin-top:14px; border:1px solid rgba(255,255,255,.05); border-radius:10px; }
+  .ucl-table-wrap .wc-table { margin-top:0; }
+  .wc-table tr.ucl-direct { background:rgba(76,175,125,.09); }
+  .wc-table tr.ucl-playoff { background:rgba(201,168,76,.07); }
+  .wc-table tr.ucl-out { opacity:.62; }
+  .ucl-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; font-size:11px; color:var(--text3); }
+  .ucl-legend span { padding:5px 8px; border-radius:99px; border:1px solid rgba(255,255,255,.07); }
+  .ucl-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:99px; background:rgba(99,102,241,.12); border:1px solid rgba(129,140,248,.26); color:#c7d2fe; font-size:11px; font-weight:700; }
+  @media (max-width: 480px) {
+    .ucl-pot-grid, .ucl-fixtures { grid-template-columns:1fr; }
+  }
+
   .btn-dice {
     width: 100%;
     background: linear-gradient(135deg, #7c3aed, #db2777);
@@ -713,6 +742,71 @@ let diceCup = {
 };
 
 
+
+// 2025/26 UEFA CHAMPIONS LEAGUE — 36 TAKIM / 4 TORBA
+// Takım gücü zar sonucunu etkilemez; torbalar yalnızca lig fikstürü üretmek için kullanılır.
+const UCL_TEAMS = [
+  { name:'Paris Saint-Germain', short:'Paris SG', country:'FRA', pot:1, flag:'🇫🇷' },
+  { name:'Real Madrid', short:'Real Madrid', country:'ESP', pot:1, flag:'🇪🇸' },
+  { name:'Manchester City', short:'Man City', country:'ENG', pot:1, flag:'🇬🇧' },
+  { name:'Bayern München', short:'Bayern', country:'GER', pot:1, flag:'🇩🇪' },
+  { name:'Liverpool', short:'Liverpool', country:'ENG', pot:1, flag:'🇬🇧' },
+  { name:'Inter', short:'Inter', country:'ITA', pot:1, flag:'🇮🇹' },
+  { name:'Chelsea', short:'Chelsea', country:'ENG', pot:1, flag:'🇬🇧' },
+  { name:'Borussia Dortmund', short:'Dortmund', country:'GER', pot:1, flag:'🇩🇪' },
+  { name:'Barcelona', short:'Barcelona', country:'ESP', pot:1, flag:'🇪🇸' },
+
+  { name:'Arsenal', short:'Arsenal', country:'ENG', pot:2, flag:'🇬🇧' },
+  { name:'Bayer Leverkusen', short:'Leverkusen', country:'GER', pot:2, flag:'🇩🇪' },
+  { name:'Atlético Madrid', short:'Atlético', country:'ESP', pot:2, flag:'🇪🇸' },
+  { name:'Benfica', short:'Benfica', country:'POR', pot:2, flag:'🇵🇹' },
+  { name:'Atalanta', short:'Atalanta', country:'ITA', pot:2, flag:'🇮🇹' },
+  { name:'Villarreal', short:'Villarreal', country:'ESP', pot:2, flag:'🇪🇸' },
+  { name:'Juventus', short:'Juventus', country:'ITA', pot:2, flag:'🇮🇹' },
+  { name:'Eintracht Frankfurt', short:'Frankfurt', country:'GER', pot:2, flag:'🇩🇪' },
+  { name:'Club Brugge', short:'Club Brugge', country:'BEL', pot:2, flag:'🇧🇪' },
+
+  { name:'Tottenham Hotspur', short:'Tottenham', country:'ENG', pot:3, flag:'🇬🇧' },
+  { name:'PSV Eindhoven', short:'PSV', country:'NED', pot:3, flag:'🇳🇱' },
+  { name:'Ajax', short:'Ajax', country:'NED', pot:3, flag:'🇳🇱' },
+  { name:'Napoli', short:'Napoli', country:'ITA', pot:3, flag:'🇮🇹' },
+  { name:'Sporting CP', short:'Sporting CP', country:'POR', pot:3, flag:'🇵🇹' },
+  { name:'Olympiacos', short:'Olympiacos', country:'GRE', pot:3, flag:'🇬🇷' },
+  { name:'Slavia Praha', short:'Slavia Praha', country:'CZE', pot:3, flag:'🇨🇿' },
+  { name:'Bodø/Glimt', short:'Bodø/Glimt', country:'NOR', pot:3, flag:'🇳🇴' },
+  { name:'Marseille', short:'Marseille', country:'FRA', pot:3, flag:'🇫🇷' },
+
+  { name:'Copenhagen', short:'Copenhagen', country:'DEN', pot:4, flag:'🇩🇰' },
+  { name:'Monaco', short:'Monaco', country:'FRA', pot:4, flag:'🇫🇷' },
+  { name:'Galatasaray', short:'Galatasaray', country:'TUR', pot:4, flag:'🇹🇷' },
+  { name:'Union Saint-Gilloise', short:'Union SG', country:'BEL', pot:4, flag:'🇧🇪' },
+  { name:'Qarabağ', short:'Qarabağ', country:'AZE', pot:4, flag:'🇦🇿' },
+  { name:'Athletic Club', short:'Athletic Club', country:'ESP', pot:4, flag:'🇪🇸' },
+  { name:'Newcastle United', short:'Newcastle', country:'ENG', pot:4, flag:'🇬🇧' },
+  { name:'Pafos', short:'Pafos', country:'CYP', pot:4, flag:'🇨🇾' },
+  { name:'Kairat Almaty', short:'Kairat', country:'KAZ', pot:4, flag:'🇰🇿' }
+];
+
+const UCL_DRAW_TEMPLATES = [[[["Bayern München","Villarreal"],["Barcelona","Marseille"],["Atlético Madrid","Copenhagen"],["Chelsea","Pafos"],["Qarabağ","Newcastle United"],["Atalanta","Paris Saint-Germain"],["Ajax","Olympiacos"],["Kairat Almaty","Bayer Leverkusen"],["Union Saint-Gilloise","Sporting CP"],["Tottenham Hotspur","PSV Eindhoven"],["Liverpool","Real Madrid"],["Athletic Club","Juventus"],["Eintracht Frankfurt","Bodø/Glimt"],["Galatasaray","Monaco"],["Borussia Dortmund","Benfica"],["Arsenal","Club Brugge"],["Slavia Praha","Napoli"],["Manchester City","Inter"]],[["Villarreal","Manchester City"],["Copenhagen","Qarabağ"],["Monaco","Ajax"],["Newcastle United","Union Saint-Gilloise"],["Paris Saint-Germain","Kairat Almaty"],["Club Brugge","Marseille"],["Benfica","Liverpool"],["Eintracht Frankfurt","Barcelona"],["Galatasaray","Atalanta"],["Athletic Club","Borussia Dortmund"],["Juventus","Tottenham Hotspur"],["Pafos","Arsenal"],["Bodø/Glimt","Slavia Praha"],["Napoli","Atlético Madrid"],["PSV Eindhoven","Bayer Leverkusen"],["Olympiacos","Inter"],["Real Madrid","Bayern München"],["Sporting CP","Chelsea"]],[["PSV Eindhoven","Barcelona"],["Liverpool","Eintracht Frankfurt"],["Bayer Leverkusen","Atlético Madrid"],["Copenhagen","Club Brugge"],["Marseille","Tottenham Hotspur"],["Real Madrid","Slavia Praha"],["Villarreal","Ajax"],["Benfica","Atalanta"],["Manchester City","Galatasaray"],["Monaco","Kairat Almaty"],["Sporting CP","Newcastle United"],["Athletic Club","Olympiacos"],["Bodø/Glimt","Paris Saint-Germain"],["Inter","Chelsea"],["Borussia Dortmund","Napoli"],["Arsenal","Union Saint-Gilloise"],["Juventus","Qarabağ"],["Pafos","Bayern München"]],[["Napoli","Ajax"],["Paris Saint-Germain","Borussia Dortmund"],["Olympiacos","Benfica"],["Manchester City","Club Brugge"],["Newcastle United","Villarreal"],["Atalanta","Kairat Almaty"],["Copenhagen","Marseille"],["Chelsea","Bodø/Glimt"],["Galatasaray","Real Madrid"],["Athletic Club","Pafos"],["Atlético Madrid","Juventus"],["Union Saint-Gilloise","Eintracht Frankfurt"],["Barcelona","Liverpool"],["PSV Eindhoven","Monaco"],["Arsenal","Bayern München"],["Slavia Praha","Qarabağ"],["Bayer Leverkusen","Sporting CP"],["Inter","Tottenham Hotspur"]],[["Benfica","Newcastle United"],["Bodø/Glimt","Kairat Almaty"],["Ajax","Union Saint-Gilloise"],["Atlético Madrid","Inter"],["Borussia Dortmund","Manchester City"],["Olympiacos","Marseille"],["Liverpool","Monaco"],["Bayern München","Paris Saint-Germain"],["Atalanta","Bayer Leverkusen"],["Real Madrid","Copenhagen"],["Club Brugge","Athletic Club"],["Juventus","Eintracht Frankfurt"],["Galatasaray","PSV Eindhoven"],["Qarabağ","Napoli"],["Slavia Praha","Arsenal"],["Pafos","Tottenham Hotspur"],["Chelsea","Barcelona"],["Sporting CP","Villarreal"]],[["Eintracht Frankfurt","Arsenal"],["Bodø/Glimt","Atalanta"],["Barcelona","Bayer Leverkusen"],["Bayern München","Newcastle United"],["Tottenham Hotspur","Club Brugge"],["Ajax","Real Madrid"],["Union Saint-Gilloise","Chelsea"],["Monaco","Atlético Madrid"],["Marseille","Athletic Club"],["Qarabağ","Paris Saint-Germain"],["Olympiacos","Pafos"],["Villarreal","Benfica"],["Copenhagen","Liverpool"],["Kairat Almaty","Inter"],["Juventus","Borussia Dortmund"],["PSV Eindhoven","Sporting CP"],["Napoli","Galatasaray"],["Slavia Praha","Manchester City"]],[["Club Brugge","Villarreal"],["Kairat Almaty","Copenhagen"],["Newcastle United","Barcelona"],["Real Madrid","Juventus"],["Marseille","Borussia Dortmund"],["Sporting CP","Bodø/Glimt"],["Paris Saint-Germain","PSV Eindhoven"],["Manchester City","Ajax"],["Union Saint-Gilloise","Athletic Club"],["Eintracht Frankfurt","Monaco"],["Atalanta","Slavia Praha"],["Napoli","Liverpool"],["Inter","Arsenal"],["Bayer Leverkusen","Chelsea"],["Tottenham Hotspur","Bayern München"],["Atlético Madrid","Olympiacos"],["Pafos","Galatasaray"],["Qarabağ","Benfica"]],[["Barcelona","Union Saint-Gilloise"],["Newcastle United","Bodø/Glimt"],["Inter","Athletic Club"],["Marseille","Eintracht Frankfurt"],["Arsenal","PSV Eindhoven"],["Tottenham Hotspur","Copenhagen"],["Bayern München","Olympiacos"],["Liverpool","Sporting CP"],["Ajax","Juventus"],["Kairat Almaty","Slavia Praha"],["Club Brugge","Real Madrid"],["Chelsea","Atalanta"],["Monaco","Manchester City"],["Bayer Leverkusen","Galatasaray"],["Borussia Dortmund","Qarabağ"],["Benfica","Napoli"],["Paris Saint-Germain","Atlético Madrid"],["Villarreal","Pafos"]]],[[["Arsenal","Eintracht Frankfurt"],["Paris Saint-Germain","Union Saint-Gilloise"],["Slavia Praha","Ajax"],["Juventus","Chelsea"],["Bayern München","Newcastle United"],["Atalanta","Club Brugge"],["Copenhagen","Liverpool"],["Kairat Almaty","Borussia Dortmund"],["Monaco","Napoli"],["Pafos","Bodø/Glimt"],["Benfica","Athletic Club"],["Bayer Leverkusen","Marseille"],["Real Madrid","Olympiacos"],["Galatasaray","Sporting CP"],["Atlético Madrid","Qarabağ"],["Inter","PSV Eindhoven"],["Villarreal","Tottenham Hotspur"],["Manchester City","Barcelona"]],[["Club Brugge","Benfica"],["Arsenal","Galatasaray"],["Atlético Madrid","Inter"],["Atalanta","Olympiacos"],["Athletic Club","Union Saint-Gilloise"],["Slavia Praha","Real Madrid"],["Ajax","Kairat Almaty"],["Bayer Leverkusen","Manchester City"],["Eintracht Frankfurt","Paris Saint-Germain"],["Borussia Dortmund","Liverpool"],["Qarabağ","Marseille"],["Tottenham Hotspur","Pafos"],["Barcelona","Sporting CP"],["Chelsea","Bodø/Glimt"],["Monaco","Villarreal"],["Juventus","PSV Eindhoven"],["Napoli","Bayern München"],["Copenhagen","Newcastle United"]],[["Real Madrid","Monaco"],["PSV Eindhoven","Liverpool"],["Galatasaray","Eintracht Frankfurt"],["Juventus","Copenhagen"],["Atlético Madrid","Atalanta"],["Villarreal","Bayer Leverkusen"],["Kairat Almaty","Slavia Praha"],["Sporting CP","Club Brugge"],["Borussia Dortmund","Athletic Club"],["Bodø/Glimt","Newcastle United"],["Marseille","Chelsea"],["Qarabağ","Paris Saint-Germain"],["Inter","Arsenal"],["Union Saint-Gilloise","Benfica"],["Olympiacos","Napoli"],["Tottenham Hotspur","Barcelona"],["Ajax","Manchester City"],["Pafos","Bayern München"]],[["Liverpool","Marseille"],["Olympiacos","Arsenal"],["Copenhagen","Club Brugge"],["Newcastle United","Bayer Leverkusen"],["Barcelona","Borussia Dortmund"],["Kairat Almaty","Atlético Madrid"],["Bodø/Glimt","Inter"],["Eintracht Frankfurt","Villarreal"],["Union Saint-Gilloise","Galatasaray"],["PSV Eindhoven","Slavia Praha"],["Paris Saint-Germain","Real Madrid"],["Napoli","Tottenham Hotspur"],["Chelsea","Bayern München"],["Ajax","Sporting CP"],["Qarabağ","Monaco"],["Benfica","Juventus"],["Pafos","Atalanta"],["Athletic Club","Manchester City"]],[["Paris Saint-Germain","Bayer Leverkusen"],["Real Madrid","Atalanta"],["Barcelona","Club Brugge"],["Sporting CP","Bodø/Glimt"],["Villarreal","Borussia Dortmund"],["Liverpool","Inter"],["Eintracht Frankfurt","Union Saint-Gilloise"],["Tottenham Hotspur","PSV Eindhoven"],["Manchester City","Napoli"],["Qarabağ","Juventus"],["Olympiacos","Monaco"],["Marseille","Galatasaray"],["Chelsea","Copenhagen"],["Kairat Almaty","Athletic Club"],["Newcastle United","Pafos"],["Benfica","Slavia Praha"],["Arsenal","Ajax"],["Bayern München","Atlético Madrid"]],[["Copenhagen","Tottenham Hotspur"],["Bayer Leverkusen","Atlético Madrid"],["Borussia Dortmund","Benfica"],["Liverpool","Qarabağ"],["Newcastle United","Ajax"],["PSV Eindhoven","Eintracht Frankfurt"],["Napoli","Athletic Club"],["Chelsea","Villarreal"],["Union Saint-Gilloise","Real Madrid"],["Manchester City","Galatasaray"],["Marseille","Olympiacos"],["Atalanta","Bayern München"],["Arsenal","Barcelona"],["Club Brugge","Bodø/Glimt"],["Sporting CP","Paris Saint-Germain"],["Slavia Praha","Juventus"],["Monaco","Inter"],["Pafos","Kairat Almaty"]],[["Slavia Praha","Union Saint-Gilloise"],["Sporting CP","Qarabağ"],["Marseille","Atlético Madrid"],["Olympiacos","Borussia Dortmund"],["Real Madrid","Manchester City"],["Eintracht Frankfurt","Napoli"],["Ajax","Atalanta"],["Tottenham Hotspur","Bayer Leverkusen"],["Bodø/Glimt","Benfica"],["Newcastle United","Barcelona"],["Bayern München","Paris Saint-Germain"],["Juventus","Arsenal"],["Athletic Club","PSV Eindhoven"],["Inter","Kairat Almaty"],["Galatasaray","Chelsea"],["Club Brugge","Liverpool"],["Monaco","Copenhagen"],["Villarreal","Pafos"]],[["Benfica","Real Madrid"],["Atalanta","Newcastle United"],["PSV Eindhoven","Copenhagen"],["Athletic Club","Arsenal"],["Bayer Leverkusen","Monaco"],["Barcelona","Pafos"],["Bayern München","Ajax"],["Manchester City","Eintracht Frankfurt"],["Club Brugge","Kairat Almaty"],["Atlético Madrid","Sporting CP"],["Galatasaray","Qarabağ"],["Liverpool","Juventus"],["Borussia Dortmund","Slavia Praha"],["Inter","Chelsea"],["Napoli","Villarreal"],["Paris Saint-Germain","Tottenham Hotspur"],["Union Saint-Gilloise","Olympiacos"],["Bodø/Glimt","Marseille"]]],[[["Real Madrid","Monaco"],["Juventus","Pafos"],["Sporting CP","Qarabağ"],["Kairat Almaty","Liverpool"],["Olympiacos","Napoli"],["Club Brugge","Bayern München"],["Marseille","Newcastle United"],["Arsenal","Paris Saint-Germain"],["Bayer Leverkusen","Villarreal"],["Galatasaray","Ajax"],["Athletic Club","Copenhagen"],["Benfica","Manchester City"],["Chelsea","Eintracht Frankfurt"],["Tottenham Hotspur","Barcelona"],["Bodø/Glimt","Borussia Dortmund"],["Inter","Union Saint-Gilloise"],["PSV Eindhoven","Atlético Madrid"],["Atalanta","Slavia Praha"]],[["Chelsea","Qarabağ"],["Atlético Madrid","Inter"],["Kairat Almaty","Club Brugge"],["Atalanta","Real Madrid"],["Tottenham Hotspur","Ajax"],["Slavia Praha","Bayer Leverkusen"],["Borussia Dortmund","Marseille"],["Newcastle United","Sporting CP"],["Olympiacos","Galatasaray"],["Athletic Club","Juventus"],["Benfica","Monaco"],["Pafos","Arsenal"],["Bayern München","PSV Eindhoven"],["Napoli","Paris Saint-Germain"],["Liverpool","Villarreal"],["Barcelona","Bodø/Glimt"],["Copenhagen","Eintracht Frankfurt"],["Union Saint-Gilloise","Manchester City"]],[["Union Saint-Gilloise","Slavia Praha"],["Pafos","Borussia Dortmund"],["Inter","Bayer Leverkusen"],["Eintracht Frankfurt","Napoli"],["Barcelona","Club Brugge"],["Tottenham Hotspur","Athletic Club"],["Marseille","Chelsea"],["Olympiacos","Manchester City"],["Monaco","Galatasaray"],["Sporting CP","Bayern München"],["Arsenal","Copenhagen"],["Atalanta","Qarabağ"],["Bodø/Glimt","Benfica"],["PSV Eindhoven","Real Madrid"],["Villarreal","Juventus"],["Atlético Madrid","Kairat Almaty"],["Paris Saint-Germain","Newcastle United"],["Ajax","Liverpool"]],[["Union Saint-Gilloise","Kairat Almaty"],["Club Brugge","Newcastle United"],["Atlético Madrid","Marseille"],["Qarabağ","Pafos"],["Barcelona","Liverpool"],["Copenhagen","Bayern München"],["Slavia Praha","Inter"],["Villarreal","Borussia Dortmund"],["Benfica","Ajax"],["Eintracht Frankfurt","Athletic Club"],["PSV Eindhoven","Olympiacos"],["Paris Saint-Germain","Sporting CP"],["Napoli","Monaco"],["Tottenham Hotspur","Atalanta"],["Galatasaray","Chelsea"],["Manchester City","Juventus"],["Real Madrid","Arsenal"],["Bayer Leverkusen","Bodø/Glimt"]],[["Borussia Dortmund","Copenhagen"],["Liverpool","Olympiacos"],["Eintracht Frankfurt","Benfica"],["Newcastle United","Bayer Leverkusen"],["Ajax","Sporting CP"],["Real Madrid","Slavia Praha"],["Marseille","Juventus"],["Chelsea","Paris Saint-Germain"],["Pafos","Bodø/Glimt"],["Villarreal","PSV Eindhoven"],["Napoli","Arsenal"],["Bayern München","Athletic Club"],["Monaco","Atalanta"],["Manchester City","Kairat Almaty"],["Club Brugge","Atlético Madrid"],["Qarabağ","Barcelona"],["Inter","Tottenham Hotspur"],["Galatasaray","Union Saint-Gilloise"]],[["Bodø/Glimt","Marseille"],["Arsenal","Eintracht Frankfurt"],["Olympiacos","Club Brugge"],["Villarreal","Union Saint-Gilloise"],["Manchester City","Ajax"],["Real Madrid","Bayern München"],["Benfica","Bayer Leverkusen"],["Atlético Madrid","Atalanta"],["Athletic Club","Paris Saint-Germain"],["Chelsea","Napoli"],["Borussia Dortmund","Inter"],["Barcelona","Galatasaray"],["Juventus","Liverpool"],["Monaco","Tottenham Hotspur"],["Sporting CP","PSV Eindhoven"],["Kairat Almaty","Qarabağ"],["Slavia Praha","Pafos"],["Copenhagen","Newcastle United"]],[["Atalanta","Arsenal"],["Bodø/Glimt","Union Saint-Gilloise"],["Ajax","Copenhagen"],["Inter","Real Madrid"],["Club Brugge","Tottenham Hotspur"],["Kairat Almaty","Olympiacos"],["Eintracht Frankfurt","Barcelona"],["Newcastle United","Monaco"],["Athletic Club","Marseille"],["Paris Saint-Germain","Manchester City"],["Liverpool","Pafos"],["Galatasaray","Villarreal"],["Bayer Leverkusen","Chelsea"],["Napoli","Slavia Praha"],["Bayern München","Benfica"],["Juventus","Sporting CP"],["Qarabağ","PSV Eindhoven"],["Borussia Dortmund","Atlético Madrid"]],[["Liverpool","Borussia Dortmund"],["Ajax","Eintracht Frankfurt"],["Arsenal","Olympiacos"],["Pafos","Athletic Club"],["Marseille","Tottenham Hotspur"],["Paris Saint-Germain","Atalanta"],["Juventus","Club Brugge"],["Newcastle United","Real Madrid"],["PSV Eindhoven","Kairat Almaty"],["Slavia Praha","Bodø/Glimt"],["Qarabağ","Atlético Madrid"],["Bayer Leverkusen","Galatasaray"],["Sporting CP","Villarreal"],["Bayern München","Chelsea"],["Copenhagen","Napoli"],["Monaco","Inter"],["Union Saint-Gilloise","Benfica"],["Manchester City","Barcelona"]]],[[["Inter","Qarabağ"],["Ajax","Slavia Praha"],["PSV Eindhoven","Copenhagen"],["Tottenham Hotspur","Borussia Dortmund"],["Napoli","Bayern München"],["Atlético Madrid","Atalanta"],["Newcastle United","Marseille"],["Eintracht Frankfurt","Athletic Club"],["Olympiacos","Paris Saint-Germain"],["Bodø/Glimt","Liverpool"],["Bayer Leverkusen","Juventus"],["Club Brugge","Monaco"],["Benfica","Chelsea"],["Villarreal","Galatasaray"],["Kairat Almaty","Sporting CP"],["Arsenal","Real Madrid"],["Pafos","Union Saint-Gilloise"],["Barcelona","Manchester City"]],[["Barcelona","Slavia Praha"],["Union Saint-Gilloise","PSV Eindhoven"],["Newcastle United","Borussia Dortmund"],["Copenhagen","Olympiacos"],["Bayer Leverkusen","Tottenham Hotspur"],["Qarabağ","Real Madrid"],["Villarreal","Marseille"],["Sporting CP","Eintracht Frankfurt"],["Kairat Almaty","Galatasaray"],["Chelsea","Paris Saint-Germain"],["Athletic Club","Atalanta"],["Arsenal","Pafos"],["Monaco","Juventus"],["Benfica","Napoli"],["Club Brugge","Bodø/Glimt"],["Ajax","Manchester City"],["Liverpool","Atlético Madrid"],["Inter","Bayern München"]],[["Union Saint-Gilloise","Barcelona"],["Borussia Dortmund","Copenhagen"],["Olympiacos","Benfica"],["PSV Eindhoven","Real Madrid"],["Napoli","Arsenal"],["Bayern München","Newcastle United"],["Paris Saint-Germain","Atalanta"],["Villarreal","Eintracht Frankfurt"],["Marseille","Juventus"],["Bayer Leverkusen","Qarabağ"],["Liverpool","Inter"],["Galatasaray","Ajax"],["Manchester City","Monaco"],["Slavia Praha","Club Brugge"],["Athletic Club","Bodø/Glimt"],["Pafos","Tottenham Hotspur"],["Atlético Madrid","Kairat Almaty"],["Sporting CP","Chelsea"]],[["Newcastle United","Club Brugge"],["Atlético Madrid","Borussia Dortmund"],["Marseille","Napoli"],["Qarabağ","Athletic Club"],["Bayern München","Sporting CP"],["Liverpool","PSV Eindhoven"],["Real Madrid","Pafos"],["Benfica","Bayer Leverkusen"],["Juventus","Olympiacos"],["Chelsea","Ajax"],["Galatasaray","Paris Saint-Germain"],["Atalanta","Barcelona"],["Arsenal","Slavia Praha"],["Copenhagen","Eintracht Frankfurt"],["Tottenham Hotspur","Kairat Almaty"],["Villarreal","Manchester City"],["Bodø/Glimt","Union Saint-Gilloise"],["Monaco","Inter"]],[["Manchester City","Club Brugge"],["Marseille","Barcelona"],["Kairat Almaty","Liverpool"],["Juventus","Union Saint-Gilloise"],["Sporting CP","Pafos"],["Athletic Club","Bayern München"],["Paris Saint-Germain","Borussia Dortmund"],["Ajax","Atalanta"],["Arsenal","Benfica"],["Monaco","Newcastle United"],["Galatasaray","Qarabağ"],["Copenhagen","Chelsea"],["Bodø/Glimt","Bayer Leverkusen"],["Napoli","Olympiacos"],["Tottenham Hotspur","Villarreal"],["Slavia Praha","Inter"],["PSV Eindhoven","Atlético Madrid"],["Real Madrid","Eintracht Frankfurt"]],[["Eintracht Frankfurt","Liverpool"],["Manchester City","Real Madrid"],["Union Saint-Gilloise","Villarreal"],["Atalanta","Copenhagen"],["Atlético Madrid","Sporting CP"],["Club Brugge","Inter"],["Kairat Almaty","Benfica"],["Olympiacos","Athletic Club"],["Borussia Dortmund","Arsenal"],["Bodø/Glimt","PSV Eindhoven"],["Galatasaray","Bayer Leverkusen"],["Paris Saint-Germain","Napoli"],["Bayern München","Chelsea"],["Newcastle United","Pafos"],["Ajax","Monaco"],["Barcelona","Juventus"],["Slavia Praha","Tottenham Hotspur"],["Marseille","Qarabağ"]],[["Benfica","Newcastle United"],["Eintracht Frankfurt","Ajax"],["Manchester City","Olympiacos"],["Borussia Dortmund","Marseille"],["Paris Saint-Germain","Kairat Almaty"],["Inter","Villarreal"],["Club Brugge","Arsenal"],["Atalanta","PSV Eindhoven"],["Qarabağ","Napoli"],["Tottenham Hotspur","Sporting CP"],["Athletic Club","Copenhagen"],["Monaco","Slavia Praha"],["Juventus","Bayern München"],["Pafos","Atlético Madrid"],["Chelsea","Bayer Leverkusen"],["Real Madrid","Bodø/Glimt"],["Liverpool","Union Saint-Gilloise"],["Barcelona","Galatasaray"]],[["Atalanta","Villarreal"],["Slavia Praha","Newcastle United"],["Bayer Leverkusen","Paris Saint-Germain"],["Napoli","Galatasaray"],["Eintracht Frankfurt","Club Brugge"],["Olympiacos","Ajax"],["Inter","Tottenham Hotspur"],["PSV Eindhoven","Marseille"],["Real Madrid","Liverpool"],["Union Saint-Gilloise","Kairat Almaty"],["Juventus","Atlético Madrid"],["Chelsea","Athletic Club"],["Qarabağ","Arsenal"],["Bayern München","Benfica"],["Sporting CP","Bodø/Glimt"],["Pafos","Manchester City"],["Copenhagen","Monaco"],["Borussia Dortmund","Barcelona"]]]];
+
+const UCL_STAGE_WORDS = { league:10, playoff:15, ro16:18, qf:20, sf:22, final:25 };
+const UCL_STAGE_NAMES = {
+  league:'Lig Aşaması', playoff:'Eleme Aşaması Play-off', ro16:'Son 16 Turu',
+  qf:'Çeyrek Final', sf:'Yarı Final', final:'Şampiyonlar Ligi Finali', won:'Şampiyon'
+};
+
+let diceUcl = {
+  active:false, playerTeam:null, stage:'league', leagueMatchIndex:0, standings:{}, schedule:[], leagueRounds:[],
+  opponent:null, home:true, wordCount:10, preMatchCorrect:0, preMatchTotal:0,
+  playerDice:[], opponentDice:[], playerScore:0, opponentScore:0,
+  extraTimePlayer:0, extraTimeOpponent:0, rolled:false, rolling:false,
+  rerollUsed:false, rerollFailed:false, rerollQueue:[], rerollIndex:0,
+  rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
+  rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
+  finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
+  knockoutField:[], currentRoundPairings:[]
+};
+
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -794,7 +888,8 @@ function todayStr() {
 
 function renderPreStart() {
   wc.active = false;
-  diceCup.active = false; 
+  diceCup.active = false;
+  diceUcl.active = false;
   wc.usedWords = []; 
   const userWords = loadUserWords();
   const area = document.getElementById('flashcard-area');
@@ -826,6 +921,10 @@ function renderPreStart() {
 
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
         <button class="btn btn-dice" onclick="renderDiceCupTeamSelect()">🎲 Zar Kupası Modu · Rastgele Takım</button>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
+        <button class="btn btn-ucl" onclick="renderDiceUclLanding()">⭐🎲 Zar Şampiyonlar Ligi · 36 Takım</button>
       </div>
       
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
@@ -936,6 +1035,7 @@ function resetDiceCupState() {
 // Ana menüdeki buton bu ekrana gelir. Takım seçilmez; turnuva başlayınca kura çekilir.
 function renderDiceCupTeamSelect() {
   wc.active = false;
+  diceUcl.active = false;
   fcQueue = [];
   resetDiceCupState();
   const area = document.getElementById('flashcard-area');
@@ -1497,12 +1597,652 @@ function finishDiceCupMatch() {
     </div>`;
 }
 
+
+// ----------------------------------------------------
+// ZAR ŞAMPİYONLAR LİGİ OYUN MANTIĞI
+// ----------------------------------------------------
+
+function shuffleArray(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function resetDiceUclState() {
+  diceUcl = {
+    active:true, playerTeam:null, stage:'league', leagueMatchIndex:0, standings:{}, schedule:[], leagueRounds:[],
+    opponent:null, home:true, wordCount:10, preMatchCorrect:0, preMatchTotal:0,
+    playerDice:[], opponentDice:[], playerScore:0, opponentScore:0,
+    extraTimePlayer:0, extraTimeOpponent:0, rolled:false, rolling:false,
+    rerollUsed:false, rerollFailed:false, rerollQueue:[], rerollIndex:0,
+    rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
+    rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
+    finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
+    knockoutField:[], currentRoundPairings:[]
+  };
+}
+
+function renderDiceUclLanding() {
+  wc.active = false;
+  diceCup.active = false;
+  fcQueue = [];
+  resetDiceUclState();
+  const pots = [1,2,3,4].map(pot => {
+    const teams = UCL_TEAMS.filter(t => t.pot === pot);
+    return `<div class="ucl-pot-card"><div class="ucl-pot-title">${pot}. Torba</div>${teams.map(t => `<div class="ucl-team-line">${t.flag} ${t.short}</div>`).join('')}</div>`;
+  }).join('');
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:34px 24px">
+      <div style="font-size:54px;margin-bottom:10px">🎲⭐🏆</div>
+      <div class="quiz-start-title">Zar <em>Şampiyonlar Ligi</em></div>
+      <p style="color:var(--text2);line-height:1.7;margin:12px 0 16px">
+        36 kulüpten biri rastgele atanır. Lig aşamasında her torbadan iki farklı rakiple, toplam sekiz maç oynarsın.
+      </p>
+      <div class="dice-rule-box">
+        Her lig maçı 10 kelimeyle başlar. Ardından üçer zar atılır ve istediğin tek zarı 5/5 kelime sınavıyla bir kez reroll edebilirsin. İlk 8 direkt Son 16'ya, 9–24 play-off'a yükselir; 25–36 elenir.
+      </div>
+      <div class="ucl-pot-grid">${pots}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-ucl" style="max-width:370px" onclick="startDiceUclTournament()">Rastgele Kulüple Başlat 🎲</button>
+        <button class="btn btn-outline" onclick="renderPreStart()">← Ana Menü</button>
+      </div>
+    </div>`;
+}
+
+function buildDiceUclDrawRounds() {
+  const template = UCL_DRAW_TEMPLATES[Math.floor(Math.random() * UCL_DRAW_TEMPLATES.length)];
+  const reverseAll = Math.random() < .5;
+  const rounds = template.map(round => round.map(([homeName,awayName]) => {
+    const home = UCL_TEAMS.find(t => t.name === homeName);
+    const away = UCL_TEAMS.find(t => t.name === awayName);
+    return reverseAll ? [away,home] : [home,away];
+  }));
+  return shuffleArray(rounds);
+}
+
+function buildDiceUclPlayerSchedule(player) {
+  return diceUcl.leagueRounds.map(round => {
+    const match = round.find(([home,away]) => home.name === player.name || away.name === player.name);
+    const home = match[0].name === player.name;
+    const opponent = home ? match[1] : match[0];
+    return {opponent, home, pot:opponent.pot};
+  });
+}
+
+function startDiceUclTournament() {
+  resetDiceUclState();
+  wc.active = false;
+  diceCup.active = false;
+  diceUcl.playerTeam = UCL_TEAMS[Math.floor(Math.random() * UCL_TEAMS.length)];
+  diceUcl.leagueRounds = buildDiceUclDrawRounds();
+  diceUcl.schedule = buildDiceUclPlayerSchedule(diceUcl.playerTeam);
+  UCL_TEAMS.forEach(team => {
+    diceUcl.standings[team.name] = {team, P:0, W:0, D:0, L:0, GF:0, GA:0, GD:0};
+  });
+  renderDiceUclIntro();
+}
+
+function renderDiceUclIntro() {
+  const fixtures = diceUcl.schedule.map((f,i) => `
+    <div class="ucl-fixture"><span style="color:var(--text3)">${i+1}. maç · ${f.pot}. torba</span><br><b>${f.home ? '🏠' : '✈️'} ${f.opponent.flag} ${f.opponent.short}</b></div>`).join('');
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:34px 24px">
+      <div style="font-size:54px;margin-bottom:10px">⭐🎲</div>
+      <div class="quiz-start-title">Kulübün <em>Belirlendi</em></div>
+      <div class="wc-score-box" style="justify-content:center">
+        <div class="wc-team">
+          <div class="wc-flag">${diceUcl.playerTeam.flag}</div>
+          <div class="wc-team-name">${diceUcl.playerTeam.name}</div>
+          <div class="ucl-badge">${diceUcl.playerTeam.pot}. TORBA · ${diceUcl.playerTeam.country}</div>
+        </div>
+      </div>
+      <div class="quiz-settings-title" style="text-align:center;margin-top:18px">8 MAÇLIK LİG FİKSTÜRÜN</div>
+      <div class="ucl-fixtures">${fixtures}</div>
+      <button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">1. Lig Maçına Çık ➔</button>
+    </div>`;
+}
+
+function getDiceUclStageText() {
+  if (diceUcl.stage === 'league') {
+    const fixture = diceUcl.schedule[diceUcl.leagueMatchIndex];
+    return `Lig Aşaması · ${diceUcl.leagueMatchIndex + 1}/8 · ${fixture && fixture.home ? 'İç Saha' : 'Deplasman'}`;
+  }
+  return UCL_STAGE_NAMES[diceUcl.stage] || diceUcl.stage;
+}
+
+function resetDiceUclMatchState() {
+  diceUcl.wordCount = UCL_STAGE_WORDS[diceUcl.stage] || 10;
+  diceUcl.preMatchCorrect = 0;
+  diceUcl.preMatchTotal = 0;
+  diceUcl.playerDice = [];
+  diceUcl.opponentDice = [];
+  diceUcl.playerScore = 0;
+  diceUcl.opponentScore = 0;
+  diceUcl.extraTimePlayer = 0;
+  diceUcl.extraTimeOpponent = 0;
+  diceUcl.rolled = false;
+  diceUcl.rolling = false;
+  diceUcl.rerollUsed = false;
+  diceUcl.rerollFailed = false;
+  diceUcl.rerollQueue = [];
+  diceUcl.rerollIndex = 0;
+  diceUcl.rerollRevealed = false;
+  diceUcl.selectedRerollIndex = -1;
+  diceUcl.rerolledValue = null;
+  diceUcl.rerolledIndex = -1;
+  diceUcl.eventNote = '';
+  diceUcl.resultCommitted = false;
+}
+
+function prepareNextDiceUclMatch() {
+  resetDiceUclMatchState();
+  if (diceUcl.stage === 'league') {
+    const fixture = diceUcl.schedule[diceUcl.leagueMatchIndex];
+    diceUcl.opponent = fixture.opponent;
+    diceUcl.home = fixture.home;
+  }
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-settings-title" style="text-align:center">${getDiceUclStageText()}</div>
+      <div class="quiz-start-title" style="font-size:32px">Sıradaki Rakip</div>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
+        <div class="wc-score">VS</div>
+        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
+      </div>
+      ${diceUcl.stage === 'league' ? `<div class="ucl-badge" style="margin-bottom:14px">${diceUcl.home ? '🏠 İÇ SAHA' : '✈️ DEPLASMAN'} · RAKİP ${diceUcl.opponent.pot}. TORBA</div>` : ''}
+      <p style="color:var(--text2);font-size:13px;line-height:1.65;margin-bottom:20px">
+        Önce <b style="color:var(--gold)">${diceUcl.wordCount} kelime</b> gelecek. Tüm kelimeler tamamlanınca maç zarları açılacak.
+      </p>
+      <button class="btn btn-ucl" onclick="startDiceUclMatchWords()">${diceUcl.wordCount} Kelimelik Maça Başla 📚</button>
+    </div>`;
+}
+
+function startDiceUclMatchWords() {
+  const words = loadUserWords();
+  if (!words.length) {
+    alert('Zar Şampiyonlar Ligi için en az bir kelime gerekiyor.');
+    return;
+  }
+  const unusedCount = words.filter(w => !diceUcl.usedWords.includes(w.id)).length;
+  if (unusedCount < Math.min(diceUcl.wordCount, words.length)) diceUcl.usedWords = [];
+  startFlashcard(false, diceUcl.wordCount);
+}
+
+function showDiceUclWordSummary() {
+  diceUcl.preMatchCorrect = fcCorrect;
+  diceUcl.preMatchTotal = fcTotal;
+  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:48px;margin-bottom:10px">📚✓</div>
+      <div class="quiz-start-title">Kelimeler <em>Tamamlandı</em></div>
+      <p style="color:var(--text2);margin-bottom:18px">${fcTotal} kelimede ${fcCorrect} doğru · Başarı %${accuracy}</p>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
+        <div class="wc-score">VS</div>
+        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
+      </div>
+      <button class="btn btn-ucl" onclick="rollDiceUclMatch()">Şimdi Zarları At 🎲</button>
+    </div>`;
+}
+
+function rollDiceUclMatch() {
+  if (diceUcl.rolling || diceUcl.rolled) return;
+  diceUcl.rolling = true;
+  renderDiceUclBattle(true);
+  setTimeout(() => {
+    diceUcl.playerDice = rollThreeDice();
+    diceUcl.opponentDice = rollThreeDice();
+    const scored = scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
+    diceUcl.playerScore = scored.playerScore;
+    diceUcl.opponentScore = scored.opponentScore;
+    diceUcl.rolling = false;
+    diceUcl.rolled = true;
+    renderDiceUclBattle(false);
+  }, 720);
+}
+
+function uclDieHtml(value, options = {}) {
+  const classes = ['die'];
+  if (options.rolling) classes.push('rolling');
+  if (options.rerolled) classes.push('rerolled');
+  if (options.selectable) classes.push('selectable');
+  if (options.selected) classes.push('selected');
+  const content = options.rolling ? '↻' : DICE_FACES[value];
+  if (options.selectable) {
+    return `<button type="button" class="${classes.join(' ')}" onclick="selectDiceUclRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
+  }
+  return `<div class="${classes.join(' ')}">${content}</div>`;
+}
+
+function selectDiceUclRerollDie(index) {
+  if (!diceUcl.rolled || diceUcl.rolling || diceUcl.rerollUsed) return;
+  if (index < 0 || index >= diceUcl.playerDice.length) return;
+  diceUcl.selectedRerollIndex = index;
+  diceUcl.eventNote = `${index + 1}. zar seçildi: ${DICE_FACES[diceUcl.playerDice[index]]} (${diceUcl.playerDice[index]}). Reroll için 5 kelimenin tamamını bilmelisin.`;
+  renderDiceUclBattle(false);
+}
+
+function renderDiceUclBattle(isRolling = false) {
+  const area = document.getElementById('flashcard-area');
+  const scored = isRolling
+    ? {playerScore:'–', opponentScore:'–', pairs:[0,1,2].map(i => ({index:i,result:'draw'}))}
+    : scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
+  if (!isRolling) {
+    diceUcl.playerScore = scored.playerScore + (diceUcl.extraTimePlayer || 0);
+    diceUcl.opponentScore = scored.opponentScore + (diceUcl.extraTimeOpponent || 0);
+  }
+  const pairLabels = isRolling ? ['', '', ''] : scored.pairs.map(pair => {
+    if (pair.result === 'player') return '<span>+1 Gol<br>Sen</span>';
+    if (pair.result === 'opponent') return '<span>+1 Gol<br>Rakip</span>';
+    return '<span>Eşit<br>Gol Yok</span>';
+  });
+  let controls = '';
+  if (isRolling) {
+    controls = `<div style="color:var(--text2);font-size:13px;margin-top:18px">Zarlar atılıyor...</div>`;
+  } else if (!diceUcl.rerollUsed) {
+    const hasSelection = diceUcl.selectedRerollIndex >= 0;
+    const selectedText = hasSelection
+      ? `Seçili zar: ${DICE_FACES[diceUcl.playerDice[diceUcl.selectedRerollIndex]]} (${diceUcl.playerDice[diceUcl.selectedRerollIndex]})`
+      : 'Yeniden atmak istediğin kendi zarına dokun.';
+    const secondaryAction = diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore
+      ? `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="resolveDiceUclExtraTime()">Reroll Kullanma · Uzatma Zarına Geç</button>`
+      : `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceUclMatch()">Reroll Kullanma · Maçı Bitir</button>`;
+    controls = `
+      <div class="dice-rescue-box">
+        <div style="font-weight:700;color:#c4b5fd;margin-bottom:6px">İsteğe Bağlı Reroll Hakkı</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">${selectedText} Beş kelimede 5/5 yaparsan seçtiğin zar yeniden atılır. Tek yanlışta bu maçtaki hakkın yanar.</div>
+        <button class="btn btn-ucl" ${hasSelection ? '' : 'disabled'} style="${hasSelection ? '' : 'opacity:.45;pointer-events:none'}" onclick="startDiceUclReroll()">🎯 Seçili Zarı Reroll Et · 5 Kelime</button>
+      </div>${secondaryAction}`;
+  } else if (diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore) {
+    controls = `<button class="btn btn-ucl" onclick="resolveDiceUclExtraTime()">⚡ Uzatma Zarını At</button>`;
+  } else {
+    controls = `<button class="btn ${diceUcl.playerScore > diceUcl.opponentScore ? 'btn-ucl' : 'btn-outline'}" style="width:100%" onclick="finishDiceUclMatch()">Maç Sonucunu Onayla ➔</button>`;
+  }
+  const canSelect = !isRolling && !diceUcl.rerollUsed;
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:30px 22px">
+      <div class="quiz-settings-title" style="text-align:center">${getDiceUclStageText()}</div>
+      <div class="dice-score-line">
+        <div><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
+        <div class="dice-score-number">${isRolling ? '–' : diceUcl.playerScore} - ${isRolling ? '–' : diceUcl.opponentScore}</div>
+        <div><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
+      </div>
+      <div class="dice-arena"><div class="dice-columns">
+        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.playerDice[i], {rolling:isRolling, rerolled:!isRolling && diceUcl.rerolledIndex === i, selectable:canSelect, selected:canSelect && diceUcl.selectedRerollIndex === i, index:i})).join('')}</div>
+        <div class="dice-side">${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}</div>
+        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.opponentDice[i], {rolling:isRolling})).join('')}</div>
+      </div></div>
+      ${diceUcl.eventNote ? `<div class="dice-event-note">${diceUcl.eventNote}</div>` : ''}
+      <div style="margin-top:18px">${controls}</div>
+    </div>`;
+}
+
+function getUnusedDiceUclWords(count) {
+  let pool = loadUserWords().filter(w => !diceUcl.usedWords.includes(w.id));
+  if (pool.length < count) {
+    diceUcl.usedWords = [];
+    pool = loadUserWords();
+  }
+  pool = shuffleArray(pool);
+  const chosen = pool.slice(0, Math.min(count, pool.length));
+  chosen.forEach(w => { if (!diceUcl.usedWords.includes(w.id)) diceUcl.usedWords.push(w.id); });
+  return chosen;
+}
+
+function startDiceUclReroll() {
+  if (diceUcl.rerollUsed || diceUcl.selectedRerollIndex < 0) return;
+  diceUcl.rerollUsed = true;
+  diceUcl.rerollFailed = false;
+  diceUcl.rerollQueue = getUnusedDiceUclWords(5);
+  diceUcl.rerollIndex = 0;
+  diceUcl.rerollRevealed = false;
+  if (diceUcl.rerollQueue.length < 5) {
+    alert('Reroll sınavı için en az 5 kelime gerekiyor.');
+    diceUcl.rerollUsed = false;
+    renderDiceUclBattle(false);
+    return;
+  }
+  showNextDiceUclRerollWord();
+}
+
+function showNextDiceUclRerollWord() {
+  if (diceUcl.rerollIndex >= 5) {
+    completeDiceUclReroll();
+    return;
+  }
+  const area = document.getElementById('flashcard-area');
+  const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
+  diceUcl.rerollRevealed = false;
+  const askTrToEn = Math.random() > .5;
+  const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
+  const answer = askTrToEn ? card.en : card.tr;
+  let example = '';
+  if (card.example) {
+    if (askTrToEn) {
+      const regex = new RegExp(escapeRegExp(card.en), 'gi');
+      example = `<div class="quiz-example">"${card.example.replace(regex, '_____')}"</div>`;
+    } else example = `<div class="quiz-example">"${card.example}"</div>`;
+  }
+  const selectedValue = diceUcl.playerDice[diceUcl.selectedRerollIndex];
+  area.innerHTML = `
+    <div class="dice-rescue-progress">${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceUcl.rerollIndex ? 'done' : i === diceUcl.rerollIndex ? 'current' : ''}"></div>`).join('')}</div>
+    <div style="text-align:center;color:#c4b5fd;font-size:12px;margin-bottom:12px">Hedef zar: ${DICE_FACES[selectedValue]} (${selectedValue})</div>
+    <div class="flashcard-wrap" id="ucl-reroll-card" onclick="revealDiceUclRerollWord()">
+      <div class="flashcard" id="ucl-reroll-inner">
+        <div class="quiz-mode-label">UCL REROLL ${diceUcl.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+        <div class="quiz-word">${question}</div>${example}
+        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
+        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
+      </div>
+    </div>
+    <div class="flashcard-actions" id="ucl-reroll-actions" style="grid-template-columns:1fr 1fr">
+      <button class="fc-btn fc-idk" onclick="answerDiceUclReroll(false)">✗ Yanlış Bildim</button>
+      <button class="fc-btn fc-easy" onclick="answerDiceUclReroll(true)">✓ Doğru Bildim</button>
+    </div>
+    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, bu maçtaki reroll hakkını tamamen bitirir.</div>`;
+}
+
+function revealDiceUclRerollWord() {
+  if (diceUcl.rerollRevealed) return;
+  diceUcl.rerollRevealed = true;
+  const inner = document.getElementById('ucl-reroll-inner');
+  const back = document.getElementById('ucl-reroll-back');
+  const actions = document.getElementById('ucl-reroll-actions');
+  if (inner) inner.classList.add('revealed');
+  if (back) back.style.display = 'block';
+  if (actions) actions.classList.add('visible');
+  const card = document.getElementById('ucl-reroll-card');
+  if (card) card.onclick = null;
+}
+
+function answerDiceUclReroll(isCorrect) {
+  if (!diceUcl.rerollRevealed) return;
+  const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
+  recordDiceCupWordResult(card.id, isCorrect ? 5 : 1);
+  if (!isCorrect) {
+    diceUcl.rerollFailed = true;
+    diceUcl.eventNote = `Reroll sınavı ${diceUcl.rerollIndex + 1}. kelimede başarısız oldu. Zarlar değişmedi.`;
+    renderDiceUclRerollFailed();
+    return;
+  }
+  diceUcl.rerollIndex++;
+  showNextDiceUclRerollWord();
+}
+
+function renderDiceUclRerollFailed() {
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:52px;margin-bottom:12px">💥</div>
+      <div class="quiz-start-title">Reroll Hakkı <em>Yandı</em></div>
+      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için seçtiğin zar yeniden atılmadı. Mevcut skor korunuyor.</p>
+      <button class="btn btn-outline" style="width:100%" onclick="renderDiceUclBattle(false)">Zarlara ve Maç Sonucuna Dön ➔</button>
+    </div>`;
+}
+
+function completeDiceUclReroll() {
+  const targetIndex = diceUcl.selectedRerollIndex;
+  if (targetIndex < 0 || targetIndex >= diceUcl.playerDice.length) {
+    diceUcl.eventNote = 'Reroll uygulanamadı: seçili zar bulunamadı.';
+    renderDiceUclBattle(false);
+    return;
+  }
+  const before = [...diceUcl.playerDice];
+  const oldValue = diceUcl.playerDice[targetIndex];
+  const newValue = randomDie();
+  diceUcl.playerDice[targetIndex] = newValue;
+  diceUcl.playerDice.sort((a,b) => b-a);
+  diceUcl.rerolledValue = newValue;
+  diceUcl.rerolledIndex = diceUcl.playerDice.findIndex(v => v === newValue);
+  diceUcl.selectedRerollIndex = -1;
+  const after = scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
+  diceUcl.playerScore = after.playerScore;
+  diceUcl.opponentScore = after.opponentScore;
+  diceUcl.eventNote = `5/5 doğru! ${DICE_FACES[oldValue]} (${oldValue}) yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. ${before.join(' · ')} → ${diceUcl.playerDice.join(' · ')}`;
+  renderDiceUclBattle(false);
+}
+
+function resolveDiceUclExtraTime() {
+  let player = randomDie();
+  let opponent = randomDie();
+  let attempts = 1;
+  while (player === opponent && attempts < 30) {
+    player = randomDie(); opponent = randomDie(); attempts++;
+  }
+  if (player > opponent) diceUcl.extraTimePlayer = 1;
+  else diceUcl.extraTimeOpponent = 1;
+  diceUcl.eventNote = `Uzatma zarı: Sen ${DICE_FACES[player]} (${player}), rakip ${DICE_FACES[opponent]} (${opponent}) attı${attempts > 1 ? `; ${attempts} deneme gerekti` : ''}.`;
+  renderDiceUclBattle(false);
+}
+
+function updateDiceUclStandings(t1, t2, g1, g2) {
+  const s1 = diceUcl.standings[t1.name];
+  const s2 = diceUcl.standings[t2.name];
+  if (!s1 || !s2) return;
+  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
+  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
+  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
+  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
+  else { s1.D++; s1.P++; s2.D++; s2.P++; }
+}
+
+function sortedDiceUclStandings() {
+  return Object.values(diceUcl.standings).sort((a,b) =>
+    b.P - a.P || b.GD - a.GD || b.GF - a.GF || a.team.name.localeCompare(b.team.name)
+  );
+}
+
+function diceUclStandingsHtml(rows) {
+  return `
+    <div class="ucl-table-wrap"><table class="wc-table">
+      <tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
+      ${rows.map((row,idx) => `
+        <tr class="${idx < 8 ? 'ucl-direct' : idx < 24 ? 'ucl-playoff' : 'ucl-out'} ${row.team.name === diceUcl.playerTeam.name ? 'player' : ''}">
+          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}</td>
+          <td>${row.W+row.D+row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
+          <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
+        </tr>`).join('')}
+    </table></div>
+    <div class="ucl-legend"><span style="color:var(--green)">1–8: Direkt Son 16</span><span style="color:var(--gold)">9–24: Play-off</span><span style="color:var(--red)">25–36: Elenir</span></div>`;
+}
+
+function pairKey(a,b) { return [a.name,b.name].sort().join('|||'); }
+
+function buildDiceUclOtherRoundPairings(roundOpponent) {
+  const teams = UCL_TEAMS.filter(t => t.name !== diceUcl.playerTeam.name && t.name !== roundOpponent.name);
+  let best = null;
+  let bestScore = Infinity;
+  for (let attempt=0; attempt<700; attempt++) {
+    const shuffled = shuffleArray(teams);
+    const pairs = [];
+    let score = 0;
+    for (let i=0; i<shuffled.length; i+=2) {
+      const a = shuffled[i], b = shuffled[i+1];
+      const key = pairKey(a,b);
+      if (diceUcl.playedPairs[key]) score += 100;
+      if (a.country === b.country) score += 14;
+      pairs.push([a,b]);
+    }
+    if (score < bestScore) { bestScore = score; best = pairs; }
+    if (score === 0) break;
+  }
+  return best || [];
+}
+
+function simulateDiceUclLeagueRound(playerGoals, opponentGoals) {
+  const round = diceUcl.leagueRounds[diceUcl.leagueMatchIndex] || [];
+  round.forEach(([home,away]) => {
+    const playerIsHome = home.name === diceUcl.playerTeam.name;
+    const playerIsAway = away.name === diceUcl.playerTeam.name;
+    if (playerIsHome) {
+      updateDiceUclStandings(home,away,playerGoals,opponentGoals);
+    } else if (playerIsAway) {
+      updateDiceUclStandings(home,away,opponentGoals,playerGoals);
+    } else {
+      const result = simulatePureDiceMatch();
+      updateDiceUclStandings(home,away,result.playerScore,result.opponentScore);
+    }
+  });
+}
+
+function simulateUclKnockoutWinner(a,b) {
+  let result = simulatePureDiceMatch();
+  let attempts = 0;
+  while (result.playerScore === result.opponentScore && attempts < 40) {
+    const da = randomDie(), db = randomDie();
+    if (da > db) result.playerScore++;
+    else if (db > da) result.opponentScore++;
+    attempts++;
+  }
+  return result.playerScore >= result.opponentScore ? a : b;
+}
+
+function buildUclPlayoffPairings(rows) {
+  const seeded = shuffleArray(rows.slice(8,16).map(r => r.team));
+  const unseeded = shuffleArray(rows.slice(16,24).map(r => r.team));
+  return seeded.map((team,i) => [team,unseeded[i]]);
+}
+
+function setupUclRoundPairings(stage, field) {
+  diceUcl.stage = stage;
+  diceUcl.knockoutField = [...field];
+  let pairings = [];
+  if (stage === 'ro16') {
+    const directs = shuffleArray(diceUcl.directQualifiers.filter(t => field.some(f => f.name === t.name)));
+    const winners = shuffleArray(diceUcl.playoffWinners.filter(t => field.some(f => f.name === t.name)));
+    pairings = directs.map((team,i) => [team,winners[i]]);
+  } else {
+    const shuffled = shuffleArray(field);
+    for (let i=0;i<shuffled.length;i+=2) pairings.push([shuffled[i],shuffled[i+1]]);
+  }
+  diceUcl.currentRoundPairings = pairings;
+  const playerPair = pairings.find(pair => pair.some(t => t.name === diceUcl.playerTeam.name));
+  diceUcl.opponent = playerPair ? playerPair.find(t => t.name !== diceUcl.playerTeam.name) : null;
+}
+
+function prepareDiceUclAfterLeague(rows, position) {
+  diceUcl.finalPosition = position + 1;
+  diceUcl.directQualifiers = rows.slice(0,8).map(r => r.team);
+  diceUcl.playoffPairings = buildUclPlayoffPairings(rows);
+  if (position < 8) {
+    diceUcl.playoffWinners = diceUcl.playoffPairings.map(pair => simulateUclKnockoutWinner(pair[0],pair[1]));
+    setupUclRoundPairings('ro16',[...diceUcl.directQualifiers,...diceUcl.playoffWinners]);
+    return 'direct';
+  }
+  if (position < 24) {
+    diceUcl.stage = 'playoff';
+    diceUcl.currentRoundPairings = diceUcl.playoffPairings;
+    const playerPair = diceUcl.playoffPairings.find(pair => pair.some(t => t.name === diceUcl.playerTeam.name));
+    diceUcl.opponent = playerPair.find(t => t.name !== diceUcl.playerTeam.name);
+    return 'playoff';
+  }
+  return 'out';
+}
+
+function advanceDiceUclKnockout() {
+  const currentStage = diceUcl.stage;
+  const otherWinners = diceUcl.currentRoundPairings
+    .filter(pair => !pair.some(t => t.name === diceUcl.playerTeam.name))
+    .map(pair => simulateUclKnockoutWinner(pair[0],pair[1]));
+  const winners = [diceUcl.playerTeam,...otherWinners];
+
+  if (currentStage === 'playoff') {
+    diceUcl.playoffWinners = winners;
+    setupUclRoundPairings('ro16',[...diceUcl.directQualifiers,...diceUcl.playoffWinners]);
+    return;
+  }
+  if (currentStage === 'ro16') setupUclRoundPairings('qf',winners);
+  else if (currentStage === 'qf') setupUclRoundPairings('sf',winners);
+  else if (currentStage === 'sf') setupUclRoundPairings('final',winners);
+  else if (currentStage === 'final') diceUcl.stage = 'won';
+}
+
+function finishDiceUclMatch() {
+  if (diceUcl.resultCommitted) return;
+  if (diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore) {
+    resolveDiceUclExtraTime();
+    return;
+  }
+  diceUcl.resultCommitted = true;
+  const playerWon = diceUcl.playerScore > diceUcl.opponentScore;
+  const playerLost = diceUcl.playerScore < diceUcl.opponentScore;
+  let title = playerWon ? 'Maçı Kazandın! 🎉' : playerLost ? 'Maçı Kaybettin 💔' : 'Maç Berabere 🤝';
+  let table = '';
+  let action = '';
+  let note = '';
+
+  if (diceUcl.stage === 'league') {
+    simulateDiceUclLeagueRound(diceUcl.playerScore,diceUcl.opponentScore);
+    const rows = sortedDiceUclStandings();
+    table = diceUclStandingsHtml(rows);
+    if (diceUcl.leagueMatchIndex < 7) {
+      diceUcl.leagueMatchIndex++;
+      action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">${diceUcl.leagueMatchIndex + 1}. Lig Maçına Geç ➔</button>`;
+    } else {
+      const position = rows.findIndex(r => r.team.name === diceUcl.playerTeam.name);
+      const outcome = prepareDiceUclAfterLeague(rows,position);
+      if (outcome === 'direct') {
+        title = `Ligi ${position+1}. Bitirdin · Direkt Son 16! ⭐`;
+        note = 'Play-off turunu atladın. Rakibin play-off kazananlarından biri oldu.';
+        action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">Son 16 Turuna Geç ➔</button>`;
+      } else if (outcome === 'playoff') {
+        title = `Ligi ${position+1}. Bitirdin · Play-off! ⚔️`;
+        note = '9–24 aralığında tamamladığın için Son 16 öncesinde tek maçlık zar play-off’una çıkacaksın.';
+        action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">Play-off Maçına Geç ➔</button>`;
+      } else {
+        title = `Ligi ${position+1}. Bitirdin · Elendin`;
+        note = 'İlk 24 dışında kaldığın için Şampiyonlar Ligi maceran sona erdi.';
+        action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Ana Menüye Dön</button>`;
+      }
+    }
+  } else if (playerWon) {
+    const completedStage = diceUcl.stage;
+    advanceDiceUclKnockout();
+    if (diceUcl.stage === 'won') {
+      title = 'ZAR ŞAMPİYONLAR LİGİ ŞAMPİYONUSUN! 🏆⭐🎲';
+      action = `<button class="btn btn-gold" style="width:100%;font-size:16px" onclick="renderPreStart()">Kupayı Kaldır · Ana Menü</button>`;
+    } else {
+      const nextName = UCL_STAGE_NAMES[diceUcl.stage];
+      note = `${UCL_STAGE_NAMES[completedStage]} tamamlandı. Kalan eşleşmeler simüle edildi.`;
+      action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">${nextName} Aşamasına Geç ➔</button>`;
+    }
+  } else {
+    action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Turnuvaya Veda Et · Ana Menü</button>`;
+  }
+
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:32px 20px">
+      <div class="quiz-start-title ${playerWon ? 'dice-result-win' : playerLost ? 'dice-result-loss' : 'dice-result-draw'}" style="font-size:29px">${title}</div>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
+        <div class="wc-score">${diceUcl.playerScore} - ${diceUcl.opponentScore}</div>
+        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
+      </div>
+      <div style="color:var(--text3);font-size:12px;margin-bottom:12px">Maç öncesi kelimeler: ${diceUcl.preMatchCorrect}/${diceUcl.preMatchTotal}</div>
+      ${diceUcl.eventNote ? `<div class="dice-event-note">${diceUcl.eventNote}</div>` : ''}
+      ${note ? `<div class="info-box" style="margin-top:14px">${note}</div>` : ''}
+      ${table}
+      <div style="margin-top:24px">${action}</div>
+    </div>`;
+}
+
 // ----------------------------------------------------
 // WC 2026 OYUN MANTIĞI
 // ----------------------------------------------------
 
 function startWCTournament() {
   diceCup.active = false;
+  diceUcl.active = false;
   wc.active = true;
   wc.stage = 'group';
   wc.matchIndex = 0;
@@ -1772,6 +2512,14 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
       unusedPool = pool;
     }
     pool = unusedPool;
+  } else if (diceUcl.active) {
+    let unusedPool = pool.filter(w => !diceUcl.usedWords.includes(w.id));
+    const requested = limitOverride || 0;
+    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
+      diceUcl.usedWords = [];
+      unusedPool = pool;
+    }
+    pool = unusedPool;
   }
   
   if (onlyMistakes) {
@@ -1804,6 +2552,10 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
     fcQueue.forEach(card => {
       if (!diceCup.usedWords.includes(card.id)) diceCup.usedWords.push(card.id);
     });
+  } else if (diceUcl.active) {
+    fcQueue.forEach(card => {
+      if (!diceUcl.usedWords.includes(card.id)) diceUcl.usedWords.push(card.id);
+    });
   }
 
   fcIndex = 0;
@@ -1813,8 +2565,8 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
 }
 
 function endQuizEarly() {
-  if (diceCup.active) {
-    alert('Zar Kupası maçında zarların açılması için bu turun kelimelerini tamamlamalısın.');
+  if (diceCup.active || diceUcl.active) {
+    alert('Zarlı turnuva maçında zarların açılması için bu turun kelimelerini tamamlamalısın.');
     return;
   }
   if (fcIndex === 0) { renderPreStart(); return; }
@@ -1827,6 +2579,7 @@ function showNextFlashcard() {
   if (fcIndex >= fcQueue.length) {
     if (wc.active) showWCSummary();
     else if (diceCup.active) showDiceCupWordSummary();
+    else if (diceUcl.active) showDiceUclWordSummary();
     else showFlashcardSummary();
     return;
   }
@@ -1856,7 +2609,7 @@ function showNextFlashcard() {
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
       <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${progress}%"></div></div>
       <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
-      ${diceCup.active ? '' : '<button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>'}
+      ${(diceCup.active || diceUcl.active) ? '' : '<button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>'}
     </div>
 
     <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
