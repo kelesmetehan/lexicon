@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -313,6 +312,67 @@
     .word-stats { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); padding-left: 0; margin-left: 0; padding-top: 12px; margin-top: 12px; width: 100%; justify-content: flex-start; }
     .wc-score-box { flex-direction: column; gap: 16px; }
   }
+
+  /* ZAR KUPASI */
+  .btn-dice {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 5px 18px rgba(124,58,237,0.30);
+    font-weight: 700;
+    justify-content: center;
+  }
+  .btn-dice:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .dice-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; margin: 20px 0; }
+  .dice-group-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .dice-group-title { color: var(--gold); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
+  .dice-team-option {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; padding: 9px 10px; margin-top: 7px; border-radius: 8px;
+    background: var(--bg2); color: var(--text2); border: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .18s;
+  }
+  .dice-team-option:hover { color: var(--text); border-color: rgba(201,168,76,.36); transform: translateX(2px); }
+  .dice-team-option.selected { color: var(--gold2); border-color: var(--gold); background: var(--gold-dim); }
+  .dice-arena { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin: 18px 0; }
+  .dice-score-line { display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:18px; }
+  .dice-score-number { font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:600; min-width:110px; }
+  .dice-columns { display:grid; grid-template-columns:1fr 60px 1fr; gap:10px; align-items:center; }
+  .dice-side { display:flex; flex-direction:column; gap:10px; }
+  .die {
+    width: 62px; height: 62px; margin: 0 auto; border-radius: 13px;
+    display:flex; align-items:center; justify-content:center;
+    background: #f5f1e7; color:#111827; border: 2px solid rgba(255,255,255,.72);
+    box-shadow: inset 0 -5px 10px rgba(0,0,0,.14), 0 7px 18px rgba(0,0,0,.35);
+    font-size: 44px; line-height:1; font-family: Arial, sans-serif;
+  }
+  .die.rolling { animation: diceShake .16s linear infinite; color: var(--text3); background: var(--bg4); }
+  .die.rerolled { outline: 3px solid var(--gold); animation: dicePop .45s ease; }
+  .dice-pair-status { height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; color:var(--text3); text-align:center; }
+  .dice-pair-status.player-win { color:var(--green); }
+  .dice-pair-status.opp-win { color:var(--red); }
+  .dice-pair-status.draw { color:var(--gold); }
+  .dice-rule-box { background:rgba(124,58,237,.10); border:1px solid rgba(167,139,250,.28); color:#c4b5fd; border-radius:10px; padding:13px 15px; font-size:12px; line-height:1.65; text-align:left; margin:18px 0; }
+  .dice-rescue-box { background:var(--red-dim); border:1px solid rgba(224,92,92,.28); border-radius:12px; padding:16px; margin-top:16px; }
+  .dice-rescue-progress { display:flex; gap:7px; justify-content:center; margin-bottom:18px; }
+  .dice-rescue-dot { width:30px; height:6px; border-radius:99px; background:var(--bg4); }
+  .dice-rescue-dot.done { background:var(--green); }
+  .dice-rescue-dot.current { background:var(--gold); }
+  .dice-event-note { font-size:12px; color:var(--gold2); background:var(--gold-dim); border:1px solid rgba(201,168,76,.22); padding:10px 12px; border-radius:8px; margin-top:12px; line-height:1.5; }
+  .dice-result-win { color:var(--green); }
+  .dice-result-loss { color:var(--red); }
+  .dice-result-draw { color:var(--gold); }
+  @keyframes diceShake { 0%{transform:rotate(-8deg) scale(.96)} 50%{transform:rotate(8deg) scale(1.04)} 100%{transform:rotate(-8deg) scale(.96)} }
+  @keyframes dicePop { 0%{transform:scale(.7) rotate(-20deg)} 70%{transform:scale(1.12) rotate(8deg)} 100%{transform:scale(1) rotate(0)} }
+
+  @media (max-width: 560px) {
+    .dice-group-grid { grid-template-columns:1fr; }
+    .dice-columns { grid-template-columns:1fr 46px 1fr; }
+    .die { width:54px; height:54px; font-size:38px; }
+    .dice-pair-status { height:54px; font-size:10px; }
+  }
+
 </style>
 </head>
 <body>
@@ -609,6 +669,44 @@ let wc = {
 
 const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
 
+const DICE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+const DICE_STAGE_NAMES = {
+  group: 'Grup Aşaması', ro32: 'Son 32 Turu', ro16: 'Son 16 Turu',
+  qf: 'Çeyrek Final', sf: 'Yarı Final', final: 'Büyük Final', won: 'Şampiyon'
+};
+
+let diceCup = {
+  active: false,
+  playerTeam: null,
+  selectedTeamName: null,
+  stage: 'group',
+  matchIndex: 0,
+  groupTeams: [],
+  standings: {},
+  schedule: [],
+  opponent: null,
+  playerDice: [],
+  opponentDice: [],
+  playerScore: 0,
+  opponentScore: 0,
+  extraTimePlayer: 0,
+  extraTimeOpponent: 0,
+  rolled: false,
+  rolling: false,
+  rescueUsed: false,
+  rescueFailed: false,
+  rescueQueue: [],
+  rescueIndex: 0,
+  rescueRevealed: false,
+  usedWords: [],
+  rerolledValue: null,
+  rerolledIndex: -1,
+  eventNote: '',
+  knockoutOpponentsUsed: [],
+  resultCommitted: false
+};
+
+
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -689,7 +787,8 @@ function todayStr() {
 }
 
 function renderPreStart() {
-  wc.active = false; 
+  wc.active = false;
+  diceCup.active = false; 
   wc.usedWords = []; 
   const userWords = loadUserWords();
   const area = document.getElementById('flashcard-area');
@@ -717,6 +816,10 @@ function renderPreStart() {
 
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-wc" onclick="startWCTournament()">🏆 WC 2026 Turnuvası Başlat</button>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
+        <button class="btn btn-dice" onclick="renderDiceCupTeamSelect()">🎲 Zar Kupası Modu</button>
       </div>
       
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
@@ -783,11 +886,555 @@ function renderWordList() {
     </div>`;
 }
 
+
+// ----------------------------------------------------
+// ZAR KUPASI OYUN MANTIĞI
+// ----------------------------------------------------
+
+function resetDiceCupState() {
+  diceCup = {
+    active: true,
+    playerTeam: null,
+    selectedTeamName: null,
+    stage: 'group',
+    matchIndex: 0,
+    groupTeams: [],
+    standings: {},
+    schedule: [],
+    opponent: null,
+    playerDice: [],
+    opponentDice: [],
+    playerScore: 0,
+    opponentScore: 0,
+    extraTimePlayer: 0,
+    extraTimeOpponent: 0,
+    rolled: false,
+    rolling: false,
+    rescueUsed: false,
+    rescueFailed: false,
+    rescueQueue: [],
+    rescueIndex: 0,
+    rescueRevealed: false,
+    usedWords: [],
+    rerolledValue: null,
+    rerolledIndex: -1,
+    eventNote: '',
+    knockoutOpponentsUsed: [],
+    resultCommitted: false
+  };
+}
+
+function renderDiceCupTeamSelect() {
+  wc.active = false;
+  fcQueue = [];
+  resetDiceCupState();
+  const area = document.getElementById('flashcard-area');
+  const groups = [...new Set(WC_TEAMS.map(t => t.group))];
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:32px 24px; max-width:760px; margin:0 auto;">
+      <div style="font-size:48px;margin-bottom:10px">🎲</div>
+      <div class="quiz-start-title">Zar <em>Kupası</em></div>
+      <p style="color:var(--text2);line-height:1.6;">Takımını seç. Grup maçlarından başlayıp finale kadar ilerle.</p>
+      <div class="dice-rule-box">
+        Her maçta iki tarafa da 3 zar atılır. Zarlar büyükten küçüğe sıralanır ve aynı sıradaki zarlar karşılaşır. Büyük zar 1 gol kazandırır; eşitlikte gol çıkmaz. Kaybediyorsan 5 kelimelik tek bir kurtuluş hakkın açılır.
+      </div>
+      <div class="dice-group-grid">
+        ${groups.map(group => `
+          <div class="dice-group-card">
+            <div class="dice-group-title">Grup ${group}</div>
+            ${WC_TEAMS.filter(t => t.group === group).map(team => `
+              <button class="dice-team-option" data-team="${team.name.replace(/"/g, '&quot;')}" onclick="selectDiceCupTeam('${team.name.replace(/'/g, "\\'")}')">
+                <span>${team.flag} ${team.name}</span><span>Seç</span>
+              </button>
+            `).join('')}
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="dice-start-btn" class="btn btn-dice" style="max-width:320px;opacity:.45;pointer-events:none;" onclick="startDiceCupTournament()">Kupayı Başlat 🎲</button>
+        <button class="btn btn-outline" onclick="renderPreStart()">← Ana Menü</button>
+      </div>
+    </div>`;
+}
+
+function selectDiceCupTeam(teamName) {
+  diceCup.selectedTeamName = teamName;
+  document.querySelectorAll('.dice-team-option').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.team === teamName);
+    const right = btn.querySelector('span:last-child');
+    if (right) right.textContent = btn.dataset.team === teamName ? '✓' : 'Seç';
+  });
+  const startBtn = document.getElementById('dice-start-btn');
+  if (startBtn) {
+    startBtn.style.opacity = '1';
+    startBtn.style.pointerEvents = 'auto';
+  }
+}
+
+function startDiceCupTournament() {
+  if (!diceCup.selectedTeamName) return;
+  const chosenName = diceCup.selectedTeamName;
+  resetDiceCupState();
+  diceCup.selectedTeamName = chosenName;
+  diceCup.playerTeam = WC_TEAMS.find(t => t.name === chosenName);
+  if (!diceCup.playerTeam) return renderDiceCupTeamSelect();
+
+  const groupAll = WC_TEAMS.filter(t => t.group === diceCup.playerTeam.group);
+  diceCup.groupTeams = [diceCup.playerTeam, ...groupAll.filter(t => t.name !== diceCup.playerTeam.name)];
+  diceCup.groupTeams.forEach(t => {
+    diceCup.standings[t.name] = { team:t, P:0, W:0, D:0, L:0, GF:0, GA:0, GD:0 };
+  });
+  diceCup.schedule = [
+    { playerMatch:1, otherMatch:[2,3] },
+    { playerMatch:2, otherMatch:[1,3] },
+    { playerMatch:3, otherMatch:[1,2] }
+  ];
+  renderDiceCupIntro();
+}
+
+function renderDiceCupIntro() {
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:52px;margin-bottom:10px">🎲🏆</div>
+      <div class="quiz-start-title">Zar Kupası <em>Başlıyor</em></div>
+      <div class="wc-score-box" style="justify-content:center;">
+        <div class="wc-team">
+          <div class="wc-flag">${diceCup.playerTeam.flag}</div>
+          <div class="wc-team-name">${diceCup.playerTeam.name}</div>
+          <div style="color:var(--gold);font-size:12px">Grup ${diceCup.playerTeam.group}</div>
+        </div>
+      </div>
+      <button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">İlk Maça Çık ➔</button>
+    </div>`;
+}
+
+function getDiceCupStageText() {
+  return diceCup.stage === 'group'
+    ? `Grup ${diceCup.playerTeam.group} · ${diceCup.matchIndex + 1}. Maç`
+    : DICE_STAGE_NAMES[diceCup.stage];
+}
+
+function pickDiceCupKnockoutOpponent() {
+  let pool = WC_TEAMS.filter(t =>
+    t.name !== diceCup.playerTeam.name &&
+    !diceCup.knockoutOpponentsUsed.includes(t.name)
+  );
+  if (!pool.length) {
+    diceCup.knockoutOpponentsUsed = [];
+    pool = WC_TEAMS.filter(t => t.name !== diceCup.playerTeam.name);
+  }
+  const opponent = pool[Math.floor(Math.random() * pool.length)];
+  diceCup.knockoutOpponentsUsed.push(opponent.name);
+  return opponent;
+}
+
+function prepareNextDiceCupMatch() {
+  diceCup.rolled = false;
+  diceCup.rolling = false;
+  diceCup.rescueUsed = false;
+  diceCup.rescueFailed = false;
+  diceCup.rescueQueue = [];
+  diceCup.rescueIndex = 0;
+  diceCup.rescueRevealed = false;
+  diceCup.rerolledValue = null;
+  diceCup.rerolledIndex = -1;
+  diceCup.eventNote = '';
+  diceCup.resultCommitted = false;
+  diceCup.playerDice = [];
+  diceCup.opponentDice = [];
+  diceCup.playerScore = 0;
+  diceCup.opponentScore = 0;
+  diceCup.extraTimePlayer = 0;
+  diceCup.extraTimeOpponent = 0;
+
+  if (diceCup.stage === 'group') {
+    diceCup.opponent = diceCup.groupTeams[diceCup.schedule[diceCup.matchIndex].playerMatch];
+  } else {
+    diceCup.opponent = pickDiceCupKnockoutOpponent();
+  }
+
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
+      <div class="quiz-start-title" style="font-size:32px">Sıradaki Zar Düellosu</div>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
+        <div class="wc-score">VS</div>
+        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
+      </div>
+      <p style="color:var(--text2);font-size:12px;line-height:1.6;margin-bottom:20px">3 zar otomatik atılacak, büyükten küçüğe sıralanacak ve bire bir karşılaştırılacak.</p>
+      <button class="btn btn-dice" onclick="rollDiceCupMatch()">Maçı Başlat · Zarları At 🎲</button>
+    </div>`;
+}
+
+function randomDie() { return Math.floor(Math.random() * 6) + 1; }
+function rollThreeDice() { return [randomDie(), randomDie(), randomDie()].sort((a,b) => b-a); }
+
+function scoreDiceBattle(playerDice, opponentDice) {
+  let playerScore = 0;
+  let opponentScore = 0;
+  const pairs = playerDice.map((p, i) => {
+    const o = opponentDice[i];
+    let result = 'draw';
+    if (p > o) { playerScore++; result = 'player'; }
+    else if (p < o) { opponentScore++; result = 'opponent'; }
+    return { index:i, player:p, opponent:o, result };
+  });
+  return { playerScore, opponentScore, pairs };
+}
+
+function simulatePureDiceMatch() {
+  const p = rollThreeDice();
+  const o = rollThreeDice();
+  return scoreDiceBattle(p, o);
+}
+
+function rollDiceCupMatch() {
+  if (diceCup.rolling || diceCup.rolled) return;
+  diceCup.rolling = true;
+  renderDiceCupBattle(true);
+  setTimeout(() => {
+    diceCup.playerDice = rollThreeDice();
+    diceCup.opponentDice = rollThreeDice();
+    const scored = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
+    diceCup.playerScore = scored.playerScore + (diceCup.extraTimePlayer || 0);
+    diceCup.opponentScore = scored.opponentScore + (diceCup.extraTimeOpponent || 0);
+    diceCup.rolling = false;
+    diceCup.rolled = true;
+    renderDiceCupBattle(false);
+  }, 720);
+}
+
+function dieHtml(value, options = {}) {
+  const classes = ['die'];
+  if (options.rolling) classes.push('rolling');
+  if (options.rerolled) classes.push('rerolled');
+  return `<div class="${classes.join(' ')}">${options.rolling ? '↻' : DICE_FACES[value]}</div>`;
+}
+
+function renderDiceCupBattle(isRolling = false) {
+  const area = document.getElementById('flashcard-area');
+  const scored = isRolling
+    ? { playerScore:'–', opponentScore:'–', pairs:[0,1,2].map(i => ({index:i,result:'draw'})) }
+    : scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
+
+  if (!isRolling) {
+    diceCup.playerScore = scored.playerScore + (diceCup.extraTimePlayer || 0);
+    diceCup.opponentScore = scored.opponentScore + (diceCup.extraTimeOpponent || 0);
+  }
+
+  const pairLabels = isRolling ? ['', '', ''] : scored.pairs.map(pair => {
+    if (pair.result === 'player') return '<span>+1 Gol<br>Sen</span>';
+    if (pair.result === 'opponent') return '<span>+1 Gol<br>Rakip</span>';
+    return '<span>Eşit<br>Gol Yok</span>';
+  });
+
+  let controls = '';
+  if (isRolling) {
+    controls = `<div style="color:var(--text2);font-size:13px;margin-top:18px">Zarlar atılıyor...</div>`;
+  } else if (diceCup.playerScore < diceCup.opponentScore && !diceCup.rescueUsed) {
+    controls = `
+      <div class="dice-rescue-box">
+        <div style="font-weight:700;color:var(--red);margin-bottom:6px">Maçı şu anda kaybediyorsun.</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">5 kelimenin tamamını bilirsen, kaybeden en düşük zarın bir kez yeniden atılır. Tek yanlışta kurtuluş hakkın biter.</div>
+        <button class="btn btn-dice" onclick="startDiceCupRescue()">🛟 Kurtuluş Şansı: 5 Kelime</button>
+      </div>
+      <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceCupMatch()">Kurtuluşu Kullanma · Maçı Bitir</button>`;
+  } else if (diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore) {
+    controls = `<button class="btn btn-dice" onclick="resolveDiceCupExtraTime()">⚡ Uzatma Zarını At</button>`;
+  } else {
+    controls = `<button class="btn ${diceCup.playerScore > diceCup.opponentScore ? 'btn-dice' : 'btn-outline'}" style="width:100%" onclick="finishDiceCupMatch()">Maç Sonucunu Onayla ➔</button>`;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:30px 22px">
+      <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
+      <div class="dice-score-line">
+        <div><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
+        <div class="dice-score-number">${isRolling ? '–' : diceCup.playerScore} - ${isRolling ? '–' : diceCup.opponentScore}</div>
+        <div><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
+      </div>
+      <div class="dice-arena">
+        <div class="dice-columns">
+          <div class="dice-side">
+            ${[0,1,2].map(i => dieHtml(diceCup.playerDice[i], {rolling:isRolling, rerolled:!isRolling && diceCup.rerolledIndex === i})).join('')}
+          </div>
+          <div class="dice-side">
+            ${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}
+          </div>
+          <div class="dice-side">
+            ${[0,1,2].map(i => dieHtml(diceCup.opponentDice[i], {rolling:isRolling})).join('')}
+          </div>
+        </div>
+      </div>
+      ${diceCup.eventNote ? `<div class="dice-event-note">${diceCup.eventNote}</div>` : ''}
+      <div style="margin-top:18px">${controls}</div>
+    </div>`;
+}
+
+function getUnusedDiceCupWords(count) {
+  let pool = loadUserWords().filter(w => !diceCup.usedWords.includes(w.id));
+  if (pool.length < count) {
+    diceCup.usedWords = [];
+    pool = loadUserWords();
+  }
+  pool.sort(() => Math.random() - 0.5);
+  const chosen = pool.slice(0, Math.min(count, pool.length));
+  chosen.forEach(w => { if (!diceCup.usedWords.includes(w.id)) diceCup.usedWords.push(w.id); });
+  return chosen;
+}
+
+function startDiceCupRescue() {
+  diceCup.rescueUsed = true;
+  diceCup.rescueFailed = false;
+  diceCup.rescueQueue = getUnusedDiceCupWords(5);
+  diceCup.rescueIndex = 0;
+  diceCup.rescueRevealed = false;
+  if (diceCup.rescueQueue.length < 5) {
+    alert('Kurtuluş modu için en az 5 kelime gerekiyor.');
+    diceCup.rescueUsed = false;
+    renderDiceCupBattle(false);
+    return;
+  }
+  showNextDiceCupRescueWord();
+}
+
+function showNextDiceCupRescueWord() {
+  if (diceCup.rescueIndex >= 5) {
+    completeDiceCupRescue();
+    return;
+  }
+  const area = document.getElementById('flashcard-area');
+  const card = diceCup.rescueQueue[diceCup.rescueIndex];
+  diceCup.rescueRevealed = false;
+  const askTrToEn = Math.random() > 0.5;
+  const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
+  const answer = askTrToEn ? card.en : card.tr;
+  let example = '';
+  if (card.example) {
+    if (askTrToEn) {
+      const regex = new RegExp(escapeRegExp(card.en), 'gi');
+      example = `<div class="quiz-example">"${card.example.replace(regex, '_____')}"</div>`;
+    } else {
+      example = `<div class="quiz-example">"${card.example}"</div>`;
+    }
+  }
+  area.innerHTML = `
+    <div class="dice-rescue-progress">
+      ${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceCup.rescueIndex ? 'done' : i === diceCup.rescueIndex ? 'current' : ''}"></div>`).join('')}
+    </div>
+    <div class="flashcard-wrap" id="dice-rescue-card" onclick="revealDiceCupRescueWord()">
+      <div class="flashcard" id="dice-rescue-inner">
+        <div class="quiz-mode-label">KURTULUŞ ${diceCup.rescueIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
+        <div class="quiz-word">${question}</div>
+        ${example}
+        <div class="flashcard-back" id="dice-rescue-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
+        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
+      </div>
+    </div>
+    <div class="flashcard-actions" id="dice-rescue-actions" style="grid-template-columns:1fr 1fr">
+      <button class="fc-btn fc-idk" onclick="answerDiceCupRescue(false)">✗ Yanlış Bildim</button>
+      <button class="fc-btn fc-easy" onclick="answerDiceCupRescue(true)">✓ Doğru Bildim</button>
+    </div>
+    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, kurtuluş hakkını tamamen bitirir.</div>`;
+}
+
+function revealDiceCupRescueWord() {
+  if (diceCup.rescueRevealed) return;
+  diceCup.rescueRevealed = true;
+  const inner = document.getElementById('dice-rescue-inner');
+  const back = document.getElementById('dice-rescue-back');
+  const actions = document.getElementById('dice-rescue-actions');
+  if (inner) inner.classList.add('revealed');
+  if (back) back.style.display = 'block';
+  if (actions) actions.classList.add('visible');
+  const card = document.getElementById('dice-rescue-card');
+  if (card) card.onclick = null;
+}
+
+function recordDiceCupWordResult(cardId, quality) {
+  const userWords = loadUserWords();
+  const card = userWords.find(w => w.id === cardId);
+  if (!card) return;
+  const updated = sm2(card, quality);
+  card.interval = updated.interval;
+  card.repetitions = updated.repetitions;
+  card.ef = updated.ef;
+  card.nextReview = updated.nextReview;
+  card.lastReviewed = todayStr();
+  card.reviewCount = (card.reviewCount || 0) + 1;
+  if (quality < 3) {
+    card.wrongCount = (card.wrongCount || 0) + 1;
+    card.isActiveMistake = true;
+  } else if (quality >= 4) {
+    card.isActiveMistake = false;
+  }
+  saveWordsToStorage(userWords);
+  const meta = loadMeta();
+  if (!meta.activity) meta.activity = {};
+  const t = todayStr();
+  if (!meta.activity[t]) meta.activity[t] = { reviews:0, correct:0 };
+  meta.activity[t].reviews++;
+  if (quality >= 4) meta.activity[t].correct++;
+  saveMeta(meta);
+}
+
+function answerDiceCupRescue(isCorrect) {
+  if (!diceCup.rescueRevealed) return;
+  const card = diceCup.rescueQueue[diceCup.rescueIndex];
+  recordDiceCupWordResult(card.id, isCorrect ? 5 : 1);
+  if (!isCorrect) {
+    diceCup.rescueFailed = true;
+    diceCup.eventNote = `Kurtuluşun ${diceCup.rescueIndex + 1}. kelimede sona erdi. Maç ilk zar sonucu ile kaybedildi.`;
+    renderDiceCupRescueFailed();
+    return;
+  }
+  diceCup.rescueIndex++;
+  showNextDiceCupRescueWord();
+}
+
+function renderDiceCupRescueFailed() {
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card">
+      <div style="font-size:52px;margin-bottom:12px">💥</div>
+      <div class="quiz-start-title">Kurtuluş <em>Yandı</em></div>
+      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için reroll yapılmadı. Maç ${diceCup.playerScore} - ${diceCup.opponentScore} sona erdi.</p>
+      <button class="btn btn-outline" style="width:100%" onclick="finishDiceCupMatch()">Maç Sonucuna Geç ➔</button>
+    </div>`;
+}
+
+function completeDiceCupRescue() {
+  const beforeDice = [...diceCup.playerDice];
+  const beforeScore = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
+  const losingPairs = beforeScore.pairs.filter(pair => pair.result === 'opponent');
+  const target = losingPairs.sort((a,b) => a.player - b.player || b.index - a.index)[0];
+  const targetIndex = target ? target.index : diceCup.playerDice.length - 1;
+  const oldValue = diceCup.playerDice[targetIndex];
+  const newValue = randomDie();
+  diceCup.playerDice[targetIndex] = newValue;
+  diceCup.playerDice.sort((a,b) => b-a);
+  diceCup.rerolledValue = newValue;
+  diceCup.rerolledIndex = diceCup.playerDice.indexOf(newValue);
+  const after = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
+  diceCup.playerScore = after.playerScore;
+  diceCup.opponentScore = after.opponentScore;
+  diceCup.eventNote = `5/5 doğru! Kaybeden en düşük zar ${DICE_FACES[oldValue]} (${oldValue}) yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. Zarların yeniden sıralandı: ${beforeDice.join(' · ')} → ${diceCup.playerDice.join(' · ')}.`;
+  renderDiceCupBattle(false);
+}
+
+function resolveDiceCupExtraTime() {
+  let player = randomDie();
+  let opponent = randomDie();
+  let attempts = 1;
+  while (player === opponent && attempts < 30) {
+    player = randomDie();
+    opponent = randomDie();
+    attempts++;
+  }
+  if (player > opponent) diceCup.extraTimePlayer = 1;
+  else diceCup.extraTimeOpponent = 1;
+  diceCup.eventNote = `Uzatma zarı: Sen ${DICE_FACES[player]} (${player}), rakip ${DICE_FACES[opponent]} (${opponent}) attı${attempts > 1 ? `; eşitlikler nedeniyle ${attempts} kez denendi` : ''}.`;
+  renderDiceCupBattle(false);
+}
+
+function updateDiceCupStandings(t1, t2, g1, g2) {
+  const s1 = diceCup.standings[t1.name];
+  const s2 = diceCup.standings[t2.name];
+  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
+  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
+  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
+  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
+  else { s1.D++; s1.P++; s2.D++; s2.P++; }
+}
+
+function sortedDiceCupStandings() {
+  return Object.values(diceCup.standings).sort((a,b) =>
+    b.P - a.P || b.GD - a.GD || b.GF - a.GF || a.team.name.localeCompare(b.team.name)
+  );
+}
+
+function diceCupStandingsHtml(rows) {
+  return `
+    <table class="wc-table">
+      <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
+      ${rows.map((row, idx) => `
+        <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === diceCup.playerTeam.name ? 'player' : ''}">
+          <td>${row.team.flag} ${row.team.name}</td>
+          <td>${row.W + row.D + row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
+          <td>${row.GD > 0 ? '+' + row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
+        </tr>`).join('')}
+    </table>`;
+}
+
+function finishDiceCupMatch() {
+  if (diceCup.resultCommitted) return;
+  diceCup.resultCommitted = true;
+  const playerWon = diceCup.playerScore > diceCup.opponentScore;
+  const playerLost = diceCup.playerScore < diceCup.opponentScore;
+  let table = '';
+  let action = '';
+  let title = playerWon ? 'Zar Düellosunu Kazandın! 🎉' : playerLost ? 'Maçı Kaybettin 💔' : 'Maç Berabere 🤝';
+
+  if (diceCup.stage === 'group') {
+    const fix = diceCup.schedule[diceCup.matchIndex];
+    const otherTeam1 = diceCup.groupTeams[fix.otherMatch[0]];
+    const otherTeam2 = diceCup.groupTeams[fix.otherMatch[1]];
+    const otherResult = simulatePureDiceMatch();
+    updateDiceCupStandings(diceCup.playerTeam, diceCup.opponent, diceCup.playerScore, diceCup.opponentScore);
+    updateDiceCupStandings(otherTeam1, otherTeam2, otherResult.playerScore, otherResult.opponentScore);
+    const rows = sortedDiceCupStandings();
+    table = diceCupStandingsHtml(rows);
+
+    if (diceCup.matchIndex < 2) {
+      diceCup.matchIndex++;
+      action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Sonraki Grup Maçı ➔</button>`;
+    } else {
+      const position = rows.findIndex(r => r.team.name === diceCup.playerTeam.name);
+      if (position < 2) {
+        diceCup.stage = 'ro32';
+        action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Son 32 Turuna Geç 🎉</button>`;
+      } else {
+        action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Grup Aşamasında Elendin · Ana Menü</button>`;
+      }
+    }
+  } else if (playerWon) {
+    if (diceCup.stage === 'ro32') { diceCup.stage = 'ro16'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Son 16 Turuna Geç ➔</button>`; }
+    else if (diceCup.stage === 'ro16') { diceCup.stage = 'qf'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Çeyrek Finale Geç ➔</button>`; }
+    else if (diceCup.stage === 'qf') { diceCup.stage = 'sf'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Yarı Finale Geç ➔</button>`; }
+    else if (diceCup.stage === 'sf') { diceCup.stage = 'final'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Büyük Finale Geç ➔</button>`; }
+    else if (diceCup.stage === 'final') {
+      diceCup.stage = 'won';
+      title = 'ZAR KUPASI ŞAMPİYONUSUN! 🏆🎲';
+      action = `<button class="btn btn-gold" style="width:100%;font-size:16px" onclick="renderPreStart()">Kupayı Kaldır · Ana Menü</button>`;
+    }
+  } else {
+    action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Turnuvaya Veda Et · Ana Menü</button>`;
+  }
+
+  const area = document.getElementById('flashcard-area');
+  area.innerHTML = `
+    <div class="quiz-start-card" style="padding:32px 24px">
+      <div class="quiz-start-title ${playerWon ? 'dice-result-win' : playerLost ? 'dice-result-loss' : 'dice-result-draw'}" style="font-size:29px">${title}</div>
+      <div class="wc-score-box">
+        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
+        <div class="wc-score">${diceCup.playerScore} - ${diceCup.opponentScore}</div>
+        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
+      </div>
+      ${diceCup.eventNote ? `<div class="dice-event-note">${diceCup.eventNote}</div>` : ''}
+      ${table}
+      <div style="margin-top:24px">${action}</div>
+    </div>`;
+}
+
 // ----------------------------------------------------
 // WC 2026 OYUN MANTIĞI
 // ----------------------------------------------------
 
 function startWCTournament() {
+  diceCup.active = false;
   wc.active = true;
   wc.stage = 'group';
   wc.matchIndex = 0;
@@ -1239,5 +1886,3 @@ renderPreStart();
 </script>
 </body>
 </html>
-
-```
