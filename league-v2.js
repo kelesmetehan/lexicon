@@ -47,6 +47,7 @@ function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
 function llStars(n){return '⭐'.repeat(n);}
 function llTeamLeague(name){const s=lexLeague.state;if(s?.leagues?.super?.includes(name))return 'super';if(s?.leagues?.first?.includes(name))return 'first';return null;}
 function llLeagueLabel(key){return key==='super'?'Süper Lig':'TFF 1. Lig';}
+function llLeaguePositionLabel(name){const key=llTeamLeague(name);if(!key)return 'Avrupa kupası rakibi';const position=llSortTable(key).findIndex(row=>row.team===name)+1;return `${llLeagueLabel(key)} · ${position>0?`${position}. sıra`:'Sıralama yok'}`;}
 function llBlankStandings(names){return Object.fromEntries(names.map(n=>[n,llBlankStanding(n)]));}
 function llNewState(teamName){
   const teams={};LL_ALL_TEAMS.forEach(t=>teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}});
@@ -68,7 +69,42 @@ function llPlayerFixture(){const s=lexLeague.state;if(s.pendingFixture)return s.
 function llCurrentRound(key=llTeamLeague(lexLeague.state.playerTeam)){return lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];}
 function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
   const rows=llSortTable(key);return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>t.cards[p]).length;return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>`;}
-function llRenderStandings(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){llSetWide(true);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${llLeagueLabel(key)} <em>Tablosu</em></div><div class="ll-muted">Sezon ${lexLeague.state.season}</div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings('${key==='super'?'first':'super'}')">${llLeagueLabel(key==='super'?'first':'super')}</button><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div></div>${llTableHtml(key)}</div></div>`;}
+function llV2CupResultRound(result){
+  if(Number.isInteger(result?.cupRound))return result.cupRound;
+  let round=0;for(let i=0;i<LL_CUP_WEEKS.length;i++)if(Number(result?.week)>=LL_CUP_WEEKS[i])round=i;return round;
+}
+function llV2FixtureResult(home,away,competition='league',week=null,round=null){
+  return [...(lexLeague.state.results||[])].reverse().find(r=>r.season===lexLeague.state.season&&r.competition===competition&&r.home===home&&r.away===away&&(week==null||Number(r.week)===Number(week))&&(round==null||llV2CupResultRound(r)===round));
+}
+function llV2FixtureTeamHtml(name,away=false){
+  if(!name)return `<div class="ll-fixture-team ${away?'away':''}"><span>BAY</span></div>`;
+  return `<div class="ll-fixture-team ${away?'away':''}">${away?`<span>${llEscape(name)}</span>${llTeamLogo(name,'table')}`:`${llTeamLogo(name,'table')}<span>${llEscape(name)}</span>`}</div>`;
+}
+function llV2FixtureRow(home,away,result=null){
+  const player=lexLeague.state.playerTeam,isPlayer=home===player||away===player,score=!home||!away?'BAY':result?`${result.homeGoals} - ${result.awayGoals}`:'VS';
+  return `<div class="ll-fixture-row ${isPlayer?'player':''}">${llV2FixtureTeamHtml(home)}<div class="ll-fixture-score">${score}</div>${llV2FixtureTeamHtml(away,true)}</div>`;
+}
+function llV2LeagueFixturesHtml(key){
+  const s=lexLeague.state,schedule=s.schedules[key]||[],focus=Math.min(Math.max(Number(s.week)||1,1),schedule.length);
+  return `<div class="ll-round-list">${schedule.map((round,index)=>{const week=index+1,played=round.filter(f=>llV2FixtureResult(f.home,f.away,'league',week)).length;return `<details class="ll-round-card" ${week===focus?'open':''}><summary><span>${week}. Hafta</span><span class="ll-round-meta">${played}/${round.length} oynandı</span></summary><div class="ll-fixture-list">${round.map(f=>llV2FixtureRow(f.home,f.away,llV2FixtureResult(f.home,f.away,'league',week))).join('')}</div></details>`;}).join('')}</div>`;
+}
+function llV2CupRoundField(round){
+  const c=lexLeague.state.cup||{},saved=c.history?.[round];if(Array.isArray(saved)&&saved.length)return saved;
+  if(c.round===round&&Array.isArray(c.field)&&c.field.length)return c.field;
+  const results=(lexLeague.state.results||[]).filter(r=>r.competition==='cup'&&llV2CupResultRound(r)===round);return results.length?results.flatMap(r=>[r.home,r.away]):null;
+}
+function llV2CupRoundsHtml(){
+  const s=lexLeague.state,c=s.cup||{},cupResults=(s.results||[]).filter(r=>r.competition==='cup');
+  return `<div class="ll-round-list">${LL_CUP_ROUNDS.map((name,round)=>{const field=llV2CupRoundField(round),roundResults=cupResults.filter(r=>llV2CupResultRound(r)===round),pairs=[];if(field)for(let i=0;i<field.length;i+=2)pairs.push([field[i]||null,field[i+1]||null]);const stateText=c.winner||round<c.round?'Tamamlandı':round===c.round?'Güncel tur':'Bekliyor',rows=pairs.length?pairs.map(([home,away])=>llV2FixtureRow(home,away,home&&away?roundResults.find(r=>r.home===home&&r.away===away):null)).join(''):`<div class="ll-muted" style="padding:4px 4px 10px">Eşleşmeler önceki tur tamamlanınca belli olacak.</div>`;return `<details class="ll-round-card" ${round===c.round&&!c.winner?'open':''}><summary><span>${name}</span><span class="ll-round-meta">${LL_CUP_WEEKS[round]}. hafta öncesi · ${stateText}</span></summary><div class="ll-fixture-list">${rows}</div></details>`;}).join('')}</div>`;
+}
+function llRenderCompetitionCenter(tab='league',key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
+  const s=lexLeague.state;if(!s){renderLexiconLeagueLanding();return;}llSetWide(true);llV2RepairCupProgress(s);const c=s.cup||{},playerCupMatches=(s.results||[]).filter(r=>r.competition==='cup'&&(r.home===s.playerTeam||r.away===s.playerTeam)).length,cupStatus=c.winner?`Şampiyon: ${c.winner}`:c.alive?'Kupada devam ediyor':'Kupadan elendi';
+  const tabs=`<div class="ll-comp-tabs"><button class="ll-comp-tab ${tab==='league'?'active':''}" onclick="llRenderCompetitionCenter('league','${key}')">Ligler ve Fikstür</button><button class="ll-comp-tab ${tab==='cup'?'active':''}" onclick="llRenderCompetitionCenter('cup','${key}')">Ziraat Türkiye Kupası</button></div>`;
+  const league=`<div class="ll-subtabs"><button class="ll-btn ${key==='super'?'primary':''}" onclick="llRenderCompetitionCenter('league','super')">Süper Lig</button><button class="ll-btn ${key==='first'?'primary':''}" onclick="llRenderCompetitionCenter('league','first')">TFF 1. Lig</button></div><div class="ll-card"><div class="ll-card-title">${llLeagueLabel(key)} Puan Tablosu</div>${llTableHtml(key)}</div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">${llLeagueLabel(key)} · Tüm Eşleşmeler</div>${llV2LeagueFixturesHtml(key)}</div>`;
+  const cup=`<div class="ll-cup-status"><div class="ll-metric"><strong>${cupStatus}</strong><span>Durum</span></div><div class="ll-metric"><strong>${c.winner?LL_CUP_ROUNDS.length:Math.min((c.round||0)+1,LL_CUP_ROUNDS.length)}/${LL_CUP_ROUNDS.length}</strong><span>Tur</span></div><div class="ll-metric"><strong>${playerCupMatches}</strong><span>Oynadığın Kupa Maçı</span></div></div><div class="ll-card"><div class="ll-card-title">Türkiye Kupası · Tüm Turlar ve Eşleşmeler</div>${llV2CupRoundsHtml()}</div>`;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Müsabaka <em>Merkezi</em></div><div class="ll-muted">Sezon ${s.season} · Lig ve kupa eşleşmeleri</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${tabs}${tab==='cup'?cup:league}</div></div>`;
+}
+function llRenderStandings(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){llRenderCompetitionCenter('league',key);}
 function llV2RewardTable(){return `<div class="ll-card"><div class="ll-card-title">AP / LP Ödülleri</div><div class="ll-table-wrap"><table class="ll-table" style="min-width:520px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>Galibiyet LP</th><th>Beraberlik LP</th><th>Mağlubiyet LP</th></tr></thead><tbody>${[['Lig',LL_COMP_REWARDS.league],['Türkiye Kupası',LL_COMP_REWARDS.cup],['Play-Off',LL_COMP_REWARDS.playoff],['Şampiyonlar Ligi',LL_COMP_REWARDS.ucl],['Avrupa Ligi',LL_COMP_REWARDS.uel],['Konferans Ligi',LL_COMP_REWARDS.uecl]].map(([n,r])=>`<tr><td>${n}</td><td>${r.ap}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td></tr>`).join('')}</tbody></table></div></div>`;}
 function llRenderDashboard(){
   const s=lexLeague.state;if(!s){renderLexiconLeagueLanding();return;}if(s.seasonEnded){llRenderSeasonEnd();return;}lexLeague.active=true;llSetWide(true);llClearTransient();llV2EnsureSpecial();
@@ -78,7 +114,7 @@ function llRenderDashboard(){
 }
 
 function llFinishLeagueQuiz(){const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;const comp=llPlayerFixture()?.competition||'league',reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league,ap=q.correct*reward.ap;lexLeague.state.ap+=ap;let bonus='none';if(q.correct===10){bonus='perfect';lexLeague.state.lp+=10;}else if(q.correct===9)bonus='reroll';q.apEarned=ap;q.reward=bonus;llSave();llRenderQuizReward();}
-function llRecordMatch(home,away,hg,ag,week,userMatch=false,competition='league',league=null){if(competition==='league'){llUpdateStanding(home,hg,ag);llUpdateStanding(away,ag,hg);[[home,hg,ag],[away,ag,hg]].forEach(([n,gf,ga])=>{if(n===lexLeague.state.playerTeam)return;const t=llTeamState(n);t.aiAp=(t.aiAp||0)+(gf>ga?20:gf===ga?12:6);});}lexLeague.state.results.push({season:lexLeague.state.season,week,home,away,homeGoals:hg,awayGoals:ag,userMatch,competition,league});}
+function llRecordMatch(home,away,hg,ag,week,userMatch=false,competition='league',league=null){if(competition==='league'){llUpdateStanding(home,hg,ag);llUpdateStanding(away,ag,hg);[[home,hg,ag],[away,ag,hg]].forEach(([n,gf,ga])=>{if(n===lexLeague.state.playerTeam)return;const t=llTeamState(n);t.aiAp=(t.aiAp||0)+(gf>ga?20:gf===ga?12:6);});}lexLeague.state.results.push({season:lexLeague.state.season,week,home,away,homeGoals:hg,awayGoals:ag,userMatch,competition,league,cupRound:competition==='cup'?lexLeague.state.cup?.round:null});}
 function llV2SimFixture(f,competition='league',league=null,week=lexLeague.state.week){const sim=llSimulateMatch(f.home,f.away);llRecordMatch(f.home,f.away,sim.homeGoals,sim.awayGoals,week,false,competition,league);llApplyLocks(sim.resolution,f.home,f.away);return sim.homeGoals===sim.awayGoals?(Math.random()<.5?f.home:f.away):sim.homeGoals>sim.awayGoals?f.home:f.away;}
 function llV2PlayLeagueWeek(key,skipFixture){const round=lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];round.filter(f=>!skipFixture||!(f.home===skipFixture.home&&f.away===skipFixture.away)).forEach(f=>llV2SimFixture(f,'league',key));}
 function llCommitCurrentMatch(){
@@ -95,10 +131,25 @@ function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=fals
 
 function llV2InitCup(state){
   const domestic=llShuffle([...state.leagues.super,...state.leagues.first]),preliminary=domestic.slice(0,12),byes=domestic.slice(12),field=[...preliminary,...byes.flatMap(team=>[team,null])];
-  state.cup={round:0,field,alive:true,winner:null,pending:null};
+  state.cup={round:0,field,alive:true,winner:null,pending:null,formatVersion:2,history:{0:[...field]}};
+}
+function llV2RepairCupProgress(state){
+  const c=state?.cup;if(!c||c.pending||c.winner||!c.alive||!Array.isArray(c.field))return;
+  if(c.round===0){
+    const hasEmptyPair=Array.from({length:Math.ceil(c.field.length/2)},(_,i)=>[c.field[i*2],c.field[i*2+1]]).some(([a,b])=>!a&&!b);
+    if(hasEmptyPair){llV2InitCup(state);return;}c.history=c.history||{0:[...c.field]};c.formatVersion=2;return;
+  }
+  const player=state.playerTeam,played=(state.results||[]).filter(r=>r.competition==='cup'&&(r.home===player||r.away===player));
+  const openingPlayed=played.some(r=>Number(r.week)<=LL_CUP_WEEKS[0]),maxProcessed=Math.min(LL_CUP_ROUNDS.length,played.length+(openingPlayed?0:1));
+  const expectedCurrent=64>>Math.min(c.round,5),skippedPlayerRound=c.round>maxProcessed,malformedSize=c.field.length!==expectedCurrent;
+  if(!skippedPlayerRound&&!malformedSize){c.history=c.history||{};if(!c.history[c.round])c.history[c.round]=[...c.field];c.formatVersion=2;return;}
+  const targetRound=skippedPlayerRound?maxProcessed:c.round,expectedSize=64>>Math.min(targetRound,5),domestic=[...state.leagues.super,...state.leagues.first];
+  const candidates=[...new Set([...c.field.filter(Boolean),...llShuffle(domestic)])].filter(n=>n!==player),field=[player,...candidates.slice(0,Math.max(0,expectedSize-1))];
+  c.round=targetRound;c.field=llShuffle(field);c.pending=null;c.formatVersion=2;c.history=c.history||{};c.history[targetRound]=[...c.field];
+  if(state.pendingFixture?.competition==='cup')state.pendingFixture=null;
 }
 function llV2EnsureSpecial(){const s=lexLeague.state;if(s.pendingFixture||s.seasonEnded)return;if(s.playoff){llV2EnsurePlayoff();return;}llV2EnsureCup();if(s.pendingFixture)return;llV2EnsureEurope();}
-function llV2EnsureCup(){const s=lexLeague.state,c=s.cup;if(!c||c.round>=LL_CUP_WEEKS.length||s.week<LL_CUP_WEEKS[c.round]||c.pending)return;const next=[];let playerPair=null;for(let i=0;i<c.field.length;i+=2){const a=c.field[i],b=c.field[i+1];if(!a&&!b)continue;if(!a||!b){next.push(a||b);continue;}if(a===s.playerTeam||b===s.playerTeam){playerPair=[a,b];continue;}next.push(llV2SimFixture({home:a,away:b},'cup'));}if(playerPair){c.pending={next,pair:playerPair};s.pendingFixture={home:playerPair[0],away:playerPair[1],competition:'cup',roundLabel:LL_CUP_ROUNDS[c.round]};}else{c.field=next;c.round++;if(c.field.length===1){c.winner=c.field[0];c.alive=false;}}}
+function llV2EnsureCup(){const s=lexLeague.state;llV2RepairCupProgress(s);const c=s.cup;if(!c||c.round>=LL_CUP_WEEKS.length||s.week<LL_CUP_WEEKS[c.round]||c.pending)return;c.history=c.history||{};c.history[c.round]=[...c.field];const next=[];let playerPair=null;for(let i=0;i<c.field.length;i+=2){const a=c.field[i],b=c.field[i+1];if(!a&&!b)continue;if(!a||!b){next.push(a||b);continue;}if(a===s.playerTeam||b===s.playerTeam){playerPair=[a,b];continue;}next.push(llV2SimFixture({home:a,away:b},'cup'));}if(playerPair){c.pending={next,pair:playerPair};s.pendingFixture={home:playerPair[0],away:playerPair[1],competition:'cup',roundLabel:LL_CUP_ROUNDS[c.round]};}else{c.field=next;c.round++;if(c.field.length===1){c.winner=c.field[0];c.alive=false;}}}
 function llV2FinishCupRound(winner){const c=lexLeague.state.cup;if(!c?.pending)return;c.pending.next.push(winner);c.field=c.pending.next;c.pending=null;c.round++;if(winner!==lexLeague.state.playerTeam)c.alive=false;if(c.field.length===1){c.winner=c.field[0];if(c.winner===lexLeague.state.playerTeam)lexLeague.state.trophies.push({season:lexLeague.state.season,name:'Ziraat Türkiye Kupası'});}}
 function llV2EnsureEurope(){const s=lexLeague.state,e=s.europe;if(!e||!e.alive||e.round>=LL_EURO_WEEKS.length||s.week<LL_EURO_WEEKS[e.round]||e.pending)return;const pool=llShuffle(UCL_TEAMS.filter(t=>t.name!==s.playerTeam)),opp=pool[e.round%pool.length];if(!s.teams[opp.name])s.teams[opp.name]={name:opp.name,stars:opp.pot===1?5:opp.pot===2?4:3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};e.pending=opp.name;s.pendingFixture={home:e.round%2?s.playerTeam:opp.name,away:e.round%2?opp.name:s.playerTeam,competition:e.type,roundLabel:LL_EURO_ROUNDS[e.round]};}
 function llV2FinishEuropeRound(winner){const e=lexLeague.state.europe;if(!e)return;e.pending=null;if(winner!==lexLeague.state.playerTeam){e.alive=false;return;}e.round++;if(e.round>=LL_EURO_ROUNDS.length){e.winner=lexLeague.state.playerTeam;e.alive=false;lexLeague.state.trophies.push({season:lexLeague.state.season,name:e.type==='ucl'?'UEFA Şampiyonlar Ligi':e.type==='uel'?'UEFA Avrupa Ligi':'UEFA Konferans Ligi'});}}
