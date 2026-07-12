@@ -1221,7 +1221,10 @@ function llRollValue(teamName,pos){
 }
 function llMakeDice(teamName,plusPos=null){
   const team=llTeamState(teamName);
-  return LL_POSITIONS.map(pos=>({uid:`${teamName}-${pos}-${Math.random()}`,position:pos,value:llRollValue(teamName,pos)+(pos===plusPos?1:0),cardId:team.cards[pos],stars:team.stars})).sort((a,b)=>b.value-a.value);
+  return LL_POSITIONS.map(pos=>({uid:`${teamName}-${pos}-${Math.random()}`,position:pos,value:llRollValue(teamName,pos)+(pos===plusPos?1:0),cardId:team.cards[pos],stars:team.stars}));
+}
+function llOrderDiceByPosition(dice){
+  return LL_POSITIONS.map(pos=>dice.find(d=>d.position===pos)).filter(Boolean);
 }
 function llEffectAmount(card,fallback=1){
   if(!card)return fallback;const m=card.effect.match(/(?:\+|x|Farkı\s+)(\d+)/i)||card.effect.match(/(\d+)\s+(?:sanal gol|azalt|aktar|elendir|elenir|ekstra ücretsiz reroll)/i);return m?Number(m[1]):fallback;
@@ -1247,7 +1250,7 @@ function llExtraRerolls(teamName){
   let total=0;LL_POSITIONS.forEach(p=>{const c=llCard(llTeamState(teamName).cards[p]);if(llBaseName(c)==='Metronom')total+=llEffectAmount(c,1);});return total;
 }
 function llAutoReroll(teamName,dice,count){
-  let out=llDeep(dice);for(let i=0;i<count;i++){out.sort((a,b)=>b.value-a.value);const target=out[out.length-1];target.value=llRollValue(teamName,target.position);}return out.sort((a,b)=>b.value-a.value);
+  const out=llOrderDiceByPosition(llDeep(dice));for(let i=0;i<count;i++){const target=llLowestDie(out);target.value=llRollValue(teamName,target.position);}return out;
 }
 function llDuplicates(dice,value){return dice.filter(d=>d.value===value).length>=2;}
 function llLowestDie(dice){return dice.reduce((a,b)=>a.value<=b.value?a:b);}
@@ -1256,7 +1259,9 @@ function llFindPosition(dice,pos){return dice.find(d=>d.position===pos);}
 function llSum(dice){return dice.reduce((s,d)=>s+d.value,0);}
 function llCardGoalAmount(card){const m=card?.effect.match(/\+(\d+)\s+sanal gol/i)||card?.effect.match(/(\d+)\s+sanal gol/i);return m?Number(m[1]):1;}
 function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
-  const aDice=llDeep(aDiceInput),bDice=llDeep(bDiceInput),events=[],nextLocks={a:{},b:{}};
+  // Zarları değerlerine göre değil, sabit mevki sırasına göre eşleştir.
+  // Böylece Kaleci daima Kaleciyle, Orta Saha Orta Sahayla ve Forvet Forvetle düello yapar.
+  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),events=[],nextLocks={a:{},b:{}};
   const aState=llTeamState(aName),bState=llTeamState(bName);
   const sides={a:{name:aName,dice:aDice,state:aState,home:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:!ctx.aHome,extra:0,shield:0}};
   function log(msg){events.push(msg);}
@@ -1344,7 +1349,7 @@ function llSelectReroll(uid){const m=lexLeague.match;if(m?.phase!=='reroll')retu
 function llUseReroll(){
   const m=lexLeague.match;if(!m||m.phase!=='reroll'||!m.selectedUid||m.rerolls<=0)return;
   const die=m.playerDice.find(d=>d.uid===m.selectedUid);if(!die)return;
-  die.value=llRollValue(m.player,die.position)+(die.position===m.plusPos?1:0);m.playerDice.sort((a,b)=>b.value-a.value);m.rerolls--;m.selectedUid=null;
+  die.value=llRollValue(m.player,die.position)+(die.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);m.rerolls--;m.selectedUid=null;
   if(m.rerolls<=0){m.phase='resolve';llFinalizeCurrentMatch();}else llRenderMatch();
 }
 function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.phase='resolve';llFinalizeCurrentMatch();}
