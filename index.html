@@ -410,7 +410,7 @@
   /* =========================================================
      LEXICON LEAGUE — SÜPER LİG RPG
      ========================================================= */
-  .container.league-wide { max-width: 1120px; }
+  .container.league-wide { max-width: 1280px; }
   .btn-league {
     width:100%; max-width:420px; justify-content:center;
     background:linear-gradient(135deg,#075985,#0f766e 55%,#166534);
@@ -441,7 +441,8 @@
   .ll-btn.gold { background:var(--gold); color:#111827; border-color:var(--gold2); }
   .ll-btn.danger { color:#fca5a5; border-color:rgba(239,68,68,.26); background:rgba(127,29,29,.15); }
   .ll-btn:disabled { opacity:.42; cursor:not-allowed; transform:none; }
-  .ll-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:16px; }
+  .ll-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:16px; }
+  .ll-grid > * { min-width:0; }
   .ll-card { background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:16px; }
   .ll-card-title { color:#99f6e4; font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; margin-bottom:12px; }
   .ll-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0 16px; }
@@ -1093,7 +1094,7 @@ function llNewState(teamName){
     teams,
     standings:Object.fromEntries(LL_TEAMS.map(t=>[t.name,llBlankStanding(t.name)])),
     schedule:llGenerateSchedule(LL_TEAMS.map(t=>t.name)),results:[],usedWords:[],
-    transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,seasonEnded:false,lastSeasonSummary:null,createdAt:new Date().toISOString()
+    transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,starterOffers:{},seasonEnded:false,lastSeasonSummary:null,createdAt:new Date().toISOString()
   };
 }
 function llSortTable(){
@@ -1181,14 +1182,29 @@ function llAssignStarterCardsToAi(){
 function llRenderStarterShop(){
   const state=lexLeague.state;if(!state)return;
   if(state.starterPackClaimed){llRenderDashboard();return;}
+  llEnsureStarterOffers();
   lexLeague.active=true;llSetWide(true);lexLeague.shop={mode:'starter',position:null,offers:[]};
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Ücretsiz <em>Başlangıç Kartı</em></div><div class="ll-muted">Yalnızca ilk sezonun başında, kariyer başına bir kez</div></div></div><div class="ll-notice"><b>Bütün takımlar bir başlangıç kartı aldı.</b> Sen de bir mevki seçip açılan iki tekliften yalnızca bir kart alacaksın. Bu seçim ücretsizdir ve atlanamaz.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(state.playerTeam).stars)}</div></div><div class="ll-muted">Bu mevkiye uygun iki kart teklifi açılır.</div><button class="ll-btn gold" style="width:100%;margin-top:14px" onclick="llOpenStarterPack('${pos}')">Ücretsiz Teklifleri Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
 }
+function llEnsureStarterOffers(){
+  const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
+  if(!state.starterOffers||typeof state.starterOffers!=='object')state.starterOffers={};
+  const reserved=new Set(Object.values(state.starterOffers).flat().filter(Boolean));
+  LL_POSITIONS.forEach(pos=>{
+    const saved=state.starterOffers[pos];
+    if(Array.isArray(saved)&&saved.length===2&&saved.every(id=>llCard(id)))return;
+    const pool=llEligibleCards(state.playerTeam,pos).filter(c=>!reserved.has(c.id));
+    const offers=llPickDistinctOfferPair(pool);
+    state.starterOffers[pos]=offers.map(c=>c.id);
+    offers.forEach(c=>reserved.add(c.id));
+  });
+  llSave();
+}
 function llOpenStarterPack(pos){
   const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
-  const pool=llEligibleCards(state.playerTeam,pos);if(pool.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
-  const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  lexLeague.shop={mode:'starter',position:pos,offers:offers.map(c=>c.id)};llSave();llRenderShopOffers();
+  llEnsureStarterOffers();const offers=state.starterOffers?.[pos]||[];
+  if(offers.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
+  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llSave();llRenderShopOffers();
 }
 function llRenderDashboard(){
   lexLeague.active=true;llSetWide(true);llClearTransient();
@@ -1623,7 +1639,7 @@ function llRenderShopOffers(){
 function llChooseShopCard(id){
   const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
   llTeamState(lexLeague.state.playerTeam).cards[sh.position]=id;
-  if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.shop=null;llSave();llRenderDashboard();return;}
+  if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
   llSave();llRenderShop();
 }
 function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;lexLeague.shop={position:null,offers:[]};llRenderShop();}
