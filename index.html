@@ -1034,6 +1034,9 @@ function llLoad(){
           team.aiAp=name===parsed.playerTeam?0:row?(row.W*20)+(row.D*12)+(row.L*6):0;
         }
       });
+      if(typeof parsed.starterPackClaimed!=='boolean')parsed.starterPackClaimed=true;
+      if(typeof parsed.starterAiAssigned!=='boolean')parsed.starterAiAssigned=true;
+      if((parsed.aiShopVersion||0)<2){parsed.aiShopVersion=2;parsed.aiTransferWindows={};}
       return parsed;
     }
   }catch(e){ console.warn('Lexicon League save okunamadı',e); }
@@ -1076,7 +1079,7 @@ function llNewState(teamName){
     teams,
     standings:Object.fromEntries(LL_TEAMS.map(t=>[t.name,llBlankStanding(t.name)])),
     schedule:llGenerateSchedule(LL_TEAMS.map(t=>t.name)),results:[],usedWords:[],
-    transferWindowsVisited:{},aiTransferWindows:{},seasonEnded:false,lastSeasonSummary:null,createdAt:new Date().toISOString()
+    transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,seasonEnded:false,lastSeasonSummary:null,createdAt:new Date().toISOString()
   };
 }
 function llSortTable(){
@@ -1144,7 +1147,8 @@ function renderLexiconLeagueLanding(){
 function llContinueGame(){
   const saved=llLoad(); if(!saved){llRenderTeamSelect();return;}
   lexLeague.state=saved; lexLeague.active=true; llSetWide(true);
-  if(saved.seasonEnded) llRenderSeasonEnd(); else llRenderDashboard();
+  if(!saved.starterPackClaimed)llRenderStarterShop();
+  else if(saved.seasonEnded) llRenderSeasonEnd(); else llRenderDashboard();
 }
 function llRenderTeamSelect(){
   lexLeague.active=true;llSetWide(true);
@@ -1153,7 +1157,24 @@ function llRenderTeamSelect(){
 }
 function llStartCareer(teamName){
   if(localStorage.getItem(LL_SAVE_KEY) && !confirm('Mevcut Lexicon League kariyerinin üzerine yeni kariyer yazılsın mı?'))return;
-  lexLeague.state=llNewState(teamName); llSave(); llRenderDashboard();
+  lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSave();llRenderStarterShop();
+}
+function llAssignStarterCardsToAi(){
+  const state=lexLeague.state;if(!state||state.starterAiAssigned)return;
+  LL_TEAMS.map(t=>t.name).filter(name=>name!==state.playerTeam).forEach(llAssignAiCard);
+  state.starterAiAssigned=true;
+}
+function llRenderStarterShop(){
+  const state=lexLeague.state;if(!state)return;
+  if(state.starterPackClaimed){llRenderDashboard();return;}
+  lexLeague.active=true;llSetWide(true);lexLeague.shop={mode:'starter',position:null,offers:[]};
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Ücretsiz <em>Başlangıç Kartı</em></div><div class="ll-muted">Yalnızca ilk sezonun başında, kariyer başına bir kez</div></div></div><div class="ll-notice"><b>Bütün takımlar bir başlangıç kartı aldı.</b> Sen de bir mevki seçip açılan iki tekliften yalnızca bir kart alacaksın. Bu seçim ücretsizdir ve atlanamaz.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(state.playerTeam).stars)}</div></div><div class="ll-muted">Bu mevkiye uygun iki kart teklifi açılır.</div><button class="ll-btn gold" style="width:100%;margin-top:14px" onclick="llOpenStarterPack('${pos}')">Ücretsiz Teklifleri Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
+}
+function llOpenStarterPack(pos){
+  const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
+  const pool=llEligibleCards(state.playerTeam,pos);if(pool.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
+  const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
+  lexLeague.shop={mode:'starter',position:pos,offers:offers.map(c=>c.id)};llSave();llRenderShopOffers();
 }
 function llRenderDashboard(){
   lexLeague.active=true;llSetWide(true);llClearTransient();
@@ -1536,6 +1557,13 @@ function llWeightedPick(pool){
   for(const r of available){roll-=LL_RARITY_WEIGHT[r];if(roll<=0){rarity=r;break;}}
   const subset=pool.filter(c=>c.rarity===rarity);return subset[Math.floor(Math.random()*subset.length)];
 }
+function llPickDistinctOfferPair(pool){
+  const first=llWeightedPick(pool);if(!first)return [];
+  const sameVisibleCard=c=>c.position===first.position&&c.name===first.name&&c.trigger===first.trigger&&c.effect===first.effect&&c.rarity===first.rarity;
+  let secondPool=pool.filter(c=>c.id!==first.id&&!sameVisibleCard(c));
+  if(!secondPool.length)secondPool=pool.filter(c=>c.id!==first.id);
+  const second=llWeightedPick(secondPool);return second?[first,second]:[first];
+}
 function llShopCost(){return llHasBase(lexLeague.state.playerTeam,'Taktik Tahtası')?100:150;}
 function llRenderShop(){
   if(![10,20,30].includes(lexLeague.state.week)){alert('Transfer merkezi yalnızca 10., 20. ve 30. haftalarda açıktır.');return;}
@@ -1545,19 +1573,54 @@ function llRenderShop(){
 function llOpenShopPack(pos){
   const cost=llShopCost();if(lexLeague.state.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
   const pool=llEligibleCards(lexLeague.state.playerTeam,pos);if(pool.length<2){alert('Bu mevki ve yıldız seviyesi için havuzda yeterli uygun kart kalmadı.');return;}
-  lexLeague.state.ap-=cost;const first=llWeightedPick(pool),second=llWeightedPick(pool.filter(c=>c.id!==first.id));lexLeague.shop={position:pos,offers:[first.id,second.id]};llSave();llRenderShopOffers();
+  const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
+  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llSave();llRenderShopOffers();
 }
 function llRenderShopOffers(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
-  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} Teklifleri</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div><button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button></div>`;
+  const starter=sh.mode==='starter';
+  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
 }
-function llChooseShopCard(id){const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;llTeamState(lexLeague.state.playerTeam).cards[sh.position]=id;llSave();llRenderShop();}
-function llSkipShopCards(){lexLeague.shop={position:null,offers:[]};llRenderShop();}
+function llChooseShopCard(id){
+  const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
+  llTeamState(lexLeague.state.playerTeam).cards[sh.position]=id;
+  if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.shop=null;llSave();llRenderDashboard();return;}
+  llSave();llRenderShop();
+}
+function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;lexLeague.shop={position:null,offers:[]};llRenderShop();}
 function llAssignAiCard(teamName){
   const t=llTeamState(teamName);const positions=llShuffle(LL_POSITIONS);let chosenPos=positions.find(p=>!t.cards[p])||positions[0];const pool=llEligibleCards(teamName,chosenPos);if(!pool.length)return false;
   const card=llWeightedPick(pool);if(!card)return false;
   const old=llCard(t.cards[chosenPos]);const rank={common:1,rare:2,epic:3,legendary:4};if(old&&rank[card.rarity]<rank[old.rarity]&&Math.random()<.75)return false;
   t.cards[chosenPos]=card.id;return true;
+}
+function llAiCardScore(card){
+  if(!card)return -100000;
+  const rarity={common:100,rare:200,epic:300,legendary:400}[card.rarity]||0;
+  const amount=llEffectAmount(card,1);let score=rarity+(amount*5);
+  if(/otomatik.*(?:kazan|galibiyet)/i.test(card.effect))score+=35;
+  if(/sanal gol/i.test(card.effect))score+=25*amount;
+  if(/reroll|yeniden at|yeniden attır/i.test(card.effect))score+=18*amount;
+  if(/azalt|düşür|aktar|\+\d/i.test(card.effect))score+=10*amount;
+  if(/x[23]|çarpan/i.test(card.effect))score+=15*amount;
+  return score;
+}
+function llAiTargetPosition(teamName){
+  const team=llTeamState(teamName),empty=llShuffle(LL_POSITIONS.filter(pos=>!team.cards[pos]));
+  if(empty.length)return empty[0];
+  return llShuffle(LL_POSITIONS).sort((a,b)=>llAiCardScore(llCard(team.cards[a]))-llAiCardScore(llCard(team.cards[b])))[0];
+}
+function llAiShopAttempt(teamName){
+  const team=llTeamState(teamName);if(!team||team.aiAp<150)return {spent:false,upgraded:false};
+  const position=llAiTargetPosition(teamName),pool=llEligibleCards(teamName,position),offers=llPickDistinctOfferPair(pool);
+  if(offers.length<2)return {spent:false,upgraded:false};
+  team.aiAp-=150;
+  const current=llCard(team.cards[position]),best=[...offers].sort((a,b)=>llAiCardScore(b)-llAiCardScore(a))[0];
+  if(!current||llAiCardScore(best)>llAiCardScore(current)){
+    team.cards[position]=best.id;
+    return {spent:true,upgraded:true,position,oldId:current?.id||null,newId:best.id};
+  }
+  return {spent:true,upgraded:false,position,oldId:current.id,newId:null};
 }
 function llDevelopOpponents(completedWeek){
   const state=lexLeague.state;if(completedWeek<10)return;
@@ -1567,8 +1630,12 @@ function llDevelopOpponents(completedWeek){
     const transfers=[];
     llSortTable().filter(row=>row.team!==state.playerTeam).forEach(row=>{
       const team=llTeamState(row.team);if(!Number.isFinite(team.aiAp))team.aiAp=0;
-      if(team.aiAp<150)return;
-      if(llAssignAiCard(row.team)){team.aiAp-=150;transfers.push(row.team);}
+      let attempts=0,upgrades=0;
+      while(team.aiAp>=150&&attempts<20){
+        const result=llAiShopAttempt(row.team);if(!result.spent)break;
+        attempts++;if(result.upgraded)upgrades++;
+      }
+      if(attempts)transfers.push({team:row.team,attempts,upgrades});
     });
     state.aiTransferWindows[`${state.season}-${windowWeek}`]=true;
     state.lastAiTransfers={season:state.season,week:windowWeek,teams:transfers};
