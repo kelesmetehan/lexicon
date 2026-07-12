@@ -458,6 +458,7 @@
   .ll-next-match { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px; padding:18px; border-radius:14px; background:linear-gradient(135deg,rgba(14,116,144,.13),rgba(15,118,110,.08)); border:1px solid rgba(94,234,212,.18); }
   .ll-club { text-align:center; }
   .ll-club-icon { font-size:34px; margin-bottom:6px; }
+  .ll-club-rank { margin-top:5px; color:#99f6e4; font-size:10px; font-weight:700; letter-spacing:.35px; }
   .ll-vs { font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:28px; }
   .ll-squad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   .ll-slot { background:var(--bg2); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:13px; min-height:126px; }
@@ -551,12 +552,31 @@
   .ll-result-row { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; padding:9px 10px; border-radius:8px; background:var(--bg2); font-size:11px; }
   .ll-result-row span:first-child { text-align:right; }
   .ll-result-row b { color:var(--gold); }
+  .ll-comp-tabs { display:flex; gap:8px; flex-wrap:wrap; padding:5px; margin-bottom:16px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:var(--bg3); }
+  .ll-comp-tab { flex:1; min-width:170px; border:1px solid transparent; border-radius:9px; padding:11px 14px; background:transparent; color:var(--text2); font:700 12px 'DM Sans'; cursor:pointer; }
+  .ll-comp-tab.active { color:#ecfeff; border-color:rgba(45,212,191,.35); background:linear-gradient(135deg,rgba(14,116,144,.38),rgba(15,118,110,.30)); }
+  .ll-subtabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .ll-round-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .ll-round-card { min-width:0; border:1px solid rgba(255,255,255,.07); border-radius:11px; background:var(--bg3); overflow:hidden; }
+  .ll-round-card[open] { border-color:rgba(94,234,212,.22); }
+  .ll-round-card summary { display:flex; justify-content:space-between; gap:12px; padding:12px 14px; color:#99f6e4; font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; cursor:pointer; list-style:none; }
+  .ll-round-card summary::-webkit-details-marker { display:none; }
+  .ll-round-meta { color:var(--text3); font-weight:500; letter-spacing:0; text-transform:none; }
+  .ll-fixture-list { display:flex; flex-direction:column; gap:6px; padding:0 10px 10px; }
+  .ll-fixture-row { display:grid; grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr); align-items:center; gap:8px; min-height:42px; padding:7px 9px; border-radius:8px; background:var(--bg2); font-size:11px; }
+  .ll-fixture-row.player { box-shadow:inset 3px 0 #2dd4bf; background:rgba(45,212,191,.07); }
+  .ll-fixture-team { display:flex; align-items:center; gap:6px; min-width:0; }
+  .ll-fixture-team.away { justify-content:flex-end; text-align:right; }
+  .ll-fixture-team span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ll-fixture-team .ll-team-logo { width:21px; height:21px; margin:0; flex:0 0 21px; }
+  .ll-fixture-score { text-align:center; color:var(--gold2); font-weight:800; white-space:nowrap; }
+  .ll-cup-status { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
   @media(max-width:850px){
-    .ll-grid{grid-template-columns:1fr}.ll-metrics{grid-template-columns:repeat(2,1fr)}.ll-team-grid{grid-template-columns:repeat(2,1fr)}
+    .ll-grid{grid-template-columns:1fr}.ll-metrics{grid-template-columns:repeat(2,1fr)}.ll-team-grid{grid-template-columns:repeat(2,1fr)}.ll-round-list{grid-template-columns:1fr}
     .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}
   }
   @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}
+    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
   }
 
@@ -1550,7 +1570,7 @@ function llRenderMatch(){
   else if(m.phase==='preview')controls=`<div class="ll-notice">Yukarıdaki tahmini ve kart etkilerini inceledikten sonra gerçek sonucu çözebilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kartları Uygula ve Sonucu Gör</button>`;
   else controls=`<button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button>`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
-  <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div></div><div class="ll-vs">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div>${llOpponentIcons(m.opponent)}</div></div>
+  <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
   ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map(d=>llDieRow(d,'a',m.phase==='reroll',m.selectedUid===d.uid)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map(d=>llDieRow(d,'b')).join('')}</div></div>`}
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
   <div style="text-align:center;margin-top:16px">${controls}</div>${r?.events?.length?`<div class="ll-event-log">${r.events.map(e=>`<div class="ll-event">${llEscape(e)}</div>`).join('')}</div>`:''}</div></div>`;
