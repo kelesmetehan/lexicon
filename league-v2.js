@@ -42,7 +42,7 @@ function llTeamLogo(teamOrName,variant=''){
   if(!team.logo)return `<span class="ll-team-logo-fallback" style="display:inline-flex">${team.icon||'⚽'}</span>`;
   return `<img class="ll-team-logo ${variant}" src="${team.logo}" alt="${llEscape(team.name)} logosu" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="ll-team-logo-fallback">${team.icon||'⚽'}</span>`;
 }
-function llRange(stars){return stars<=1?[1,3]:stars===2?[1,4]:stars===3?[2,5]:stars===4?[2,6]:[3,6];}
+function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
 function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
 function llStars(n){return '⭐'.repeat(n);}
 function llTeamLeague(name){const s=lexLeague.state;if(s?.leagues?.super?.includes(name))return 'super';if(s?.leagues?.first?.includes(name))return 'first';return null;}
