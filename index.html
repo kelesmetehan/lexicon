@@ -600,12 +600,28 @@
   .ll-fixture-team .ll-team-logo { width:21px; height:21px; margin:0; flex:0 0 21px; }
   .ll-fixture-score { text-align:center; color:var(--gold2); font-weight:800; white-space:nowrap; }
   .ll-cup-status { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+  .ll-goals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .ll-goal { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:11px 12px; border-radius:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.07); }
+  .ll-goal.success { border-color:rgba(74,222,128,.38); background:rgba(34,197,94,.09); }
+  .ll-goal.fail { border-color:rgba(248,113,113,.28); background:rgba(239,68,68,.06); }
+  .ll-goal-title { font-weight:800; font-size:11px; }
+  .ll-goal-progress { color:var(--text2); font-size:10px; margin-top:3px; }
+  .ll-goal-reward { color:var(--gold2); font-weight:900; font-size:11px; text-align:right; white-space:nowrap; }
+  .ll-big-match { position:relative; overflow:hidden; border-color:rgba(250,204,21,.50)!important; box-shadow:0 0 0 2px rgba(250,204,21,.06),0 18px 45px rgba(234,179,8,.10); }
+  .ll-match-importance { margin:-16px -16px 14px; padding:9px 14px; color:#422006; background:linear-gradient(90deg,#fde047,#fb923c); font-size:11px; font-weight:950; letter-spacing:.8px; text-align:center; }
+  .ll-archive-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .ll-archive-card { position:relative; min-height:170px; padding:14px; border-radius:12px; background:var(--bg3); border:1px solid rgba(255,255,255,.08); }
+  .ll-archive-card.common { border-color:rgba(156,163,175,.35); }
+  .ll-archive-card.rare { border-color:rgba(59,130,246,.55); }
+  .ll-archive-card.epic { border-color:rgba(168,85,247,.55); }
+  .ll-archive-card.legendary { border-color:rgba(234,179,8,.65); box-shadow:0 0 18px rgba(234,179,8,.07); }
+  .ll-owned-badge { position:absolute; top:10px; right:10px; padding:4px 7px; border-radius:99px; color:#052e16; background:#4ade80; font-size:8px; font-weight:950; letter-spacing:.6px; }
   @media(max-width:850px){
     .ll-grid{grid-template-columns:1fr}.ll-metrics{grid-template-columns:repeat(2,1fr)}.ll-team-grid{grid-template-columns:repeat(2,1fr)}.ll-round-list{grid-template-columns:1fr}
-    .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}
+    .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}.ll-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}
+    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
@@ -1346,7 +1362,7 @@ function llBlankStanding(team){ return {team,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:
 function llNewState(teamName){
   const teams={};
   LL_TEAMS.forEach(t=>{
-    teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};
+    teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};
   });
   return {
     version:1,season:1,week:1,playerTeam:teamName,ap:0,lp:0,
@@ -1448,14 +1464,14 @@ function llRenderStarterShop(){
 function llEnsureStarterOffers(){
   const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
   if(!state.starterOffers||typeof state.starterOffers!=='object')state.starterOffers={};
-  const reserved=new Set(Object.values(state.starterOffers).flat().filter(Boolean));
+  const reserved=new Set(Object.values(state.starterOffers).flat().map(id=>llCardFamilyName(llCard(id))).filter(Boolean));
   LL_POSITIONS.forEach(pos=>{
     const saved=state.starterOffers[pos];
-    if(Array.isArray(saved)&&saved.length===2&&saved.every(id=>llCard(id)))return;
-    const pool=llEligibleCards(state.playerTeam,pos).filter(c=>!reserved.has(c.id));
+    if(Array.isArray(saved)&&saved.length===2&&saved.every(id=>llCard(id))&&new Set(saved.map(id=>llCardFamilyName(llCard(id)))).size===2)return;
+    const pool=llEligibleCards(state.playerTeam,pos).filter(c=>!reserved.has(llCardFamilyName(c)));
     const offers=llPickDistinctOfferPair(pool);
     state.starterOffers[pos]=offers.map(c=>c.id);
-    offers.forEach(c=>reserved.add(c.id));
+    offers.forEach(c=>reserved.add(llCardFamilyName(c)));
   });
   llSave();
 }
@@ -1463,7 +1479,7 @@ function llOpenStarterPack(pos){
   const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
   llEnsureStarterOffers();const offers=state.starterOffers?.[pos]||[];
   if(offers.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
-  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llSave();llRenderShopOffers();
+  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llDiscoverCards(offers);llSave();llRenderShopOffers();
 }
 function llRenderDashboard(){
   lexLeague.active=true;llSetWide(true);llClearTransient();
@@ -1522,8 +1538,11 @@ function llStartMatchPreparation(){
   fcQueue=[];
   const queue=llPickQuizWords(10);
   if(queue.length<10){alert('Lig maçı için en az 10 kelime gerekiyor. Kelime veritabanında yeterli kart yok.');return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false};
+  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0};
   llRenderLeagueQuiz();
+}
+function llQuizApPerWord(){
+  try{const comp=llPlayerFixture()?.competition||'league';return typeof LL_COMP_REWARDS!=='undefined'?(LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league).ap:5;}catch{return 5;}
 }
 function llRenderLeagueQuiz(){
   const q=lexLeague.quiz;if(!q)return;
@@ -1538,7 +1557,7 @@ function llRenderLeagueQuiz(){
     else example=word.example;
   }
   const pct=(q.index/q.queue.length)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Bildiğin her kelime 5 AP</div></div><div class="ll-stars">Doğru: ${q.correct}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${llEscape(question)}</div>${example?`<div class="ll-sub" style="margin-top:14px;font-style:italic">“${llEscape(example)}”</div>`:''}${q.revealed?`<div class="ll-answer">${llEscape(answer)}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div></div></div>`;
 }
@@ -1547,8 +1566,10 @@ function llRateLeagueQuiz(correct){
   const q=lexLeague.quiz;if(!q||!q.revealed)return;
   const ref=q.queue[q.index],words=loadUserWords(),card=words.find(w=>w.id===ref.id),quality=correct?5:1;
   if(card){
+    const recovered=correct&&card.isActiveMistake===true;
     const updated=sm2(card,quality);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(card.reviewCount||0)+1;
     if(correct)card.isActiveMistake=false;else{card.wrongCount=(card.wrongCount||0)+1;card.isActiveMistake=true;}
+    if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(q.recoveredWords||0)+1;q.recoveryBonus=(q.recoveryBonus||0)+bonus;}
     saveWordsToStorage(words);
     const meta=loadMeta();if(!meta.activity)meta.activity={};const t=todayStr();if(!meta.activity[t])meta.activity[t]={reviews:0,correct:0};meta.activity[t].reviews++;if(correct)meta.activity[t].correct++;saveMeta(meta);
   }
@@ -1556,14 +1577,14 @@ function llRateLeagueQuiz(correct){
 }
 function llFinishLeagueQuiz(){
   const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
-  const ap=q.correct*5;lexLeague.state.ap+=ap;
+  const baseAp=q.correct*5,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;
   let reward='none';if(q.correct===10){reward='perfect';lexLeague.state.lp+=10;}else if(q.correct===9)reward='reroll';
-  q.apEarned=ap;q.reward=reward;llSave();llRenderQuizReward();
+  q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=reward;llSave();llRenderQuizReward();
 }
 function llRenderQuizReward(){
   const q=lexLeague.quiz;
-  const text=q.correct===10?'Kusursuz! +10 LP, seçtiğin mevkiye maçlık +1 ve ayrıca 1 reroll kazandın.':q.correct===9?'Formdasın! Maç içinde bir zarını yeniden atabileceksin.':'Taktik ödülü yok; AP kazancın kasaya işlendi.';
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div style="font-size:52px">${q.correct===10?'🏆':q.correct===9?'🎯':'📚'}</div><div class="quiz-start-title" style="margin-top:8px">${q.correct}/10 <em>Doğru</em></div><div class="ll-metrics" style="grid-template-columns:1fr 1fr;max-width:420px;margin:18px auto"><div class="ll-metric"><strong>+${q.apEarned}</strong><span>AP</span></div><div class="ll-metric"><strong>${q.correct===10?'+10':'0'}</strong><span>LP</span></div></div><div class="ll-notice" style="text-align:left">${text}</div>
+  const recoveryAp=Number(q.recoveryApEarned||0),text=(q.correct===10?'Kusursuz! +10 LP, seçtiğin mevkiye maçlık +1 ve ayrıca 1 reroll kazandın.':q.correct===9?'Formdasın! Maç içinde bir zarını yeniden atabileceksin.':'Taktik ödülü yok; AP kazancın kasaya işlendi.')+(recoveryAp?` Daha önce yanlış bildiğin ${q.recoveredWords} kelimeyi düzelttiğin için ayrıca +${recoveryAp} AP aldın.`:'');
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div style="font-size:52px">${q.correct===10?'🏆':q.correct===9?'🎯':'📚'}</div><div class="quiz-start-title" style="margin-top:8px">${q.correct}/10 <em>Doğru</em></div><div class="ll-metrics" style="grid-template-columns:${recoveryAp?'repeat(3,1fr)':'1fr 1fr'};max-width:${recoveryAp?'600px':'420px'};margin:18px auto"><div class="ll-metric"><strong>+${q.apEarned}</strong><span>Toplam AP</span></div>${recoveryAp?`<div class="ll-metric"><strong>+${recoveryAp}</strong><span>Hata Geri Kazanım AP</span></div>`:''}<div class="ll-metric"><strong>${q.correct===10?'+10':'0'}</strong><span>LP</span></div></div><div class="ll-notice" style="text-align:left">${text}</div>
   ${q.reward==='plusOne'||q.reward==='perfect'?`<div class="ll-card-title" style="margin-top:20px">+1 Uygulanacak Zarı Seç</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<button class="ll-team-option" onclick="llBeginMatch('${pos}')"><div class="ll-team-name">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-range">Bu maç zar sonucuna +1${q.reward==='perfect'?' · 1 reroll ayrıca hazır':''}</div></button>`).join('')}</div>`:`<button class="ll-btn primary" style="margin-top:18px" onclick="llBeginMatch(null)">Zar Düellosuna Geç</button>`}
   </div></div>`;
 }
@@ -1994,9 +2015,12 @@ function llOwnTriggerCompatible(card,stars){
   if(!/Kendi zarın\s+[1-6]/i.test(card.trigger))return true;
   const nums=llTriggerNumbers(card.trigger),[min,max]=llRange(stars);return nums.some(n=>n>=min&&n<=max);
 }
+function llTeamCardFamilyHistory(teamName){
+  const t=llTeamState(teamName);if(!t)return new Set();if(!Array.isArray(t.usedCardFamilies))t.usedCardFamilies=[];LL_POSITIONS.forEach(position=>{const family=llCardFamilyName(llCard(t.cards[position]));if(family&&!t.usedCardFamilies.includes(family))t.usedCardFamilies.push(family);});return new Set(t.usedCardFamilies);
+}
 function llEligibleCards(teamName,pos){
-  const t=llTeamState(teamName),held=new Set(LL_POSITIONS.map(position=>t.cards[position]).filter(Boolean));
-  return LL_CARD_POOL.filter(c=>(c.position===pos||c.position==='Evrensel')&&!held.has(c.id)&&llOwnTriggerCompatible(c,t.stars));
+  const t=llTeamState(teamName),usedFamilies=llTeamCardFamilyHistory(teamName);
+  return LL_CARD_POOL.filter(c=>(c.position===pos||c.position==='Evrensel')&&!usedFamilies.has(llCardFamilyName(c))&&llOwnTriggerCompatible(c,t.stars));
 }
 function llWeightedPick(pool){
   if(!pool.length)return null;const available=[...new Set(pool.map(c=>c.rarity))];let total=available.reduce((s,r)=>s+LL_RARITY_WEIGHT[r],0),roll=Math.random()*total,rarity=available[0];
@@ -2005,22 +2029,30 @@ function llWeightedPick(pool){
 }
 function llPickDistinctOfferPair(pool){
   const first=llWeightedPick(pool);if(!first)return [];
-  const sameVisibleCard=c=>c.position===first.position&&c.name===first.name&&c.trigger===first.trigger&&c.effect===first.effect&&c.rarity===first.rarity;
-  let secondPool=pool.filter(c=>c.id!==first.id&&!sameVisibleCard(c));
-  if(!secondPool.length)secondPool=pool.filter(c=>c.id!==first.id);
+  const firstFamily=llCardFamilyName(first);
+  const secondPool=pool.filter(c=>llCardFamilyName(c)!==firstFamily);
   const second=llWeightedPick(secondPool);return second?[first,second]:[first];
+}
+function llShopWindowKey(){
+  const s=lexLeague.state,n=Number(s?.week||0);if(!s)return 'none';if(s.seasonEnded)return `${s.season}-season-end`;if(n>=1&&n<=3)return `${s.season}-opening`;return `${s.season}-week-${n}`;
+}
+function llShopSeenFamilies(){
+  const s=lexLeague.state;if(!s)return new Set();if(!s.shopSeenByWindow||typeof s.shopSeenByWindow!=='object')s.shopSeenByWindow={};const key=llShopWindowKey();if(!Array.isArray(s.shopSeenByWindow[key]))s.shopSeenByWindow[key]=[];return new Set(s.shopSeenByWindow[key]);
+}
+function llMarkShopFamiliesSeen(cards=[]){
+  const s=lexLeague.state,seen=llShopSeenFamilies(),key=llShopWindowKey();cards.forEach(card=>seen.add(llCardFamilyName(card)));s.shopSeenByWindow[key]=[...seen].filter(Boolean);
 }
 function llShopCost(){return llHasBase(lexLeague.state.playerTeam,'Taktik Tahtası')?100:150;}
 function llRenderShop(){
-  const seasonEnd=!!lexLeague.state.seasonEnded,seasonStart=lexLeague.state.season>1&&Number(lexLeague.state.week)===1;if(!seasonEnd&&!seasonStart&&![10,20,30].includes(lexLeague.state.week)){alert('Transfer merkezi 10., 20., 30. haftalarda, sezon sonunda ve yeni sezonun 1. haftasında açıktır.');return;}
-  lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:seasonStart?`Sezon ${lexLeague.state.season} başlangıcı`:`${lexLeague.state.week}. hafta`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice">Bir mevki kasası açıldığında ücret anında kesilir. İki karttan birini seçebilir veya Skip diyebilirsin. Eski kart otomatik olarak havuza döner.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
+  const week=Number(lexLeague.state.week),seasonEnd=!!lexLeague.state.seasonEnded,earlySeason=week>=1&&week<=3;if(!seasonEnd&&!earlySeason&&![10,20,30].includes(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
+  lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklif dönemi:</b> Bu dönemde gördüğün kart ailesi yeniden çıkmaz ve aynı pakette iki benzer kart bulunmaz. Bir kez seçip kullandığın kart ailesinin daha güçlü/zayıf benzeri kariyer boyunca tekrar teklif edilmez. Kaleci, Orta Saha ve Forvet kartları kendi kasalarına özeldir; “Evrensel” kartlar istisna olarak herhangi bir yuvaya takılabilir ama aile kilidi nedeniyle yalnız bir kez görünür.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
 }
 function llOpenShopPack(pos){
   const cost=llShopCost();if(lexLeague.state.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
-  const pool=llEligibleCards(lexLeague.state.playerTeam,pos);if(pool.length<2){alert('Bu mevki ve yıldız seviyesi için havuzda yeterli uygun kart kalmadı.');return;}
+  const seen=llShopSeenFamilies(),pool=llEligibleCards(lexLeague.state.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
   const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llSave();llRenderShopOffers();
+  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llMarkShopFamiliesSeen(offers);llDiscoverCards(lexLeague.shop.offers);llSave();llRenderShopOffers();
 }
 function llRenderShopOffers(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
@@ -2029,16 +2061,31 @@ function llRenderShopOffers(){
 }
 function llChooseShopCard(id){
   const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
-  llTeamState(lexLeague.state.playerTeam).cards[sh.position]=id;
+  const player=llTeamState(lexLeague.state.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
   if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
   llSave();llRenderShop();
 }
 function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;lexLeague.shop={position:null,offers:[]};llRenderShop();}
+function llEnsureDiscoveredCards(){
+  const s=lexLeague.state;if(!s)return [];
+  if(!Array.isArray(s.discoveredCards))s.discoveredCards=[];
+  const owned=Object.values(s.teams?.[s.playerTeam]?.cards||{}).filter(Boolean),valid=[...s.discoveredCards,...owned].map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id));
+  s.discoveredCards=[...new Set(valid)];return s.discoveredCards;
+}
+function llDiscoverCards(ids=[]){
+  const s=lexLeague.state;if(!s)return;const known=new Set(llEnsureDiscoveredCards());ids.forEach(id=>{const migrated=LL_LEGACY_CARD_REPLACEMENTS[id]||id;if(llCard(migrated))known.add(migrated);});s.discoveredCards=[...known];
+}
+function llRenderCardArchive(filter='discovered'){
+  const s=lexLeague.state;if(!s)return;llSetWide(true);llEnsureDiscoveredCards();
+  const known=new Set(s.discoveredCards),ownedIds=Object.values(llTeamState(s.playerTeam)?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id),owned=new Set(ownedIds),source=filter==='owned'?[...owned]:[...known],cards=source.map(llCard).filter(Boolean).sort((a,b)=>LL_POSITIONS.concat('Evrensel').indexOf(a.position)-LL_POSITIONS.concat('Evrensel').indexOf(b.position)||(LL_CARD_RARITY_RANK[b.rarity]||0)-(LL_CARD_RARITY_RANK[a.rarity]||0)||a.name.localeCompare(b.name,'tr'));
+  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>`<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div></div>`).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Kart <em>Arşivi</em></div><div class="ll-muted">Keşfedilen ${known.size}/${LL_CARD_POOL.length} · Şu anda sahip olunan ${owned.size}/3</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div><div class="ll-comp-tabs"><button class="ll-comp-tab ${filter==='discovered'?'active':''}" onclick="llRenderCardArchive('discovered')">Keşfedilen Kartlar (${known.size})</button><button class="ll-comp-tab ${filter==='owned'?'active':''}" onclick="llRenderCardArchive('owned')">Sahip Olunanlar (${owned.size})</button></div>${cardHtml}</div></div>`;
+}
 function llAssignAiCard(teamName){
   const t=llTeamState(teamName);const positions=llShuffle(LL_POSITIONS);let chosenPos=positions.find(p=>!t.cards[p])||positions[0];const pool=llEligibleCards(teamName,chosenPos);if(!pool.length)return false;
   const card=llWeightedPick(pool);if(!card)return false;
   const old=llCard(t.cards[chosenPos]);const rank={common:1,rare:2,epic:3,legendary:4};if(old&&rank[card.rarity]<rank[old.rarity]&&Math.random()<.75)return false;
-  t.cards[chosenPos]=card.id;return true;
+  if(!Array.isArray(t.usedCardFamilies))t.usedCardFamilies=[];const family=llCardFamilyName(card);if(family&&!t.usedCardFamilies.includes(family))t.usedCardFamilies.push(family);t.cards[chosenPos]=card.id;return true;
 }
 function llAiCardScore(card){
   if(!card)return -100000;
@@ -4027,6 +4074,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260713-4"></script>
+<script src="league-v2.js?v=20260714-1"></script>
 </body>
 </html>
