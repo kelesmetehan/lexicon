@@ -490,6 +490,9 @@
   .ll-table tr.champion-zone { box-shadow:inset 3px 0 #22c55e; }
   .ll-table tr.playoff-zone { box-shadow:inset 3px 0 #38bdf8; }
   .ll-table tr.relegation-zone { box-shadow:inset 3px 0 #ef4444; }
+  .ll-table tr.champion-zone > td:first-child { box-shadow:inset 4px 0 #22c55e; }
+  .ll-table tr.playoff-zone > td:first-child { box-shadow:inset 4px 0 #38bdf8; }
+  .ll-table tr.relegation-zone > td:first-child { box-shadow:inset 4px 0 #ef4444; }
   .ll-zone-legend { display:flex; gap:16px; flex-wrap:wrap; margin:10px 2px 0; color:var(--text2); font-size:10px; }
   .ll-zone-legend span { display:inline-flex; align-items:center; gap:6px; }
   .ll-zone-dot { width:9px; height:9px; border-radius:3px; display:inline-block; }
@@ -589,6 +592,7 @@
   @media(max-width:600px){
     .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
+    .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
   }
 
 </style>
@@ -648,7 +652,7 @@ const NATIVE_USER_DATA = [
   {en:"bet prediction", tr:"bahis tahmini / iddaa tahmini", example:"I checked the bet prediction before the match.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"bitterly", tr:"acı bir şekilde", example:"She was bitterly disappointed by the results.", repetitions:5, interval:1, reviewCount:5, state:"due"},
   {en:"blow off steam", tr:"stres atmak", example:"I go to the gym to blow off steam.", repetitions:6, interval:1, reviewCount:6, state:"learning"},
-  {en:"bother", tr:"zahmet etmek", example:"Please don't bother me while I'm studying.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
+  {en:"bother", tr:"rahatsız etmek", example:"Please don't bother me while I'm studying.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
   {en:"break-in", tr:"hırsızlık", example:"There was a break-in at the jewelry store.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
   {en:"by the time", tr:"zamana kadar", example:"By the time we arrived, the movie had started.", repetitions:8, interval:9, reviewCount:8, state:"due"},
   {en:"cable car", tr:"teleferik", example:"We took a cable car to the top of the mountain.", repetitions:5, interval:29, reviewCount:5, state:"review"},
@@ -673,7 +677,7 @@ const NATIVE_USER_DATA = [
   {en:"contribution", tr:"katkı", example:"Thank you for your generous contribution.", repetitions:6, interval:1, reviewCount:6, state:"due"},
   {en:"controversial", tr:"tartışmalı", example:"It is a very controversial topic in politics.", repetitions:2, interval:1, reviewCount:2, state:"due"},
   {en:"crossword", tr:"kare bulmaca / çengel bulmaca", example:"He loves solving the crossword in the Sunday newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"ctirics", tr:"eleştirmenler", example:"The movie was highly praised by critics.", repetitions:6, interval:301, reviewCount:6, state:"review"},
+  {en:"critics", tr:"eleştirmenler", example:"The movie was highly praised by critics.", repetitions:6, interval:301, reviewCount:6, state:"review"},
   {en:"currency", tr:"para birimi", example:"The local currency is the Turkish Lira.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
   {en:"dam", tr:"baraj", example:"The dam holds back millions of gallons of water.", repetitions:4, interval:13, reviewCount:4, state:"due"},
   {en:"dates back", tr:"eskiye dayanıyor", example:"This ancient castle dates back to the 15th century.", repetitions:3, interval:6, reviewCount:3, state:"due"},
@@ -929,7 +933,11 @@ const NATIVE_USER_DATA = [
   {en:"AI skeptics", tr:"yapay zekâ şüphecileri", example:"AI skeptics question its safety.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"AI novices", tr:"yapay zekâya yeni başlayanlar", example:"AI novices often begin with simple chatbots.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"AI explorers", tr:"yapay zekâyı deneyerek keşfeden kullanıcılar", example:"AI explorers enjoy testing new tools.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"AI power users", tr:"yapay zekâyı ileri düzeyde kullananlar", example:"AI power users automate repetitive work.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"AI power users", tr:"yapay zekâyı ileri düzeyde kullananlar", example:"AI power users automate repetitive work.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"claims", tr:"iddialar / öne sürülen görüşler", example:"The report questions his claims.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"repetitive", tr:"tekrarlayan / tekdüze", example:"The job became repetitive and boring.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"revealed", tr:"ortaya çıkardı / açığa çıkardı", example:"The test revealed the real problem.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"instruction", tr:"talimat / yönerge", example:"Please follow the instruction carefully.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
@@ -1838,6 +1846,10 @@ function initDatabase() {
     try {
       existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
     } catch(e) { existingWords = []; }
+
+    existingWords.forEach(word => {
+      if (word.source === 'user' && String(word.en || '').toLowerCase() === 'ctirics') word.en = 'critics';
+    });
 
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
