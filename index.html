@@ -534,6 +534,9 @@
   .ll-forecast { margin-top:16px; padding:16px; border-radius:13px; background:rgba(15,23,42,.72); border:1px solid rgba(96,165,250,.25); text-align:left; }
   .ll-forecast-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
   .ll-forecast-score { color:#bfdbfe; font-weight:800; white-space:nowrap; }
+  .ll-carded-outcome { margin-top:12px; padding:13px 14px; border-radius:11px; color:#dcfce7; background:rgba(34,197,94,.11); border:1px solid rgba(74,222,128,.36); }
+  .ll-carded-outcome-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .ll-carded-outcome-score { color:#86efac; font-size:25px; font-weight:900; white-space:nowrap; }
   .ll-forecast-grid { display:flex; flex-direction:column; gap:8px; }
   .ll-forecast-row { display:grid; grid-template-columns:100px 52px 1fr 52px; gap:8px; align-items:center; background:rgba(255,255,255,.035); border-radius:9px; padding:9px 10px; font-size:11px; }
   .ll-forecast-value { font-size:20px; font-weight:800; text-align:center; }
@@ -594,6 +597,7 @@
   @media(max-width:600px){
     .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
+    .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
   }
 
@@ -1804,8 +1808,12 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
 function llBeginMatch(plusPos){
   const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
   const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
-  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),scouting:null,resolution:null,committed:false};
+  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),scouting:null,projectedResolution:null,resolution:null,committed:false};
   llRenderMatch();
+}
+function llRefreshMatchProjection(m){
+  if(!m?.playerDice?.length||!m?.opponentDice?.length){if(m)m.projectedResolution=null;return;}
+  m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
 }
 function llRollCurrentMatch(){
   const m=lexLeague.match;if(!m||m.phase!=='ready')return;
@@ -1813,19 +1821,20 @@ function llRollCurrentMatch(){
   m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
   m.rerolls=Number(m.baseRerolls||0)+llExtraRerollsFromDice(m.playerDice,m.scouting.disabled.a);
   const oppR=llExtraRerollsFromDice(m.opponentDice,m.scouting.disabled.b)+llTakeCarriedRerolls(m.opponent);if(oppR)m.opponentDice=llAutoReroll(m.opponent,m.opponentDice,oppR);
+  llRefreshMatchProjection(m);
   m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
 }
 function llSelectReroll(uid){const m=lexLeague.match;if(m?.phase!=='reroll')return;m.selectedUid=uid;llRenderMatch();}
 function llUseReroll(){
   const m=lexLeague.match;if(!m||m.phase!=='reroll'||!m.selectedUid||m.rerolls<=0)return;
   const die=m.playerDice.find(d=>d.uid===m.selectedUid);if(!die)return;
-  die.value=llRollValue(m.player,die.position)+(die.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);m.rerolls--;m.selectedUid=null;
+  die.value=llRollValue(m.player,die.position)+(die.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);m.rerolls--;m.selectedUid=null;llRefreshMatchProjection(m);
   if(m.rerolls<=0)m.phase='preview';llRenderMatch();
 }
 function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.selectedUid=null;m.phase='preview';llRenderMatch();}
 function llFinalizeCurrentMatch(){
   const m=lexLeague.match;if(!m||m.resolution)return;
-  m.resolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});m.phase='final';llRenderMatch();
+  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});m.phase='final';llRenderMatch();
 }
 function llDieRow(die,side,selectable=false,selected=false){
   const c=llCard(die.cardId);return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars}">${die.value}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
@@ -1890,6 +1899,11 @@ function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set
   const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
   return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b><br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
 }
+function llProjectedOutcomeHtml(m){
+  const r=m?.projectedResolution;if(!r)return '';
+  const verdict=r.scoreA>r.scoreB?'Kartlardan sonra sen öndesin':r.scoreB>r.scoreA?'Kartlardan sonra rakip önde':'Kartlardan sonra skor berabere';
+  return `<div class="ll-carded-outcome"><div class="ll-carded-outcome-head"><div><b>TETİKLENEN KARTLARA GÖRE SONUÇ</b><div style="margin-top:3px;font-size:11px">${verdict}. Reroll yaparsan bu skor yeni zarlarla birlikte yeniden hesaplanır.</div></div><div class="ll-carded-outcome-score">${r.scoreA} - ${r.scoreB}</div></div></div>`;
+}
 function llMatchForecastHtml(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length)return '';
   const pDice=llOrderDiceByPosition(m.playerDice),oDice=llOrderDiceByPosition(m.opponentDice);
@@ -1905,15 +1919,15 @@ function llMatchForecastHtml(m){
   const verdict=playerGoals>opponentGoals?'Ham zarlarda avantaj sende':opponentGoals>playerGoals?'Ham zarlarda rakip avantajlı':'Ham zar durumu dengede';
   const activeCards=[...pDice,...oDice].filter(d=>llCard(d.cardId)).length;
   const scoutingInfo=m.scouting?.events?.length?`<div class="ll-notice" style="margin-top:12px">${m.scouting.events.map(e=>llEscape(e)).join('<br>')}</div>`:'';
-  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Kartlar uygulanmadan önceki mevki eşleşmeleri. Kart tetikleyicileri, otomatik sonuçlar, sanal goller ve reroll son skoru değiştirebilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div><div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div></div>`;
+  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div></div>`;
 }
 function llRenderMatch(){
   const m=lexLeague.match;if(!m)return;const pDef=llTeamDef(m.player),oDef=llTeamDef(m.opponent),r=m.resolution;
   const pairs=r?.pairs||[null,null,null];const pDice=r?.aDice||m.playerDice,oDice=r?.bDice||m.opponentDice;
   let controls='';
   if(m.phase==='ready')controls=`<button class="ll-btn primary" onclick="llRollCurrentMatch()">3 Zarı At 🎲</button>`;
-  else if(m.phase==='reroll')controls=`<div class="ll-notice">${m.rerolls} reroll hakkın var. Yeniden atmak istediğin zarı seç.</div><div style="display:flex;gap:9px;justify-content:center;margin-top:12px"><button class="ll-btn primary" ${m.selectedUid?'':'disabled'} onclick="llUseReroll()">Seçili Zarı Yeniden At</button><button class="ll-btn" onclick="llSkipRerolls()">Reroll Kullanma</button></div>`;
-  else if(m.phase==='preview')controls=`<div class="ll-notice">Yukarıdaki tahmini ve kart etkilerini inceledikten sonra gerçek sonucu çözebilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kartları Uygula ve Sonucu Gör</button>`;
+  else if(m.phase==='reroll')controls=`<div class="ll-notice">${m.rerolls} reroll hakkın var. Yukarıdaki <b>Kartlı sonuç</b> skorunu inceleyip yeniden atmak istediğin zarı seç.</div><div style="display:flex;gap:9px;justify-content:center;margin-top:12px"><button class="ll-btn primary" ${m.selectedUid?'':'disabled'} onclick="llUseReroll()">Seçili Zarı Yeniden At</button><button class="ll-btn" onclick="llSkipRerolls()">Reroll Kullanma</button></div>`;
+  else if(m.phase==='preview')controls=`<div class="ll-notice">Ham skor ile tetiklenen kartlara göre hesaplanan skoru inceledin. Şimdi kart etkilerini kesin sonuca uygulayabilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kart Etkilerini Uygula</button>`;
   else controls=`<button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button>`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
   <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
