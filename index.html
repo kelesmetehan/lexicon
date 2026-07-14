@@ -377,8 +377,8 @@
     font-size: 44px; line-height:1; font-family: Arial, sans-serif;
     transform-style:preserve-3d; transform-origin:50% 72%; will-change:transform;
   }
-  .die.rolling { animation:dicePhysicsRoll .82s cubic-bezier(.16,.84,.32,1) both; animation-delay:var(--dice-delay,0ms); color:var(--text3); background:var(--bg4); }
-  .die.landed { animation:diceLandThud .28s cubic-bezier(.2,.9,.28,1.35) both; animation-delay:var(--dice-delay,0ms); }
+  .die.rolling { animation:diceReadableRoll .72s cubic-bezier(.22,.72,.28,1) both; animation-delay:var(--dice-delay,0ms); color:#111827; background:#f5f1e7; border-color:#fff; }
+  .die.landed { animation:diceLandThud .22s ease-out both; animation-delay:var(--dice-delay,0ms); }
   .die.rerolled { outline: 3px solid var(--gold); animation: dicePop .45s ease; }
   .die.selectable { cursor:pointer; transition:transform .16s ease, outline-color .16s ease, box-shadow .16s ease; padding:0; }
   .die.selectable:hover { transform:translateY(-3px) scale(1.04); box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 10px 24px rgba(124,58,237,.42); }
@@ -398,16 +398,15 @@
   .dice-result-loss { color:var(--red); }
   .dice-result-draw { color:var(--gold); }
   @keyframes diceShake { 0%{transform:rotate(-8deg) scale(.96)} 50%{transform:rotate(8deg) scale(1.04)} 100%{transform:rotate(-8deg) scale(.96)} }
-  @keyframes dicePhysicsRoll {
-    0% { transform:perspective(480px) translate3d(0,-64px,18px) rotateX(0deg) rotateY(0deg) rotateZ(-8deg) scale(.78); filter:brightness(1.25); }
-    38% { transform:perspective(480px) translate3d(4px,3px,0) rotateX(310deg) rotateY(235deg) rotateZ(18deg) scale(1.02); }
-    52% { transform:perspective(480px) translate3d(-3px,-18px,8px) rotateX(430deg) rotateY(350deg) rotateZ(-14deg) scale(.96); }
-    76% { transform:perspective(480px) translate3d(2px,1px,0) rotateX(615deg) rotateY(515deg) rotateZ(8deg) scale(1.03); }
-    88% { transform:perspective(480px) translate3d(0,-7px,3px) rotateX(680deg) rotateY(640deg) rotateZ(-4deg) scale(.98); }
-    94% { transform:perspective(480px) translate3d(0,2px,0) rotateX(714deg) rotateY(704deg) rotateZ(1deg) scale(1.08,.86); }
-    100% { transform:perspective(480px) translate3d(0,0,0) rotateX(720deg) rotateY(720deg) rotateZ(0) scale(1); filter:brightness(1); }
+  @keyframes diceReadableRoll {
+    0% { transform:translateY(0) rotate(0deg) scale(1); }
+    24% { transform:translateY(-16px) rotate(-10deg) scale(1.07); }
+    48% { transform:translateY(-5px) rotate(8deg) scale(.98); }
+    70% { transform:translateY(-11px) rotate(-6deg) scale(1.04); }
+    90% { transform:translateY(2px) rotate(3deg) scale(1.05,.91); }
+    100% { transform:translateY(0) rotate(0deg) scale(1); }
   }
-  @keyframes diceLandThud { 0%{transform:translateY(-5px) scale(.94)} 38%{transform:translateY(2px) scale(1.09,.84)} 68%{transform:translateY(-2px) scale(.98,1.05)} 100%{transform:translateY(0) scale(1)} }
+  @keyframes diceLandThud { 0%{transform:translateY(-3px) scale(.96)} 50%{transform:translateY(1px) scale(1.06,.9)} 100%{transform:translateY(0) scale(1)} }
   @keyframes dicePop { 0%{transform:scale(.7) rotate(-20deg)} 70%{transform:scale(1.12) rotate(8deg)} 100%{transform:scale(1) rotate(0)} }
 
   @media (max-width: 560px) {
@@ -503,8 +502,6 @@
   .ll-table th { position:sticky; top:0; background:var(--bg3); color:var(--text3); text-transform:uppercase; font-size:10px; letter-spacing:1px; padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
   .ll-table th:nth-child(2), .ll-table td:nth-child(2) { text-align:left; }
   .ll-table td { padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045); }
-  .ll-team-main { display:flex; align-items:center; gap:7px; white-space:nowrap; }
-  .ll-team-objective { margin:4px 0 0 27px; color:var(--text2); font-size:9px; line-height:1.25; white-space:normal; max-width:210px; }
   .ll-table tr.player { background:rgba(94,234,212,.07); color:#99f6e4; font-weight:700; }
   .ll-table tr.champion-zone { box-shadow:inset 3px 0 #22c55e; }
   .ll-table tr.playoff-zone { box-shadow:inset 3px 0 #38bdf8; }
@@ -548,8 +545,8 @@
   .ll-die.star3 { background:#4ade80; }
   .ll-die.star4 { background:#38bdf8; }
   .ll-die.star5 { background:#c084fc; }
-  .ll-die.rolling { background:var(--bg4); color:var(--text3); animation:dicePhysicsRoll .82s cubic-bezier(.16,.84,.32,1) both; animation-delay:var(--dice-delay,0ms); }
-  .ll-die.landed { animation:diceLandThud .28s cubic-bezier(.2,.9,.28,1.35) both; animation-delay:var(--dice-delay,0ms); }
+  .ll-die.rolling { color:#111827; outline:3px solid rgba(255,255,255,.48); animation:diceReadableRoll .72s cubic-bezier(.22,.72,.28,1) both; animation-delay:var(--dice-delay,0ms); }
+  .ll-die.landed { animation:diceLandThud .22s ease-out both; animation-delay:var(--dice-delay,0ms); }
   .ll-die-info { min-width:0; }
   .ll-die-pos { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:1px; }
   .ll-die-card { color:var(--text2); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; margin-top:3px; }
@@ -579,6 +576,11 @@
   .ll-forecast-status.draw { color:#facc15; }
   .ll-forecast-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
   .ll-forecast-side { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); border-radius:9px; padding:10px; }
+  .ll-trigger-log { margin-top:12px; padding:12px; border-radius:10px; background:rgba(8,47,73,.24); border:1px solid rgba(56,189,248,.22); }
+  .ll-trigger-log-list { display:flex; flex-direction:column; gap:6px; margin-top:9px; }
+  .ll-trigger-log-item { padding:8px 10px; border-radius:7px; color:var(--text2); background:rgba(255,255,255,.035); border-left:3px solid #64748b; font-size:10px; line-height:1.45; }
+  .ll-trigger-log-item.player { border-left-color:#4ade80; color:#dcfce7; }
+  .ll-trigger-log-item.opponent { border-left-color:#f87171; color:#fee2e2; }
   .ll-forecast-card { color:var(--text2); font-size:10px; line-height:1.5; padding-top:7px; margin-top:7px; border-top:1px solid rgba(255,255,255,.05); }
   .ll-forecast-card.active { color:#dcfce7; background:rgba(34,197,94,.13); border:1px solid rgba(74,222,128,.42); border-radius:9px; padding:10px; box-shadow:0 0 0 2px rgba(34,197,94,.07),0 7px 20px rgba(22,163,74,.10); }
   .ll-forecast-card.inactive { opacity:.58; }
@@ -630,17 +632,6 @@
   .ll-goal-title { font-weight:800; font-size:11px; }
   .ll-goal-progress { color:var(--text2); font-size:10px; margin-top:3px; }
   .ll-goal-reward { color:var(--gold2); font-weight:900; font-size:11px; text-align:right; white-space:nowrap; }
-  .ll-all-targets { margin-top:12px; }
-  .ll-all-targets summary { cursor:pointer; color:var(--aqua); font-weight:900; font-size:12px; text-transform:uppercase; letter-spacing:.7px; }
-  .ll-target-leagues { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-  .ll-target-league { min-width:0; padding:11px; border-radius:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.06); }
-  .ll-target-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:10px; }
-  .ll-target-row:last-child { border-bottom:0; }
-  .ll-target-row b,.ll-target-row span { display:block; }
-  .ll-target-row span { color:var(--text2); margin-top:3px; line-height:1.3; }
-  .ll-target-status { white-space:nowrap; font-size:9px; }
-  .ll-target-status.success { color:#4ade80; }
-  .ll-target-status.fail { color:#f87171; }
   .ll-big-match { position:relative; overflow:hidden; border-color:rgba(250,204,21,.50)!important; box-shadow:0 0 0 2px rgba(250,204,21,.06),0 18px 45px rgba(234,179,8,.10); }
   .ll-match-importance { margin:-16px -16px 14px; padding:9px 14px; color:#422006; background:linear-gradient(90deg,#fde047,#fb923c); font-size:11px; font-weight:950; letter-spacing:.8px; text-align:center; }
   .ll-archive-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
@@ -655,7 +646,7 @@
     .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}.ll-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid,.ll-target-leagues{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}
+    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
@@ -1889,11 +1880,15 @@ function llRefreshMatchProjection(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length){if(m)m.projectedResolution=null;return;}
   m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
 }
+function llAnimateVisibleDice(m,token,duration){
+  const tick=()=>{if(lexLeague.match!==m||m.rollAnimationToken!==token)return;document.querySelectorAll('.ll-die.rolling').forEach((el,i)=>{el.textContent=String(1+Math.floor(Math.random()*6));el.setAttribute('aria-label',`Zar dönüyor: ${el.textContent}`);});};
+  tick();const timer=setInterval(tick,82);setTimeout(()=>clearInterval(timer),Math.max(80,duration-35));
+}
 function llRollCurrentMatch(){
   const m=lexLeague.match;if(!m||m.phase!=='ready')return;
   m.playerDice=llMakeDice(m.player,m.plusPos);m.opponentDice=llMakeDice(m.opponent,null);
   m.phase='rolling';m.rollingAll=true;m.justLandedAll=false;m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
-  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:1020;
+  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:950;llAnimateVisibleDice(m,token,wait);
   setTimeout(()=>{
     if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
     m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
@@ -1908,7 +1903,7 @@ function llUseReroll(){
   const m=lexLeague.match;if(!m||m.phase!=='reroll'||!m.selectedUid||m.rerolls<=0)return;
   const uid=m.selectedUid,die=m.playerDice.find(d=>d.uid===uid);if(!die)return;
   m.selectedUid=null;m.rollingUid=uid;m.justLandedUid=null;m.phase='rerollRolling';m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
-  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:900;
+  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:830;llAnimateVisibleDice(m,token,wait);
   setTimeout(()=>{
     if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
     const current=m.playerDice.find(d=>d.uid===uid);if(!current)return;
@@ -1925,7 +1920,7 @@ function llFinalizeCurrentMatch(){
   m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
 }
 function llDieRow(die,side,selectable=false,selected=false,rolling=false,landed=false,animationIndex=0){
-  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'';return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms">${rolling?'◆':die.value}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
+  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'',shownValue=rolling?1+(animationIndex*2)%6:die.value;return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms" aria-label="${rolling?'Zar dönüyor':`Zar sonucu ${die.value}`}">${shownValue}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
 }
 function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome){
   const base=llBaseName(card),opp=llFindPosition(oppDice,die.position),team=llTeamState(teamName);
@@ -1992,6 +1987,11 @@ function llProjectedOutcomeHtml(m){
   const verdict=r.scoreA>r.scoreB?'Kartlardan sonra sen öndesin':r.scoreB>r.scoreA?'Kartlardan sonra rakip önde':'Kartlardan sonra skor berabere';
   return `<div class="ll-carded-outcome"><div class="ll-carded-outcome-head"><div><b>TETİKLENEN KARTLARA GÖRE SONUÇ</b><div style="margin-top:3px;font-size:11px">${verdict}. Reroll yaparsan bu skor yeni zarlarla birlikte yeniden hesaplanır.</div></div><div class="ll-carded-outcome-score">${r.scoreA} - ${r.scoreB}</div></div></div>`;
 }
+function llTriggeredCardLogHtml(m){
+  const events=[...new Set([...(m?.scouting?.events||[]),...(m?.projectedResolution?.events||[])].filter(Boolean))];
+  if(!events.length)return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Tetiklenen Kartlar · Log Özeti</div><div class="ll-muted">Mevcut zarlarla kesinleşen kart hareketi yok. Reroll sonrası durum değişebilir.</div></div>`;
+  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Tetiklenen Kartlar · Log Özeti</div><div class="ll-muted">Aşağıdaki etkiler “Kart Etkilerini Uygula” dediğinde kesin sonuca girecek.</div><div class="ll-trigger-log-list">${events.map(event=>{const cls=event.startsWith(`${m.player}:`)?'player':event.startsWith(`${m.opponent}:`)?'opponent':'';return `<div class="ll-trigger-log-item ${cls}">${llEscape(event)}</div>`;}).join('')}</div></div>`;
+}
 function llMatchForecastHtml(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length)return '';
   const pDice=llOrderDiceByPosition(m.playerDice),oDice=llOrderDiceByPosition(m.opponentDice);
@@ -2007,7 +2007,7 @@ function llMatchForecastHtml(m){
   const verdict=playerGoals>opponentGoals?'Ham zarlarda avantaj sende':opponentGoals>playerGoals?'Ham zarlarda rakip avantajlı':'Ham zar durumu dengede';
   const activeCards=[...pDice,...oDice].filter(d=>llCard(d.cardId)).length;
   const scoutingInfo=m.scouting?.events?.length?`<div class="ll-notice" style="margin-top:12px">${m.scouting.events.map(e=>llEscape(e)).join('<br>')}</div>`:'';
-  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div></div>`;
+  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div>${llTriggeredCardLogHtml(m)}</div>`;
 }
 function llRenderMatch(){
   const m=lexLeague.match;if(!m)return;const pDef=llTeamDef(m.player),oDef=llTeamDef(m.opponent),r=m.resolution;
@@ -2646,7 +2646,7 @@ function dieHtml(value, options = {}) {
   if (options.rerolled) classes.push('rerolled');
   if (options.selectable) classes.push('selectable');
   if (options.selected) classes.push('selected');
-  const content = options.rolling ? '↻' : DICE_FACES[value];
+  const content = options.rolling ? DICE_FACES[(Number(options.index || 0) % 6) + 1] : DICE_FACES[value];
   const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
   if (options.selectable) {
     return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceCupRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
@@ -3231,7 +3231,7 @@ function uclDieHtml(value, options = {}) {
   if (options.rerolled) classes.push('rerolled');
   if (options.selectable) classes.push('selectable');
   if (options.selected) classes.push('selected');
-  const content = options.rolling ? '↻' : DICE_FACES[value];
+  const content = options.rolling ? DICE_FACES[(Number(options.index || 0) % 6) + 1] : DICE_FACES[value];
   const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
   if (options.selectable) {
     return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceUclRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
@@ -4135,6 +4135,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260714-2"></script>
+<script src="league-v2.js?v=20260714-3"></script>
 </body>
 </html>
