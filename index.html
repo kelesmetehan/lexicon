@@ -375,8 +375,10 @@
     background: #f5f1e7; color:#111827; border: 2px solid rgba(255,255,255,.72);
     box-shadow: inset 0 -5px 10px rgba(0,0,0,.14), 0 7px 18px rgba(0,0,0,.35);
     font-size: 44px; line-height:1; font-family: Arial, sans-serif;
+    transform-style:preserve-3d; transform-origin:50% 72%; will-change:transform;
   }
-  .die.rolling { animation: diceShake .16s linear infinite; color: var(--text3); background: var(--bg4); }
+  .die.rolling { animation:dicePhysicsRoll .82s cubic-bezier(.16,.84,.32,1) both; animation-delay:var(--dice-delay,0ms); color:var(--text3); background:var(--bg4); }
+  .die.landed { animation:diceLandThud .28s cubic-bezier(.2,.9,.28,1.35) both; animation-delay:var(--dice-delay,0ms); }
   .die.rerolled { outline: 3px solid var(--gold); animation: dicePop .45s ease; }
   .die.selectable { cursor:pointer; transition:transform .16s ease, outline-color .16s ease, box-shadow .16s ease; padding:0; }
   .die.selectable:hover { transform:translateY(-3px) scale(1.04); box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 10px 24px rgba(124,58,237,.42); }
@@ -396,6 +398,16 @@
   .dice-result-loss { color:var(--red); }
   .dice-result-draw { color:var(--gold); }
   @keyframes diceShake { 0%{transform:rotate(-8deg) scale(.96)} 50%{transform:rotate(8deg) scale(1.04)} 100%{transform:rotate(-8deg) scale(.96)} }
+  @keyframes dicePhysicsRoll {
+    0% { transform:perspective(480px) translate3d(0,-64px,18px) rotateX(0deg) rotateY(0deg) rotateZ(-8deg) scale(.78); filter:brightness(1.25); }
+    38% { transform:perspective(480px) translate3d(4px,3px,0) rotateX(310deg) rotateY(235deg) rotateZ(18deg) scale(1.02); }
+    52% { transform:perspective(480px) translate3d(-3px,-18px,8px) rotateX(430deg) rotateY(350deg) rotateZ(-14deg) scale(.96); }
+    76% { transform:perspective(480px) translate3d(2px,1px,0) rotateX(615deg) rotateY(515deg) rotateZ(8deg) scale(1.03); }
+    88% { transform:perspective(480px) translate3d(0,-7px,3px) rotateX(680deg) rotateY(640deg) rotateZ(-4deg) scale(.98); }
+    94% { transform:perspective(480px) translate3d(0,2px,0) rotateX(714deg) rotateY(704deg) rotateZ(1deg) scale(1.08,.86); }
+    100% { transform:perspective(480px) translate3d(0,0,0) rotateX(720deg) rotateY(720deg) rotateZ(0) scale(1); filter:brightness(1); }
+  }
+  @keyframes diceLandThud { 0%{transform:translateY(-5px) scale(.94)} 38%{transform:translateY(2px) scale(1.09,.84)} 68%{transform:translateY(-2px) scale(.98,1.05)} 100%{transform:translateY(0) scale(1)} }
   @keyframes dicePop { 0%{transform:scale(.7) rotate(-20deg)} 70%{transform:scale(1.12) rotate(8deg)} 100%{transform:scale(1) rotate(0)} }
 
   @media (max-width: 560px) {
@@ -420,6 +432,11 @@
   .btn-league:hover { transform:translateY(-2px); filter:brightness(1.08); }
   .ll-shell { width:100%; animation:fadeUp .32s ease; }
   .ll-panel { background:var(--bg2); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:22px; }
+  .ll-panel.ll-goal-flash { position:relative; isolation:isolate; }
+  .ll-panel.ll-goal-flash::after { content:''; position:absolute; inset:0; z-index:40; pointer-events:none; border-radius:inherit; background:var(--ll-goal-flash,rgba(34,197,94,.24)); animation:llGoalFlash .3s ease-out both; }
+  .ll-panel.ll-goal-flash.player { --ll-goal-flash:rgba(34,197,94,.25); }
+  .ll-panel.ll-goal-flash.opponent { --ll-goal-flash:rgba(239,68,68,.24); }
+  .ll-panel.ll-goal-flash.draw { --ll-goal-flash:rgba(250,204,21,.19); }
   .ll-topbar { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
   .ll-brand { display:flex; align-items:center; gap:12px; }
   .ll-brand-mark { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; font-size:25px; background:linear-gradient(135deg,rgba(14,116,144,.35),rgba(22,101,52,.35)); border:1px solid rgba(94,234,212,.22); }
@@ -486,6 +503,8 @@
   .ll-table th { position:sticky; top:0; background:var(--bg3); color:var(--text3); text-transform:uppercase; font-size:10px; letter-spacing:1px; padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
   .ll-table th:nth-child(2), .ll-table td:nth-child(2) { text-align:left; }
   .ll-table td { padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045); }
+  .ll-team-main { display:flex; align-items:center; gap:7px; white-space:nowrap; }
+  .ll-team-objective { margin:4px 0 0 27px; color:var(--text2); font-size:9px; line-height:1.25; white-space:normal; max-width:210px; }
   .ll-table tr.player { background:rgba(94,234,212,.07); color:#99f6e4; font-weight:700; }
   .ll-table tr.champion-zone { box-shadow:inset 3px 0 #22c55e; }
   .ll-table tr.playoff-zone { box-shadow:inset 3px 0 #38bdf8; }
@@ -523,13 +542,14 @@
   .ll-die-row { display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:10px; }
   .ll-die-row.selectable { cursor:pointer; }
   .ll-die-row.selectable:hover, .ll-die-row.selected { border-color:#5eead4; box-shadow:0 0 0 3px rgba(45,212,191,.11); }
-  .ll-die { width:58px; height:58px; flex:0 0 58px; border-radius:13px; display:grid; place-items:center; font:bold 28px Arial; color:#111827; box-shadow:inset 0 -5px 10px rgba(0,0,0,.18),0 7px 18px rgba(0,0,0,.25); }
+  .ll-die { width:58px; height:58px; flex:0 0 58px; border-radius:13px; display:grid; place-items:center; font:bold 28px Arial; color:#111827; box-shadow:inset 0 -5px 10px rgba(0,0,0,.18),0 7px 18px rgba(0,0,0,.25); transform-style:preserve-3d; transform-origin:50% 72%; will-change:transform; }
   .ll-die.star1 { background:#f87171; }
   .ll-die.star2 { background:#facc15; }
   .ll-die.star3 { background:#4ade80; }
   .ll-die.star4 { background:#38bdf8; }
   .ll-die.star5 { background:#c084fc; }
-  .ll-die.rolling { background:var(--bg4); color:var(--text3); animation:diceShake .16s linear infinite; }
+  .ll-die.rolling { background:var(--bg4); color:var(--text3); animation:dicePhysicsRoll .82s cubic-bezier(.16,.84,.32,1) both; animation-delay:var(--dice-delay,0ms); }
+  .ll-die.landed { animation:diceLandThud .28s cubic-bezier(.2,.9,.28,1.35) both; animation-delay:var(--dice-delay,0ms); }
   .ll-die-info { min-width:0; }
   .ll-die-pos { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:1px; }
   .ll-die-card { color:var(--text2); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; margin-top:3px; }
@@ -539,6 +559,9 @@
   .ll-pair.loss { color:#f87171; }
   .ll-pair.draw { color:#facc15; }
   .ll-score { font-family:'Cormorant Garamond',serif; font-size:54px; text-align:center; margin:14px 0; }
+  .ll-score-pop { display:inline-block; animation:llScorePop .56s cubic-bezier(.18,.85,.28,1.35) both; transform-origin:center; }
+  @keyframes llScorePop { 0%{transform:scale(.72);filter:brightness(1)} 42%{transform:scale(1.4);filter:brightness(1.45)} 72%{transform:scale(.94)} 100%{transform:scale(1);filter:brightness(1)} }
+  @keyframes llGoalFlash { 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
   .ll-event-log { max-height:220px; overflow:auto; display:flex; flex-direction:column; gap:7px; margin-top:12px; }
   .ll-event { font-size:11px; color:var(--text2); background:var(--bg3); border-left:3px solid rgba(94,234,212,.45); padding:8px 10px; border-radius:6px; }
   .ll-forecast { margin-top:16px; padding:16px; border-radius:13px; background:rgba(15,23,42,.72); border:1px solid rgba(96,165,250,.25); text-align:left; }
@@ -607,6 +630,17 @@
   .ll-goal-title { font-weight:800; font-size:11px; }
   .ll-goal-progress { color:var(--text2); font-size:10px; margin-top:3px; }
   .ll-goal-reward { color:var(--gold2); font-weight:900; font-size:11px; text-align:right; white-space:nowrap; }
+  .ll-all-targets { margin-top:12px; }
+  .ll-all-targets summary { cursor:pointer; color:var(--aqua); font-weight:900; font-size:12px; text-transform:uppercase; letter-spacing:.7px; }
+  .ll-target-leagues { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .ll-target-league { min-width:0; padding:11px; border-radius:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.06); }
+  .ll-target-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:10px; }
+  .ll-target-row:last-child { border-bottom:0; }
+  .ll-target-row b,.ll-target-row span { display:block; }
+  .ll-target-row span { color:var(--text2); margin-top:3px; line-height:1.3; }
+  .ll-target-status { white-space:nowrap; font-size:9px; }
+  .ll-target-status.success { color:#4ade80; }
+  .ll-target-status.fail { color:#f87171; }
   .ll-big-match { position:relative; overflow:hidden; border-color:rgba(250,204,21,.50)!important; box-shadow:0 0 0 2px rgba(250,204,21,.06),0 18px 45px rgba(234,179,8,.10); }
   .ll-match-importance { margin:-16px -16px 14px; padding:9px 14px; color:#422006; background:linear-gradient(90deg,#fde047,#fb923c); font-size:11px; font-weight:950; letter-spacing:.8px; text-align:center; }
   .ll-archive-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
@@ -621,10 +655,14 @@
     .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}.ll-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}
+    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid,.ll-target-leagues{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop{animation-duration:.01ms!important;animation-delay:0ms!important}
+    .ll-panel.ll-goal-flash::after{display:none}
   }
 
 </style>
@@ -974,7 +1012,12 @@ const NATIVE_USER_DATA = [
   {en:"asked for", tr:"istedi / talep etti", example:"She asked for a glass of water.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"mapping", tr:"haritalama / eşleştirme", example:"The diagram shows the mapping between the two systems.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"as soon as", tr:"olur olmaz / hemen ...ınca", example:"Call me as soon as you arrive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"compliance", tr:"uyum / kurallara uygunluk", example:"The company checks compliance with safety rules.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"compliance", tr:"uyum / kurallara uygunluk", example:"The company checks compliance with safety rules.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"elaborate", tr:"ayrıntılı açıklamak / detaylandırmak", example:"Could you elaborate on your idea?", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"on behalf of", tr:"adına / temsilen", example:"I thanked everyone on behalf of the team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"propose", tr:"önermek / teklif etmek", example:"I propose a simpler solution.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"compliment", tr:"iltifat / iltifat etmek", example:"She complimented him on his presentation.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
@@ -1849,26 +1892,40 @@ function llRefreshMatchProjection(m){
 function llRollCurrentMatch(){
   const m=lexLeague.match;if(!m||m.phase!=='ready')return;
   m.playerDice=llMakeDice(m.player,m.plusPos);m.opponentDice=llMakeDice(m.opponent,null);
-  m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
-  m.rerolls=Number(m.baseRerolls||0)+llExtraRerollsFromDice(m.playerDice,m.scouting.disabled.a);
-  const oppR=llExtraRerollsFromDice(m.opponentDice,m.scouting.disabled.b)+llTakeCarriedRerolls(m.opponent);if(oppR)m.opponentDice=llAutoReroll(m.opponent,m.opponentDice,oppR);
-  llRefreshMatchProjection(m);
-  m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
+  m.phase='rolling';m.rollingAll=true;m.justLandedAll=false;m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
+  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:1020;
+  setTimeout(()=>{
+    if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
+    m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
+    m.rerolls=Number(m.baseRerolls||0)+llExtraRerollsFromDice(m.playerDice,m.scouting.disabled.a);
+    const oppR=llExtraRerollsFromDice(m.opponentDice,m.scouting.disabled.b)+llTakeCarriedRerolls(m.opponent);if(oppR)m.opponentDice=llAutoReroll(m.opponent,m.opponentDice,oppR);
+    llRefreshMatchProjection(m);m.rollingAll=false;m.justLandedAll=true;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
+    setTimeout(()=>{if(lexLeague.match===m)m.justLandedAll=false;},420);
+  },wait);
 }
 function llSelectReroll(uid){const m=lexLeague.match;if(m?.phase!=='reroll')return;m.selectedUid=uid;llRenderMatch();}
 function llUseReroll(){
   const m=lexLeague.match;if(!m||m.phase!=='reroll'||!m.selectedUid||m.rerolls<=0)return;
-  const die=m.playerDice.find(d=>d.uid===m.selectedUid);if(!die)return;
-  die.value=llRollValue(m.player,die.position)+(die.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);m.rerolls--;m.selectedUid=null;llRefreshMatchProjection(m);
-  if(m.rerolls<=0)m.phase='preview';llRenderMatch();
+  const uid=m.selectedUid,die=m.playerDice.find(d=>d.uid===uid);if(!die)return;
+  m.selectedUid=null;m.rollingUid=uid;m.justLandedUid=null;m.phase='rerollRolling';m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
+  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:900;
+  setTimeout(()=>{
+    if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
+    const current=m.playerDice.find(d=>d.uid===uid);if(!current)return;
+    current.value=llRollValue(m.player,current.position)+(current.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);m.rerolls--;llRefreshMatchProjection(m);
+    m.rollingUid=null;m.justLandedUid=uid;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
+    setTimeout(()=>{if(lexLeague.match===m)m.justLandedUid=null;},420);
+  },wait);
 }
 function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.selectedUid=null;m.phase='preview';llRenderMatch();}
 function llFinalizeCurrentMatch(){
   const m=lexLeague.match;if(!m||m.resolution)return;
-  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});m.phase='final';llRenderMatch();
+  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
+  if(m.resolution.scoreA>0||m.resolution.scoreB>0){m.scorePop=true;m.scoreFlash=m.resolution.scoreA>m.resolution.scoreB?'player':m.resolution.scoreB>m.resolution.scoreA?'opponent':'draw';}
+  m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
 }
-function llDieRow(die,side,selectable=false,selected=false){
-  const c=llCard(die.cardId);return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars}">${die.value}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
+function llDieRow(die,side,selectable=false,selected=false,rolling=false,landed=false,animationIndex=0){
+  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'';return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms">${rolling?'◆':die.value}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
 }
 function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome){
   const base=llBaseName(card),opp=llFindPosition(oppDice,die.position),team=llTeamState(teamName);
@@ -1957,12 +2014,14 @@ function llRenderMatch(){
   const pairs=r?.pairs||[null,null,null];const pDice=r?.aDice||m.playerDice,oDice=r?.bDice||m.opponentDice;
   let controls='';
   if(m.phase==='ready')controls=`<button class="ll-btn primary" onclick="llRollCurrentMatch()">3 Zarı At 🎲</button>`;
+  else if(m.phase==='rolling')controls=`<div class="ll-notice">Zarlar havada… Düştüklerinde sonuçlar ve kart tetikleyicileri açılacak.</div><button class="ll-btn" style="margin-top:12px" disabled>Zarlar Atılıyor 🎲</button>`;
+  else if(m.phase==='rerollRolling')controls=`<div class="ll-notice">Seçtiğin zar yeniden atılıyor… Rakibin zarları sabit kalır.</div><button class="ll-btn" style="margin-top:12px" disabled>Reroll Yapılıyor 🎲</button>`;
   else if(m.phase==='reroll')controls=`<div class="ll-notice">${m.rerolls} reroll hakkın var. Yukarıdaki <b>Kartlı sonuç</b> skorunu inceleyip yeniden atmak istediğin zarı seç.</div><div style="display:flex;gap:9px;justify-content:center;margin-top:12px"><button class="ll-btn primary" ${m.selectedUid?'':'disabled'} onclick="llUseReroll()">Seçili Zarı Yeniden At</button><button class="ll-btn" onclick="llSkipRerolls()">Reroll Kullanma</button></div>`;
   else if(m.phase==='preview')controls=`<div class="ll-notice">Ham skor ile tetiklenen kartlara göre hesaplanan skoru inceledin. Şimdi kart etkilerini kesin sonuca uygulayabilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kart Etkilerini Uygula</button>`;
   else controls=`<button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button>`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
-  <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
-  ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map(d=>llDieRow(d,'a',m.phase==='reroll',m.selectedUid===d.uid)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map(d=>llDieRow(d,'b')).join('')}</div></div>`}
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel ${m.scoreFlash?`ll-goal-flash ${m.scoreFlash}`:''}"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
+  <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs ${m.scorePop?'ll-score-pop':''}">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
+  ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map((d,i)=>llDieRow(d,'a',m.phase==='reroll',m.selectedUid===d.uid,m.phase==='rolling'||(m.phase==='rerollRolling'&&m.rollingUid===d.uid),m.justLandedAll||m.justLandedUid===d.uid,i)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map((d,i)=>llDieRow(d,'b',false,false,m.phase==='rolling',m.justLandedAll,i+3)).join('')}</div></div>`}
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
   <div style="text-align:center;margin-top:16px">${controls}</div>${r?.events?.length?`<div class="ll-event-log">${r.events.map(e=>`<div class="ll-event">${llEscape(e)}</div>`).join('')}</div>`:''}</div></div>`;
 }
@@ -2578,7 +2637,7 @@ function rollDiceCupMatch() {
     diceCup.rolling = false;
     diceCup.rolled = true;
     renderDiceCupBattle(false);
-  }, 720);
+  }, 1020);
 }
 
 function dieHtml(value, options = {}) {
@@ -2588,10 +2647,11 @@ function dieHtml(value, options = {}) {
   if (options.selectable) classes.push('selectable');
   if (options.selected) classes.push('selected');
   const content = options.rolling ? '↻' : DICE_FACES[value];
+  const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
   if (options.selectable) {
-    return `<button type="button" class="${classes.join(' ')}" onclick="selectDiceCupRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
+    return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceCupRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
   }
-  return `<div class="${classes.join(' ')}">${content}</div>`;
+  return `<div class="${classes.join(' ')}" ${motionStyle}>${content}</div>`;
 }
 
 function selectDiceCupRerollDie(index) {
@@ -2667,7 +2727,7 @@ function renderDiceCupBattle(isRolling = false) {
             ${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}
           </div>
           <div class="dice-side">
-            ${[0,1,2].map(i => dieHtml(diceCup.opponentDice[i], {rolling:isRolling})).join('')}
+            ${[0,1,2].map(i => dieHtml(diceCup.opponentDice[i], {rolling:isRolling,index:i+3})).join('')}
           </div>
         </div>
       </div>
@@ -3162,7 +3222,7 @@ function rollDiceUclMatch() {
     diceUcl.rolling = false;
     diceUcl.rolled = true;
     renderDiceUclBattle(false);
-  }, 720);
+  }, 1020);
 }
 
 function uclDieHtml(value, options = {}) {
@@ -3172,10 +3232,11 @@ function uclDieHtml(value, options = {}) {
   if (options.selectable) classes.push('selectable');
   if (options.selected) classes.push('selected');
   const content = options.rolling ? '↻' : DICE_FACES[value];
+  const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
   if (options.selectable) {
-    return `<button type="button" class="${classes.join(' ')}" onclick="selectDiceUclRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
+    return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceUclRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
   }
-  return `<div class="${classes.join(' ')}">${content}</div>`;
+  return `<div class="${classes.join(' ')}" ${motionStyle}>${content}</div>`;
 }
 
 function selectDiceUclRerollDie(index) {
@@ -3234,7 +3295,7 @@ function renderDiceUclBattle(isRolling = false) {
       <div class="dice-arena"><div class="dice-columns">
         <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.playerDice[i], {rolling:isRolling, rerolled:!isRolling && diceUcl.rerolledIndex === i, selectable:canSelect, selected:canSelect && diceUcl.selectedRerollIndex === i, index:i})).join('')}</div>
         <div class="dice-side">${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}</div>
-        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.opponentDice[i], {rolling:isRolling})).join('')}</div>
+        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.opponentDice[i], {rolling:isRolling,index:i+3})).join('')}</div>
       </div></div>
       ${diceUcl.eventNote ? `<div class="dice-event-note">${diceUcl.eventNote}</div>` : ''}
       <div style="margin-top:18px">${controls}</div>
@@ -4074,6 +4135,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260714-1"></script>
+<script src="league-v2.js?v=20260714-2"></script>
 </body>
 </html>
