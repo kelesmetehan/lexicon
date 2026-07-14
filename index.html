@@ -196,11 +196,34 @@
     font-size: 15px;
     color: var(--text2);
     font-style: italic;
-    margin-top: 12px;
+    margin-top: 0;
     max-width: 90%;
     line-height: 1.5;
     opacity: 0.7;
     font-family: 'DM Sans', sans-serif;
+  }
+  .example-block { width:100%; max-width:94%; margin:12px auto 0; }
+  .example-line { display:flex; align-items:flex-start; justify-content:center; gap:8px; }
+  .example-line .quiz-example, .example-line .word-ex { max-width:none; }
+  .example-translate-btn {
+    flex:0 0 auto; min-width:36px; min-height:30px; padding:5px 7px; border-radius:7px;
+    border:1px solid rgba(56,189,248,.34); background:rgba(14,116,144,.12); color:#67e8f9;
+    display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;
+    font:700 9px/1 'DM Sans',sans-serif; letter-spacing:.45px; transition:.18s ease;
+  }
+  .example-translate-btn:hover, .example-translate-btn.active { background:rgba(14,116,144,.30); border-color:#22d3ee; color:#cffafe; }
+  .example-translate-btn:focus-visible { outline:2px solid #22d3ee; outline-offset:2px; }
+  .example-translation {
+    margin:8px auto 0; padding:9px 12px; max-width:92%; border-radius:8px;
+    background:rgba(8,145,178,.10); border-left:3px solid #22d3ee; color:#cffafe;
+    font-size:12px; line-height:1.55; text-align:left; animation:fadeUp .18s ease;
+  }
+  .example-translation[hidden] { display:none; }
+  @media (max-width:560px) {
+    .example-block { max-width:100%; }
+    .example-line { gap:6px; }
+    .example-translate-btn { min-width:40px; min-height:34px; }
+    .example-translation { max-width:100%; }
   }
 
   .reveal-hint {
@@ -1011,6 +1034,340 @@ const NATIVE_USER_DATA = [
   {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
+// İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
+// Sıra NATIVE_USER_DATA ile aynıdır; initDatabase mevcut kariyerlere de bu alanı ekler.
+const NATIVE_EXAMPLE_TRANSLATIONS = [
+  "Arabayı hızlandırmak için gaz pedalına bas.",
+  "Eski kitapların üzerinde toz birikmişti.",
+  "Fırın caddenin hemen karşısında.",
+  "Birçok siyasetçi kendi çıkarları doğrultusunda hareket eder.",
+  "Televizyonda komik bir reklam gördüm.",
+  "O neredeyse hiç fast food yemez.",
+  "Gitarını da yanında getirdi.",
+  "Köpek sahibinin yanında koştu.",
+  "En büyük hedefi doktor olmak.",
+  "Yüksek sesler beni gerçekten rahatsız ediyor.",
+  "Kazanan, kimliğinin tamamen gizli tutulmasını istedi.",
+  "Anlaşılan toplantı iptal edilmiş.",
+  "Bu işe elliden fazla başvuran var.",
+  "Yaraya baskı uygulamalısın.",
+  "Şüpheli polis tarafından yakalandı.",
+  "Nehre kadar yürüdük.",
+  "Bildiğim kadarıyla o gelmiyor.",
+  "Bana göre sorun çözüldü.",
+  "İstediğin sürece burada kalabilirsin.",
+  "Ben de bir fincan kahve isterim.",
+  "O, İngilizcenin yanı sıra Fransızca da konuşuyor.",
+  "Bir gün başarılı bir yazar olmayı hedefliyorum.",
+  "Herkesin seninle aynı fikirde olduğunu hemen varsayma.",
+  "Parlak çiçekler birçok arıyı çeker.",
+  "Dikkatleri üzerine çekmemeye çalış.",
+  "Bu ünlü kitabın yazarı kim?",
+  "Aslında sadece daha fazla zamana ihtiyacımız var.",
+  "Genellikle özgüvenli insanlardan etkilenir.",
+  "Biletleri önceden almalıyız.",
+  "Maçtan önce bahis tahminine baktım.",
+  "Sonuçlar onu büyük bir hayal kırıklığına uğrattı.",
+  "Stres atmak için spor salonuna giderim.",
+  "Lütfen ben ders çalışırken beni rahatsız etme.",
+  "Kuyumcuda bir hırsızlık olayı yaşandı.",
+  "Biz vardığımızda film başlamıştı.",
+  "Dağın tepesine teleferikle çıktık.",
+  "O, bu iş için en iyi aday.",
+  "Bir flört uygulamasında sahte kimlikle kandırıldı.",
+  "Her ay bir yardım kuruluşuna para bağışlar.",
+  "İşe sürekli geç kalıyor.",
+  "Kedinin çok keskin pençeleri var.",
+  "Palyaço bütün çocukları güldürdü.",
+  "Tabutu yavaşça mezara indirdiler.",
+  "Seninle burada karşılaşmamız tam bir tesadüf!",
+  "Müzenin harika sanat koleksiyonları var.",
+  "Spor yorumcusu çok heyecanlıydı.",
+  "Topluluk önünde konuşmak için özgüvene ihtiyacın var.",
+  "Sınavı geçeceği konusunda kendinden emindi.",
+  "İki ülke arasında ciddi bir çatışma var.",
+  "Doğruyu söylediğim için vicdanım rahat.",
+  "Cüzdanımı kaybettiğimi fark edince büyük bir telaşa kapıldım.",
+  "Buzdolabı sürekli uğultulu bir ses çıkarıyor.",
+  "Bir finansal danışmanlık şirketinde çalışıyor.",
+  "Asya, dünyanın en büyük kıtasıdır.",
+  "Cömert katkınız için teşekkür ederim.",
+  "Siyasette çok tartışmalı bir konu.",
+  "Pazar gazetesindeki bulmacayı çözmeyi çok seviyor.",
+  "Film eleştirmenler tarafından çok beğenildi.",
+  "Yerel para birimi Türk lirasıdır.",
+  "Baraj milyonlarca galon suyu tutuyor.",
+  "Bu antik kale 15. yüzyıla dayanıyor.",
+  "İklim değişikliği hakkında uzun bir tartışma yaptılar.",
+  "Fırtınadan sonra cadde enkazla kaplanmıştı.",
+  "Borcunu kapatmak için çok çalışıyor.",
+  "Sahte bir raporla patronunu kandırmaya çalıştı.",
+  "Yaptığı aldatmaca sonunda polis tarafından ortaya çıkarıldı.",
+  "ATM yalnızca küçük kupürlü banknotlar veriyor.",
+  "Maratonu bitirmeye kararlı.",
+  "Kraliçe güzel bir elmas taç takıyordu.",
+  "Burada bulamadım, başka bir mağazayı deneyelim.",
+  "Benim fikrim seninkinden büyük ölçüde farklı.",
+  "Binada fiziksel engelli kişiler için bir rampa var.",
+  "Bütçe konusunda küçük bir anlaşmazlık yaşadık.",
+  "Kötü hava uçuş programını aksatıyor.",
+  "Sessiz bir yerleşim bölgesinde yaşıyorlar.",
+  "Çok hızlı ayağa kalkınca başı döndü.",
+  "Dün gece telefonumda saatlerce kötü haberleri kaydırdım.",
+  "Üniversite yurdunda bir odayı paylaşıyorum.",
+  "Ateş yakmak için sahilde kıyıya vurmuş odun topladık.",
+  "Hikâyede ormanda dost canlısı bir cüceyle karşılaştı.",
+  "Vahşi bir hayvanla tuhaf bir karşılaşma yaşadık.",
+  "Öğrencilerimi her zaman soru sormaya teşvik ederim.",
+  "Geçen kış korkunç bir grip salgını vardı.",
+  "Şu anda dijital çağda yaşıyoruz.",
+  "Sınav sonuçlarını beklemek sonsuzluk gibi geldi.",
+  "Bu şehri eskisinden daha çok seviyorum.",
+  "Çocuklar heyecanla zıpladı.",
+  "O restoran bizim için fazla pahalı.",
+  "Gazeteci gerçeği ortaya çıkarmak istiyor.",
+  "Roma tarihi hakkında kapsamlı bilgiye sahip.",
+  "Lütfen rapordaki gereksiz ayrıntıları çıkar.",
+  "Lunaparkta olağanüstü bir gün geçirdik.",
+  "Bu elbise çok yumuşak bir kumaştan yapılmış.",
+  "Yeni spor tesisinde çok büyük bir havuz var.",
+  "Gala şık insanlarla doluydu.",
+  "Uyluk kemiği insan vücudundaki en uzun kemiktir.",
+  "Bugün burada dünden daha az insan var.",
+  "Yeni öğretmen hakkındaki ilk izlenimim çok olumluydu.",
+  "Satışlar tatilden sonra yatay seyretmeye başladı.",
+  "Savaş yüzünden evlerinden kaçmak zorunda kaldılar.",
+  "Denizde yüzen bir plastik şişe gördüm.",
+  "Hava tahmini yarın şiddetli yağmur öngörüyor.",
+  "Dolandırıcı internet üzerinden binlerce dolar çaldı.",
+  "Bu lezzetli pastayı tamamen sıfırdan yaptı.",
+  "Anladığım kadarıyla etkinlik ertelendi.",
+  "Akşamı birbirlerini tanıyarak geçirdiler.",
+  "Kuyumcu güzel bir altın kolye yaptı.",
+  "Yeni torunu için bir oyuncak aldı.",
+  "İnekler ve koyunlar tipik otlayan hayvanlardır.",
+  "Lütfen güvenlik yönergelerini dikkatle uygula.",
+  "O kadar saf ki her söylentiye inanıyor.",
+  "Tavşanlar ve geyikler otoburdur.",
+  "O komedyenin yeni gösterisi kesinlikle çok komikti!",
+  "Yaşlı adam düşüp kalçasını kırdı.",
+  "Bu hafta sonu bir akşam yemeği daveti veriyoruz.",
+  "Kurtlar sürü hâlinde avlandı.",
+  "Dikkatli ol, o tanınmış bir sokak dolandırıcısıdır.",
+  "Tanık kimliğini gizli tutmak istedi.",
+  "Yalan söylediğimi mi ima etmeye çalışıyorsun?",
+  "Kendi korkuları tarafından hapsedilmiş gibi hissediyordu.",
+  "Şu anda konuşamam, acelem var.",
+  "Kız kardeşinin aksine o çok utangaçtır.",
+  "Her bireyin ifade özgürlüğü hakkı vardır.",
+  "Yaranın enfeksiyon kapmamasına dikkat et.",
+  "Şehir altyapısını geliştirmek için milyonlar harcıyor.",
+  "Hesabı benim ödememe izin vermende ısrar ediyorum.",
+  "Restoran sağlık denetiminden geçemedi.",
+  "Çöldeki sıcaklık çok yoğundu.",
+  "Herhangi bir kesintiyi önlemek için lütfen sessiz çalış.",
+  "Arkadaşım beni erkek kardeşiyle tanıştırdı.",
+  "Kalabalığın yuhalaması hakemi tedirgin etti.",
+  "Kızım bu yıl anaokuluna başlıyor.",
+  "Ayağım takıldı ve dizimi sıyırdım.",
+  "Sınava çalışmamış olmasına hayıflandı.",
+  "Ev sahibim kirayı yeni artırdı.",
+  "Karlı manzara bir tablo gibi görünüyordu.",
+  "Bu internet sitesinin yeni düzenini gerçekten beğendim.",
+  "Kötü kararları başarısızlığına yol açtı.",
+  "Bu, liberal eğilimli bir gazetedir.",
+  "Bu öğleden sonra yağmur yağması çok muhtemel.",
+  "Kelimenin tam anlamıyla sevinçten zıplıyordum.",
+  "Sağlıklı beslenme insan ömrünü uzatır.",
+  "İyi tarafından bak, en azından güvendeyiz.",
+  "Video oyunu oynarken zamanın nasıl geçtiğini tamamen unutuyorum.",
+  "Tatillerini tam bir lüks içinde geçirdiler.",
+  "Hırsızlar çalınan elmaslarla kaçtı.",
+  "Tatilini en iyi şekilde değerlendirmelisin.",
+  "Onun sürekli üstten konuşmasına gözlerini devirdi.",
+  "Ben akşam yemeğini yaptım; bu sırada o masayı kurdu.",
+  "Paris gezimiz gerçekten unutulmaz bir deneyimdi.",
+  "Birçok kuş kış için güneye göç eder.",
+  "O filmdeki özel efektler akıllara durgunluk vericiydi.",
+  "Yaramaz çocuk erkek kardeşinin ayakkabılarını sakladı.",
+  "Takım maçın ikinci yarısında ivme kazandı.",
+  "Yerel belediye yolları onarıyor.",
+  "Saflığı onu dolandırıcılar için kolay bir hedef hâline getiriyor.",
+  "Kâğıt peçeteyi bana uzatır mısın lütfen?",
+  "Çöp kokusu midemi bulandırdı.",
+  "O ne zengin ne de ünlü.",
+  "Artık o şehirde yaşamıyorum.",
+  "Film üç Oscar'a aday gösterildi.",
+  "O kötü şöhretli bir bilgisayar korsanı.",
+  "Cuma günleri ara sıra akşam yemeğine çıkarız.",
+  "Yeni yasaya karşı güçlü bir muhalefet vardı.",
+  "Lütfen ayakkabılarını dışarıda bırak.",
+  "Şirket cömert bir ebeveyn izni sunuyor.",
+  "Tartışmaya aktif olarak katıldı.",
+  "Tüm katılımcılar bir feragatname imzalamalıdır.",
+  "Işıkta uçuşan toz parçacıklarını görebilirsin.",
+  "İhtiyaç sahipleri için bir yardım etkinliği düzenledik.",
+  "Uçuşu iptal edilince gerçekten çok sinirlendi.",
+  "Acele etme, bolca vaktimiz var.",
+  "Ülkede giderek artan bir siyasi kutuplaşma var.",
+  "Fabrikalar havaya zararlı kirleticiler salıyor.",
+  "Zaman en değerli kaynağımızdır.",
+  "Suçu önlemek belediye başkanının en önemli önceliğidir.",
+  "Kitap düşüncelerim üzerinde derin bir etki bıraktı.",
+  "Kapıyı düzgünce kilitlediğinden emin ol.",
+  "Teknoloji alanında kariyer yapmak istiyorum.",
+  "Bu gece evde kalmayı tercih ederim.",
+  "Odamdaki mobilyaların yerini yeniden düzenlemem gerekiyor.",
+  "Hükümet ilaç fiyatlarını düzenlemeye çalışıyor.",
+  "Son haberler eski tartışmayı yeniden alevlendirdi.",
+  "Sonunda sınavı geçmek büyük bir rahatlamaydı.",
+  "Toplantı için telefonuma bir hatırlatıcı kurdum.",
+  "Haber muhabiri belediye başkanına zor bir soru sordu.",
+  "Kazadan sonra inanılmaz bir dayanıklılık gösterdi.",
+  "Bir dilim daha pizza yemeye karşı koyamadım.",
+  "Grup son bir konser için yeniden bir araya gelmeyi planlıyor.",
+  "Konserde yaklaşık 500 kişi vardı.",
+  "Sorunlarından öylece kaçamazsın.",
+  "Dolandırıcılık gibi göründüğü için e-postayı görmezden geldim.",
+  "Bölgede ciddi bir su kıtlığı var.",
+  "Eski çöp torbasından gelen koku mide bulandırıcıydı.",
+  "Pazar sabahları geç kalkmayı seviyorum.",
+  "Takım rehavete kapıldı ve final maçını kaybetti.",
+  "Şehir merkezinde biraz küçük bir dairede yaşıyorlar.",
+  "Bu sabah erteleme düğmesine üç kez bastım.",
+  "Ev sahibi takım gol atınca seyirciler tezahürat yaptı.",
+  "İstediği her şeyi alan çok şımarık bir çocuk.",
+  "Tavan arasından gelen tuhaf bir ses duydum.",
+  "Ailem bana asla bir yabancıyla konuşmamamı söyledi.",
+  "Yeni bir işe ihtiyacım var; tamamen tekdüze bir hayatın içinde sıkışmış hissediyorum.",
+  "Tesadüfen harika küçük bir kafeye rastladım.",
+  "Şeker yerine bal kullanabilirsin.",
+  "Günlük hayatından bir alışkanlığı çıkarmak çok zordur.",
+  "Daha büyük bir bahçeleri olsun diye banliyöye taşındılar.",
+  "Kıyafetlerimi bavula koydum.",
+  "Lütfen hizmetimizle ilgili bu kısa anketi doldurun.",
+  "Sürdürülebilir enerji kaynaklarına yatırım yapmalıyız.",
+  "İnternet sitesi bakım nedeniyle geçici olarak kapalı.",
+  "Stresliyken fazla yemek yeme eğilimindeyim.",
+  "Hemşire kısa süre içinde hastayla ilgilenecek.",
+  "Siyasi tartışma sırasında ortam gerildi.",
+  "Bu videoyu yayımlamadan önce düzenlemem gerekiyor.",
+  "Kıyafetlerini katlayıp kaldırmayı unutma.",
+  "Su girişini durdurmak için bir baraj inşa ettiler.",
+  "Sınav sonuçlarını beklemek tam bir işkenceydi.",
+  "Konser, hayatını kaybeden müzisyene bir saygı duruşuydu.",
+  "Araban bozulursa dörtlüleri yak.",
+  "Gazeteci büyük bir skandalı ortaya çıkardı.",
+  "Sana yaptıkları tüm yardımlar için nankörlük etme.",
+  "Ortak bir hedef tüm takımı birleştirir.",
+  "Yarışı kazanması pek olası değil.",
+  "Bu şehirde toplu taşıma çok güvenilmez.",
+  "O internet sitesi tamamen güvenilmez bir bilgi kaynağı.",
+  "Sürpriz partiyi farkında olmadan açıkladı.",
+  "Kötü haberi duymak çok üzücü bir deneyimdi.",
+  "Kiram ucuz ama faturalar pahalı.",
+  "Mağaza çok çeşitli taze meyveler satıyor.",
+  "Mutlu köpek kuyruğunu sallıyordu.",
+  "Garson bize tatlı menüsünü getirdi.",
+  "Morsun iki uzun ve keskin dişi vardır.",
+  "Eski kanepede belirgin yıpranma izleri var.",
+  "Gökyüzü rüzgârla savrulan toz yüzünden griydi.",
+  "Bir fincan çay sipariş etmek istiyorum lütfen.",
+  "Televizyon izlemektense kitap okumayı tercih ederim.",
+  "Konuşmasına ünlü bir alıntıyla başladı.",
+  "Demans bir kişinin hafızasını ve günlük yaşamını etkileyebilir.",
+  "Düzenli egzersiz bilişsel işlevleri geliştirebilir.",
+  "Sigara içmek damar hastalığı riskini artırır.",
+  "Felç geçirdikten sonra hemen tedavi edildi.",
+  "Büyükannesinin evini miras alacak.",
+  "Uzun süren sosyal izolasyon ruh sağlığını etkileyebilir.",
+  "Okul kuralları öğrencilerin derste telefon kullanmasını yasaklıyor.",
+  "Ani değişiklik yolcular arasında kafa karışıklığına neden oldu.",
+  "Sokaktan gelen bağırışlar duyduk.",
+  "Onun hatasına gülmesi kabacaydı.",
+  "Ailesi kararı onaylamadığını ifade etti.",
+  "Şirket daha zayıf rakiplerini acımasızca ortadan kaldırdı.",
+  "Bu kaplar iç içe geçecek veya düzgünce üst üste konacak şekilde tasarlanmıştır.",
+  "Yönetici projeye liderlik edecek birini belirleyecek.",
+  "İki grup siyasi konular yüzünden sık sık çatışıyor.",
+  "Yeni iş arkadaşlarımla çok iyi anlaşıyorum.",
+  "Yanlış bilgi sosyal medyada hızla yayılır.",
+  "İnsanların çoğunluğu yeni öneriyi destekledi.",
+  "Evden çalışmanın faydalarının yanı sıra bazı dezavantajları da vardır.",
+  "Takım turnuvadan ilk turda elendi.",
+  "Köpek yuvarlanıp ödül mamasını bekledi.",
+  "Haftalardır omzunda geçmeyen bir ağrı var.",
+  "Hızla değişen teknolojiye ayak uydurmak zordur.",
+  "Yazın son haftaları hızla geçip gidiyor gibiydi.",
+  "Takım ikinci yarıda toparlandı ve maçı kazandı.",
+  "Son dakikada kıl payı bir galibiyet almayı başardılar.",
+  "Her zaman ev sahibi takımı desteklerim.",
+  "Birçok müşteri şirketi boykot etmeye karar verdi.",
+  "Neden olduğu utanç için özür diledi.",
+  "Kimse anlamadığı için şakası başarısız oldu.",
+  "Vardığın sonuç yanlış bir varsayıma dayanıyor.",
+  "Röportaj bize onun çalışmaları hakkında değerli bir bakış açısı kazandırdı.",
+  "Bu sorunun hâlâ kesin bir cevabı yok.",
+  "Dairenin başlıca dezavantajı küçük mutfağıdır.",
+  "O uzun yolculuktan sonra bir fincan kahve için can atıyorum.",
+  "Sürekli şikâyet eden kötü bir kaybedenle kimse oynamaktan hoşlanmaz.",
+  "Daha iyi bir çözüm bulmamız gerekiyor.",
+  "Ailesi ona haftalık harçlık veriyor.",
+  "Komşuları için ufak tefek işler yaparak ek para kazanıyor.",
+  "Parkın yakınındaki bir tezgahtan limonata aldık.",
+  "Mahkemenin kararı önemli bir emsal oluşturabilir.",
+  "Sanatçı soruya gizemli bir cevap verdi.",
+  "Çamaşır makinemiz yine bozuldu.",
+  "Saatler süren çalışmanın ardından mutfak tertemizdi.",
+  "Maaş gününe kadar nakit sıkıntısı çekiyoruz.",
+  "Daire modern mutfak aletleriyle birlikte geliyor.",
+  "Hiç aletimiz yoktu, bu yüzden doğaçlama yapmak zorunda kaldık.",
+  "Top mutfak penceresinin camını çatlattı.",
+  "Takımımız şampiyonları iki golle yendi.",
+  "Seyirci final sahnesinin etkisine kapıldı.",
+  "Heyecan arayan turistler sık sık ekstrem sporları dener.",
+  "Deneyimli bir öğretmen sınavı denetleyecek.",
+  "Uykusuzluk ciddi sağlık sorunlarına yol açabilir.",
+  "Yıllık toplantı Ankara'da yapıldı.",
+  "Şirket işini yurt dışına genişletmeyi planlıyor.",
+  "Kapı güçlü rüzgârda birden açıldı.",
+  "Son dakika biletleri için fahiş bir ücret ödemek zorunda kaldık.",
+  "Bazı satıcılar tatil sezonunda turistlere fahiş fiyat uygulamaya çalışır.",
+  "Seyahat giderleri projenin ana maliyetine göre ikincil kalır.",
+  "Devasa bir kaya parçası dağ yolunu kapattı.",
+  "Yiyecek bir kişinin soluk borusunu tıkadığında boğulma meydana gelebilir.",
+  "Derin nefes almak kaygıyı azaltmaya yardımcı olabilir.",
+  "Dikkat dağılması teorisi, baskının kişinin dikkatini böldüğünü öne sürer.",
+  "Bilinçli kontrol, normalde otomatik gerçekleşen becerileri bozabilir.",
+  "Küçük çocuklar bu enfeksiyona karşı daha hassastır.",
+  "Sınıfın önünde konuşurken kendini rahatsız hissetti.",
+  "Yapay zekânın benimsenmesi hızla artıyor.",
+  "Robot bağımsız olarak çalışabilir.",
+  "Sıradan görevlerden sıkılmıştı.",
+  "Mucize tedavilere şüpheyle yaklaşır.",
+  "Planı yarın uygulayacaklar.",
+  "İnternetteki iddiaları sorgulamadan kabul etme.",
+  "Yapay zekâ şüphecileri onun güvenliğini sorguluyor.",
+  "Yapay zekâya yeni başlayanlar genellikle basit sohbet robotlarıyla başlar.",
+  "Yapay zekâ keşifçileri yeni araçları denemekten hoşlanır.",
+  "İleri düzey yapay zekâ kullanıcıları tekrarlayan işleri otomatikleştirir.",
+  "Rapor onun iddialarını sorguluyor.",
+  "İş tekrarlayıcı ve sıkıcı hâle geldi.",
+  "Test gerçek sorunu ortaya çıkardı.",
+  "Lütfen talimatı dikkatle uygula.",
+  "Tutarlılık hızdan daha önemlidir.",
+  "Bir bardak su istedi.",
+  "Diyagram iki sistem arasındaki eşlemeyi gösteriyor.",
+  "Varır varmaz beni ara.",
+  "Şirket güvenlik kurallarına uygunluğu kontrol ediyor.",
+  "Fikrini biraz daha ayrıntılı açıklayabilir misin?",
+  "Takım adına herkese teşekkür ettim.",
+  "Daha basit bir çözüm öneriyorum.",
+  "Sunumundan dolayı ona iltifat etti.",
+  "Seyirciler sonunda yüksek sesle alkışladı."
+];
+NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
+
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
 const WC_TEAMS = [
   { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
@@ -1598,9 +1955,10 @@ function llRenderLeagueQuiz(){
     if(ref.askTrToEn){const rx=new RegExp(escapeRegExp(word.en),'gi');example=word.example.replace(rx,'_____');}
     else example=word.example;
   }
+  const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
-  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${llEscape(question)}</div>${example?`<div class="ll-sub" style="margin-top:14px;font-style:italic">“${llEscape(example)}”</div>`:''}${q.revealed?`<div class="ll-answer">${llEscape(answer)}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
+  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${llEscape(question)}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${llEscape(answer)}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div></div></div>`;
 }
 function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
@@ -2248,6 +2606,29 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+let llExampleSerial = 0;
+function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
+  if (!shownExample) return '';
+  const translation = String(card?.exampleTr || '').trim();
+  const rawToken = token || `${card?.id || 'word'}-${llExampleSerial++}`;
+  const panelId = `example-tr-${String(rawToken).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+  const sentenceClass = compact ? 'word-ex' : 'quiz-example';
+  return `<div class="example-block"><div class="example-line"><div class="${sentenceClass}">“${llEscape(shownExample)}”</div>${translation?`<button class="example-translate-btn" type="button" aria-label="Türkçe çeviriyi göster" aria-expanded="false" aria-controls="${panelId}" title="Türkçe çeviriyi göster" onclick="toggleExampleTranslation(event,'${panelId}')"><span aria-hidden="true">文</span><span>TR</span></button>`:''}</div>${translation?`<div class="example-translation" id="${panelId}" hidden>${llEscape(translation)}</div>`:''}</div>`;
+}
+function toggleExampleTranslation(event, panelId) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  const button = event?.currentTarget;
+  button?.setAttribute('aria-expanded', String(opening));
+  button?.setAttribute('aria-label', opening ? 'Türkçe çeviriyi gizle' : 'Türkçe çeviriyi göster');
+  button?.setAttribute('title', opening ? 'Türkçe çeviriyi gizle' : 'Türkçe çeviriyi göster');
+  button?.classList.toggle('active', opening);
+}
+
 function initDatabase() {
   try {
     let existingWords = [];
@@ -2262,13 +2643,13 @@ function initDatabase() {
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
       if (foundMatch) {
-        foundMatch.tr = w.tr; foundMatch.example = w.example; return foundMatch;
+        foundMatch.tr = w.tr; foundMatch.example = w.example; foundMatch.exampleTr = w.exampleTr || ''; return foundMatch;
       } else {
         const nextReviewDate = new Date();
         if (w.state !== "due") nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
         return {
           id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
-          en: w.en, tr: w.tr, example: w.example || "", category: "word", source: "user",
+          en: w.en, tr: w.tr, example: w.example || "", exampleTr: w.exampleTr || "", category: "word", source: "user",
           addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
           nextReview: nextReviewDate.toISOString().split('T')[0], reviewCount: w.reviewCount, wrongCount: 0, isActiveMistake: false, type: ""
         };
@@ -2411,7 +2792,7 @@ function renderWordList() {
       <div class="word-item">
         <div class="word-info">
           <div class="word-en">${w.en}</div><div class="word-tr">${w.tr}</div>
-          ${w.example ? `<div class="word-ex">"${w.example}"</div>` : ''}
+          ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
         </div>
         <div class="word-stats">
           <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
@@ -2815,9 +3196,9 @@ function showNextDiceCupRerollWord() {
   if (card.example) {
     if (askTrToEn) {
       const regex = new RegExp(escapeRegExp(card.en), 'gi');
-      example = `<div class="quiz-example">"${card.example.replace(regex, '_____')}"</div>`;
+      example = llExampleSentenceHtml(card,card.example.replace(regex, '_____'),`cup-reroll-${diceCup.rerollIndex}-${card.id}`);
     } else {
-      example = `<div class="quiz-example">"${card.example}"</div>`;
+      example = llExampleSentenceHtml(card,card.example,`cup-reroll-${diceCup.rerollIndex}-${card.id}`);
     }
   }
   const selectedValue = diceCup.playerDice[diceCup.selectedRerollIndex];
@@ -3378,8 +3759,8 @@ function showNextDiceUclRerollWord() {
   if (card.example) {
     if (askTrToEn) {
       const regex = new RegExp(escapeRegExp(card.en), 'gi');
-      example = `<div class="quiz-example">"${card.example.replace(regex, '_____')}"</div>`;
-    } else example = `<div class="quiz-example">"${card.example}"</div>`;
+      example = llExampleSentenceHtml(card,card.example.replace(regex, '_____'),`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`);
+    } else example = llExampleSentenceHtml(card,card.example,`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`);
   }
   const selectedValue = diceUcl.playerDice[diceUcl.selectedRerollIndex];
   area.innerHTML = `
@@ -4045,9 +4426,9 @@ function showNextFlashcard() {
     if (askTurkishToEnglish) {
       const regex = new RegExp(escapeRegExp(card.en), "gi");
       let hiddenExample = card.example.replace(regex, "_____");
-      exampleDisplay = `<div class="quiz-example">"${hiddenExample}"</div>`;
+      exampleDisplay = llExampleSentenceHtml(card,hiddenExample,`flashcard-${fcIndex}-${card.id}`);
     } else {
-      exampleDisplay = `<div class="quiz-example">"${card.example}"</div>`;
+      exampleDisplay = llExampleSentenceHtml(card,card.example,`flashcard-${fcIndex}-${card.id}`);
     }
   }
 
