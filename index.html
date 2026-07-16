@@ -617,6 +617,14 @@
   .ll-trigger-log-item { padding:8px 10px; border-radius:7px; color:var(--text2); background:rgba(255,255,255,.035); border-left:3px solid #64748b; font-size:10px; line-height:1.45; }
   .ll-trigger-log-item.player { border-left-color:#4ade80; color:#dcfce7; }
   .ll-trigger-log-item.opponent { border-left-color:#f87171; color:#fee2e2; }
+  .ll-card-chain { display:grid; gap:7px; margin-top:10px; }
+  .ll-chain-step { display:grid; grid-template-columns:34px 1fr; gap:9px; align-items:start; padding:9px 10px; border-radius:9px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); }
+  .ll-chain-step.player { border-left:3px solid #2dd4bf; }
+  .ll-chain-step.opponent { border-left:3px solid #fb7185; }
+  .ll-chain-step.final { border-color:rgba(201,168,76,.34); background:rgba(201,168,76,.07); }
+  .ll-chain-index { width:27px; height:27px; border-radius:50%; display:grid; place-items:center; background:var(--bg4); color:var(--gold2); font-size:10px; font-weight:800; }
+  .ll-chain-text { color:var(--text2); font-size:11px; line-height:1.5; }
+  .ll-synergy-strip { margin-top:10px; padding:9px 11px; border-radius:9px; border:1px solid rgba(34,197,94,.30); background:rgba(34,197,94,.08); color:#bbf7d0; font-size:11px; line-height:1.55; }
   .ll-forecast-card { color:var(--text2); font-size:10px; line-height:1.5; padding-top:7px; margin-top:7px; border-top:1px solid rgba(255,255,255,.05); }
   .ll-forecast-card.active { color:#dcfce7; background:rgba(34,197,94,.13); border:1px solid rgba(74,222,128,.42); border-radius:9px; padding:10px; box-shadow:0 0 0 2px rgba(34,197,94,.07),0 7px 20px rgba(22,163,74,.10); }
   .ll-forecast-card.inactive { opacity:.58; }
@@ -2080,6 +2088,19 @@ function llNadirKimyaActiveForDice(dice,die){
   const otherCards=dice.filter(other=>other.uid!==die.uid).map(other=>llCard(other.cardId));
   return otherCards.length===2&&otherCards.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);
 }
+function llRealCardSynergies(teamName){
+  const team=llTeamState(teamName);if(!team)return [];
+  const slots=LL_POSITIONS.map(position=>({position,card:llCard(team.cards?.[position])})),active=[];
+  const full=slots.every(slot=>slot.card),teamChemistry=slots.find(slot=>llBaseName(slot.card)==='Takım Kimyası');
+  if(teamChemistry&&full)active.push({name:'Takım Kimyası',reason:'Üç kart yuvası da dolu; takımın en düşük zarı +1 kazanır.'});
+  const rareChemistry=slots.find(slot=>llBaseName(slot.card)==='Nadir Kimya');
+  if(rareChemistry){const others=slots.filter(slot=>slot.position!==rareChemistry.position).map(slot=>slot.card),ready=others.length===2&&others.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);if(ready)active.push({name:'Nadir Kimya',reason:'Diğer iki kart Nadir veya üstü; +1 ücretsiz reroll hazır.'});}
+  return active;
+}
+function llRealCardSynergyHtml(teamName,showTeam=false){
+  const synergies=llRealCardSynergies(teamName);if(!synergies.length)return '';
+  return `<div class="ll-synergy-strip"><b>✓ GERÇEK KART UYUMU${showTeam?` · ${llEscape(teamName)}`:''}</b><br>${synergies.map(item=>`${llEscape(item.name)}: ${llEscape(item.reason)}`).join('<br>')}</div>`;
+}
 function llExtraRerolls(teamName){
   let total=0;LL_POSITIONS.forEach(p=>{const c=llCard(llTeamState(teamName).cards[p]),base=llBaseName(c);if(['Metronom','Reflex'].includes(base))total+=llEffectAmount(c,1);if(base==='Nadir Kimya'&&llNadirKimyaActiveForTeam(teamName,p))total+=1;});return total;
 }
@@ -2424,10 +2445,16 @@ function llProjectedOutcomeHtml(m){
   const verdict=r.scoreA>r.scoreB?'Kartlardan sonra sen öndesin':r.scoreB>r.scoreA?'Kartlardan sonra rakip önde':'Kartlardan sonra skor berabere';
   return `<div class="ll-carded-outcome"><div class="ll-carded-outcome-head"><div><b>TETİKLENEN KARTLARA GÖRE SONUÇ</b><div style="margin-top:3px;font-size:11px">${verdict}. Reroll yaparsan bu skor yeni zarlarla birlikte yeniden hesaplanır.</div></div><div class="ll-carded-outcome-score">${r.scoreA} - ${r.scoreB}</div></div></div>`;
 }
+function llRawScoreFromMatchDice(m){
+  let player=0,opponent=0;LL_POSITIONS.forEach(position=>{const a=llFindPosition(m.playerDice||[],position),b=llFindPosition(m.opponentDice||[],position);if(!a||!b)return;if(a.value>b.value)player++;else if(b.value>a.value)opponent++;});return {player,opponent};
+}
+function llCardEffectChainHtml(m,resolution=m?.projectedResolution,preview=true){
+  if(!m||!resolution)return '';
+  const raw=llRawScoreFromMatchDice(m),events=(resolution.events?.length?resolution.events:(m.scouting?.events||[])).filter(Boolean),steps=[{text:`Ham zar düelloları ${raw.player}-${raw.opponent}.`,cls:''},...events.map(event=>({text:event,cls:event.startsWith(`${m.player}:`)?'player':event.startsWith(`${m.opponent}:`)?'opponent':''})),{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final'}];
+  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zincir yeni zarlarla baştan hesaplanır. “Kart Etkilerini Uygula” dediğinde bu sıra kesinleşir.':'Maç sonucu aşağıdaki neden–sonuç sırasıyla oluştu.'}</div>${events.length?`<div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span></div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`}</div>`;
+}
 function llTriggeredCardLogHtml(m){
-  const events=[...new Set([...(m?.scouting?.events||[]),...(m?.projectedResolution?.events||[])].filter(Boolean))];
-  if(!events.length)return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Tetiklenen Kartlar · Log Özeti</div><div class="ll-muted">Mevcut zarlarla kesinleşen kart hareketi yok. Reroll sonrası durum değişebilir.</div></div>`;
-  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Tetiklenen Kartlar · Log Özeti</div><div class="ll-muted">Aşağıdaki etkiler “Kart Etkilerini Uygula” dediğinde kesin sonuca girecek.</div><div class="ll-trigger-log-list">${events.map(event=>{const cls=event.startsWith(`${m.player}:`)?'player':event.startsWith(`${m.opponent}:`)?'opponent':'';return `<div class="ll-trigger-log-item ${cls}">${llEscape(event)}</div>`;}).join('')}</div></div>`;
+  return llCardEffectChainHtml(m,m?.projectedResolution,true);
 }
 function llMatchForecastHtml(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length)return '';
@@ -2444,7 +2471,7 @@ function llMatchForecastHtml(m){
   const verdict=playerGoals>opponentGoals?'Ham zarlarda avantaj sende':opponentGoals>playerGoals?'Ham zarlarda rakip avantajlı':'Ham zar durumu dengede';
   const activeCards=[...pDice,...oDice].filter(d=>llCard(d.cardId)).length;
   const scoutingInfo=m.scouting?.events?.length?`<div class="ll-notice" style="margin-top:12px">${m.scouting.events.map(e=>llEscape(e)).join('<br>')}</div>`:'';
-  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div>${llTriggeredCardLogHtml(m)}</div>`;
+  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b)}</div>${llRealCardSynergyHtml(m.player,true)}${llRealCardSynergyHtml(m.opponent,true)}${llTriggeredCardLogHtml(m)}</div>`;
 }
 function llRenderMatch(){
   const m=lexLeague.match;if(!m)return;const pDef=llTeamDef(m.player),oDef=llTeamDef(m.opponent),r=m.resolution;
@@ -2460,7 +2487,7 @@ function llRenderMatch(){
   <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs ${m.scorePop?'ll-score-pop':''}">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
   ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map((d,i)=>llDieRow(d,'a',m.phase==='reroll',m.selectedUid===d.uid,m.phase==='rolling'||(m.phase==='rerollRolling'&&m.rollingUid===d.uid),m.justLandedAll||m.justLandedUid===d.uid,i)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map((d,i)=>llDieRow(d,'b',false,false,m.phase==='rolling',m.justLandedAll,i+3)).join('')}</div></div>`}
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
-  <div style="text-align:center;margin-top:16px">${controls}</div>${r?.events?.length?`<div class="ll-event-log">${r.events.map(e=>`<div class="ll-event">${llEscape(e)}</div>`).join('')}</div>`:''}</div></div>`;
+  <div style="text-align:center;margin-top:16px">${controls}</div>${r?llCardEffectChainHtml(m,r,false):''}</div></div>`;
 }
 function llSimulateMatch(home,away){
   let hd=llMakeDice(home),ad=llMakeDice(away);const scouting=llPrepareScouting(home,away,hd,ad,{aHome:true});hd=llAutoReroll(home,hd,llExtraRerollsFromDice(hd,scouting.disabled.a)+llTakeCarriedRerolls(home));ad=llAutoReroll(away,ad,llExtraRerollsFromDice(ad,scouting.disabled.b)+llTakeCarriedRerolls(away));
@@ -4601,6 +4628,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260716-2"></script>
+<script src="league-v2.js?v=20260716-3"></script>
 </body>
 </html>
