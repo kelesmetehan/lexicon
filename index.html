@@ -191,6 +191,19 @@
   
   .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
   .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.2; word-break: break-word; }
+  .pronounce-line { display:flex; align-items:center; justify-content:center; gap:9px; }
+  .pronounce-line.dictionary { justify-content:flex-start; }
+  .pronounce-btn {
+    flex:0 0 auto; width:34px; height:34px; padding:0; border-radius:50%; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; color:#bae6fd;
+    border:1px solid rgba(56,189,248,.34); background:rgba(14,116,144,.14);
+    font-size:16px; line-height:1; transition:background .18s,border-color .18s,transform .18s;
+  }
+  .pronounce-btn:hover { background:rgba(14,116,144,.32); border-color:#38bdf8; transform:scale(1.06); }
+  .pronounce-btn:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
+  .pronounce-btn.compact { width:29px; height:29px; font-size:13px; }
+  .pronounce-btn.speaking { background:rgba(34,197,94,.20); border-color:#4ade80; animation:pronouncePulse .8s ease-in-out infinite alternate; }
+  @keyframes pronouncePulse { from{transform:scale(1)} to{transform:scale(1.09)} }
   
   .quiz-example {
     font-size: 15px;
@@ -1032,7 +1045,13 @@ const NATIVE_USER_DATA = [
   {en:"propose", tr:"önermek / teklif etmek", example:"I propose a simpler solution.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"compliment", tr:"iltifat / iltifat etmek", example:"She complimented him on his presentation.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"if so", tr:"eğer öyleyse / öyleyse", example:"If so, we should change our plan.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"if so", tr:"eğer öyleyse / öyleyse", example:"If so, we should change our plan.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"come across", tr:"rastlamak / karşılaşmak", example:"I came across an old photo yesterday.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"resemble", tr:"benzemek", example:"The child resembles his father.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"kill two birds with one stone", tr:"bir taşla iki kuş vurmak", example:"I cycle to work to exercise and save money, killing two birds with one stone.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"abuse", tr:"kötüye kullanmak / istismar etmek", example:"Do not abuse your power.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"unless", tr:"-medikçe / eğer ... değilse", example:"I won't go unless you come with me.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"whether or", tr:"olup olmadığı / ister ... ister", example:"We must decide whether to stay or leave.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -1366,7 +1385,13 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Daha basit bir çözüm öneriyorum.",
   "Sunumundan dolayı ona iltifat etti.",
   "Seyirciler sonunda yüksek sesle alkışladı.",
-  "Eğer öyleyse planımızı değiştirmeliyiz."
+  "Eğer öyleyse planımızı değiştirmeliyiz.",
+  "Dün eski bir fotoğrafa rastladım.",
+  "Çocuk babasına benziyor.",
+  "İşe bisikletle giderek hem egzersiz yapıyor hem para biriktiriyorum; bir taşla iki kuş vuruyorum.",
+  "Gücünü kötüye kullanma.",
+  "Benimle gelmezsen gitmeyeceğim.",
+  "Kalmaya mı yoksa ayrılmaya mı karar vermeliyiz."
 ];
 NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
 
@@ -1676,6 +1701,19 @@ let lexLeague = {
 function llEscape(value){
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 }
+let llActiveSpeechButton=null;
+function llSpeakEnglish(text,button=null){
+  const synth=window.speechSynthesis;
+  if(!synth||typeof SpeechSynthesisUtterance==='undefined'){alert('Bu tarayıcı sesli telaffuzu desteklemiyor.');return;}
+  synth.cancel();if(llActiveSpeechButton)llActiveSpeechButton.classList.remove('speaking');
+  const utterance=new SpeechSynthesisUtterance(String(text||''));utterance.lang='en-US';utterance.rate=.86;utterance.pitch=1;
+  const voices=synth.getVoices?.()||[],voice=voices.find(v=>/^en-US/i.test(v.lang))||voices.find(v=>/^en-/i.test(v.lang));if(voice)utterance.voice=voice;
+  const clear=()=>{if(button)button.classList.remove('speaking');if(llActiveSpeechButton===button)llActiveSpeechButton=null;};
+  utterance.onend=clear;utterance.onerror=clear;if(button){button.classList.add('speaking');llActiveSpeechButton=button;}synth.speak(utterance);
+}
+function llPronounceButton(text,compact=false){
+  const safe=llEscape(text);return `<button type="button" class="pronounce-btn${compact?' compact':''}" data-pronounce="${safe}" onclick="event.stopPropagation();llSpeakEnglish(this.dataset.pronounce,this)" aria-label="${safe} kelimesinin İngilizce telaffuzunu dinle" title="İngilizce telaffuzu dinle">🔊</button>`;
+}
 function llSetWide(on=true){
   const container=document.querySelector('.container');
   if(container) container.classList.toggle('league-wide',on);
@@ -1957,9 +1995,11 @@ function llRenderLeagueQuiz(){
     else example=word.example;
   }
   const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
+  const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(word.en)}</div>`;
+  const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
-  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${llEscape(question)}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${llEscape(answer)}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
+  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
 }
 function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
@@ -2797,7 +2837,7 @@ function renderWordList() {
     listHTML += `
       <div class="word-item">
         <div class="word-info">
-          <div class="word-en">${w.en}</div><div class="word-tr">${w.tr}</div>
+          <div class="pronounce-line dictionary"><div class="word-en">${llEscape(w.en)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
           ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
         </div>
         <div class="word-stats">
@@ -3198,6 +3238,8 @@ function showNextDiceCupRerollWord() {
   const askTrToEn = Math.random() > 0.5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
+  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -3216,9 +3258,9 @@ function showNextDiceCupRerollWord() {
     <div class="flashcard-wrap" id="dice-reroll-card" onclick="revealDiceCupRerollWord()">
       <div class="flashcard" id="dice-reroll-inner">
         <div class="quiz-mode-label">REROLL ${diceCup.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-        <div class="quiz-word">${question}</div>
+        <div class="quiz-word">${questionHtml}</div>
         ${example}
-        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
+        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
     </div>
@@ -3761,6 +3803,8 @@ function showNextDiceUclRerollWord() {
   const askTrToEn = Math.random() > .5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
+  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -3775,8 +3819,8 @@ function showNextDiceUclRerollWord() {
     <div class="flashcard-wrap" id="ucl-reroll-card" onclick="revealDiceUclRerollWord()">
       <div class="flashcard" id="ucl-reroll-inner">
         <div class="quiz-mode-label">UCL REROLL ${diceUcl.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-        <div class="quiz-word">${question}</div>${example}
-        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answer}</div></div>
+        <div class="quiz-word">${questionHtml}</div>${example}
+        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
     </div>
@@ -4440,6 +4484,8 @@ function showNextFlashcard() {
 
   if (askTurkishToEnglish) { questionText = card.tr.split(',')[0].trim(); answerText = card.en; } 
   else { questionText = card.en; answerText = card.tr; }
+  const questionHtml = askTurkishToEnglish ? llEscape(questionText) : `<div class="pronounce-line"><span>${llEscape(questionText)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTurkishToEnglish ? `<div class="pronounce-line"><span>${llEscape(answerText)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answerText);
 
   area.innerHTML = `
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
@@ -4452,11 +4498,11 @@ function showNextFlashcard() {
       <div class="flashcard" id="fc-inner">
         <div class="flashcard-front">
           <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-          <div class="quiz-word">${questionText}</div>
+          <div class="quiz-word">${questionHtml}</div>
           ${exampleDisplay}
         </div>
         <div class="flashcard-back" id="fc-back" style="display:none">
-          <div class="flashcard-answer">${answerText}</div>
+          <div class="flashcard-answer">${answerHtml}</div>
         </div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
