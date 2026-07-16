@@ -138,6 +138,17 @@ function llV2RepairState(state){
   if(!Array.isArray(state.discoveredCards))state.discoveredCards=[];
   const owned=Object.values(state.teams?.[state.playerTeam]?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id));
   state.discoveredCards=[...new Set([...state.discoveredCards.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)),...owned])];
+  const repairedPerformance={};
+  Object.entries(state.cardPerformance||{}).forEach(([rawId,raw])=>{
+    const id=LL_LEGACY_CARD_REPLACEMENTS[rawId]||rawId;if(!llCard(id)||!raw||typeof raw!=='object')return;
+    const target=repairedPerformance[id]||{wins:0,draws:0,losses:0,matches:0,goalsFor:0,goalsAgainst:0,firstSeason:null,lastSeason:null,byCompetition:{}};
+    target.wins+=Math.max(0,Number(raw.wins)||0);target.draws+=Math.max(0,Number(raw.draws)||0);target.losses+=Math.max(0,Number(raw.losses)||0);target.matches=target.wins+target.draws+target.losses;
+    target.goalsFor+=Math.max(0,Number(raw.goalsFor)||0);target.goalsAgainst+=Math.max(0,Number(raw.goalsAgainst)||0);
+    const first=Number(raw.firstSeason),last=Number(raw.lastSeason);if(Number.isFinite(first)&&first>0)target.firstSeason=target.firstSeason==null?first:Math.min(target.firstSeason,first);if(Number.isFinite(last)&&last>0)target.lastSeason=target.lastSeason==null?last:Math.max(target.lastSeason,last);
+    Object.entries(raw.byCompetition||{}).forEach(([competition,comp])=>{if(!comp||typeof comp!=='object')return;const entry=target.byCompetition[competition]||{wins:0,draws:0,losses:0,matches:0};entry.wins+=Math.max(0,Number(comp.wins)||0);entry.draws+=Math.max(0,Number(comp.draws)||0);entry.losses+=Math.max(0,Number(comp.losses)||0);entry.matches=entry.wins+entry.draws+entry.losses;target.byCompetition[competition]=entry;});
+    repairedPerformance[id]=target;
+  });
+  state.cardPerformance=repairedPerformance;
   if(!Array.isArray(state.clubBadges))state.clubBadges=[];
   if(!Array.isArray(state.seasonHistory))state.seasonHistory=[];
   if(state.seasonEnded&&state.lastSeasonSummary?.superRows&&state.lastSeasonSummary?.firstRows)llV2ArchiveSeason(state,state.lastSeasonSummary);
@@ -217,7 +228,7 @@ function llBlankStandings(names){return Object.fromEntries(names.map(n=>[n,llBla
 function llNewState(teamName){
   const teams={};LL_ALL_TEAMS.forEach(t=>teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}});
   const superNames=LL_TEAMS.map(t=>t.name),firstNames=LL_FIRST_TEAMS.map(t=>t.name);
-  const state={version:2,season:1,week:1,playerTeam:teamName,ap:0,lp:0,teams,leagues:{super:superNames,first:firstNames},standings:{super:llBlankStandings(superNames),first:llBlankStandings(firstNames)},schedules:{super:llGenerateSchedule(superNames),first:llGenerateSchedule(firstNames)},results:[],usedWords:[],transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,starterOffers:{},seasonEnded:false,lastSeasonSummary:null,seasonHistory:[],pendingFixture:null,playoff:null,europe:null,trophies:[],discoveredCards:[],clubBadges:[],shopSeenByWindow:{},teamSeasonTargets:null,seasonGoals:null,createdAt:new Date().toISOString()};
+  const state={version:2,season:1,week:1,playerTeam:teamName,ap:0,lp:0,teams,leagues:{super:superNames,first:firstNames},standings:{super:llBlankStandings(superNames),first:llBlankStandings(firstNames)},schedules:{super:llGenerateSchedule(superNames),first:llGenerateSchedule(firstNames)},results:[],usedWords:[],transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,starterOffers:{},cardPerformance:{},seasonEnded:false,lastSeasonSummary:null,seasonHistory:[],pendingFixture:null,playoff:null,europe:null,trophies:[],discoveredCards:[],clubBadges:[],shopSeenByWindow:{},teamSeasonTargets:null,seasonGoals:null,createdAt:new Date().toISOString()};
   llV2InitCup(state);llV2RepairState(state);return state;
 }
 function llSave(){if(lexLeague.state)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(lexLeague.state));}
@@ -291,7 +302,9 @@ function llV2SimFixture(f,competition='league',league=null,week=lexLeague.state.
 function llV2PlayLeagueWeek(key,skipFixture){const round=lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];round.filter(f=>!skipFixture||!(f.home===skipFixture.home&&f.away===skipFixture.away)).forEach(f=>llV2SimFixture(f,'league',key));}
 function llCommitCurrentMatch(){
   const m=lexLeague.match;if(!m||m.committed||!m.resolution)return;m.committed=true;const s=lexLeague.state,f=m.fixture,comp=f.competition||'league',r=m.resolution,hg=m.playerHome?r.scoreA:r.scoreB,ag=m.playerHome?r.scoreB:r.scoreA,pg=r.scoreA,og=r.scoreB,reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league;
-  const lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;s.lp+=lp;llRecordMatch(f.home,f.away,hg,ag,s.week,true,comp,f.league||null);llApplyLocks(r,m.player,m.opponent);
+  const lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;s.lp+=lp;
+  const usedCardIds=(m.playerDice||[]).map(die=>die.cardId).filter(Boolean);llRecordPlayerCardPerformance(usedCardIds,pg>og?'win':pg===og?'draw':'loss',comp,pg,og);
+  llRecordMatch(f.home,f.away,hg,ag,s.week,true,comp,f.league||null);llApplyLocks(r,m.player,m.opponent);
   let winner=pg===og?(Math.random()<.5?m.player:m.opponent):pg>og?m.player:m.opponent;
   if(comp==='league'){llV2PlayLeagueWeek('super',f.league==='super'?f:null);llV2PlayLeagueWeek('first',f.league==='first'?f:null);llDevelopOpponents(s.week);s.week++;}
   else if(comp==='cup')llV2FinishCupRound(winner);
