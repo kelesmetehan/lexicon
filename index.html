@@ -1922,24 +1922,23 @@ function llPickQuizWords(count=10){
   let words=loadUserWords(); if(!words.length)return [];
   const target=Math.min(count,words.length),used=new Set(lexLeague.state.usedWords);
   const remaining=llShuffle(words.filter(w=>!used.has(w.id)));
-  const chosen=remaining.slice(0,target);
-  if(chosen.length<target){
-    const closingIds=new Set(chosen.map(w=>w.id));
-    const nextCycle=llShuffle(words.filter(w=>!closingIds.has(w.id))).slice(0,target-chosen.length);
-    chosen.push(...nextCycle);
-    lexLeague.state.usedWords=nextCycle.map(w=>w.id);
-  }else{
-    chosen.forEach(w=>used.add(w.id));
-    lexLeague.state.usedWords=[...used];
+  const closing=remaining.slice(0,target),queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false}));
+  if(queue.length<target){
+    const closingIds=new Set(closing.map(w=>w.id));
+    const nextCycle=llShuffle(words.filter(w=>!closingIds.has(w.id))).slice(0,target-queue.length);
+    nextCycle.forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
   }
-  llSave();
-  return chosen.map(w=>({id:w.id,askTrToEn:Math.random()>.5}));
+  return queue;
+}
+function llMarkQuizWordUsed(ref){
+  const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
+  const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
 }
 function llStartMatchPreparation(){
   fcQueue=[];
   const queue=llPickQuizWords(10);
   if(queue.length<10){alert('Lig maçı için en az 10 kelime gerekiyor. Kelime veritabanında yeterli kart yok.');return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0};
+  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2};
   llRenderLeagueQuiz();
 }
 function llQuizApPerWord(){
@@ -1961,9 +1960,14 @@ function llRenderLeagueQuiz(){
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${llEscape(question)}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${llEscape(answer)}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
-  <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div></div></div>`;
+  <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
 }
 function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
+function llSkipLeagueQuiz(){
+  const q=lexLeague.quiz;if(!q||q.committed)return;const answered=q.index,earned=q.correct*llQuizApPerWord()+Number(q.recoveryBonus||0);
+  if(!confirm(answered?`Sınavı burada bitirip ${answered} cevaptaki ${q.correct} doğru için ${earned} AP alarak maça devam etmek istiyor musun?`:'Hiç soru cevaplamadın. 0 AP ile doğrudan maça devam etmek istiyor musun?'))return;
+  q.skipped=true;q.totalAnswered=answered;llFinishLeagueQuiz();
+}
 function llRateLeagueQuiz(correct){
   const q=lexLeague.quiz;if(!q||!q.revealed)return;
   const ref=q.queue[q.index],words=loadUserWords(),card=words.find(w=>w.id===ref.id),quality=correct?5:1;
@@ -1975,18 +1979,18 @@ function llRateLeagueQuiz(correct){
     saveWordsToStorage(words);
     const meta=loadMeta();if(!meta.activity)meta.activity={};const t=todayStr();if(!meta.activity[t])meta.activity[t]={reviews:0,correct:0};meta.activity[t].reviews++;if(correct)meta.activity[t].correct++;saveMeta(meta);
   }
-  if(correct)q.correct++;q.index++;q.revealed=false;llRenderLeagueQuiz();
+  llMarkQuizWordUsed(ref);if(correct)q.correct++;q.index++;q.revealed=false;llSave();llRenderLeagueQuiz();
 }
 function llFinishLeagueQuiz(){
   const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
   const baseAp=q.correct*5,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;
-  let reward='none';if(q.correct===10){reward='perfect';lexLeague.state.lp+=10;}else if(q.correct===9)reward='reroll';
+  const completed=!q.skipped&&q.index>=q.queue.length;let reward='none';if(completed&&q.correct===10){reward='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct===9)reward='reroll';
   q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=reward;llSave();llRenderQuizReward();
 }
 function llRenderQuizReward(){
   const q=lexLeague.quiz;
-  const recoveryAp=Number(q.recoveryApEarned||0),text=(q.correct===10?'Kusursuz! +10 LP, seçtiğin mevkiye maçlık +1 ve ayrıca 1 reroll kazandın.':q.correct===9?'Formdasın! Maç içinde bir zarını yeniden atabileceksin.':'Taktik ödülü yok; AP kazancın kasaya işlendi.')+(recoveryAp?` Daha önce yanlış bildiğin ${q.recoveredWords} kelimeyi düzelttiğin için ayrıca +${recoveryAp} AP aldın.`:'');
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div style="font-size:52px">${q.correct===10?'🏆':q.correct===9?'🎯':'📚'}</div><div class="quiz-start-title" style="margin-top:8px">${q.correct}/10 <em>Doğru</em></div><div class="ll-metrics" style="grid-template-columns:${recoveryAp?'repeat(3,1fr)':'1fr 1fr'};max-width:${recoveryAp?'600px':'420px'};margin:18px auto"><div class="ll-metric"><strong>+${q.apEarned}</strong><span>Toplam AP</span></div>${recoveryAp?`<div class="ll-metric"><strong>+${recoveryAp}</strong><span>Hata Geri Kazanım AP</span></div>`:''}<div class="ll-metric"><strong>${q.correct===10?'+10':'0'}</strong><span>LP</span></div></div><div class="ll-notice" style="text-align:left">${text}</div>
+  const answered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index,completed=!q.skipped&&answered>=q.queue.length,recoveryAp=Number(q.recoveryApEarned||0),text=(q.skipped?`${answered} soru cevaplandı; yalnızca bu cevapların AP kazancı işlendi. Cevaplanmayan kelimeler kullanılmış sayılmadı ve sonraki maçlarda yeniden gelebilir.`:q.correct===10?'Kusursuz! +10 LP, seçtiğin mevkiye maçlık +1 ve ayrıca 1 reroll kazandın.':q.correct===9?'Formdasın! Maç içinde bir zarını yeniden atabileceksin.':'Taktik ödülü yok; AP kazancın kasaya işlendi.')+(recoveryAp?` Daha önce yanlış bildiğin ${q.recoveredWords} kelimeyi düzelttiğin için ayrıca +${recoveryAp} AP aldın.`:'');
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div style="font-size:52px">${completed&&q.correct===10?'🏆':completed&&q.correct===9?'🎯':q.skipped?'⏭️':'📚'}</div><div class="quiz-start-title" style="margin-top:8px">${q.correct}/${answered} <em>Doğru</em></div><div class="ll-metrics" style="grid-template-columns:${recoveryAp?'repeat(3,1fr)':'1fr 1fr'};max-width:${recoveryAp?'600px':'420px'};margin:18px auto"><div class="ll-metric"><strong>+${q.apEarned}</strong><span>Toplam AP</span></div>${recoveryAp?`<div class="ll-metric"><strong>+${recoveryAp}</strong><span>Hata Geri Kazanım AP</span></div>`:''}<div class="ll-metric"><strong>${completed&&q.correct===10?'+10':'0'}</strong><span>LP</span></div></div><div class="ll-notice" style="text-align:left">${text}</div>
   ${q.reward==='plusOne'||q.reward==='perfect'?`<div class="ll-card-title" style="margin-top:20px">+1 Uygulanacak Zarı Seç</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<button class="ll-team-option" onclick="llBeginMatch('${pos}')"><div class="ll-team-name">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-range">Bu maç zar sonucuna +1${q.reward==='perfect'?' · 1 reroll ayrıca hazır':''}</div></button>`).join('')}</div>`:`<button class="ll-btn primary" style="margin-top:18px" onclick="llBeginMatch(null)">Zar Düellosuna Geç</button>`}
   </div></div>`;
 }
@@ -4551,6 +4555,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260716-1"></script>
+<script src="league-v2.js?v=20260716-2"></script>
 </body>
 </html>
