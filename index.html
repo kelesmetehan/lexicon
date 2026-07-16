@@ -1031,7 +1031,8 @@ const NATIVE_USER_DATA = [
   {en:"on behalf of", tr:"adına / temsilen", example:"I thanked everyone on behalf of the team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"propose", tr:"önermek / teklif etmek", example:"I propose a simpler solution.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"compliment", tr:"iltifat / iltifat etmek", example:"She complimented him on his presentation.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"if so", tr:"eğer öyleyse / öyleyse", example:"If so, we should change our plan.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -1364,7 +1365,8 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Takım adına herkese teşekkür ettim.",
   "Daha basit bir çözüm öneriyorum.",
   "Sunumundan dolayı ona iltifat etti.",
-  "Seyirciler sonunda yüksek sesle alkışladı."
+  "Seyirciler sonunda yüksek sesle alkışladı.",
+  "Eğer öyleyse planımızı değiştirmeliyiz."
 ];
 NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
 
@@ -4549,6 +4551,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260714-5"></script>
+<script src="league-v2.js?v=20260716-1"></script>
 </body>
 </html>
