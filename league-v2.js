@@ -104,8 +104,37 @@ function llV2CreateSeasonGoals(state){
   ];
   return {version:LL_SEASON_GOAL_VERSION,season:state.season,league,stars,items,evaluated:false,results:[],earnedAp:0,earnedLp:0,promotionSupportAp:0,badge:null};
 }
+const LL_V2_CARD_REPAIR_VERSION=1;
+function llV2CardFitsSlot(card,position,stars){return !!card&&(card.position===position||card.position==='Evrensel')&&Number(card.minStar||1)<=Number(stars||1);}
+function llV2RepairCardId(oldId,position,stars,usedFamilies=new Set()){
+  if(!oldId)return null;
+  const migratedId=LL_LEGACY_CARD_REPLACEMENTS[oldId]||oldId,migrated=llCard(migratedId);
+  if(llV2CardFitsSlot(migrated,position,stars))return migratedId;
+  const legacy=LL_LEGACY_CARD_POOL.find(card=>card.id===oldId),legacyFamily=llCardFamilyName(legacy),targetRank=LL_CARD_RARITY_RANK[legacy?.rarity]||LL_CARD_RARITY_RANK.rare;
+  const candidates=LL_CARD_POOL.filter(card=>llV2CardFitsSlot(card,position,stars)&&!usedFamilies.has(llCardFamilyName(card)));
+  return [...candidates].sort((a,b)=>{
+    const familyA=legacyFamily&&llCardFamilyName(a)===legacyFamily?0:1,familyB=legacyFamily&&llCardFamilyName(b)===legacyFamily?0:1;
+    if(familyA!==familyB)return familyA-familyB;
+    const gapA=Math.abs((LL_CARD_RARITY_RANK[a.rarity]||1)-targetRank),gapB=Math.abs((LL_CARD_RARITY_RANK[b.rarity]||1)-targetRank);
+    if(gapA!==gapB)return gapA-gapB;
+    const exactA=a.position===position?0:1,exactB=b.position===position?0:1;if(exactA!==exactB)return exactA-exactB;
+    return a.id.localeCompare(b.id);
+  })[0]?.id||null;
+}
 function llV2RepairState(state){
   if(!state)return state;
+  Object.entries(state.teams||{}).forEach(([teamName,team])=>{
+    if(!team.cards||typeof team.cards!=='object')team.cards={'Kaleci':null,'Orta Saha':null,'Forvet':null};
+    const usedFamilies=new Set();
+    LL_POSITIONS.forEach(position=>{
+      const repairedId=llV2RepairCardId(team.cards[position],position,team.stars,usedFamilies),card=llCard(repairedId);
+      team.cards[position]=card?repairedId:null;
+      const family=llCardFamilyName(card);if(family)usedFamilies.add(family);
+    });
+    if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];
+    usedFamilies.forEach(family=>{if(!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);});
+  });
+  state.cardRepairVersion=LL_V2_CARD_REPAIR_VERSION;
   if(!Array.isArray(state.discoveredCards))state.discoveredCards=[];
   const owned=Object.values(state.teams?.[state.playerTeam]?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id));
   state.discoveredCards=[...new Set([...state.discoveredCards.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)),...owned])];
@@ -192,7 +221,7 @@ function llNewState(teamName){
 function llSave(){if(lexLeague.state)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(lexLeague.state));}
 function llLoad(){try{const s=JSON.parse(localStorage.getItem(LL_V2_SAVE_KEY)||'null');return s?.version===2?llV2RepairState(s):null;}catch{return null;}}
 function llResetGame(){if(!confirm('İki ligli kariyer kaydı tamamen silinsin mi?'))return;localStorage.removeItem(LL_V2_SAVE_KEY);lexLeague.state=null;llClearTransient();renderLexiconLeagueLanding();}
-function llContinueGame(){const s=llLoad();if(!s){llRenderTeamSelect();return;}lexLeague.state=s;lexLeague.active=true;llSetWide(true);if(!s.starterPackClaimed)llRenderStarterShop();else if(s.seasonEnded)llRenderSeasonEnd();else llRenderDashboard();}
+function llContinueGame(){const s=llLoad();if(!s){llRenderTeamSelect();return;}lexLeague.state=s;llSave();lexLeague.active=true;llSetWide(true);if(!s.starterPackClaimed)llRenderStarterShop();else if(s.seasonEnded)llRenderSeasonEnd();else llRenderDashboard();}
 function llRenderTeamSelect(){lexLeague.active=true;llSetWide(true);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">TFF 1. Lig'den <em>Başla</em></div><div class="ll-muted">20 kulüp · 5 yıldızlı yeni güç sistemi · Hedef Süper Lig</div></div><button class="ll-btn" onclick="renderLexiconLeagueLanding()">← Geri</button></div><div class="ll-team-grid">${LL_FIRST_TEAMS.map(t=>`<button class="ll-team-option" onclick="llStartCareer('${llEscape(t.name)}')"><div class="ll-team-name team-with-logo">${llTeamLogo(t,'compact')}<span>${llEscape(t.name)}</span></div><div class="ll-stars">${llStars(t.stars)}</div><div class="ll-range">Zar aralığı ${llRangeText(t.stars)}</div></button>`).join('')}</div></div></div>`;}
 function llAssignStarterCardsToAi(){const s=lexLeague.state;if(!s||s.starterAiAssigned)return;LL_ALL_TEAMS.map(t=>t.name).filter(n=>n!==s.playerTeam).forEach(llAssignAiCard);s.starterAiAssigned=true;}
 function llHeldCardIds(){const ids=new Set();Object.values(lexLeague.state.teams).forEach(t=>LL_POSITIONS.forEach(p=>{if(t.cards?.[p])ids.add(t.cards[p]);}));return ids;}
@@ -207,7 +236,7 @@ function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
   const legend=key==='first'
     ?`<div class="ll-zone-legend"><span><i class="ll-zone-dot direct"></i>1–2: Doğrudan Süper Lig'e yükselir</span><span><i class="ll-zone-dot playoff"></i>3–7: Play-Off oynar</span></div>`
     :`<div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span><span><i class="ll-zone-dot relegation"></i>Son 3: TFF 1. Lig'e düşer</span></div>`;
-  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>t.cards[p]).length,euroClass=key!=='super'?'':euroZones.ucl.has(r.team)?'ucl-zone ':euroZones.uel.has(r.team)?'uel-zone ':euroZones.uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euroClass}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}`;}
+  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>llCard(t.cards[p])).length,euroClass=key!=='super'?'':euroZones.ucl.has(r.team)?'ucl-zone ':euroZones.uel.has(r.team)?'uel-zone ':euroZones.uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euroClass}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}`;}
 function llV2CupResultRound(result){
   if(Number.isInteger(result?.cupRound))return result.cupRound;
   let round=0;for(let i=0;i<LL_CUP_WEEKS.length;i++)if(Number(result?.week)>=LL_CUP_WEEKS[i])round=i;return round;
