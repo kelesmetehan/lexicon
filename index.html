@@ -2212,8 +2212,8 @@ function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,is
     case 'Katil İçgüdü': return die.position==='Forvet'&&own>opp;
     case 'Mükemmeliyetçi': return LL_POSITIONS.every(pos=>llFindPosition(ownDice,pos)?.value>llFindPosition(oppDice,pos)?.value);
     case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp;}
-    case 'Boş Kadro': return LL_POSITIONS.some(pos=>pos!==die.position&&!team?.cards?.[pos]);
-    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>!!team?.cards?.[pos]);
+    case 'Boş Kadro': return LL_POSITIONS.some(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos));
+    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos));
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die);
     case 'Taktik Tahtası': case 'Yedek Kulübesi': return false;
     case 'Form Tutmuyor': return (team?.sixStreaks?.[die.position]||0)>=2&&own===6;
@@ -2280,10 +2280,10 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Çift Kanat'&&llHasDoubleWing(rawDice)){const forward=llFindPosition(me.dice,'Forvet');forward.value+=1;log(`${me.name}: Çift Kanat → Forvet zarı +1.`);}
       if(base==='Dengeli On Bir'&&llIsBalancedEleven(rawDice)){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position);target.value+=1;log(`${me.name}: Dengeli On Bir → ${target.position} zarı +1.`);}
       if(base==='Boş Kadro'){
-        const emptyCount=LL_POSITIONS.filter(pos=>pos!==d.position&&!me.state.cards[pos]).length,bonus=Math.min(2,emptyCount);
+        const emptyCount=LL_POSITIONS.filter(pos=>pos!==d.position&&!llCardContractSlotActive(me.state,pos)).length,bonus=Math.min(2,emptyCount);
         if(bonus){d.value+=bonus;log(`${me.name}: Boş Kadro → ${d.position} zarı +${bonus}.`);}
       }
-      if(base==='Takım Kimyası'&&LL_POSITIONS.every(pos=>!!me.state.cards[pos])){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position);target.value+=1;log(`${me.name}: Takım Kimyası → ${target.position} zarı +1.`);}
+      if(base==='Takım Kimyası'&&LL_POSITIONS.every(pos=>llCardContractSlotActive(me.state,pos))){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position);target.value+=1;log(`${me.name}: Takım Kimyası → ${target.position} zarı +1.`);}
     });
   }
   function applyGlobals(me,opp,key){
@@ -2483,8 +2483,8 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome){
     case 'Katil İçgüdü': return ownValue>oppValue?active(`Forvet zarı ${ownValue}-${oppValue} önde; kazanırsa x3 gol sayılacak.`):inactive(`Forvet zarı şu anda ${ownValue}-${oppValue}; düello kazanılmıyor.`);
     case 'Mükemmeliyetçi': {const wins=LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value>llFindPosition(oppDice,pos)?.value).length;return wins===3?active('Üç ham düelloda da öndesin; kartlı çözüm korunursa +2 gol.'):uncertain(`Ham zarlarda ${wins}/3 düello önde; diğer kart etkileri sonucu değiştirebilir.`);}
     case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp?active(`İlk iki ham düelloda ${score.own}-${score.opp} öndesin.`):inactive(`İlk iki ham düello ${score.own}-${score.opp}; önde değilsin.`);}
-    case 'Boş Kadro': {const empty=LL_POSITIONS.filter(pos=>pos!==die.position&&!team?.cards?.[pos]).length;return empty?active(`${empty} boş yuva var; ${die.position} zarına +${Math.min(2,empty)} uygulanacak.`):inactive('Diğer iki kart yuvası da dolu.');}
-    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>!!team?.cards?.[pos])?active('Üç kart yuvası da dolu.'):inactive('Üç kart yuvasının tamamı dolu değil.');
+    case 'Boş Kadro': {const empty=LL_POSITIONS.filter(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos)).length;return empty?active(`${empty} boş veya sözleşmesi bitmiş yuva var; ${die.position} zarına +${Math.min(2,empty)} uygulanacak.`):inactive('Diğer iki kart yuvası da aktif.');}
+    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos))?active('Üç kart yuvası da aktif.'):inactive('Üç aktif kart yuvasının tamamı dolu değil.');
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die)?active('Diğer iki kart da Nadir veya daha üstü; +1 reroll hazır.'):inactive('Diğer iki kartın ikisi de Nadir veya daha üstü değil.');
     case 'Taktik Tahtası': return inactive('Bu kart yalnızca transfer haftasında çalışır.');
     case 'Reflex': return active(`${llEffectAmount(card,1)} ekstra reroll hakkı maç başında verildi.`);
@@ -4690,6 +4690,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260717-3"></script>
+<script src="league-v2.js?v=20260717-4"></script>
 </body>
 </html>
