@@ -208,6 +208,7 @@ function llV2MatchImportance(f,key){
   if(comp==='playoff')return '🚀 YÜKSELME PLAY-OFF MAÇI';
   if(comp==='league'&&derbies.has(pair))return '🔥 BÜYÜK DERBİ';
   if(comp==='league'&&Number(s.week)>=20){const rows=llSortTable(key),positions=[f.home,f.away].map(n=>rows.findIndex(r=>r.team===n)+1);if(key==='super'&&positions.some(p=>p>rows.length-5))return '⚠️ DÜŞME HATTI MAÇI';if(key==='first'&&positions.some(p=>p>0&&p<=7))return '⬆️ YÜKSELME YARIŞI MAÇI';}
+  if(comp==='league'&&Number(s.week)>=20&&key==='super'){const rows=llSortTable(key),positions=[f.home,f.away].map(n=>rows.findIndex(r=>r.team===n)+1);if(positions.some(p=>p>0&&p<=6))return '\uD83C\uDF0D AVRUPA YARI\u015eI MA\u00c7I';}
   return '';
 }
 
