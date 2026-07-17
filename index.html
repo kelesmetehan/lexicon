@@ -689,7 +689,7 @@
   .ll-card-performance { margin-top:12px; padding:10px; border-radius:10px; background:rgba(45,212,191,.07); border:1px solid rgba(45,212,191,.20); }
   .ll-card-performance.compact { margin-top:11px; padding:9px; }
   .ll-card-performance-title { margin-bottom:8px; color:#5eead4; font-size:9px; font-weight:950; letter-spacing:.55px; text-transform:uppercase; }
-  .ll-card-performance-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
+  .ll-card-performance-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; }
   .ll-card-performance-stat { min-width:0; padding:6px 3px; border-radius:7px; text-align:center; background:rgba(255,255,255,.035); }
   .ll-card-performance-stat strong { display:block; color:var(--text1); font-size:12px; }
   .ll-card-performance-stat span { display:block; margin-top:2px; color:var(--text3); font-size:7px; text-transform:uppercase; }
@@ -701,7 +701,7 @@
     .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}.ll-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}.ll-card-performance-grid{grid-template-columns:repeat(5,minmax(44px,1fr))}
+    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}.ll-card-performance-grid{grid-template-columns:repeat(3,minmax(64px,1fr))}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
@@ -1853,30 +1853,48 @@ function llCardHtml(cardId,teamName,emptyText='Kart yok'){
   const card=llCard(cardId);
   if(!card) return `<button class="ll-ability empty" type="button">${emptyText}</button>`;
   const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null;
-  const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · %${llCardWinRate(performance)} galibiyet · ${performance.wins}G ${performance.draws}B ${performance.losses}M</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
+  const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} tetik (%${llCardTriggerRate(performance)}) · Tetikte ${performance.triggeredWins}G ${performance.triggeredDraws}B ${performance.triggeredLosses}M</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
   return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br><span>${llEscape(card.effect)}</span>${performanceLine}</button>`;
 }
 function llCardPerformance(cardId){
   const id=LL_LEGACY_CARD_REPLACEMENTS[cardId]||cardId,raw=lexLeague.state?.cardPerformance?.[id];
   if(!raw||typeof raw!=='object')return null;
   const wins=Math.max(0,Number(raw.wins)||0),draws=Math.max(0,Number(raw.draws)||0),losses=Math.max(0,Number(raw.losses)||0);
-  return {...raw,wins,draws,losses,matches:wins+draws+losses,goalsFor:Math.max(0,Number(raw.goalsFor)||0),goalsAgainst:Math.max(0,Number(raw.goalsAgainst)||0)};
+  const triggeredWins=Math.max(0,Number(raw.triggeredWins)||0),triggeredDraws=Math.max(0,Number(raw.triggeredDraws)||0),triggeredLosses=Math.max(0,Number(raw.triggeredLosses)||0),triggers=Math.max(triggeredWins+triggeredDraws+triggeredLosses,Math.max(0,Number(raw.triggers)||0));
+  return {...raw,wins,draws,losses,matches:wins+draws+losses,triggers,triggeredWins,triggeredDraws,triggeredLosses,goalsFor:Math.max(0,Number(raw.goalsFor)||0),goalsAgainst:Math.max(0,Number(raw.goalsAgainst)||0)};
 }
 function llCardWinRate(stat){return stat?.matches?Math.round((stat.wins/stat.matches)*100):0;}
-function llRecordPlayerCardPerformance(cardIds,result,competition='league',goalsFor=0,goalsAgainst=0){
+function llCardTriggerRate(stat){return stat?.matches?Math.round((stat.triggers/stat.matches)*100):0;}
+function llTriggeredPlayerCardIds(match){
+  if(!match)return [];
+  const events=match.resolution?.events||match.projectedResolution?.events||[],prefix=`${match.player}:`,disabled=match.scouting?.disabled?.a||new Set(),triggered=new Set();
+  (match.playerDice||[]).forEach(die=>{
+    const card=llCard(die.cardId);if(!card||disabled.has(die.uid))return;const base=llBaseName(card);
+    if(events.some(event=>event.startsWith(prefix)&&event.includes(`: ${base} →`)&&!/bulunamadı|şartı sağlanmadı/i.test(event)))triggered.add(card.id);
+    if(['Metronom','Reflex'].includes(base))triggered.add(card.id);
+    if(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(match.playerDice,die))triggered.add(card.id);
+    if(base==='Yedek Kulübesi'&&match.resolution?.scoreA<match.resolution?.scoreB)triggered.add(card.id);
+    if(base==='Form Tutmuyor'&&(llTeamState(match.player)?.sixStreaks?.[die.position]||0)>=2&&die.value===6)triggered.add(card.id);
+  });
+  return [...triggered];
+}
+function llRecordPlayerCardPerformance(cardIds,result,competition='league',goalsFor=0,goalsAgainst=0,triggeredCardIds=[]){
   const s=lexLeague.state;if(!s)return;if(!s.cardPerformance||typeof s.cardPerformance!=='object')s.cardPerformance={};
   const validResults=['win','draw','loss'];if(!validResults.includes(result))return;
   const ids=[...new Set((cardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))];
+  const triggered=new Set((triggeredCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id));
   ids.forEach(id=>{
     const stat=s.cardPerformance[id]&&typeof s.cardPerformance[id]==='object'?s.cardPerformance[id]:{};
     stat.wins=Math.max(0,Number(stat.wins)||0);stat.draws=Math.max(0,Number(stat.draws)||0);stat.losses=Math.max(0,Number(stat.losses)||0);
+    stat.triggers=Math.max(0,Number(stat.triggers)||0);stat.triggeredWins=Math.max(0,Number(stat.triggeredWins)||0);stat.triggeredDraws=Math.max(0,Number(stat.triggeredDraws)||0);stat.triggeredLosses=Math.max(0,Number(stat.triggeredLosses)||0);
     stat.goalsFor=Math.max(0,Number(stat.goalsFor)||0)+Math.max(0,Number(goalsFor)||0);stat.goalsAgainst=Math.max(0,Number(stat.goalsAgainst)||0)+Math.max(0,Number(goalsAgainst)||0);
     if(result==='win')stat.wins++;else if(result==='draw')stat.draws++;else stat.losses++;
+    if(triggered.has(id)){stat.triggers++;if(result==='win')stat.triggeredWins++;else if(result==='draw')stat.triggeredDraws++;else stat.triggeredLosses++;}
     stat.matches=stat.wins+stat.draws+stat.losses;stat.firstSeason=stat.firstSeason==null?s.season:Math.min(Number(stat.firstSeason)||s.season,s.season);stat.lastSeason=s.season;
     if(!stat.byCompetition||typeof stat.byCompetition!=='object')stat.byCompetition={};
     const comp=stat.byCompetition[competition]&&typeof stat.byCompetition[competition]==='object'?stat.byCompetition[competition]:{};
     comp.wins=Math.max(0,Number(comp.wins)||0);comp.draws=Math.max(0,Number(comp.draws)||0);comp.losses=Math.max(0,Number(comp.losses)||0);
-    if(result==='win')comp.wins++;else if(result==='draw')comp.draws++;else comp.losses++;comp.matches=comp.wins+comp.draws+comp.losses;stat.byCompetition[competition]=comp;
+    comp.triggers=Math.max(0,Number(comp.triggers)||0);if(result==='win')comp.wins++;else if(result==='draw')comp.draws++;else comp.losses++;if(triggered.has(id))comp.triggers++;comp.matches=comp.wins+comp.draws+comp.losses;stat.byCompetition[competition]=comp;
     s.cardPerformance[id]=stat;
   });
 }
@@ -1884,7 +1902,7 @@ function llCardPerformanceHtml(cardId,compact=false){
   const stat=llCardPerformance(cardId);
   if(!stat?.matches)return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart kadrodayken</div><div class="ll-card-performance-empty">Henüz maç verisi yok.</div></div>`;
   const seasons=stat.firstSeason===stat.lastSeason?`Sezon ${stat.firstSeason}`:`Sezon ${stat.firstSeason}–${stat.lastSeason}`;
-  return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart kadrodayken · ${llEscape(seasons)}</div><div class="ll-card-performance-grid"><div class="ll-card-performance-stat"><strong>${stat.matches}</strong><span>Maç</span></div><div class="ll-card-performance-stat"><strong>%${llCardWinRate(stat)}</strong><span>Galibiyet</span></div><div class="ll-card-performance-stat"><strong>${stat.wins}</strong><span>G</span></div><div class="ll-card-performance-stat"><strong>${stat.draws}</strong><span>B</span></div><div class="ll-card-performance-stat"><strong>${stat.losses}</strong><span>M</span></div></div>${compact?'':`<div class="ll-card-performance-note">Takım skoru: ${stat.goalsFor}-${stat.goalsAgainst}. Bu kayıt, kartın kadroda olduğu maçların takım sonuçlarını gösterir; sonucu tek başına kartın oluşturduğunu göstermez.</div>`}</div>`;
+  return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart performansı · ${llEscape(seasons)}</div><div class="ll-card-performance-grid"><div class="ll-card-performance-stat"><strong>${stat.matches}</strong><span>Kadroda</span></div><div class="ll-card-performance-stat"><strong>${stat.triggers}</strong><span>Tetik</span></div><div class="ll-card-performance-stat"><strong>%${llCardTriggerRate(stat)}</strong><span>Tetik Oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredWins}</strong><span>Tetikte G</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredDraws}</strong><span>Tetikte B</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredLosses}</strong><span>Tetikte M</span></div></div>${compact?'':`<div class="ll-card-performance-note">Kart kadrodayken genel takım sonucu ${stat.wins}G ${stat.draws}B ${stat.losses}M; toplam skor ${stat.goalsFor}-${stat.goalsAgainst}. Ana ölçüm tetiklenme oranıdır. G/B/M yalnız kartın gerçekten tetiklendiği maçları gösterir.</div>`}</div>`;
 }
 function llOpponentIcons(teamName){
   const team=llTeamState(teamName);
@@ -4672,6 +4690,6 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260717-1"></script>
+<script src="league-v2.js?v=20260717-2"></script>
 </body>
 </html>
