@@ -32,7 +32,7 @@ const LL_EURO_ROUNDS=['Son 32','Son 16','Çeyrek Final','Yarı Final','Final'];
 const LL_EURO_LOGO_IDS={
   'Paris Saint-Germain':583,'Real Madrid':418,'Manchester City':281,'Bayern München':27,Liverpool:31,Inter:46,Chelsea:631,'Borussia Dortmund':16,Barcelona:131,Arsenal:11,'Bayer Leverkusen':15,'Atlético Madrid':13,Benfica:294,Atalanta:800,Villarreal:1050,Juventus:506,'Eintracht Frankfurt':24,'Club Brugge':2282,'Tottenham Hotspur':148,'PSV Eindhoven':383,Ajax:610,Napoli:6195,'Sporting CP':336,Olympiacos:683,Marseille:244,Copenhagen:190,Monaco:162,Galatasaray:141,'Union Saint-Gilloise':3948,'Qarabağ':10625,'Athletic Club':621,'Newcastle United':762,'Bodø/Glimt':2619,'Slavia Praha':62,Pafos:20401,'Kairat Almaty':10470
 };
-const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=3,LL_TEAM_TARGET_VERSION=2,LL_SEASON_HISTORY_VERSION=1;
+const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=4,LL_TEAM_TARGET_VERSION=3,LL_SEASON_HISTORY_VERSION=1;
 function llV2PlayerLeagueInState(state){return state?.leagues?.super?.includes(state.playerTeam)?'super':'first';}
 function llV2TeamStarsInState(state,name){return Math.max(1,Math.min(5,Number(state?.teams?.[name]?.stars||LL_ALL_TEAMS.find(t=>t.name===name)?.stars||1)));}
 function llV2TeamTargetOptions(league,stars){
@@ -73,10 +73,43 @@ function llV2TeamTargetOptions(league,stars){
   ];
   return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:140,lp:90}}];
 }
+function llV2PreviousTeamContext(state,name){
+  const previous=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-1);if(!previous)return null;
+  const superIndex=(previous.superRows||[]).findIndex(row=>row.team===name),firstIndex=(previous.firstRows||[]).findIndex(row=>row.team===name),league=superIndex>=0?'super':firstIndex>=0?'first':null,index=league==='super'?superIndex:firstIndex;
+  if(!league||index<0)return null;const row=(league==='super'?previous.superRows:previous.firstRows)[index];
+  return {league,position:Number(row?.position)||index+1,promoted:(previous.promoted||[]).includes(name),relegated:(previous.relegated||[]).includes(name)};
+}
+function llV2ContextualTeamTargetOptions(state,name,league,stars){
+  const previous=llV2PreviousTeamContext(state,name);if(!previous)return llV2TeamTargetOptions(league,stars);
+  if(league==='super'&&previous.promoted){
+    if(stars>=4)return [{type:'league_position',value:8,label:'Ligi ilk 8 içinde bitir',reward:{ap:155,lp:125}}];
+    if(stars===3)return [{type:'league_position',value:previous.position<=2?10:12,label:`Ligi ilk ${previous.position<=2?10:12} içinde bitir`,reward:{ap:145,lp:110}}];
+    if(stars===2&&previous.position<=2)return [{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:135,lp:95}}];
+    return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:130,lp:90}}];
+  }
+  if(league==='first'&&previous.relegated){
+    if(stars>=3)return [{type:'direct_promote',label:'İlk 2’ye girerek doğrudan yüksel',reward:{ap:160,lp:210}}];
+    if(stars===2)return [{type:'playoff',label:'Play-Off bileti al',reward:{ap:130,lp:110}}];
+    return [{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:115,lp:80}}];
+  }
+  if(league==='super'&&previous.league==='super'){
+    if(stars>=5)return previous.position===1?[{type:'champion',label:'Süper Lig şampiyonu ol',reward:{ap:220,lp:240}}]:[{type:'league_position',value:2,label:'Ligi ilk 2 içinde bitir',reward:{ap:185,lp:195}}];
+    if(stars===4)return previous.position<=3?[{type:'league_position',value:3,label:'Ligi ilk 3 içinde bitir',reward:{ap:175,lp:175}}]:previous.position<=6?[{type:'europe',label:'Avrupa kupalarına katıl',reward:{ap:165,lp:165}}]:[{type:'league_position',value:7,label:'Ligi ilk 7 içinde bitir',reward:{ap:150,lp:130}}];
+    if(stars===3)return previous.position<=6?[{type:'league_position',value:7,label:'Ligi ilk 7 içinde bitir',reward:{ap:140,lp:110}}]:previous.position<=10?[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:130,lp:100}}]:[{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:125,lp:90}}];
+    if(stars===2)return previous.position<=10?[{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:130,lp:90}}]:[{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:120,lp:80}}];
+    return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:140,lp:90}}];
+  }
+  if(league==='first'&&previous.league==='first'){
+    if(stars>=3)return previous.position<=7?[{type:'promote',label:'Süper Lig’e yüksel',reward:{ap:120,lp:190}}]:previous.position<=12?[{type:'playoff',label:'Play-Off bileti al',reward:{ap:125,lp:110}}]:[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:115,lp:90}}];
+    if(stars===2)return previous.position<=7?[{type:'playoff',label:'Play-Off bileti al',reward:{ap:120,lp:100}}]:previous.position<=12?[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:105,lp:85}}]:[{type:'league_position',value:14,label:'Ligi ilk 14 içinde bitir',reward:{ap:105,lp:70}}];
+    return [{type:'first_survive',label:'TFF 1. Lig’de kümede kal',reward:{ap:100,lp:60}}];
+  }
+  return llV2TeamTargetOptions(league,stars);
+}
 function llV2TeamTierIndex(state,name,league){const stars=llV2TeamStarsInState(state,name),same=(state.leagues?.[league]||[]).filter(n=>llV2TeamStarsInState(state,n)===stars).sort((a,b)=>a.localeCompare(b,'tr'));return Math.max(0,same.indexOf(name));}
 function llV2CreateTeamSeasonTargets(state){
   const targets={};
-  ['super','first'].forEach(league=>(state.leagues?.[league]||[]).forEach(name=>{const stars=llV2TeamStarsInState(state,name),options=llV2TeamTargetOptions(league,stars),choice=options[llV2TeamTierIndex(state,name,league)%options.length];targets[name]={...choice,team:name,league,stars};}));
+  ['super','first'].forEach(league=>(state.leagues?.[league]||[]).forEach(name=>{const stars=llV2TeamStarsInState(state,name),options=llV2ContextualTeamTargetOptions(state,name,league,stars),choice=options[llV2TeamTierIndex(state,name,league)%options.length];targets[name]={...choice,team:name,league,stars};}));
   return {version:LL_TEAM_TARGET_VERSION,season:state.season,targets,evaluated:false,results:{}};
 }
 function llV2EnsureTeamSeasonTargets(state=lexLeague.state){
@@ -474,7 +507,14 @@ function llOpenPremiumPack(position,source='paid'){
   const pending={season:s.season,source,position,offers:offers.map(card=>card.id),openedAt:new Date().toISOString()};s.pendingPremiumPack=pending;
   s.premiumPackHistory.push({...pending,status:'pending'});lexLeague.shop={mode:'premium',position,offers:[...pending.offers],source};llDiscoverCards(pending.offers);llSave();llRenderShop();
 }
-function llDeferPremiumPack(){lexLeague.shop=null;llSave();llRenderShop();}
+function llDeferPremiumPack(){
+  const s=lexLeague.state;llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack;
+  if(pending){
+    const history=[...s.premiumPackHistory].reverse().find(item=>item.status==='pending'&&Number(item.season)===Number(pending.season)&&item.position===pending.position&&item.offers?.length===pending.offers?.length&&item.offers.every(id=>pending.offers.includes(id)));
+    if(history){history.status='skipped';history.skippedAt=new Date().toISOString();}
+  }
+  s.pendingPremiumPack=null;lexLeague.shop=null;llSave();llRenderShop();
+}
 
 const llV3RepairStateBase=llV2RepairState;
 llV2RepairState=function(state){state=llV3RepairStateBase(state);llV3EnsurePremiumState(state);if(state?.seasonGoals?.evaluated)llV3GrantObjectivePack(state,state.seasonGoals);return state;};
@@ -488,6 +528,8 @@ llRenderShopOffers=function(){
   const sh=lexLeague.shop;if(sh?.mode!=='premium'){llV3RenderShopOffersBase();return;}
   const host=document.getElementById('ll-shop-offers');if(!host)return;
   host.innerHTML=`<div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7)"><div class="ll-card-title">✨ ${LL_POSITION_ICONS[sh.position]} ${sh.position} Elit Rol Paketi</div><div class="ll-notice" style="margin-bottom:12px">İki teklif de en az Destansı seviyededir. Birini seçtiğinde diğer teklif kapanır; sayfayı yenilemek kartları değiştirmez.</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div><button class="ll-btn" style="width:100%;margin-top:12px" onclick="llDeferPremiumPack()">Sonra Seç · Paket Kayıtta Kalsın</button></div>`;
+  const discardButton=host.querySelector('button[onclick="llDeferPremiumPack()"]');
+  if(discardButton){discardButton.classList.add('danger');discardButton.textContent='Paketi Atla · Kartları Alma ve Paketi Sil (İade Yok)';}
 };
 const llV3ChooseShopCardBase=llChooseShopCard;
 llChooseShopCard=function(id){
