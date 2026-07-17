@@ -622,12 +622,13 @@
   .ll-trigger-log-item.player { border-left-color:#4ade80; color:#dcfce7; }
   .ll-trigger-log-item.opponent { border-left-color:#f87171; color:#fee2e2; }
   .ll-card-chain { display:grid; gap:7px; margin-top:10px; }
-  .ll-chain-step { display:grid; grid-template-columns:34px 1fr; gap:9px; align-items:start; padding:9px 10px; border-radius:9px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); }
+  .ll-chain-step { display:grid; grid-template-columns:34px minmax(0,1fr) auto; gap:9px; align-items:center; padding:9px 10px; border-radius:9px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); }
   .ll-chain-step.player { border-left:3px solid #2dd4bf; }
   .ll-chain-step.opponent { border-left:3px solid #fb7185; }
   .ll-chain-step.final { border-color:rgba(201,168,76,.34); background:rgba(201,168,76,.07); }
   .ll-chain-index { width:27px; height:27px; border-radius:50%; display:grid; place-items:center; background:var(--bg4); color:var(--gold2); font-size:10px; font-weight:800; }
   .ll-chain-text { color:var(--text2); font-size:11px; line-height:1.5; }
+  .ll-chain-score { color:#a7f3d0; background:rgba(16,185,129,.10); border:1px solid rgba(52,211,153,.22); border-radius:7px; padding:5px 7px; font-size:10px; font-weight:800; white-space:nowrap; }
   .ll-synergy-strip { margin-top:10px; padding:9px 11px; border-radius:9px; border:1px solid rgba(34,197,94,.30); background:rgba(34,197,94,.08); color:#bbf7d0; font-size:11px; line-height:1.55; }
   .ll-forecast-card { color:var(--text2); font-size:10px; line-height:1.5; padding-top:7px; margin-top:7px; border-top:1px solid rgba(255,255,255,.05); }
   .ll-forecast-card.active { color:#dcfce7; background:rgba(34,197,94,.13); border:1px solid rgba(74,222,128,.42); border-radius:9px; padding:10px; box-shadow:0 0 0 2px rgba(34,197,94,.07),0 7px 20px rgba(22,163,74,.10); }
@@ -708,6 +709,7 @@
     .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}.ll-card-performance-grid{grid-template-columns:repeat(3,minmax(64px,1fr))}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
+    .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
   }
   @media (prefers-reduced-motion:reduce){
@@ -2304,12 +2306,22 @@ function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scor
 function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   // Zarları değerlerine göre değil, sabit mevki sırasına göre eşleştir.
   // Böylece Kaleci daima Kaleciyle, Orta Saha Orta Sahayla ve Forvet Forvetle düello yapar.
-  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[])],nextLocks={a:{},b:{}};
+  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[])],eventScores=(scouting.events||[]).map(()=>null),nextLocks={a:{},b:{}};
   const rawADice=llDeep(aDice),rawBDice=llDeep(bDice);
   const aState=llTeamState(aName),bState=llTeamState(bName);
   const sides={a:{name:aName,dice:aDice,state:aState,home:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:!ctx.aHome,extra:0,shield:0}};
   const disabled={a:new Set(scouting.disabled?.a||[]),b:new Set(scouting.disabled?.b||[])};
-  function log(msg){events.push(msg);}
+  let scoreA=0,scoreB=0,processedPairs=0,extrasCommitted=false;
+  const shieldCommitted={a:false,b:false};
+  function projectedScore(){
+    let a=scoreA,b=scoreB;
+    for(let i=processedPairs;i<3;i++){const left=aDice[i],right=bDice[i];if(left.value>right.value)a++;else if(right.value>left.value)b++;}
+    if(!extrasCommitted){a+=sides.a.extra;b+=sides.b.extra;}
+    if(!shieldCommitted.a&&sides.a.shield)b=Math.max(0,b-sides.a.shield);
+    if(!shieldCommitted.b&&sides.b.shield)a=Math.max(0,a-sides.b.shield);
+    return {scoreA:a,scoreB:b};
+  }
+  function log(msg){events.push(msg);eventScores.push(projectedScore());}
   function activeCard(d,key){return disabled[key].has(d.uid)?null:llCard(d.cardId);}
   function sideHasBase(key,base){return sides[key].dice.some(d=>llBaseName(activeCard(d,key))===base);}
   function applyCombinationCards(me,key,rawDice){
@@ -2368,9 +2380,10 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   applyGlobals(sides.a,sides.b,'a');applyGlobals(sides.b,sides.a,'b');
   const chance={a:scouting.randoms?.a?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)},b:scouting.randoms?.b?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)}};
   chance.a.active=sideHasBase('a','Şans Faktörü')&&chance.a.active;chance.b.active=sideHasBase('b','Şans Faktörü')&&chance.b.active;
-  const pairResults=[];let scoreA=0,scoreB=0;
+  const pairResults=[];
   for(let i=0;i<3;i++){
     const a=aDice[i],b=bDice[i],ca=activeCard(a,'a'),cb=activeCard(b,'b'),ba=llBaseName(ca),bb=llBaseName(cb);
+    const duelEventStart=events.length;
     const rawA=llFindPosition(rawADice,a.position),rawB=llFindPosition(rawBDice,b.position);
     if(ba==='Son Adam'&&llOppTrigger(ca,b.value)){const n=llEffectAmount(ca,1);b.value=Math.max(1,b.value-n);log(`${aName}: Son Adam → rakip zar -${n}.`);}
     if(bb==='Son Adam'&&llOppTrigger(cb,a.value)){const n=llEffectAmount(cb,1);a.value=Math.max(1,a.value-n);log(`${bName}: Son Adam → rakip zar -${n}.`);}
@@ -2434,16 +2447,17 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     if(result==='a'){scoreA+=multA;if(sonPerdeA)log(`${aName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;log(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}}
     if(result==='b'){scoreB+=multB;if(sonPerdeB)log(`${bName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;log(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}}
     pairResults.push({a:a.value,b:b.value,result,aGoals:result==='a'?multA:0,bGoals:result==='b'?multB:0});
+    processedPairs=i+1;for(let eventIndex=duelEventStart;eventIndex<events.length;eventIndex++)eventScores[eventIndex]=projectedScore();
   }
   applyFinalCombinationCards(sides.a,'a');
   applyFinalCombinationCards(sides.b,'b');
   if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı, +${n} sanal gol.`);}
   if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;log(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı, +${n} sanal gol.`);}
-  scoreA+=sides.a.extra;scoreB+=sides.b.extra;
-  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);if(before!==scoreB)log(`${aName}: Kale Duvarı toplam skordan ${before-scoreB} gol sildi.`);}
-  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);if(before!==scoreA)log(`${bName}: Kale Duvarı toplam skordan ${before-scoreA} gol sildi.`);}
+  scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
+  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;if(before!==scoreB)log(`${aName}: Kale Duvarı toplam skordan ${before-scoreB} gol sildi.`);}
+  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;if(before!==scoreA)log(`${bName}: Kale Duvarı toplam skordan ${before-scoreA} gol sildi.`);}
   const triggeredCardIds={a:llResolutionTriggeredCardIds(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionTriggeredCardIds(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
-  return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,nextLocks,disabled,triggeredCardIds};
+  return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds};
 }
 function llBeginMatch(plusPos){
   const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
@@ -2576,8 +2590,10 @@ function llRawScoreFromMatchDice(m){
 }
 function llCardEffectChainHtml(m,resolution=m?.projectedResolution,preview=true){
   if(!m||!resolution)return '';
-  const raw=llRawScoreFromMatchDice(m),events=(resolution.events?.length?resolution.events:(m.scouting?.events||[])).filter(Boolean),steps=[{text:`Ham zar düelloları ${raw.player}-${raw.opponent}.`,cls:''},...events.map(event=>({text:event,cls:event.startsWith(`${m.player}:`)?'player':event.startsWith(`${m.opponent}:`)?'opponent':''})),{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final'}];
-  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zincir yeni zarlarla baştan hesaplanır. “Kart Etkilerini Uygula” dediğinde bu sıra kesinleşir.':'Maç sonucu aşağıdaki neden–sonuç sırasıyla oluştu.'}</div>${events.length?`<div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span></div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`}</div>`;
+  const raw=llRawScoreFromMatchDice(m),sourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),events=sourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text),last={a:raw.player,b:raw.opponent};
+  const eventSteps=events.map(item=>{const score=item.score,same=score&&score.scoreA===last.a&&score.scoreB===last.b,label=score?`${same?'Skor değişmedi':'Ara skor'} ${score.scoreA}-${score.scoreB}`:'';if(score){last.a=score.scoreA;last.b=score.scoreB;}return {text:item.text,cls:item.text.startsWith(`${m.player}:`)?'player':item.text.startsWith(`${m.opponent}:`)?'opponent':'',scoreLabel:label};});
+  const steps=[{text:`Ham zar düelloları ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:`Ham ${raw.player}-${raw.opponent}`},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
+  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zincir ve ara skorlar yeni zarlarla baştan hesaplanır. “Kart Etkilerini Uygula” dediğinde bu sıra kesinleşir.':'Maç sonucu aşağıdaki neden–sonuç sırasıyla oluştu.'}</div>${events.length?`<div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`}</div>`;
 }
 function llTriggeredCardLogHtml(m){
   return llCardEffectChainHtml(m,m?.projectedResolution,true);
