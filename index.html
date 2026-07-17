@@ -2084,7 +2084,7 @@ function llRenderLeagueQuiz(){
   const answer=ref.askTrToEn?word.en:word.tr;
   let example='';
   if(word.example){
-    if(ref.askTrToEn){const rx=new RegExp(escapeRegExp(word.en),'gi');example=word.example.replace(rx,'_____');}
+    if(ref.askTrToEn)example=llMaskAnswerInExample(word.example,word.en);
     else example=word.example;
   }
   const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
@@ -2802,6 +2802,41 @@ function llStartNextSeason(){
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+const LL_EXAMPLE_IRREGULAR_FORMS={
+  be:['am','is','are','was','were','been','being'],come:['came','comes','coming'],get:['got','gets','getting'],fall:['fell','falls','fallen','falling'],go:['went','goes','gone','going'],keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],swing:['swung','swings','swinging'],beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
+};
+function llEnglishWordForms(word){
+  const base=String(word||'').toLowerCase(),forms=new Set([base]);if(!base)return [];
+  (LL_EXAMPLE_IRREGULAR_FORMS[base]||[]).forEach(form=>forms.add(form));
+  if(/[^aeiou]y$/.test(base)){forms.add(base.slice(0,-1)+'ies');forms.add(base.slice(0,-1)+'ied');forms.add(base.slice(0,-1)+'ying');}
+  else{
+    forms.add(base+(/(?:s|x|z|ch|sh|o)$/.test(base)?'es':'s'));
+    if(/e$/.test(base)){forms.add(base+'d');forms.add(base.slice(0,-1)+'ing');}
+    else{
+      const doubled=base.length<=5&&/[^aeiou][aeiou][^aeiouwxy]$/.test(base)?base+base.slice(-1):base;
+      forms.add(doubled+'ed');forms.add(doubled+'ing');
+    }
+  }
+  return [...forms].filter(Boolean).sort((a,b)=>b.length-a.length);
+}
+function llExampleAnswerCandidates(answer){
+  return String(answer||'').split(/\s*\/\s*/).map(part=>part.replace(/\([^)]*\)/g,' ').replace(/^to\s+/i,'').replace(/\b(?:someone|somebody|something)\b\s*$/i,'').replace(/\s+/g,' ').trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
+}
+function llExampleAnswerPattern(candidate){
+  const phrase=String(candidate||'').toLowerCase().trim();if(!phrase)return '';
+  if(phrase==='whether or')return '\\bwhether\\b[^.!?]{0,45}?\\bor\\b';
+  const tokens=phrase.split(/\s+/).filter(Boolean);if(!tokens.length)return '';
+  const first=llEnglishWordForms(tokens.shift()).map(escapeRegExp).join('|'),rest=tokens.map(escapeRegExp).join('\\s+');
+  return '\\b(?:'+first+')'+(rest?'\\s+'+rest:'')+'\\b';
+}
+function llMaskAnswerInExample(example,answer){
+  let output=String(example||''),masked=false;
+  llExampleAnswerCandidates(answer).forEach(candidate=>{
+    const pattern=llExampleAnswerPattern(candidate);if(!pattern)return;
+    output=output.replace(new RegExp(pattern,'gi'),()=>{masked=true;return '_____';});
+  });
+  return masked?output:'';
+}
 
 let llExampleSerial = 0;
 function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
@@ -3395,8 +3430,8 @@ function showNextDiceCupRerollWord() {
   let example = '';
   if (card.example) {
     if (askTrToEn) {
-      const regex = new RegExp(escapeRegExp(card.en), 'gi');
-      example = llExampleSentenceHtml(card,card.example.replace(regex, '_____'),`cup-reroll-${diceCup.rerollIndex}-${card.id}`);
+      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
+      example=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`cup-reroll-${diceCup.rerollIndex}-${card.id}`):'';
     } else {
       example = llExampleSentenceHtml(card,card.example,`cup-reroll-${diceCup.rerollIndex}-${card.id}`);
     }
@@ -3960,8 +3995,8 @@ function showNextDiceUclRerollWord() {
   let example = '';
   if (card.example) {
     if (askTrToEn) {
-      const regex = new RegExp(escapeRegExp(card.en), 'gi');
-      example = llExampleSentenceHtml(card,card.example.replace(regex, '_____'),`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`);
+      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
+      example=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`):'';
     } else example = llExampleSentenceHtml(card,card.example,`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`);
   }
   const selectedValue = diceUcl.playerDice[diceUcl.selectedRerollIndex];
@@ -4626,9 +4661,8 @@ function showNextFlashcard() {
   
   if (card.example) {
     if (askTurkishToEnglish) {
-      const regex = new RegExp(escapeRegExp(card.en), "gi");
-      let hiddenExample = card.example.replace(regex, "_____");
-      exampleDisplay = llExampleSentenceHtml(card,hiddenExample,`flashcard-${fcIndex}-${card.id}`);
+      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
+      exampleDisplay=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`flashcard-${fcIndex}-${card.id}`):'';
     } else {
       exampleDisplay = llExampleSentenceHtml(card,card.example,`flashcard-${fcIndex}-${card.id}`);
     }
