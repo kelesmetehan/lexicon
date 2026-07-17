@@ -568,6 +568,8 @@
   .ll-progress > div { height:100%; background:linear-gradient(90deg,#0e7490,#2dd4bf); transition:width .25s; }
   .ll-question { min-height:240px; display:grid; place-items:center; text-align:center; padding:34px; border-radius:15px; background:var(--bg3); border:1px solid rgba(94,234,212,.16); cursor:pointer; }
   .ll-question-word { font-family:'Cormorant Garamond',serif; font-size:44px; line-height:1.15; }
+  .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
+  .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
   .ll-answer { color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:35px; border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; }
   .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
   .ll-battle { display:grid; grid-template-columns:1fr 100px 1fr; gap:12px; align-items:center; }
@@ -2089,6 +2091,7 @@ function llRenderLeagueQuiz(){
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
+  markNewWordFrame(word,llArea().querySelector('.ll-question'));
 }
 function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
 function llSkipLeagueQuiz(){
@@ -2824,6 +2827,7 @@ function loadUserWords() {
     return allWords.filter(w => w.source === 'user');
   } catch (e) { return []; }
 }
+function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);}
 
 function saveWordsToStorage(updatedWords) {
   try {
@@ -4621,6 +4625,7 @@ function showNextFlashcard() {
       <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
     </div>
   `;
+  markNewWordFrame(card,document.getElementById('fc-inner'));
 }
 
 function revealFlashcard() {
