@@ -527,6 +527,7 @@
   .ll-die-mini.star3 { background:#4ade80; }
   .ll-die-mini.star4 { background:#38bdf8; }
   .ll-die-mini.star5 { background:#c084fc; }
+  .ll-die-mini.star6 { background:linear-gradient(135deg,#fde047,#f97316);box-shadow:inset 0 -3px 6px rgba(0,0,0,.25),0 0 12px rgba(250,204,21,.35); }
   .ll-ability { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); border-radius:9px; padding:9px; cursor:pointer; width:100%; color:var(--text2); text-align:left; font:500 11px 'DM Sans'; line-height:1.4; }
   .ll-ability.empty { cursor:default; color:var(--text3); border-style:dashed; }
   .ll-ability.common { border-color:rgba(156,163,175,.35); }
@@ -583,6 +584,7 @@
   .ll-die.star3 { background:#4ade80; }
   .ll-die.star4 { background:#38bdf8; }
   .ll-die.star5 { background:#c084fc; }
+  .ll-die.star6 { background:linear-gradient(135deg,#fde047,#f97316);box-shadow:inset 0 -5px 10px rgba(0,0,0,.2),0 0 18px rgba(250,204,21,.35); }
   .ll-die.rolling { color:#111827; outline:3px solid rgba(255,255,255,.48); animation:diceReadableRoll .72s cubic-bezier(.22,.72,.28,1) both; animation-delay:var(--dice-delay,0ms); }
   .ll-die.landed { animation:diceLandThud .22s ease-out both; animation-delay:var(--dice-delay,0ms); }
   .ll-die-info { min-width:0; }
@@ -2020,7 +2022,7 @@ function llRenderDashboard(){
   const team=llTeamState(s.playerTeam),def=llTeamDef(s.playerTeam),fixture=llPlayerFixture();
   const opponentName=fixture.home===s.playerTeam?fixture.away:fixture.home;
   const opp=llTeamState(opponentName),oppDef=llTeamDef(opponentName),isHome=fixture.home===s.playerTeam;
-  const upgradeCost=({1:800,2:1400,3:2300,4:3500})[team.stars]||null;
+  const upgradeCost=({1:800,2:1400,3:2300,4:3500,5:5000})[team.stars]||null;
   const transferOpen=[10,20,30].includes(s.week);
   const recent=s.results.slice(-5).reverse();
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel">
@@ -2029,7 +2031,7 @@ function llRenderDashboard(){
     <div class="ll-grid"><div><div class="ll-card"><div class="ll-card-title">Sıradaki Maç</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b><div class="ll-stars">${llStars(team.stars)}</div></div><div class="ll-vs">${isHome?'EV':'DEP'}<br>VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(opponentName)}</b><div class="ll-stars">${llStars(opp.stars)}</div>${llOpponentIcons(opponentName)}</div></div>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="ll-btn primary" onclick="llStartMatchPreparation()">10 Kelimelik Maça Başla</button>${transferOpen?`<button class="ll-btn gold" onclick="llRenderShop()">🛒 ${s.week}. Hafta Transfer Merkezi</button>`:''}</div></div>
       <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>
-      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px">${upgradeCost?`<button class="ll-btn" onclick="llUpgradeStars()">Yıldızı Yükselt · ${upgradeCost} LP</button><span class="ll-muted">${team.stars}★ → ${team.stars+1}★</span>`:`<span class="ll-notice">Takım maksimum 5 yıldıza ulaştı.</span>`}</div></div></div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px">${upgradeCost?`<button class="ll-btn" onclick="llUpgradeStars()">Yıldızı Yükselt · ${upgradeCost} LP</button><span class="ll-muted">${team.stars}★ → ${team.stars+1}★</span>`:`<span class="ll-notice">Takım maksimum 6 yıldıza ulaştı.</span>`}</div></div></div>
       <div><div class="ll-card"><div class="ll-card-title">Son Sonuçlar</div>${recent.length?`<div class="ll-result-list">${recent.map(r=>`<div class="ll-result-row"><span>${llEscape(r.home)}</span><b>${r.homeGoals}-${r.awayGoals}</b><span>${llEscape(r.away)}</span></div>`).join('')}</div>`:`<div class="ll-muted">Henüz maç oynanmadı.</div>`}</div>
       <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Ekonomi</div><div class="ll-sub">Doğru kelime: <b>5 AP</b><br>Galibiyet: <b>50 LP</b><br>Beraberlik: <b>20 LP</b><br>Mağlubiyet: <b>5 LP</b><br>10/10: ayrıca <b>10 LP + maçlık +1</b><br>9/10: <b>1 reroll</b></div></div></div></div>
   </div></div>`;
@@ -4788,7 +4790,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260718-2"></script>
-<script src="manager-market.js?v=20260718-1"></script>
+<script src="league-v2.js?v=20260718-3"></script>
+<script src="manager-market.js?v=20260718-2"></script>
 </body>
 </html>
