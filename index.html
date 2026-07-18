@@ -50,6 +50,38 @@
     z-index: 9999;
     opacity: 0.4;
   }
+  body.ll-euro-match-day {
+    --ll-euro-accent:#93c5fd;
+    --ll-euro-border:rgba(96,165,250,.46);
+    background-color:var(--bg);
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    transition:background-color .28s ease;
+  }
+  body.ll-euro-match-ucl {
+    --ll-euro-accent:#bfdbfe;
+    --ll-euro-border:rgba(96,165,250,.52);
+    background-image:linear-gradient(180deg,rgba(3,7,44,.16) 0,rgba(8,12,24,.82) 42vh,var(--bg) 92vh),url("assets/europe-match-themes/champions-league.png");
+    background-size:cover,100% auto;
+    background-position:center,center top;
+  }
+  body.ll-euro-match-uel {
+    --ll-euro-accent:#fb923c;
+    --ll-euro-border:rgba(249,115,22,.52);
+    background-image:linear-gradient(180deg,rgba(0,0,0,.26),rgba(9,12,19,.86) 72vh,var(--bg)),url("assets/europe-match-themes/europa-league.png");
+    background-size:cover,cover;
+    background-position:center,center;
+  }
+  body.ll-euro-match-uecl {
+    --ll-euro-accent:#4ade80;
+    --ll-euro-border:rgba(74,222,128,.48);
+    background-image:linear-gradient(180deg,rgba(0,0,0,.24),rgba(9,12,19,.86) 72vh,var(--bg)),url("assets/europe-match-themes/conference-league.png");
+    background-size:cover,cover;
+    background-position:center,center;
+  }
+  body.ll-euro-match-day .ll-panel { background:rgba(10,14,23,.90); border-color:var(--ll-euro-border); backdrop-filter:blur(10px); }
+  body.ll-euro-match-day .ll-title em,
+  body.ll-euro-match-day .ll-card-title { color:var(--ll-euro-accent); }
 
   .container {
     width: 100%;
@@ -723,6 +755,7 @@
     .ll-question{padding:26px 16px}.ll-modal{padding:10px}.ll-modal-card{padding:16px}.ll-upgrade-compare{grid-template-columns:1fr}
     .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
+    body.ll-euro-match-ucl{background-size:cover,auto 230px;background-position:center,left top}
   }
   @media (prefers-reduced-motion:reduce){
     .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
@@ -1878,6 +1911,24 @@ function llPronounceButton(text,compact=false){
 function llSetWide(on=true){
   const container=document.querySelector('.container');
   if(container) container.classList.toggle('league-wide',on);
+}
+const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl'];
+function llSetEuropeMatchTheme(competition=null){
+  if(typeof document==='undefined'||!document.body)return;
+  document.body.classList.remove(...LL_EURO_MATCH_THEME_CLASSES);
+  if(!['ucl','uel','uecl'].includes(competition))return;
+  document.body.classList.add('ll-euro-match-day','ll-euro-match-'+competition);
+}
+function llSyncEuropeMatchTheme(){
+  const host=typeof llArea==='function'?llArea():null;
+  const matchCompetition=lexLeague?.match?.fixture?.competition;
+  const fixtureCompetition=typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null;
+  const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
+  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
+}
+if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
+  const llEuropeThemeHost=document.getElementById('flashcard-area');
+  if(llEuropeThemeHost)new MutationObserver(()=>llSyncEuropeMatchTheme()).observe(llEuropeThemeHost,{childList:true});
 }
 function llArea(){ return document.getElementById('flashcard-area'); }
 function llTeamDef(name){ return LL_TEAMS.find(t=>t.name===name); }
