@@ -2359,7 +2359,10 @@ function llCardGoalAmount(card){const m=card?.effect.match(/\+(\d+)\s+(?:ekstra\
 function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scoreAgainst){
   const triggered=new Set();
   side.dice.forEach(die=>{
-    const card=disabled.has(die.uid)?null:llCard(die.cardId);if(!card)return;const base=llBaseName(card),prefix=`${side.name}: ${base}`;
+    const equipped=llCard(die.cardId),equippedBase=llBaseName(equipped);
+    // Scouting plans are simultaneous; an executed scout still receives credit.
+    const card=disabled.has(die.uid)&&equippedBase!=='Sahayı Oku'?null:equipped;
+    if(!card)return;const base=llBaseName(card),prefix=`${side.name}: ${base}`;
     const rawDie=llFindPosition(rawDice,die.position),logged=events.some(event=>(event.startsWith(`${prefix} →`)||event.startsWith(`${prefix} (`))&&!/bulunamadı|sağlanmadı|tetiklenmedi/i.test(event));
     const passive=['Metronom','Reflex'].includes(base)||(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(side.dice,die))||(base==='Yıldız Oyuncu'&&(side.state?.stars||0)>=3)||(base==='Yedek Kulübesi'&&scoreFor<scoreAgainst)||(base==='Form Tutmuyor'&&(side.state?.sixStreaks?.[die.position]||0)>=2&&rawDie?.value===6);
     if(logged||passive)triggered.add(card.id);
@@ -2412,9 +2415,15 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       }
     });
   }
-  function applyGlobals(me,opp,key){
+  const globalPhaseCards={
+    self:new Set(['Ev Sahibi Avantajı','Kaptanlık Pazubandı','Uzun Top','Pas Ustası']),
+    opponent:new Set(['Deplasman Ruhu','Deplasman Disiplini','Dev Avcısı','Kalenin Efendisi','Moral Bozukluğu','Kilitleme','Ofsayt Tuzağı']),
+    post:new Set(['Sakatlık Şansı'])
+  };
+  function applyGlobals(me,opp,key,phase){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c);if(!c)return;
+      if(!globalPhaseCards[phase]?.has(base))return;
       if(base==='Ev Sahibi Avantajı'&&me.home){const low=llLowestDie(me.dice);low.value+=1;log(`${me.name}: Ev Sahibi Avantajı → en düşük ${low.position} zarı +1.`);}
       const preparedCaptain=scouting.randoms?.[key]?.captain?.[d.uid],captainActive=typeof preparedCaptain==='boolean'?preparedCaptain:Math.random()<.5;
       if(base==='Kaptanlık Pazubandı'&&captainActive){const low=llLowestDie(me.dice);low.value+=1;log(`${me.name}: Kaptanlık Pazubandı → en düşük ${low.position} zarı +1.`);}
@@ -2454,7 +2463,9 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   }
 
   applyCombinationCards(sides.a,'a',rawADice);applyCombinationCards(sides.b,'b',rawBDice);
-  applyGlobals(sides.a,sides.b,'a');applyGlobals(sides.b,sides.a,'b');
+  applyGlobals(sides.a,sides.b,'a','self');applyGlobals(sides.b,sides.a,'b','self');
+  applyGlobals(sides.a,sides.b,'a','opponent');applyGlobals(sides.b,sides.a,'b','opponent');
+  applyGlobals(sides.a,sides.b,'a','post');applyGlobals(sides.b,sides.a,'b','post');
   const chance={a:scouting.randoms?.a?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)},b:scouting.randoms?.b?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)}};
   chance.a.active=sideHasBase('a','Şans Faktörü')&&chance.a.active;chance.b.active=sideHasBase('b','Şans Faktörü')&&chance.b.active;
   const pairResults=[];
