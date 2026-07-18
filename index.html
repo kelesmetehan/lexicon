@@ -61,27 +61,30 @@
   body.ll-euro-match-ucl {
     --ll-euro-accent:#bfdbfe;
     --ll-euro-border:rgba(96,165,250,.52);
-    background-image:linear-gradient(180deg,rgba(3,7,44,.16) 0,rgba(8,12,24,.82) 42vh,var(--bg) 92vh),url("assets/europe-match-themes/champions-league.png");
-    background-size:cover,100% auto;
-    background-position:center,center top;
+    background-image:linear-gradient(180deg,rgba(3,7,44,.10),rgba(8,12,24,.72) 74vh,var(--bg) 120vh),url("assets/europe-match-themes/champions-league-desktop-v2.png");
+    background-size:cover,cover;
+    background-position:center,center;
   }
   body.ll-euro-match-uel {
     --ll-euro-accent:#fb923c;
     --ll-euro-border:rgba(249,115,22,.52);
-    background-image:linear-gradient(180deg,rgba(0,0,0,.26),rgba(9,12,19,.86) 72vh,var(--bg)),url("assets/europe-match-themes/europa-league.png");
+    background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(9,12,19,.76) 78vh,var(--bg) 125vh),url("assets/europe-match-themes/europa-league-desktop-v2.png");
     background-size:cover,cover;
     background-position:center,center;
   }
   body.ll-euro-match-uecl {
     --ll-euro-accent:#4ade80;
     --ll-euro-border:rgba(74,222,128,.48);
-    background-image:linear-gradient(180deg,rgba(0,0,0,.24),rgba(9,12,19,.86) 72vh,var(--bg)),url("assets/europe-match-themes/conference-league.png");
+    background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(9,12,19,.76) 78vh,var(--bg) 125vh),url("assets/europe-match-themes/conference-league-desktop-v2.png");
     background-size:cover,cover;
     background-position:center,center;
   }
   body.ll-euro-match-day .ll-panel { background:rgba(10,14,23,.90); border-color:var(--ll-euro-border); backdrop-filter:blur(10px); }
   body.ll-euro-match-day .ll-title em,
   body.ll-euro-match-day .ll-card-title { color:var(--ll-euro-accent); }
+  @media (min-width:1200px) {
+    body.ll-euro-match-day .ll-quiz-card { max-width:880px; }
+  }
 
   .container {
     width: 100%;
@@ -755,7 +758,10 @@
     .ll-question{padding:26px 16px}.ll-modal{padding:10px}.ll-modal-card{padding:16px}.ll-upgrade-compare{grid-template-columns:1fr}
     .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
-    body.ll-euro-match-ucl{background-size:cover,auto 230px;background-position:center,left top}
+    body.ll-euro-match-day{background-attachment:scroll;background-size:cover,cover;background-position:center top,center top}
+    body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
+    body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
+    body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
   }
   @media (prefers-reduced-motion:reduce){
     .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
