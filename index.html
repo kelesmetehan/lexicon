@@ -2372,7 +2372,7 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Frikik Ustası'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Frikik Ustası → +${n} kart golü.`);}
       if(base==='Hat-trick Ruhu'){const form=llHatTrickForm(me.name,c);if(form.active){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Hat-trick Ruhu → son ${form.windowSize} resmi maçta ${form.wins} galibiyet, +${n} kart golü.`);}}
       if(base==='Bitiricilik'){const need=llThreshold(c.trigger,99);if(llSum(me.dice)>=need){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Bitiricilik → +${n} kart golü.`);}}
-      if(base==='Kale Duvarı'){const need=llThreshold(c.trigger,99);if(llSum(opp.dice)>=need){const m=c.effect.match(/(\d+)\s+sanal gol elenir/i);me.shield+=m?Number(m[1]):1;log(`${me.name}: Kale Duvarı → ${me.shield} gole kadar koruma.`);}}
+      if(base==='Kale Duvarı'){const need=llThreshold(c.trigger,99);if(llSum(opp.dice)>=need){const m=c.effect.match(/(\d+)\s+sanal gol elenir/i);me.shield+=m?Number(m[1]):1;}}
       if(base==='Sakatlık Şansı')opp.dice.filter(x=>x.value===1).forEach(x=>{nextLocks[key==='a'?'b':'a'][x.position]=1;log(`${me.name}: Sakatlık Şansı → rakibin ${x.position} zarı gelecek maça 1 kilitlendi.`);});
     });
   }
@@ -2454,8 +2454,8 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı, +${n} sanal gol.`);}
   if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;log(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı, +${n} sanal gol.`);}
   scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
-  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;if(before!==scoreB)log(`${aName}: Kale Duvarı toplam skordan ${before-scoreB} gol sildi.`);}
-  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;if(before!==scoreA)log(`${bName}: Kale Duvarı toplam skordan ${before-scoreA} gol sildi.`);}
+  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
+  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
   const triggeredCardIds={a:llResolutionTriggeredCardIds(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionTriggeredCardIds(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
   return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds};
 }
