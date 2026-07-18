@@ -685,11 +685,11 @@ function llApplyLocks(resolution,aName,bName){Object.assign(llTeamState(aName).l
 const llV4CardHtmlBase=llCardHtml;
 llCardHtml=function(cardId,teamName,emptyText='Kart yok'){let html=llV4CardHtmlBase(cardId,teamName,emptyText),team=llTeamState(teamName);if(!cardId||!team)return html;const pos=LL_POSITIONS.find(position=>team.cards?.[position]===cardId);if(!pos)return html;llEnsureTeamContracts(team);const contract=team.cardContracts[pos],expired=!llCardContractSlotActive(team,pos),text=expired?'⛔ Sözleşme bitti · Kart etkisiz':`⌛ ${contract.remaining}/${contract.total} maç hakkı`;if(expired)html=html.replace('class="ll-ability ','class="ll-ability ll-contract-expired ').replace('<button ','<button style="opacity:.58;filter:saturate(.45)" ');return html.replace('</button>',`<span style="display:block;margin-top:7px;font-size:11px;font-weight:800;color:${expired?'#fb7185':contract.remaining<=3?'#facc15':'#67e8f9'}">${text}</span></button>`);};
 function llContractPopupHtml(teamName,cardId){const team=llTeamState(teamName),pos=LL_POSITIONS.find(position=>team?.cards?.[position]===cardId);if(!team||!pos)return '';llEnsureTeamContracts(team);const contract=team.cardContracts[pos],rule=llCardContractRule(cardId),expired=contract.remaining<=0;return `<div class="ll-notice" style="margin-top:10px;border-color:${expired?'rgba(244,63,94,.6)':'rgba(34,211,238,.35)'}"><b>${expired?'⛔ Sözleşme bitti':'⌛ Kart sözleşmesi'}</b><br>${contract.remaining}/${contract.total} resmi maç hakkı kaldı · Yenileme ${rule.renewLp} LP${expired?'<br>Bu kart slotta görünür ancak zar ve kart etkilerinde yok sayılır.':''}</div>`;}
-function llShowCardPopup(cardId,teamName=''){const card=llCard(cardId);if(!card)return;const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;llShowModal(`<div class="ll-rarity">${LL_RARITY_LABELS[card.rarity]}</div><div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(card.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(card.position)} · Min ${card.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(card.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(card))}<br><b>Efekt:</b> ${llEscape(card.effect)}</div>${teamName?llContractPopupHtml(teamName,card.id):''}${showPerformance?llCardPerformanceHtml(card.id):''}`);}
+function llShowCardPopup(cardId,teamName=''){const card=llCard(cardId);if(!card)return;const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;llShowModal(`<div class="ll-rarity">${llRarityLabel(card)}</div>${llCardUpgradeBadgeHtml(card)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(card.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(card.position)} · Min ${card.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(card.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(card))}<br><b>Efekt:</b> ${llEscape(card.effect)}</div>${teamName?llContractPopupHtml(teamName,card.id):''}${showPerformance?llCardPerformanceHtml(card.id):''}`);}
 function llOpponentIcons(teamName){const team=llTeamState(teamName);llEnsureTeamContracts(team);return `<div class="ll-card-icons">${LL_POSITIONS.map(pos=>{const id=team.cards[pos],card=llCard(id),active=llCardContractSlotActive(team,pos),title=active?pos:`${pos} · Sözleşmesi bitti`;return `<button class="ll-icon-btn" title="${llEscape(title)}" style="${card&&!active?'opacity:.45;border-color:#fb7185':''}" onclick="${id?`llShowCardPopup('${id}','${llEscape(teamName)}')`:`llShowEmptyCard('${llEscape(teamName)}','${llEscape(pos)}')`}">${card?(active?LL_POSITION_ICONS[pos]:'⏳'):'·'}</button>`;}).join('')}</div>`;}
 function llRenewPlayerContract(pos){const state=lexLeague.state;if(!llIsTransferWindow(state.week)){alert('Kart sözleşmesi yalnızca transfer döneminde yenilenebilir.');return;}const team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);const card=llCard(team.cards[pos]),contract=team.cardContracts[pos];if(!card||!contract)return;if(contract.remaining>10){alert('Yenileme, son 10 maç hakkına girince açılır.');return;}const rule=llCardContractRule(card);if(state.lp<rule.renewLp){alert(`Yetersiz LP. Gerekli: ${rule.renewLp} LP`);return;}if(!confirm(`${card.name} sözleşmesi ${rule.renewLp} LP karşılığında ${rule.matches} maça yenilensin mi?`))return;state.lp-=rule.renewLp;llResetCardContract(team,pos,card.id);llSave();llRenderShop();}
 function llReleaseExpiredCard(pos){const state=lexLeague.state;if(!llIsTransferWindow(state.week))return;const team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);const contract=team.cardContracts[pos];if(!team.cards[pos]||!contract||contract.remaining>0)return;if(!confirm('Sözleşmesi biten kart slotundan çıkarılsın mı? Kart arşivinde kalmaya devam eder.'))return;team.cards[pos]=null;delete team.cardContracts[pos];llSave();llRenderShop();}
-function llContractShopHtml(){const state=lexLeague.state,team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);return `<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">📑 Kart Sözleşmeleri · LP: ${state.lp}</div><div class="ll-sub" style="margin-bottom:12px">Kart, takılı olduğu her resmi maçta 1 kullanım harcar; tetiklenmesi gerekmez. Süresi biten kart slotta görünür fakat etkisizdir ve takım 2/3 aktif kartlı sayılır.</div><div class="ll-shop-grid">${LL_POSITIONS.map(pos=>{const card=llCard(team.cards[pos]);if(!card)return `<div class="ll-card"><b>${LL_POSITION_ICONS[pos]} ${pos}</b><div class="ll-muted" style="margin-top:9px">Boş slot</div></div>`;const contract=team.cardContracts[pos],rule=llCardContractRule(card),expired=contract.remaining<=0,canRenew=contract.remaining<=10;return `<div class="ll-card" style="${expired?'border-color:rgba(244,63,94,.65)':''}"><b>${LL_POSITION_ICONS[pos]} ${llEscape(card.name)}</b><div class="ll-muted" style="margin:7px 0">${LL_RARITY_LABELS[card.rarity]} · ${contract.remaining}/${contract.total} maç</div><div class="ll-sub">${expired?'Sözleşme bitti; kart şu anda etkisiz.':canRenew?'Yenileme penceresi açık.':'10 maç hakkına girince yenilenebilir.'}</div><div class="ll-actions" style="margin-top:10px"><button class="ll-btn ${expired?'danger':''}" ${canRenew?'':'disabled'} onclick="llRenewPlayerContract('${pos}')">${rule.renewLp} LP ile Yenile</button>${expired?`<button class="ll-btn" onclick="llReleaseExpiredCard('${pos}')">Slottan Çıkar</button>`:''}</div></div>`;}).join('')}</div><div class="ll-muted" style="margin-top:10px">Süre / yenileme: Yaygın 18 maç / 40 LP · Nadir 16 / 60 · Destansı 14 / 90 · Efsanevi 12 / 130.</div></div>`;}
+function llContractShopHtml(){const state=lexLeague.state,team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);return `<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">📑 Kart Sözleşmeleri · LP: ${state.lp}</div><div class="ll-sub" style="margin-bottom:12px">Kart, takılı olduğu her resmi maçta 1 kullanım harcar; tetiklenmesi gerekmez. Süresi biten kart slotta görünür fakat etkisizdir ve takım 2/3 aktif kartlı sayılır.</div><div class="ll-shop-grid">${LL_POSITIONS.map(pos=>{const card=llCard(team.cards[pos]);if(!card)return `<div class="ll-card"><b>${LL_POSITION_ICONS[pos]} ${pos}</b><div class="ll-muted" style="margin-top:9px">Boş slot</div></div>`;const contract=team.cardContracts[pos],rule=llCardContractRule(card),expired=contract.remaining<=0,canRenew=contract.remaining<=10;return `<div class="ll-card" style="${expired?'border-color:rgba(244,63,94,.65)':''}"><b>${LL_POSITION_ICONS[pos]} ${llEscape(card.name)}</b>${llCardUpgradeBadgeHtml(card)}<div class="ll-muted" style="margin:7px 0">${llRarityLabel(card)} · ${contract.remaining}/${contract.total} maç</div><div class="ll-sub">${expired?'Sözleşme bitti; kart şu anda etkisiz.':canRenew?'Yenileme penceresi açık.':'10 maç hakkına girince yenilenebilir.'}</div><div class="ll-actions" style="margin-top:10px"><button class="ll-btn ${expired?'danger':''}" ${canRenew?'':'disabled'} onclick="llRenewPlayerContract('${pos}')">${rule.renewLp} LP ile Yenile</button>${expired?`<button class="ll-btn" onclick="llReleaseExpiredCard('${pos}')">Slottan Çıkar</button>`:''}</div></div>`;}).join('')}</div><div class="ll-muted" style="margin-top:10px">Süre / yenileme: Yaygın 18 maç / 40 LP · Nadir 16 / 60 · Destansı 14 / 90 · Efsanevi 12 / 130.</div></div>`;}
 const llV4RenderShopBase=llRenderShop;
 llRenderShop=function(){llV4RenderShopBase();const host=document.getElementById('ll-shop-offers');if(host&&!document.getElementById('ll-contract-shop'))host.insertAdjacentHTML('beforebegin',`<div id="ll-contract-shop">${llContractShopHtml()}</div>`);};
 /* TFF 1. Lig career-loss boundary and visible relegation zone. */
@@ -776,7 +776,7 @@ const LL_CARD_UPGRADE_SYSTEM_VERSION=1;
 const LL_CARD_UPGRADE_LIMIT=2;
 const LL_CARD_UPGRADE_COSTS={common:120,rare:220};
 const LL_CARD_UPGRADE_MAP=Object.fromEntries(LL_CARD_UPGRADE_DEFINITIONS.map(item=>[item.from,item.card.id]));
-function llRarityLabel(card){return `${LL_RARITY_LABELS[card?.rarity]||card?.rarity||''}${card?.upgradeLevel?'+':''}`;}
+function llRarityLabel(card){return llCardDisplayRarity(card);}
 function llEnsureUpgradeState(team,state=lexLeague.state){
   if(!team)return team;if(Number(team.cardUpgradeSeason)!==Number(state?.season)){team.cardUpgradeSeason=Number(state?.season)||1;team.cardUpgradesUsed=0;}
   team.cardUpgradesUsed=Math.max(0,Math.min(LL_CARD_UPGRADE_LIMIT,Number(team.cardUpgradesUsed)||0));return team;
@@ -824,3 +824,70 @@ function llApplyLocks(resolution,aName,bName){
     const chancePos=LL_POSITIONS.find(pos=>llCard(llActiveCardId(name,pos))?.upgradeRule==='chance-pity'),chance=chancePos?llCard(llActiveCardId(name,chancePos)):null;if(chance)team.chanceMisses=triggered.includes(chance.id)?0:Math.min(4,team.chanceMisses+1);
   });llUseTeamCardContracts(llTeamState(aName));llUseTeamCardContracts(llTeamState(bName));
 }
+/* Card upgrades V8: consistent labels, safe downgrade and recoverable base cards. */
+const LL_CARD_UPGRADE_RELEASE_VERSION=1;
+function llPrepareUpgradeReleaseTeam(team){
+  if(!team)return team;
+  if(!Array.isArray(team.releasedBaseCards))team.releasedBaseCards=[];
+  team.releasedBaseCards=[...new Set(team.releasedBaseCards.filter(id=>{const card=llCard(id);return card&&!card.upgradeLevel&&!card.upgradeOnly;}))];
+  const owned=[...Object.values(team.cards||{}),...(team.reserveCards||[]),...Object.values(team.clubCards||{})].map(llCard).filter(Boolean),ownedFamilies=new Set(owned.map(llCardFamilyName));
+  team.releasedBaseCards=team.releasedBaseCards.filter(id=>!ownedFamilies.has(llCardFamilyName(llCard(id))));
+  const releasedFamilies=new Set(team.releasedBaseCards.map(id=>llCardFamilyName(llCard(id))).filter(Boolean));
+  if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];
+  team.usedCardFamilies=team.usedCardFamilies.filter(family=>!releasedFamilies.has(family)||ownedFamilies.has(family));
+  return team;
+}
+function llReleaseCardToMarket(team,cardOrId){
+  const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId,marketCard=card?.upgradeLevel&&card?.upgradeFrom?llCard(card.upgradeFrom):card;
+  if(!team||!marketCard||marketCard.clubCard||marketCard.upgradeOnly)return null;
+  llPrepareUpgradeReleaseTeam(team);
+  if(!team.releasedBaseCards.includes(marketCard.id))team.releasedBaseCards.push(marketCard.id);
+  const family=llCardFamilyName(marketCard),stillOwned=[...Object.values(team.cards||{}),...(team.reserveCards||[]),...Object.values(team.clubCards||{})].map(llCard).filter(Boolean).some(item=>llCardFamilyName(item)===family);
+  if(!stillOwned)team.usedCardFamilies=team.usedCardFamilies.filter(item=>item!==family);
+  return marketCard.id;
+}
+function llReleaseUpgradedCardToMarket(team,cardOrId){
+  const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId;
+  return card?.upgradeLevel?llReleaseCardToMarket(team,card):null;
+}
+function llConsumeReleasedBase(team,cardId){
+  if(!team||!Array.isArray(team.releasedBaseCards))return;
+  team.releasedBaseCards=team.releasedBaseCards.filter(id=>id!==cardId);
+}
+const llV8RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){state=llV8RepairStateBase(state);Object.values(state?.teams||{}).forEach(llPrepareUpgradeReleaseTeam);if(state)state.cardUpgradeReleaseVersion=LL_CARD_UPGRADE_RELEASE_VERSION;return state;};
+const llV8EligibleCardsBase=llEligibleCards;
+llEligibleCards=function(teamName,pos){
+  const team=llTeamState(teamName);llPrepareUpgradeReleaseTeam(team);const released=(team?.releasedBaseCards||[]).map(llCard).filter(Boolean),releasedByFamily=new Map(released.map(card=>[llCardFamilyName(card),card.id]));
+  return llV8EligibleCardsBase(teamName,pos).filter(card=>{const required=releasedByFamily.get(llCardFamilyName(card));return !required||card.id===required;});
+};
+const llV8ChooseShopCardBase=llChooseShopCard;
+llChooseShopCard=function(id){
+  const sh=lexLeague.shop,newCard=llCard(id),team=llTeamState(lexLeague.state?.playerTeam),pos=sh?.position,oldCard=pos?llCard(team?.cards?.[pos]):null;
+  if(oldCard?.upgradeLevel&&!newCard?.clubCard&&oldCard.id!==id&&!confirm('Bu kart ayrılırsa geliştirmesi kalıcı olarak kaybolacak. Temel sürümü daha sonra transfer kasalarında yeniden bulunabilir. Devam edilsin mi?'))return false;
+  llV8ChooseShopCardBase(id);
+  if(pos&&team?.cards?.[pos]===id){if(oldCard&&oldCard.id!==id)llReleaseCardToMarket(team,oldCard);llConsumeReleasedBase(team,id);llSave();}
+  return true;
+};
+const llV8ReleaseExpiredCardBase=llReleaseExpiredCard;
+llReleaseExpiredCard=function(pos){
+  const state=lexLeague.state,team=llTeamState(state?.playerTeam),card=llCard(team?.cards?.[pos]),contract=team?.cardContracts?.[pos];
+  if(!llIsTransferWindow(state.week)||!card||!contract||contract.remaining>0)return;
+  const message=card.upgradeLevel?'Bu kart ayrılırsa geliştirmesi kalıcı olarak kaybolacak. Temel sürümü daha sonra transfer kasalarında yeniden bulunabilir. Devam edilsin mi?':'Sözleşmesi biten kart slotundan çıkarılsın mı? Kart arşivinde kalır ve daha sonra transfer kasalarında yeniden bulunabilir.';
+  if(!confirm(message))return;
+  team.cards[pos]=null;delete team.cardContracts[pos];llReleaseCardToMarket(team,card);llSave();llRenderShop();
+};
+const llV8AiShopAttemptBase=llAiShopAttempt;
+llAiShopAttempt=function(teamName){
+  const team=llTeamState(teamName),before=Object.fromEntries(LL_POSITIONS.map(pos=>[pos,llCard(team?.cards?.[pos])]));
+  const result=llV8AiShopAttemptBase(teamName);
+  LL_POSITIONS.forEach(pos=>{const old=before[pos],current=llCard(team?.cards?.[pos]);if(old&&current?.id!==old.id&&current?.upgradeFrom!==old.id)llReleaseCardToMarket(team,old);});
+  if(result?.newId)llConsumeReleasedBase(team,result.newId);
+  return result;
+};
+const llV8RenewAiContractsBase=llV4RenewAiContracts;
+llV4RenewAiContracts=function(teamName){
+  const team=llTeamState(teamName),before=Object.fromEntries(LL_POSITIONS.map(pos=>[pos,llCard(team?.cards?.[pos])]));
+  llV8RenewAiContractsBase(teamName);
+  LL_POSITIONS.forEach(pos=>{const old=before[pos],current=llCard(team?.cards?.[pos]);if(old&&current?.id!==old.id&&current?.upgradeFrom!==old.id)llReleaseCardToMarket(team,old);});
+};
