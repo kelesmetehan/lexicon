@@ -1806,6 +1806,16 @@ const LL_CARD_UPGRADE_DEFINITIONS=[
   {from:'NCM04',card:{id:'UPU08',position:'Evrensel',name:'Deplasman Disiplini (Geliştirilmiş)',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en düşük zarı -1; en düşük iki zar eşitse ikisi de -1',rarity:'common',upgradeRule:'away-discipline'}}
 ];
 LL_CARD_UPGRADE_DEFINITIONS.forEach(({from,card})=>LL_BALANCED_CARD_POOL.push({...card,upgradeFrom:from,upgradeOnly:true,upgradeLevel:1}));
+const LL_CARD_UPGRADE_SOURCE_IDS=new Set(LL_CARD_UPGRADE_DEFINITIONS.map(item=>item.from));
+function llCardDisplayRarity(card){return `${LL_RARITY_LABELS[card?.rarity]||card?.rarity||''}${card?.upgradeLevel?'+':''}`;}
+function llCardUpgradeBadgeHtml(card){
+  if(!card)return '';
+  const upgraded=!!card.upgradeLevel,upgradeable=LL_CARD_UPGRADE_SOURCE_IDS.has(card.id);
+  if(!upgraded&&!upgradeable)return '';
+  const label=upgraded?`${llCardDisplayRarity(card)} · GELİŞTİRİLMİŞ`:'⬆ GELİŞTİRİLEBİLİR';
+  const color=upgraded?'#facc15':'#67e8f9',border=upgraded?'rgba(250,204,21,.55)':'rgba(103,232,249,.45)',background=upgraded?'rgba(250,204,21,.10)':'rgba(34,211,238,.09)';
+  return `<span class="ll-upgrade-badge" style="display:inline-flex;align-items:center;width:max-content;margin:6px 0 2px;padding:4px 8px;border:1px solid ${border};border-radius:999px;background:${background};color:${color};font-size:9px;font-weight:900;letter-spacing:.7px">${label}</span>`;
+}
 const LL_CARD_RARITY_RANK={common:1,rare:2,epic:3,legendary:4};
 const llCardFamilyName=card=>card?.name?.replace(/\s*\([^)]*\)\s*$/,'').trim()||'';
 const LL_LEGACY_CARD_REPLACEMENTS=Object.fromEntries(LL_LEGACY_CARD_POOL.map(oldCard=>{
@@ -1984,7 +1994,7 @@ function llCardHtml(cardId,teamName,emptyText='Kart yok'){
   if(!card) return `<button class="ll-ability empty" type="button">${emptyText}</button>`;
   const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null;
   const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} tetik (%${llCardTriggerRate(performance)}) · Tetikte ${performance.triggeredWins}G ${performance.triggeredDraws}B ${performance.triggeredLosses}M</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
-  return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br><span><b>${llEscape(llCardEffectKind(card))}:</b> ${llEscape(card.effect)}</span>${performanceLine}</button>`;
+  return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br>${llCardUpgradeBadgeHtml(card)}<span style="display:block"><b>${llEscape(llCardEffectKind(card))}:</b> ${llEscape(card.effect)}</span>${performanceLine}</button>`;
 }
 function llCardPerformance(cardId){
   const id=LL_LEGACY_CARD_REPLACEMENTS[cardId]||cardId,raw=lexLeague.state?.cardPerformance?.[id];
@@ -2050,7 +2060,7 @@ function llShowEmptyCard(team,pos){
 function llShowCardPopup(cardId,teamName=''){
   const c=llCard(cardId);if(!c)return;
   const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;
-  llShowModal(`<div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${showPerformance?llCardPerformanceHtml(c.id):''}`);
+  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${showPerformance?llCardPerformanceHtml(c.id):''}`);
 }
 function llShowModal(content){
   const old=document.getElementById('ll-modal'); if(old)old.remove();
@@ -2649,7 +2659,7 @@ function llFinalizeCurrentMatch(){
   m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
 }
 function llDieRow(die,side,selectable=false,selected=false,rolling=false,landed=false,animationIndex=0){
-  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'',shownValue=rolling?1+(animationIndex*2)%6:die.value;return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms" aria-label="${rolling?'Zar dönüyor':`Zar sonucu ${die.value}`}">${shownValue}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?llEscape(c.name):'Kart yok'}</div></div></div>`;
+  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'',shownValue=rolling?1+(animationIndex*2)%6:die.value;return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms" aria-label="${rolling?'Zar dönüyor':`Zar sonucu ${die.value}`}">${shownValue}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?`${llEscape(c.name)}${llCardUpgradeBadgeHtml(c)}`:'Kart yok'}</div></div></div>`;
 }
 function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedDice=null){
   const base=llBaseName(card),opp=llFindPosition(oppDice,die.position),team=llTeamState(teamName);
@@ -2718,7 +2728,7 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedD
 }
 function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
   const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
-  return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b><br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
+  return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
 }
 function llResolvedForecastStatus(card,rawStatus,resolution,sideKey,teamName){
   if(!resolution)return rawStatus;
@@ -2738,7 +2748,7 @@ llForecastSideCards=function(dice,oppDice,label,teamName,isHome,disabled=new Set
   const html=cards.length?cards.map(x=>{
     const rawStatus=llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,finalDice);
     const status=disabled.has(x.die.uid)?{state:'blocked',label:'\u26D4 BLOKLANDI',reason:'Sahay\u0131 Oku bu kart\u0131 etkisizle\u015Ftirdi.'}:llResolvedForecastStatus(x.card,rawStatus,resolution,sideKey,teamName);
-    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b><br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;
+    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;
   }).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`;
   return `${order}<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} &middot; Kesin Zincirde Kart Durumu</div>${html}</div>`;
 };
@@ -2913,7 +2923,7 @@ function llDiscoverCards(ids=[]){
 function llRenderCardArchive(filter='discovered'){
   const s=lexLeague.state;if(!s)return;llSetWide(true);llEnsureDiscoveredCards();
   const known=new Set(s.discoveredCards),ownedIds=Object.values(llTeamState(s.playerTeam)?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id),owned=new Set(ownedIds),source=filter==='owned'?[...owned]:[...known],cards=source.map(llCard).filter(Boolean).sort((a,b)=>LL_POSITIONS.concat('Evrensel').indexOf(a.position)-LL_POSITIONS.concat('Evrensel').indexOf(b.position)||(LL_CARD_RARITY_RANK[b.rarity]||0)-(LL_CARD_RARITY_RANK[a.rarity]||0)||a.name.localeCompare(b.name,'tr'));
-  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>`<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div>${llCardPerformanceHtml(c.id,true)}<button class="ll-btn ll-archive-detail-btn" type="button" onclick="llShowCardPopup('${c.id}','${llEscape(s.playerTeam)}')">Kart Detayı</button></div>`).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
+  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>`<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div>${llCardPerformanceHtml(c.id,true)}<button class="ll-btn ll-archive-detail-btn" type="button" onclick="llShowCardPopup('${c.id}','${llEscape(s.playerTeam)}')">Kart Detayı</button></div>`).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Kart <em>Arşivi</em></div><div class="ll-muted">Keşfedilen ${known.size}/${LL_CARD_POOL.length} · Şu anda sahip olunan ${owned.size}/3</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div><div class="ll-comp-tabs"><button class="ll-comp-tab ${filter==='discovered'?'active':''}" onclick="llRenderCardArchive('discovered')">Keşfedilen Kartlar (${known.size})</button><button class="ll-comp-tab ${filter==='owned'?'active':''}" onclick="llRenderCardArchive('owned')">Sahip Olunanlar (${owned.size})</button></div>${cardHtml}</div></div>`;
 }
 function llAssignAiCard(teamName){
@@ -4981,7 +4991,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260718-5"></script>
+<script src="league-v2.js?v=20260718-6"></script>
 <script src="manager-market.js?v=20260718-2"></script>
 </body>
 </html>
