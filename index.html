@@ -956,7 +956,7 @@ const NATIVE_USER_DATA = [
   {en:"suitcase", tr:"bavul / valiz", example:"I packed my clothes into the suitcase.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"survey", tr:"anket", example:"Please fill out this short survey about our service.", repetitions:5, interval:131, reviewCount:5, state:"review"},
   {en:"sustainable", tr:"sürdürülebilir", example:"We must invest in sustainable energy sources.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"temporarly", tr:"geçici olarak", example:"The website is temporarly down for maintenance.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"temporarily", tr:"geçici olarak", example:"The website is temporarily down for maintenance.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"tend to + verb", tr:"genelde yapmak / -meye eğilimli olmak", example:"I tend to eat too much when I'm stressed.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"tend to someone/something", tr:"biriyle/bir şeyle ilgilenmek", example:"The nurse will tend to the patient shortly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"Things got heated", tr:"Ortam gerildi", example:"Things got heated during the political debate.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
@@ -1467,18 +1467,23 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Annem benim en büyük ilham kaynağımdır."
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
-  "across":"prep","alongside":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","fewer":"adj","likely":"adj","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","unlike":"prep",
+  "across":"prep","alongside":"prep","unlike":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","rather":"adv","temporarily":"adv","fewer":"det","likely":"adj","unlikely":"adj",
+  "anonymity":"n","anxiety":"n","charity":"n","currency":"n","disability":"n","disapproval":"n","encounter":"n","epidemic":"n","eternity":"n","fabric":"n","facility":"n","identity":"n","individual":"n","longevity":"n","luxury":"n","municipality":"n","naivety":"n","quote":"n","skeptic":"n","snooze":"n","substitute":"n","survey":"n",
+  "confident":"adj","constant":"adj","determined":"adj","extensive":"adj","infected":"adj","intense":"adj","mundane":"adj","profound":"adj","smallish":"adj","spoiled":"adj","strange":"adj","unkind":"adj","vascular":"adj",
+  "apply":"v","differs":"v","held":"v","imply":"v","introduced":"v","lamented":"v","rally":"v","swung":"v","uncovered":"v",
   "consulting":"adj","catfishing":"n","disrupting":"v","doomscrolling":"v","floating":"v","hosting":"v","jeering":"n","mansplaining":"n","mapping":"n","nagging":"adj","thrill-seeking":"adj","liberal-leaning":"adj","mind-blowing":"adj","sickening":"adj","upsetting":"adj","wagging":"v","shouting":"n","choking":"n",
-  "claims":"n","repetitive":"adj","revealed":"v","clapped":"v","compliance":"n","instruction":"n","consistency":"n",
-  "occupation":"n","refugee":"n","be humble":"phrase","you're a creeper":"phrase","shady":"adj","permission":"n","allow":"v","favor":"n","entire":"adj","convince":"v","admire":"v","inspiration":"n"
+  "claims":"n","repetitive":"adj","revealed":"v","clapped":"v","compliance":"n","instruction":"n","consistency":"n","occupation":"n","refugee":"n","shady":"adj","permission":"n","allow":"v","favor":"n","entire":"adj","convince":"v","admire":"v","inspiration":"n",
+  "act out of self-interest":"v","almost never":"adv","along with":"prep","as far as":"prep","as far as i know":"phrase","as far as i’m concerned":"phrase","as long as":"conj","as well":"adv","as well as":"conj","attract attention":"v","bet prediction":"n","blow off steam":"idiom","by the time":"conj","cable car":"n","different store":"n","even more":"adv","extraordinary day":"n","fancy people":"n","first impression":"n","from scratch":"idiom","from what i understand":"phrase","getting to know each other":"phrase",
+  "imprisoned by":"adj","in a rush":"phrase","in contrast to/with":"prep","look at the bright side":"idiom","lose track of time":"idiom","make the most of":"idiom","neither nor":"conj","no longer":"adv","people in need":"n","pissed off":"adj","plenty of":"det","slipped into complacency":"v","stuck in a rut":"idiom","subtract a habit":"v","things got heated":"phrase","to edit":"v","to stem the inflow":"v","turn on the hazard lights":"pv","unify / unifies":"v","variety of":"n","wear and tear":"n","wind-blown dust":"n","would like to":"v","would rather":"phrase",
+  "to nest / to stack":"v","the majority of people":"n","be dying for something":"idiom","sore loser / bad loser":"n","odd job":"n","on the fritz":"idiom","clean as a whistle":"idiom","be strapped for cash":"idiom","window pane":"n","pay through the nose":"idiom","distraction theory":"n","explicit monitoring":"n","ai skeptics":"n","ai novices":"n","ai explorers":"n","ai power users":"n","asked for":"pv","as soon as":"conj","on behalf of":"prep","if so":"phrase","kill two birds with one stone":"idiom","whether or":"conj","sick leave":"n","be humble":"phrase","you're a creeper":"phrase","be attracted to":"v","tend to + verb":"v"
 });
 const LL_PHRASAL_VERBS=new Set([
   "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","get along with someone","keep up with","lead to","led to","made off","roll over","root for","run away","sleep in","slip by","squeak out","stumble upon","tend to + verb","tend to someone/something","to fold away"
 ]);
 function llInferWordPos(word){
-  const explicit=String(word?.pos||'').trim().toLowerCase();if(explicit)return explicit;
   const en=String(word?.en||'').trim().toLowerCase(),tr=String(word?.tr||'').trim().toLowerCase(),example=` ${String(word?.example||'').toLowerCase()} `;
   if(LL_WORD_POS_OVERRIDES[en])return LL_WORD_POS_OVERRIDES[en];
+  const explicit=String(word?.pos||'').trim().toLowerCase();if(explicit)return explicit;
   if(LL_PHRASAL_VERBS.has(en))return 'pv';
   if(/\s/.test(en))return 'phrase';
   if(['and','but','unless','whether'].includes(en))return 'conj';
@@ -3031,7 +3036,7 @@ function initDatabase() {
     } catch(e) { existingWords = []; }
 
     existingWords.forEach(word => {
-      const spellingFixes = {ctirics:'critics', grandchlid:'grandchild', nauesous:'nauseous', upseting:'upsetting'};
+      const spellingFixes = {ctirics:'critics', grandchlid:'grandchild', nauesous:'nauseous', upseting:'upsetting', temporarly:'temporarily'};
       const normalizedEn = String(word.en || '').trim().toLowerCase();
       if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
       word.pos = llInferWordPos(word);
