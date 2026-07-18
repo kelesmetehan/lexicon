@@ -292,6 +292,7 @@
   .word-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
   .word-info { flex: 1; padding-right: 12px; }
   .word-en { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
+  .word-pos-tag { display:inline-block; margin-left:5px; color:var(--gold2); font-family:Inter,system-ui,sans-serif; font-size:.43em; font-weight:800; letter-spacing:.04em; vertical-align:middle; white-space:nowrap; }
   .word-tr { font-size: 13px; color: var(--gold); margin-bottom: 4px; font-weight: 500; }
   .word-ex { font-size: 12px; color: var(--text3); font-style: italic; line-height: 1.4; }
   
@@ -647,6 +648,9 @@
   .ll-offer.rare { border-color:rgba(59,130,246,.65); }
   .ll-offer.epic { border-color:rgba(168,85,247,.65); }
   .ll-offer.legendary { border-color:rgba(234,179,8,.72); box-shadow:0 0 22px rgba(234,179,8,.09); }
+  .ll-pack-opened { scroll-margin-top:18px; animation:llPackOpened .48s cubic-bezier(.2,.8,.2,1); }
+  .ll-pack-opened-banner { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 -3px; padding:11px 14px; border:1px solid rgba(250,204,21,.48); border-radius:11px; color:#fef3c7; background:linear-gradient(135deg,rgba(161,98,7,.22),rgba(15,118,110,.14)); font-size:11px; font-weight:900; letter-spacing:.7px; text-align:center; box-shadow:0 0 24px rgba(234,179,8,.10); }
+  @keyframes llPackOpened { 0%{opacity:.25;transform:translateY(12px) scale(.985);filter:brightness(1.5)} 65%{opacity:1;transform:translateY(-2px) scale(1.006)} 100%{transform:none;filter:none} }
   .ll-rarity { display:inline-flex; padding:4px 8px; border-radius:99px; font-size:9px; letter-spacing:1px; text-transform:uppercase; background:rgba(255,255,255,.06); margin-bottom:9px; }
   .ll-modal { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
   .ll-modal-card { width:min(520px,100%); background:var(--bg2); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 22px 70px rgba(0,0,0,.7); padding:22px; }
@@ -713,7 +717,7 @@
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
   }
   @media (prefers-reduced-motion:reduce){
-    .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop{animation-duration:.01ms!important;animation-delay:0ms!important}
+    .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
     .ll-panel.ll-goal-flash::after{display:none}
   }
 
@@ -1085,7 +1089,20 @@ const NATIVE_USER_DATA = [
   {en:"infection", tr:"enfeksiyon / iltihap", example:"Going to the office could spread the infection to others.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"parliament", tr:"parlamento / meclis", example:"The government wants to get the plan through parliament.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"sick leave", tr:"hastalık izni / raporlu izin", example:"The new rules will affect sick leave in Germany.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"appointment", tr:"randevu", example:"It may be hard to get a doctor's appointment today.", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"appointment", tr:"randevu", example:"It may be hard to get a doctor's appointment today.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"occupation", tr:"meslek / uğraş", example:"She chose teaching as her occupation.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"refugee", tr:"mülteci / sığınmacı", example:"The refugee found a safe place to stay.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"unlike", tr:"-den farklı olarak / aksine", example:"Unlike his brother, he is very patient.", pos:"prep", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"be humble", tr:"mütevazı olmak", example:"Try to be humble when you succeed.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"You're a creeper", tr:"Sen ürkütücü / rahatsız edici birisin", example:"Stop following me—you're a creeper.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"shady", tr:"şüpheli / güven vermeyen", example:"That deal sounds a little shady.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"permission", tr:"izin", example:"We asked for permission to take photos.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"allow", tr:"izin vermek / olanak sağlamak", example:"This app allows people to study anywhere.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"favor", tr:"iyilik / yardım", example:"Could you do me a favor?", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"entire", tr:"tüm / bütün", example:"It rained for the entire day.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"convince", tr:"ikna etmek", example:"I convinced him to tell the truth.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"admire", tr:"hayran olmak / takdir etmek", example:"I admire her courage.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"inspiration", tr:"ilham / esin kaynağı", example:"My mother is my greatest inspiration.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -1434,9 +1451,51 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Ofise gitmek enfeksiyonu başkalarına yayabilir.",
   "Hükûmet planı parlamentodan geçirmek istiyor.",
   "Yeni kurallar Almanya'daki hastalık izinlerini etkileyecek.",
-  "Bugün doktor randevusu almak zor olabilir."
+  "Bugün doktor randevusu almak zor olabilir.",
+  "Meslek olarak öğretmenliği seçti.",
+  "Mülteci kalmak için güvenli bir yer buldu.",
+  "Kardeşinin aksine o çok sabırlıdır.",
+  "Başarılı olduğunda mütevazı olmaya çalış.",
+  "Beni takip etmeyi bırak—sen ürkütücü birisin.",
+  "Bu anlaşma biraz şüpheli görünüyor.",
+  "Fotoğraf çekmek için izin istedik.",
+  "Bu uygulama insanların her yerde çalışmasına olanak tanır.",
+  "Bana bir iyilik yapabilir misin?",
+  "Bütün gün yağmur yağdı.",
+  "Onu gerçeği söylemeye ikna ettim.",
+  "Onun cesaretine hayranım.",
+  "Annem benim en büyük ilham kaynağımdır."
 ];
+const LL_WORD_POS_OVERRIDES=Object.freeze({
+  "across":"prep","alongside":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","fewer":"adj","likely":"adj","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","unlike":"prep",
+  "consulting":"adj","catfishing":"n","disrupting":"v","doomscrolling":"v","floating":"v","hosting":"v","jeering":"n","mansplaining":"n","mapping":"n","nagging":"adj","thrill-seeking":"adj","liberal-leaning":"adj","mind-blowing":"adj","sickening":"adj","upseting":"adj","wagging":"v","shouting":"n","choking":"n",
+  "claims":"n","repetitive":"adj","revealed":"v","clapped":"v","compliance":"n","instruction":"n","consistency":"n",
+  "occupation":"n","refugee":"n","be humble":"phrase","you're a creeper":"phrase","shady":"adj","permission":"n","allow":"v","favor":"n","entire":"adj","convince":"v","admire":"v","inspiration":"n"
+});
+const LL_PHRASAL_VERBS=new Set([
+  "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","get along with someone","keep up with","lead to","led to","made off","roll over","root for","run away","sleep in","slip by","squeak out","stumble upon","tend to someone/something","to fold away"
+]);
+function llInferWordPos(word){
+  const explicit=String(word?.pos||'').trim().toLowerCase();if(explicit)return explicit;
+  const en=String(word?.en||'').trim().toLowerCase(),tr=String(word?.tr||'').trim().toLowerCase(),example=` ${String(word?.example||'').toLowerCase()} `;
+  if(LL_WORD_POS_OVERRIDES[en])return LL_WORD_POS_OVERRIDES[en];
+  if(LL_PHRASAL_VERBS.has(en))return 'pv';
+  if(/\s/.test(en))return 'phrase';
+  if(['and','but','unless','whether'].includes(en))return 'conj';
+  if(['in','on','at','by','for','from','with','without','through','during','despite'].includes(en))return 'prep';
+  if(/ly$/.test(en))return 'adv';
+  if(/ing$/.test(en)){
+    const continuous=[' am ',' is ',' are ',' was ',' were ',' be ',' been ',' being '].some(aux=>example.includes(aux+en));
+    return continuous?'v':'n';
+  }
+  const verbFrames=[' to ',' can ',' could ',' will ',' would ',' should ',' must ',' may ',' might ',' do ',' does ',' did ',' have ',' has ',' had '];
+  if(/m[ae]k(?:\b|\s|\/)/i.test(tr)||verbFrames.some(frame=>example.includes(frame+en+' ')))return 'v';
+  if(/ed$/.test(en)&&[' was ',' were ',' is ',' are ',' had ',' has ',' have '].some(aux=>example.includes(aux+en+' ')))return 'v';
+  if(/(able|ible|al|ful|ic|ical|ive|less|ous|y)$/.test(en))return 'adj';
+  return 'n';
+}
 NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
+NATIVE_USER_DATA.forEach(word=>{word.pos=llInferWordPos(word);});
 
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
 const WC_TEAMS = [
@@ -1744,6 +1803,10 @@ let lexLeague = {
 function llEscape(value){
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 }
+function llEnglishWordHtml(word,text=word?.en||''){
+  const pos=String(word?.pos||llInferWordPos(word)||'').trim();
+  return `<span class="english-word-label">${llEscape(text)}${pos?` <span class="word-pos-tag">(${llEscape(pos)})</span>`:''}</span>`;
+}
 let llActiveSpeechButton=null;
 function llSpeakEnglish(text,button=null){
   const synth=window.speechSynthesis;
@@ -2015,7 +2078,7 @@ function llOpenStarterPack(pos){
   const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
   llEnsureStarterOffers();const offers=state.starterOffers?.[pos]||[];
   if(offers.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
-  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llDiscoverCards(offers);llSave();llRenderShopOffers();
+  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llDiscoverCards(offers);llSave();llRenderShopOffers();llRevealOpenedPack();
 }
 function llRenderDashboard(){
   lexLeague.active=true;llSetWide(true);llClearTransient();
@@ -2367,6 +2430,7 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Pas Ustası'&&llOwnTrigger(c,d.value)){const candidates=me.dice.filter(x=>x.uid!==d.uid);if(candidates.length){const target=llLowestDie(candidates),n=llEffectAmount(c,1);target.value+=n;log(`${me.name}: Pas Ustası → ${target.position} +${n}.`);}}
       if(base==='Kilitleme'){const high=llHighestDie(opp.dice);const n=llEffectAmount(c,1);high.value=Math.max(1,high.value-n);log(`${me.name}: Kilitleme → rakibin en yüksek zarı -${n}.`);}
       if(base==='Ofsayt Tuzağı'){const high=llHighestDie(opp.dice),old=high.value;high.value=llRollValue(opp.name,high.position);log(`${me.name}: Ofsayt Tuzağı → rakibin en yüksek ${high.position} zarı ${old} iken yeniden atıldı, ${high.value} geldi.`);}
+      if(['Alan Hakimiyeti','\u0130kili Oyun','Frikik Ustas\u0131','Hat-trick Ruhu','Bitiricilik','Kale Duvar\u0131'].includes(base))return;
       if(base==='Alan Hakimiyeti'&&llSum(me.dice)>llSum(opp.dice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Alan Hakimiyeti → +${n} kart golü.`);}
       if(base==='İkili Oyun'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: İkili Oyun → +${n} kart golü.`);}
       if(base==='Frikik Ustası'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Frikik Ustası → +${n} kart golü.`);}
@@ -2376,6 +2440,19 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Sakatlık Şansı')opp.dice.filter(x=>x.value===1).forEach(x=>{nextLocks[key==='a'?'b':'a'][x.position]=1;log(`${me.name}: Sakatlık Şansı → rakibin ${x.position} zarı gelecek maça 1 kilitlendi.`);});
     });
   }
+  // Total-die and virtual-goal cards run after all die changes and VAR rerolls.
+  function applyFinalScoreCards(me,opp,key){
+    me.dice.forEach(d=>{
+      const c=activeCard(d,key),base=llBaseName(c);if(!c)return;
+      if(base==='Alan Hakimiyeti'&&llSum(me.dice)>llSum(opp.dice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Alan Hakimiyeti \u2192 son zar toplam\u0131 ${llSum(me.dice)}-${llSum(opp.dice)}, +${n} kart gol\u00FC.`);}
+      if(base==='\u0130kili Oyun'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: \u0130kili Oyun \u2192 son ${d.position} zar\u0131 ${d.value}, +${n} kart gol\u00FC.`);}
+      if(base==='Frikik Ustas\u0131'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Frikik Ustas\u0131 \u2192 son ${d.position} zar\u0131 ${d.value}, +${n} kart gol\u00FC.`);}
+      if(base==='Hat-trick Ruhu'){const form=llHatTrickForm(me.name,c);if(form.active){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Hat-trick Ruhu \u2192 son ${form.windowSize} resmi ma\u00E7ta ${form.wins} galibiyet, +${n} kart gol\u00FC.`);}}
+      if(base==='Bitiricilik'){const need=llThreshold(c.trigger,99),total=llSum(me.dice);if(total>=need){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Bitiricilik \u2192 yeniden at\u0131\u015Flar sonras\u0131 toplam ${total}/${need}, +${n} kart gol\u00FC.`);}}
+      if(base==='Kale Duvar\u0131'){const need=llThreshold(c.trigger,99),total=llSum(opp.dice);if(total>=need){const m=c.effect.match(/(\d+)\s+sanal gol elenir/i);me.shield+=m?Number(m[1]):1;}}
+    });
+  }
+
   applyCombinationCards(sides.a,'a',rawADice);applyCombinationCards(sides.b,'b',rawBDice);
   applyGlobals(sides.a,sides.b,'a');applyGlobals(sides.b,sides.a,'b');
   const chance={a:scouting.randoms?.a?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)},b:scouting.randoms?.b?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)}};
@@ -2449,6 +2526,8 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     pairResults.push({a:a.value,b:b.value,result,aGoals:result==='a'?multA:0,bGoals:result==='b'?multB:0});
     processedPairs=i+1;for(let eventIndex=duelEventStart;eventIndex<events.length;eventIndex++)eventScores[eventIndex]=projectedScore();
   }
+  applyFinalScoreCards(sides.a,sides.b,'a');
+  applyFinalScoreCards(sides.b,sides.a,'b');
   applyFinalCombinationCards(sides.a,'a');
   applyFinalCombinationCards(sides.b,'b');
   if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı, +${n} sanal gol.`);}
@@ -2580,6 +2659,28 @@ function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set
   const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
   return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b><br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
 }
+function llResolvedForecastStatus(card,rawStatus,resolution,sideKey,teamName){
+  if(!resolution)return rawStatus;
+  const triggered=new Set(resolution.triggeredCardIds?.[sideKey]||[]),base=llBaseName(card),prefix=`${teamName}: ${base}`;
+  const event=[...(resolution.events||[])].reverse().find(text=>text.startsWith(prefix)&&!/bulunamad\u0131|sa\u011Flanmad\u0131|tetiklenmedi/i.test(text));
+  if(triggered.has(card.id))return {state:'active',label:'\u2713 KES\u0130N TET\u0130KLEND\u0130',reason:event||rawStatus.reason};
+  if(base==='VAR \u0130ncelemesi'&&rawStatus.state==='active')return {state:'inactive',label:'Tetiklenmedi',reason:'Ham zarlarda beraberlik vard\u0131; \u00F6nceki kartlar zar\u0131 de\u011Fi\u015Ftirdi\u011Fi i\u00E7in VAR s\u0131ras\u0131na beraberlik kalmad\u0131 ve yeniden at\u0131\u015F yap\u0131lmad\u0131.'};
+  if(rawStatus.state==='active'||rawStatus.state==='uncertain')return {state:'inactive',label:'Tetiklenmedi',reason:'Ham \u015Fart g\u00F6r\u00FCnse de \u00F6nceki kart etkilerinden sonra kesin \u00E7\u00F6z\u00FCm zincirinde tetikleme \u015Fart\u0131 olu\u015Fmad\u0131.'};
+  return {state:'inactive',label:'Tetiklenmedi',reason:rawStatus.reason};
+}
+const llForecastSideCardsRaw=llForecastSideCards;
+llForecastSideCards=function(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
+  const resolution=lexLeague.match?.projectedResolution;if(!resolution)return llForecastSideCardsRaw(dice,oppDice,label,teamName,isHome,disabled,resolvedDice);
+  const sideKey=teamName===lexLeague.match.player?'a':'b',finalDice=sideKey==='a'?resolution.aDice:resolution.bDice;
+  const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
+  const order=sideKey==='a'?`<div class="ll-notice" style="grid-column:1/-1;margin-bottom:2px"><b>Kart \u00E7\u00F6z\u00FCm s\u0131ras\u0131:</b> 1) temel zar kombinasyonlar\u0131 &middot; 2) zar art\u0131rma/azaltma &middot; 3) beraberlik ve VAR yeniden at\u0131\u015Flar\u0131 &middot; 4) d\u00FCello sonucu &middot; 5) son toplam, sanal gol ve koruma.</div>`:'';
+  const html=cards.length?cards.map(x=>{
+    const rawStatus=llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,finalDice);
+    const status=disabled.has(x.die.uid)?{state:'blocked',label:'\u26D4 BLOKLANDI',reason:'Sahay\u0131 Oku bu kart\u0131 etkisizle\u015Ftirdi.'}:llResolvedForecastStatus(x.card,rawStatus,resolution,sideKey,teamName);
+    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b><br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;
+  }).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`;
+  return `${order}<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} &middot; Kesin Zincirde Kart Durumu</div>${html}</div>`;
+};
 function llProjectedOutcomeHtml(m){
   const r=m?.projectedResolution;if(!r)return '';
   const verdict=r.scoreA>r.scoreB?'Kartlardan sonra sen öndesin':r.scoreB>r.scoreA?'Kartlardan sonra rakip önde':'Kartlardan sonra skor berabere';
@@ -2717,12 +2818,20 @@ function llOpenShopPack(pos){
   const cost=llShopCost();if(lexLeague.state.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
   const seen=llShopSeenFamilies(),pool=llEligibleCards(lexLeague.state.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
   const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llMarkShopFamiliesSeen(offers);llDiscoverCards(lexLeague.shop.offers);llSave();llRenderShopOffers();
+  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llMarkShopFamiliesSeen(offers);llDiscoverCards(lexLeague.shop.offers);llSave();llRenderShopOffers();llRevealOpenedPack();
+}
+function llRevealOpenedPack(){
+  const host=document.getElementById('ll-shop-offers');if(!host)return;
+  host.setAttribute('role','status');host.setAttribute('aria-live','polite');host.classList.remove('ll-pack-opened');void host.offsetWidth;host.classList.add('ll-pack-opened');
+  const rect=host.getBoundingClientRect(),outside=rect.top<12||rect.bottom>window.innerHeight-12;
+  if(outside)requestAnimationFrame(()=>requestAnimationFrame(()=>host.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})));
+  if(typeof navigator.vibrate==='function')navigator.vibrate(35);
 }
 function llRenderShopOffers(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
   const starter=sh.mode==='starter';
   host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
+  host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
 }
 function llChooseShopCard(id){
   const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
@@ -2888,18 +2997,19 @@ function initDatabase() {
 
     existingWords.forEach(word => {
       if (word.source === 'user' && String(word.en || '').toLowerCase() === 'ctirics') word.en = 'critics';
+      word.pos = llInferWordPos(word);
     });
 
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
       if (foundMatch) {
-        foundMatch.tr = w.tr; foundMatch.example = w.example; foundMatch.exampleTr = w.exampleTr || ''; return foundMatch;
+        foundMatch.tr = w.tr; foundMatch.example = w.example; foundMatch.exampleTr = w.exampleTr || ''; foundMatch.pos = w.pos || llInferWordPos(w); return foundMatch;
       } else {
         const nextReviewDate = new Date();
         if (w.state !== "due") nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
         return {
           id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
-          en: w.en, tr: w.tr, example: w.example || "", exampleTr: w.exampleTr || "", category: "word", source: "user",
+          en: w.en, tr: w.tr, example: w.example || "", exampleTr: w.exampleTr || "", pos: w.pos || llInferWordPos(w), category: "word", source: "user",
           addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
           nextReview: nextReviewDate.toISOString().split('T')[0], reviewCount: w.reviewCount, wrongCount: 0, isActiveMistake: false, type: ""
         };
@@ -3042,7 +3152,7 @@ function renderWordList() {
     listHTML += `
       <div class="word-item">
         <div class="word-info">
-          <div class="pronounce-line dictionary"><div class="word-en">${llEscape(w.en)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
+          <div class="pronounce-line dictionary"><div class="word-en">${llEnglishWordHtml(w)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
           ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
         </div>
         <div class="word-stats">
@@ -3443,8 +3553,8 @@ function showNextDiceCupRerollWord() {
   const askTrToEn = Math.random() > 0.5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
-  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
+  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -4008,8 +4118,8 @@ function showNextDiceUclRerollWord() {
   const askTrToEn = Math.random() > .5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
-  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
+  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -4688,8 +4798,8 @@ function showNextFlashcard() {
 
   if (askTurkishToEnglish) { questionText = card.tr.split(',')[0].trim(); answerText = card.en; } 
   else { questionText = card.en; answerText = card.tr; }
-  const questionHtml = askTurkishToEnglish ? llEscape(questionText) : `<div class="pronounce-line"><span>${llEscape(questionText)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTurkishToEnglish ? `<div class="pronounce-line"><span>${llEscape(answerText)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answerText);
+  const questionHtml = askTurkishToEnglish ? llEscape(questionText) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,questionText)}</span>${llPronounceButton(card.en)}</div>`;
+  const answerHtml = askTurkishToEnglish ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answerText)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answerText);
 
   area.innerHTML = `
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
@@ -4806,7 +4916,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260718-3"></script>
+<script src="league-v2.js?v=20260718-4"></script>
 <script src="manager-market.js?v=20260718-2"></script>
 </body>
 </html>
