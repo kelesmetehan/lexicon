@@ -506,6 +506,7 @@ function llOpenPremiumPack(position,source='paid'){
   if(source==='paid'){s.ap-=LL_PREMIUM_PACK_COST;s.premiumPackPaidSeason=s.season;}else s.sealedPremiumPacks--;
   const pending={season:s.season,source,position,offers:offers.map(card=>card.id),openedAt:new Date().toISOString()};s.pendingPremiumPack=pending;
   s.premiumPackHistory.push({...pending,status:'pending'});lexLeague.shop={mode:'premium',position,offers:[...pending.offers],source};llDiscoverCards(pending.offers);llSave();llRenderShop();
+  llRevealOpenedPack();
 }
 function llDeferPremiumPack(){
   const s=lexLeague.state;llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack;
@@ -528,6 +529,7 @@ llRenderShopOffers=function(){
   const sh=lexLeague.shop;if(sh?.mode!=='premium'){llV3RenderShopOffersBase();return;}
   const host=document.getElementById('ll-shop-offers');if(!host)return;
   host.innerHTML=`<div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7)"><div class="ll-card-title">✨ ${LL_POSITION_ICONS[sh.position]} ${sh.position} Elit Rol Paketi</div><div class="ll-notice" style="margin-bottom:12px">İki teklif de en az Destansı seviyededir. Birini seçtiğinde diğer teklif kapanır; sayfayı yenilemek kartları değiştirmez.</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div><button class="ll-btn" style="width:100%;margin-top:12px" onclick="llDeferPremiumPack()">Sonra Seç · Paket Kayıtta Kalsın</button></div>`;
+  host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; EL&#304;T KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
   const discardButton=host.querySelector('button[onclick="llDeferPremiumPack()"]');
   if(discardButton){discardButton.classList.add('danger');discardButton.textContent='Paketi Atla · Kartları Alma ve Paketi Sil (İade Yok)';}
 };
