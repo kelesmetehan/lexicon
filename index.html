@@ -2155,8 +2155,8 @@ function llRenderLeagueQuiz(){
     else example=word.example;
   }
   const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
-  const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEscape(question)}</span>${llPronounceButton(word.en)}</div>`;
-  const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEscape(answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
+  const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEnglishWordHtml(word,question)}</span>${llPronounceButton(word.en)}</div>`;
+  const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
