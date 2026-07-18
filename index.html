@@ -190,8 +190,9 @@
   .flashcard.revealed .reveal-hint { display: none; }
   
   .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
-  .quiz-word { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); margin-bottom: 8px; line-height: 1.2; word-break: break-word; }
-  .pronounce-line { display:flex; align-items:center; justify-content:center; gap:9px; }
+  .quiz-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,7.5vw,42px); font-weight:300; color:var(--text); margin-bottom:8px; line-height:1.2; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
+  .pronounce-line { display:flex; align-items:center; justify-content:center; gap:9px; max-width:100%; min-width:0; flex-wrap:wrap; }
+  .pronounce-line > span, .english-word-label { min-width:0; max-width:100%; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
   .pronounce-line.dictionary { justify-content:flex-start; }
   .pronounce-btn {
     flex:0 0 auto; width:34px; height:34px; padding:0; border-radius:50%; cursor:pointer;
@@ -255,7 +256,7 @@
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid rgba(76,175,125,0.2);
-    word-break: break-word;
+    width:100%; max-width:100%; min-width:0; overflow-wrap:anywhere; word-break:break-word; hyphens:auto;
   }
 
   .btn {
@@ -569,10 +570,10 @@
   .ll-progress { height:5px; background:var(--bg4); border-radius:99px; overflow:hidden; margin:12px 0 20px; }
   .ll-progress > div { height:100%; background:linear-gradient(90deg,#0e7490,#2dd4bf); transition:width .25s; }
   .ll-question { min-height:240px; display:grid; place-items:center; text-align:center; padding:34px; border-radius:15px; background:var(--bg3); border:1px solid rgba(94,234,212,.16); cursor:pointer; }
-  .ll-question-word { font-family:'Cormorant Garamond',serif; font-size:44px; line-height:1.15; }
+  .ll-question-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,8vw,44px); line-height:1.15; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
   .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
   .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
-  .ll-answer { color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:35px; border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; }
+  .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
   .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
   .ll-battle { display:grid; grid-template-columns:1fr 100px 1fr; gap:12px; align-items:center; }
   .ll-dice-side { display:flex; flex-direction:column; gap:11px; }
@@ -653,7 +654,13 @@
   @keyframes llPackOpened { 0%{opacity:.25;transform:translateY(12px) scale(.985);filter:brightness(1.5)} 65%{opacity:1;transform:translateY(-2px) scale(1.006)} 100%{transform:none;filter:none} }
   .ll-rarity { display:inline-flex; padding:4px 8px; border-radius:99px; font-size:9px; letter-spacing:1px; text-transform:uppercase; background:rgba(255,255,255,.06); margin-bottom:9px; }
   .ll-modal { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
-  .ll-modal-card { width:min(520px,100%); background:var(--bg2); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 22px 70px rgba(0,0,0,.7); padding:22px; }
+  .ll-modal-card { width:min(520px,100%); max-height:calc(100dvh - 24px); overflow-y:auto; overscroll-behavior:contain; background:var(--bg2); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 22px 70px rgba(0,0,0,.7); padding:22px; }
+  .ll-upgrade-preview { margin-top:10px; padding:13px; border:1px solid rgba(103,232,249,.34); border-radius:10px; background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(250,204,21,.06)); }
+  .ll-upgrade-preview-title { color:#a5f3fc; font-size:11px; font-weight:950; letter-spacing:.8px; text-transform:uppercase; }
+  .ll-upgrade-compare { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
+  .ll-upgrade-state { min-width:0; padding:10px; border-radius:8px; background:rgba(255,255,255,.035); color:var(--text2); font-size:10px; line-height:1.55; overflow-wrap:anywhere; }
+  .ll-upgrade-state.after { border:1px solid rgba(250,204,21,.28); background:rgba(250,204,21,.06); }
+  .ll-upgrade-state b { display:block; margin-bottom:5px; color:#fef3c7; }
   .ll-notice { padding:12px 14px; border-radius:10px; background:rgba(14,116,144,.10); border:1px solid rgba(34,211,238,.20); color:#a5f3fc; font-size:12px; line-height:1.6; }
   .ll-result-list { display:flex; flex-direction:column; gap:7px; }
   .ll-result-row { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; padding:9px 10px; border-radius:8px; background:var(--bg2); font-size:11px; }
@@ -713,6 +720,7 @@
     .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}.ll-card-performance-grid{grid-template-columns:repeat(3,minmax(64px,1fr))}
     .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
     .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
+    .ll-question{padding:26px 16px}.ll-modal{padding:10px}.ll-modal-card{padding:16px}.ll-upgrade-compare{grid-template-columns:1fr}
     .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
   }
@@ -1815,6 +1823,14 @@ function llCardUpgradeBadgeHtml(card){
   const label=upgraded?`${llCardDisplayRarity(card)} · GELİŞTİRİLMİŞ`:'⬆ GELİŞTİRİLEBİLİR';
   const color=upgraded?'#facc15':'#67e8f9',border=upgraded?'rgba(250,204,21,.55)':'rgba(103,232,249,.45)',background=upgraded?'rgba(250,204,21,.10)':'rgba(34,211,238,.09)';
   return `<span class="ll-upgrade-badge" style="display:inline-flex;align-items:center;width:max-content;margin:6px 0 2px;padding:4px 8px;border:1px solid ${border};border-radius:999px;background:${background};color:${color};font-size:9px;font-weight:900;letter-spacing:.7px">${label}</span>`;
+function llCardUpgradePreviewHtml(card){
+  if(!card||card.upgradeLevel||!LL_CARD_UPGRADE_SOURCE_IDS.has(card.id))return '';
+  const definition=LL_CARD_UPGRADE_DEFINITIONS.find(item=>item.from===card.id);
+  if(!definition)return '';
+  const target=llCard(definition.card.id)||{...definition.card,upgradeLevel:1};
+  const cost=typeof llUpgradeCost==='function'?llUpgradeCost(card):0;
+  return `<div class="ll-upgrade-preview"><div class="ll-upgrade-preview-title">&#11014; Geli&#351;tirme &#246;nizlemesi</div><div class="ll-muted" style="margin-top:5px">Sonu&#231; rastgele de&#287;ildir${cost?` &middot; Bedel: ${cost} LP`:''}. Yaln&#305;zca transfer d&#246;neminde uygulan&#305;r.</div><div class="ll-upgrade-compare"><div class="ll-upgrade-state"><b>&#350;imdiki h&acirc;li &middot; ${llEscape(llCardDisplayRarity(card))}</b>Tetikleyici: ${llEscape(card.trigger)}<br>Etki: ${llEscape(card.effect)}</div><div class="ll-upgrade-state after"><b>Geli&#351;tirilmi&#351; h&acirc;li &middot; ${llEscape(llCardDisplayRarity(target))}</b>Tetikleyici: ${llEscape(target.trigger)}<br>Etki: ${llEscape(target.effect)}</div></div></div>`;
+}
 }
 const LL_CARD_RARITY_RANK={common:1,rare:2,epic:3,legendary:4};
 const llCardFamilyName=card=>card?.name?.replace(/\s*\([^)]*\)\s*$/,'').trim()||'';
@@ -2060,7 +2076,7 @@ function llShowEmptyCard(team,pos){
 function llShowCardPopup(cardId,teamName=''){
   const c=llCard(cardId);if(!c)return;
   const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;
-  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${showPerformance?llCardPerformanceHtml(c.id):''}`);
+  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${llCardUpgradePreviewHtml(c)}${showPerformance?llCardPerformanceHtml(c.id):''}`);
 }
 function llShowModal(content){
   const old=document.getElementById('ll-modal'); if(old)old.remove();
@@ -4991,7 +5007,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260718-6"></script>
+<script src="league-v2.js?v=20260718-7"></script>
 <script src="manager-market.js?v=20260718-2"></script>
 </body>
 </html>
