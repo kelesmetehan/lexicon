@@ -853,7 +853,7 @@ const NATIVE_USER_DATA = [
   {en:"from what I understand", tr:"anladığım kadarıyla", example:"From what I understand, the event is postponed.", repetitions:9, interval:60, reviewCount:9, state:"review"},
   {en:"getting to know each other", tr:"birbirini tanımak", example:"They spent the evening getting to know each other.", repetitions:2, interval:6, reviewCount:2, state:"due"},
   {en:"goldsmith", tr:"kuyumcu", example:"The goldsmith crafted a beautiful gold necklace.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"grandchlid", tr:"torun", example:"She bought a toy for her new grandchild.", repetitions:5, interval:29, reviewCount:5, state:"review"},
+  {en:"grandchild", tr:"torun", example:"She bought a toy for her new grandchild.", repetitions:5, interval:29, reviewCount:5, state:"review"},
   {en:"grazers", tr:"otlayanlar", example:"Cows and sheep are typical grazers.", repetitions:5, interval:1, reviewCount:5, state:"due"},
   {en:"guidelines", tr:"yönergeler", example:"Please follow the safety guidelines closely.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
   {en:"gullible", tr:"kolayca kanan", example:"He is so gullible that he believes every rumor.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
@@ -903,7 +903,7 @@ const NATIVE_USER_DATA = [
   {en:"municipality", tr:"belediye", example:"The local municipality is repairing the roads.", repetitions:3, interval:1, reviewCount:3, state:"due"},
   {en:"naivety", tr:"saflık", example:"His naivety makes him an easy target for scammers.", repetitions:2, interval:1, reviewCount:2, state:"due"},
   {en:"napkin", tr:"peçete", example:"Could you pass me a paper napkin, please?", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"nauesous", tr:"mide bulantısı", example:"The smell of the garbage made me feel nauseous.", repetitions:5, interval:1, reviewCount:5, state:"due"},
+  {en:"nauseous", tr:"mide bulantısı", example:"The smell of the garbage made me feel nauseous.", repetitions:5, interval:1, reviewCount:5, state:"due"},
   {en:"neither nor", tr:"ne de", example:"He is neither rich nor famous.", repetitions:2, interval:6, reviewCount:2, state:"due"},
   {en:"no longer", tr:"artık", example:"I no longer live in that city.", repetitions:4, interval:1, reviewCount:4, state:"due"},
   {en:"nominated", tr:"aday gösterildi", example:"The film was nominated for three Oscars.", repetitions:5, interval:29, reviewCount:5, state:"review"},
@@ -973,7 +973,7 @@ const NATIVE_USER_DATA = [
   {en:"unreliable", tr:"güvenilmez", example:"The public transport in this city is very unreliable.", repetitions:6, interval:1, reviewCount:6, state:"due"},
   {en:"untrustable", tr:"güvenilmez", example:"That website is a totally untrustable source of information.", repetitions:5, interval:131, reviewCount:5, state:"review"},
   {en:"unwittingly", tr:"bilmeden / farkında olmadan", example:"He unwittingly revealed the surprise party.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"upseting", tr:"üzücü", example:"Hearing the bad news was a very upsetting experience.", repetitions:4, interval:45, reviewCount:4, state:"review"},
+  {en:"upsetting", tr:"üzücü", example:"Hearing the bad news was a very upsetting experience.", repetitions:4, interval:45, reviewCount:4, state:"review"},
   {en:"utilities", tr:"faturalar / temel hizmetler", example:"My rent is cheap, but the utilities are expensive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"variety of", tr:"çeşitlilik / çeşitli", example:"The store sells a wide variety of fresh fruits.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"wagging", tr:"sallanan", example:"The happy dog was wagging its tail.", repetitions:5, interval:131, reviewCount:5, state:"review"},
@@ -1468,12 +1468,12 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "across":"prep","alongside":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","fewer":"adj","likely":"adj","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","unlike":"prep",
-  "consulting":"adj","catfishing":"n","disrupting":"v","doomscrolling":"v","floating":"v","hosting":"v","jeering":"n","mansplaining":"n","mapping":"n","nagging":"adj","thrill-seeking":"adj","liberal-leaning":"adj","mind-blowing":"adj","sickening":"adj","upseting":"adj","wagging":"v","shouting":"n","choking":"n",
+  "consulting":"adj","catfishing":"n","disrupting":"v","doomscrolling":"v","floating":"v","hosting":"v","jeering":"n","mansplaining":"n","mapping":"n","nagging":"adj","thrill-seeking":"adj","liberal-leaning":"adj","mind-blowing":"adj","sickening":"adj","upsetting":"adj","wagging":"v","shouting":"n","choking":"n",
   "claims":"n","repetitive":"adj","revealed":"v","clapped":"v","compliance":"n","instruction":"n","consistency":"n",
   "occupation":"n","refugee":"n","be humble":"phrase","you're a creeper":"phrase","shady":"adj","permission":"n","allow":"v","favor":"n","entire":"adj","convince":"v","admire":"v","inspiration":"n"
 });
 const LL_PHRASAL_VERBS=new Set([
-  "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","get along with someone","keep up with","lead to","led to","made off","roll over","root for","run away","sleep in","slip by","squeak out","stumble upon","tend to someone/something","to fold away"
+  "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","get along with someone","keep up with","lead to","led to","made off","roll over","root for","run away","sleep in","slip by","squeak out","stumble upon","tend to + verb","tend to someone/something","to fold away"
 ]);
 function llInferWordPos(word){
   const explicit=String(word?.pos||'').trim().toLowerCase();if(explicit)return explicit;
@@ -2958,11 +2958,13 @@ function llEnglishWordForms(word){
   return [...forms].filter(Boolean).sort((a,b)=>b.length-a.length);
 }
 function llExampleAnswerCandidates(answer){
-  return String(answer||'').split(/\s*\/\s*/).map(part=>part.replace(/\([^)]*\)/g,' ').replace(/^to\s+/i,'').replace(/\b(?:someone|somebody|something)\b\s*$/i,'').replace(/\s+/g,' ').trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
+  return String(answer||'').split(/\s*\/\s*/).map(part=>part.replace(/\([^)]*\)/g,' ').replace(/\+\s*(?:verb|noun|adjective|adverb)\b/gi,' ').replace(/^to\s+/i,'').replace(/\b(?:someone|somebody|something)\b\s*$/i,'').replace(/\s+/g,' ').trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
 }
 function llExampleAnswerPattern(candidate){
   const phrase=String(candidate||'').toLowerCase().trim();if(!phrase)return '';
   if(phrase==='whether or')return '\\bwhether\\b[^.!?]{0,45}?\\bor\\b';
+  if(phrase==='neither nor')return '\\bneither\\b[^.!?]{0,45}?\\bnor\\b';
+  if(phrase==='odd job')return '\\bodd\\s+jobs?\\b';
   const tokens=phrase.split(/\s+/).filter(Boolean);if(!tokens.length)return '';
   const first=llEnglishWordForms(tokens.shift()).map(escapeRegExp).join('|'),rest=tokens.map(escapeRegExp).join('\\s+');
   return '\\b(?:'+first+')'+(rest?'\\s+'+rest:'')+'\\b';
@@ -3007,7 +3009,9 @@ function initDatabase() {
     } catch(e) { existingWords = []; }
 
     existingWords.forEach(word => {
-      if (word.source === 'user' && String(word.en || '').toLowerCase() === 'ctirics') word.en = 'critics';
+      const spellingFixes = {ctirics:'critics', grandchlid:'grandchild', nauesous:'nauseous', upseting:'upsetting'};
+      const normalizedEn = String(word.en || '').trim().toLowerCase();
+      if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
       word.pos = llInferWordPos(word);
     });
 
