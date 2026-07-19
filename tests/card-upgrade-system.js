@@ -74,9 +74,10 @@ function loadRuntime() {
     llSave=function(){};
     llRenderShop=function(){};
     llRenderDashboard=function(){};
+    llShowModal=function(content){globalThis.__modalContent=content;};
     globalThis.__upgradeApi={
       LL_CARD_POOL,LL_CARD_UPGRADE_DEFINITIONS,LL_CARD_UPGRADE_LIMIT,LL_POSITIONS,
-      lexLeague,llCard,llCardFamilyName,llCardDisplayRarity,llCardUpgradeBadgeHtml,
+      lexLeague,llCard,llCardFamilyName,llCardDisplayRarity,llCardUpgradeBadgeHtml,llCardUpgradePreviewHtml,llShowCardPopup,
       llUpgradeTarget,llUpgradeCost,llUpgradeCard,llEnsureUpgradeState,llAiUpgradeCards,llV4RenewAiContracts,
       llEnsureTeamContracts,llChooseShopCard,llEligibleCards,llReleaseExpiredCard,
       llPrepareUpgradeReleaseTeam,llReleaseUpgradedCardToMarket
@@ -261,6 +262,24 @@ check('releasing an expired upgraded card also returns its base version', () => 
   api.llReleaseExpiredCard('Kaleci');
   assert.strictEqual(player.cards.Kaleci, null);
   assert(player.releasedBaseCards.includes('RBK02'));
+});
+
+
+check('card detail popup opens and includes the deterministic upgrade preview', () => {
+  const player = makeTeam('Test FK', { Kaleci: 'RBK02' });
+  setState(player);
+  context.__modalContent = '';
+  api.llShowCardPopup('RBK02', player.name);
+  assert(context.__modalContent.includes('Geli&#351;tirme &#246;nizlemesi'));
+  assert(context.__modalContent.includes('Yaygın+'));
+});
+
+check('season opening and domestic-European ranking hooks are installed', () => {
+  const leagueSource = fs.readFileSync(LEAGUE_PATH, 'utf8');
+  assert(leagueSource.includes('function llRenderSeasonOpening()'));
+  assert(leagueSource.includes('function llV9EuropeanPosition'));
+  assert(leagueSource.includes('function llV9DecorateDashboard'));
+  assert(leagueSource.includes('seasonOpeningViewed'));
 });
 
 const report = {
