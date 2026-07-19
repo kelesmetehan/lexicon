@@ -687,6 +687,98 @@
   .ll-pack-opened { scroll-margin-top:18px; animation:llPackOpened .48s cubic-bezier(.2,.8,.2,1); }
   .ll-pack-opened-banner { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 -3px; padding:11px 14px; border:1px solid rgba(250,204,21,.48); border-radius:11px; color:#fef3c7; background:linear-gradient(135deg,rgba(161,98,7,.22),rgba(15,118,110,.14)); font-size:11px; font-weight:900; letter-spacing:.7px; text-align:center; box-shadow:0 0 24px rgba(234,179,8,.10); }
   @keyframes llPackOpened { 0%{opacity:.25;transform:translateY(12px) scale(.985);filter:brightness(1.5)} 65%{opacity:1;transform:translateY(-2px) scale(1.006)} 100%{transform:none;filter:none} }
+  body.ll-cinematic-open{overflow:hidden}
+  .ll-pack-cinematic{--pack-accent:#60a5fa;--pack-accent2:#bfdbfe;position:fixed;inset:0;z-index:13000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 42%,rgba(30,64,175,.27),rgba(2,6,23,.96) 62%,#000);overflow:hidden;isolation:isolate}
+  .ll-pack-cinematic.elite{--pack-accent:#facc15;--pack-accent2:#fde68a;background:radial-gradient(circle at 50% 42%,rgba(146,64,14,.32),rgba(9,6,5,.97) 63%,#000)}
+  .ll-pack-cinematic::before{content:'';position:absolute;inset:-35%;z-index:-2;opacity:0;background:repeating-conic-gradient(from 0deg,transparent 0 10deg,rgba(255,255,255,.05) 10deg 13deg,transparent 13deg 24deg);animation:llPackRays 9s linear infinite}
+  .ll-pack-cinematic.blast::before{opacity:.55;transition:opacity .35s ease}
+  .ll-pack-cinematic::after{content:'';position:absolute;inset:0;z-index:20;pointer-events:none;background:#fff;opacity:0}
+  .ll-pack-cinematic.blast::after{animation:llPackFlash .58s ease-out}
+  .ll-pack-skip{position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));z-index:30;border:1px solid rgba(147,197,253,.42);border-radius:999px;padding:8px 13px;color:var(--pack-accent2);background:rgba(2,6,23,.58);font:800 10px 'DM Sans';letter-spacing:.7px;cursor:pointer}
+  .elite .ll-pack-skip{border-color:rgba(250,204,21,.48)}
+  .ll-pack-stage{width:min(760px,100%);display:grid;place-items:center;text-align:center}
+  .ll-pack-kicker{color:var(--pack-accent2);font-size:10px;font-weight:950;letter-spacing:2px;text-transform:uppercase}
+  .ll-pack-title{margin-top:5px;color:#fff;font-family:'Cormorant Garamond',serif;font-size:clamp(31px,7vw,54px);line-height:1}
+  .ll-pack-title em{color:var(--pack-accent);font-weight:500}
+  .ll-pack-shell{position:relative;width:220px;height:320px;margin-top:24px;border:2px solid rgba(96,165,250,.52);border-radius:17px;background:linear-gradient(150deg,#1e3a8a,#0b1224 58%,#030712);box-shadow:0 0 48px rgba(96,165,250,.34),0 26px 70px rgba(0,0,0,.7),inset 0 0 38px rgba(147,197,253,.11);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;animation:llPackIdle 2.3s ease-in-out infinite;overflow:hidden}
+  .elite .ll-pack-shell{width:230px;height:335px;border-color:rgba(250,204,21,.58);background:linear-gradient(150deg,#3a2a08,#1c1404 55%,#090603);box-shadow:0 0 58px rgba(250,204,21,.36),0 28px 75px rgba(0,0,0,.75),inset 0 0 42px rgba(253,230,138,.12)}
+  .ll-pack-shell::before{content:'';position:absolute;inset:-70% -90%;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.32) 49%,transparent 56%);transform:translateX(-34%);animation:llPackSheen 3.2s linear infinite}
+  .ll-pack-shell.charging{animation:llPackShake .5s ease-in-out infinite}
+  .ll-pack-shell.launched{animation:none;opacity:0;transform:scale(1.22);transition:opacity .42s ease,transform .42s ease}
+  .ll-pack-crown{font-size:24px;filter:drop-shadow(0 0 9px rgba(250,204,21,.6));margin-bottom:8px}
+  .ll-pack-brand{color:var(--pack-accent2);font-size:15px;font-weight:900;letter-spacing:4px}
+  .ll-pack-line{width:68%;height:2px;margin:14px 0;background:linear-gradient(90deg,transparent,var(--pack-accent),transparent)}
+  .ll-pack-type{color:#94a3b8;font-size:10px;font-weight:800;letter-spacing:2.5px}
+  .elite .ll-pack-type{color:#a8863a}
+  .ll-pack-cost{margin-top:12px;padding:5px 14px;border:1px solid rgba(147,197,253,.42);border-radius:999px;color:var(--pack-accent2);font-size:11px;font-weight:900}
+  .elite .ll-pack-cost{border-color:rgba(250,204,21,.46)}
+  .ll-pack-tap{position:absolute;bottom:18px;color:var(--pack-accent2);font-size:9px;font-weight:900;letter-spacing:1.6px;animation:llPackTap 1.5s ease-in-out infinite}
+  .ll-pack-cards{display:none;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px;perspective:1400px}
+  .ll-pack-cinematic.cards-ready .ll-pack-shell{display:none}
+  .ll-pack-cinematic.cards-ready .ll-pack-cards{display:grid;animation:llPackCardsIn .58s cubic-bezier(.18,.82,.25,1.15) both}
+  .ll-pack-card{position:relative;min-height:362px;transform-style:preserve-3d;transform:rotateY(180deg) scale(.9);transition:transform .88s cubic-bezier(.18,.85,.24,1.18);cursor:pointer;scroll-snap-align:center}
+  .elite .ll-pack-card{transition-duration:1.05s}
+  .ll-pack-card.revealed{transform:rotateY(0) scale(1);cursor:default}
+  .ll-pack-card-face{position:absolute;inset:0;padding:18px;border:2px solid var(--card-color,var(--pack-accent));border-radius:17px;backface-visibility:hidden;overflow:hidden;box-shadow:0 22px 55px rgba(0,0,0,.55),0 0 28px rgba(96,165,250,.16)}
+  .elite .ll-pack-card-face{box-shadow:0 22px 55px rgba(0,0,0,.58),0 0 31px rgba(250,204,21,.14)}
+  .ll-pack-card-back{display:grid;place-items:center;background:linear-gradient(150deg,#172554,#0b1224 58%,#030712);transform:rotateY(180deg);color:var(--pack-accent2);font-size:11px;font-weight:950;letter-spacing:3px}
+  .elite .ll-pack-card-back{background:linear-gradient(150deg,#3a2a08,#1c1404 58%,#090603)}
+  .ll-pack-card-front{display:flex;flex-direction:column;align-items:center;background:linear-gradient(155deg,var(--card-light,#64748b),var(--card-color,#334155) 48%,#111827);color:#fff}
+  .ll-pack-card-front::after{content:'';position:absolute;inset:-55%;pointer-events:none;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.42) 50%,transparent 58%);transform:translateX(-45%)}
+  .ll-pack-card.revealed .ll-pack-card-front::after{animation:llCardRevealSheen 1.15s ease-out .35s}
+  .ll-pack-rarity{position:relative;z-index:1;padding:5px 13px;border-radius:999px;background:rgba(0,0,0,.27);font-size:9px;font-weight:950;letter-spacing:1.4px}
+  .ll-pack-pos-icon{position:relative;z-index:1;width:66px;height:66px;margin-top:14px;border:2px solid rgba(255,255,255,.5);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);font-size:25px}
+  .ll-pack-card-name{position:relative;z-index:1;margin-top:12px;font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:800;line-height:1.05;text-align:center}
+  .ll-pack-card-meta{position:relative;z-index:1;margin-top:5px;color:rgba(255,255,255,.78);font-size:10px;font-weight:800;letter-spacing:.8px}
+  .ll-pack-card-effect{position:relative;z-index:1;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.28);font-size:10px;line-height:1.5;text-align:center}
+  .ll-pack-card-actions{position:relative;z-index:1;width:100%;margin-top:auto;padding-top:14px}
+  .ll-pack-card-actions .ll-btn{width:100%}
+  .ll-pack-cinematic:not(.all-revealed) .ll-pack-card-actions{visibility:hidden}
+  .ll-pack-card:not(.revealed) .ll-pack-card-front{pointer-events:none}
+  .ll-pack-card:not(.revealed) .ll-pack-card-back::after{content:'DOKUN VE AÇ';position:absolute;bottom:25px;font-size:8px;letter-spacing:1.5px;animation:llPackTap 1.5s infinite}
+  .ll-pack-controls{display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:17px}
+  .ll-pack-cinematic.all-revealed .ll-pack-controls{display:flex;animation:llPackControlIn .35s ease both}
+  .ll-pack-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .ll-pack-particle{position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;background:var(--particle,var(--pack-accent));box-shadow:0 0 7px var(--particle,var(--pack-accent));animation:llPackParticle var(--duration,1.2s) ease-out var(--delay,0s) forwards}
+  .ll-signing-cinematic{position:fixed;inset:0;z-index:13000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(30,64,175,.27),rgba(2,6,23,.97) 65%,#000);overflow:hidden;text-align:center}
+  .ll-signing-cinematic.stay{background:radial-gradient(circle at 50% 40%,rgba(13,148,136,.24),rgba(2,6,23,.97) 65%,#000)}
+  .ll-signing-stage{position:relative;width:min(620px,100%);padding:25px 18px}
+  .ll-signing-kicker{color:#93c5fd;font-size:10px;font-weight:950;letter-spacing:2px;text-transform:uppercase}
+  .stay .ll-signing-kicker{color:#99f6e4}
+  .ll-signing-crest{width:160px;height:160px;margin:22px auto 16px;padding:20px;border:3px solid rgba(147,197,253,.52);border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#172554,#080f20);box-shadow:0 0 55px rgba(96,165,250,.38);opacity:0;transform:scale(.3) rotate(-24deg)}
+  .stay .ll-signing-crest{border-color:rgba(94,234,212,.5);box-shadow:0 0 55px rgba(45,212,191,.3)}
+  .ll-signing-cinematic.play .ll-signing-crest{animation:llSigningCrest .9s cubic-bezier(.18,.85,.24,1.2) forwards}
+  .ll-signing-crest .ll-team-logo{width:105px!important;height:105px!important;margin:0!important}
+  .ll-signing-team{opacity:0;transform:translateY(12px)}
+  .ll-signing-cinematic.play .ll-signing-team{animation:llSigningText .55s ease .55s forwards}
+  .ll-signing-team h2{margin:0;color:#fff;font-family:'Cormorant Garamond',serif;font-size:clamp(34px,8vw,54px)}
+  .ll-signing-team p{margin:5px 0 0;color:#93a4bf;font-size:11px;line-height:1.6}
+  .ll-signing-stamp{display:inline-block;margin-top:22px;padding:9px 24px;border:3px solid #facc15;border-radius:8px;color:#facc15;font-size:22px;font-weight:950;letter-spacing:3px;opacity:0;transform:scale(3) rotate(-7deg)}
+  .stay .ll-signing-stamp{border-color:#5eead4;color:#5eead4}
+  .ll-signing-cinematic.play .ll-signing-stamp{animation:llSigningStamp .35s ease-out 1.18s forwards}
+  .ll-signing-detail{margin:18px auto 0;max-width:520px;color:#cbd5e1;font-size:11px;line-height:1.65;opacity:0}
+  .ll-signing-cinematic.play .ll-signing-detail{animation:llSigningText .5s ease 1.58s forwards}
+  .ll-signing-actions{margin-top:20px;opacity:0}
+  .ll-signing-cinematic.play .ll-signing-actions{animation:llSigningText .45s ease 1.9s forwards}
+  @keyframes llPackIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(1deg)}}
+  @keyframes llPackShake{0%,100%{transform:translateX(0) scale(1.04)}25%{transform:translateX(-7px) rotate(-1.5deg) scale(1.07)}50%{transform:translateX(7px) rotate(1.5deg) scale(1.09)}75%{transform:translateX(-4px) rotate(-1deg) scale(1.1)}}
+  @keyframes llPackTap{0%,100%{opacity:.42}50%{opacity:1}}
+  @keyframes llPackSheen{from{transform:translateX(-42%)}to{transform:translateX(42%)}}
+  @keyframes llPackRays{to{transform:rotate(360deg)}}
+  @keyframes llPackFlash{0%{opacity:0}12%{opacity:.95}100%{opacity:0}}
+  @keyframes llPackCardsIn{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:scale(1)}}
+  @keyframes llCardRevealSheen{0%{transform:translateX(-45%);opacity:0}30%{opacity:1}100%{transform:translateX(45%);opacity:0}}
+  @keyframes llPackControlIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes llPackParticle{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2)}}
+  @keyframes llSigningCrest{0%{opacity:0;transform:scale(.3) rotate(-24deg)}65%{opacity:1;transform:scale(1.1) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+  @keyframes llSigningText{to{opacity:1;transform:none}}
+  @keyframes llSigningStamp{0%{opacity:0;transform:scale(3) rotate(-7deg)}65%{opacity:1;transform:scale(.9) rotate(-7deg)}100%{opacity:1;transform:scale(1) rotate(-7deg)}}
+  @media(max-width:600px){
+    .ll-pack-cinematic{padding:12px 0}.ll-pack-stage{width:100%}.ll-pack-title{padding:0 48px}.ll-pack-cards{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:min(82vw,285px);gap:12px;padding:0 9vw;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.ll-pack-cards::-webkit-scrollbar{display:none}.ll-pack-card{min-height:355px}.ll-pack-card-name{font-size:22px}.ll-pack-controls{padding:0 14px}.ll-signing-crest{width:138px;height:138px}.ll-signing-crest .ll-team-logo{width:90px!important;height:90px!important}.ll-signing-stamp{font-size:17px;letter-spacing:2px;padding:8px 17px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .ll-pack-cinematic::before,.ll-pack-shell,.ll-pack-shell::before,.ll-pack-tap,.ll-pack-card-back::after,.ll-pack-particle{animation:none!important}.ll-pack-card,.ll-pack-shell{transition:none!important}.ll-signing-cinematic.play .ll-signing-crest,.ll-signing-cinematic.play .ll-signing-team,.ll-signing-cinematic.play .ll-signing-stamp,.ll-signing-cinematic.play .ll-signing-detail,.ll-signing-cinematic.play .ll-signing-actions{animation-duration:.01ms!important;animation-delay:0ms!important}
+  }
   .ll-rarity { display:inline-flex; padding:4px 8px; border-radius:99px; font-size:9px; letter-spacing:1px; text-transform:uppercase; background:rgba(255,255,255,.06); margin-bottom:9px; }
   .ll-modal { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
   .ll-modal-card { width:min(520px,100%); max-height:calc(100dvh - 24px); overflow-y:auto; overscroll-behavior:contain; background:var(--bg2); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 22px 70px rgba(0,0,0,.7); padding:22px; }
@@ -2966,10 +3058,13 @@ function llRenderShop(){
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklif dönemi:</b> Bu dönemde gördüğün kart ailesi yeniden çıkmaz ve aynı pakette iki benzer kart bulunmaz. Bir kez seçip kullandığın kart ailesinin daha güçlü/zayıf benzeri kariyer boyunca tekrar teklif edilmez. Kaleci, Orta Saha ve Forvet kartları kendi kasalarına özeldir; “Evrensel” kartlar istisna olarak herhangi bir yuvaya takılabilir ama aile kilidi nedeniyle yalnız bir kez görünür.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
 }
 function llOpenShopPack(pos){
-  const cost=llShopCost();if(lexLeague.state.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
-  const seen=llShopSeenFamilies(),pool=llEligibleCards(lexLeague.state.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
+  const s=lexLeague.state,cost=llShopCost();
+  if(s.pendingPremiumPack){alert('Önce açık Elit Paketteki iki karttan birini seç veya paketten vazgeç.');llRenderShop();return;}
+  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
+  if(s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
+  const seen=llShopSeenFamilies(),pool=llEligibleCards(s.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
   const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  lexLeague.state.ap-=cost;lexLeague.shop={mode:'regular',position:pos,offers:offers.map(c=>c.id)};llMarkShopFamiliesSeen(offers);llDiscoverCards(lexLeague.shop.offers);llSave();llRenderShopOffers();llRevealOpenedPack();
+  s.ap-=cost;const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost,offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers]};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost});
 }
 function llRevealOpenedPack(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;
@@ -2988,9 +3083,10 @@ function llChooseShopCard(id){
   const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
   const player=llTeamState(lexLeague.state.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
   if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
+  if(sh.mode==='regular')lexLeague.state.pendingRegularPack=null;
   llSave();llRenderShop();
 }
-function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;lexLeague.shop={position:null,offers:[]};llRenderShop();}
+function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;if(lexLeague.shop?.mode==='regular')lexLeague.state.pendingRegularPack=null;lexLeague.shop={position:null,offers:[]};llSave();llRenderShop();}
 function llEnsureDiscoveredCards(){
   const s=lexLeague.state;if(!s)return [];
   if(!Array.isArray(s.discoveredCards))s.discoveredCards=[];
@@ -5071,7 +5167,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260719-1"></script>
-<script src="manager-market.js?v=20260718-2"></script>
+<script src="league-v2.js?v=20260719-2"></script>
+<script src="manager-market.js?v=20260719-1"></script>
 </body>
 </html>
