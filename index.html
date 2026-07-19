@@ -763,6 +763,13 @@
     body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
     body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
   }
+
+  .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
+  .ll-season-opening-hero{padding:28px;border:1px solid rgba(201,168,76,.32);border-radius:18px;background:radial-gradient(circle at 78% 15%,rgba(201,168,76,.15),transparent 31%),linear-gradient(135deg,rgba(14,116,144,.19),rgba(10,14,23,.88) 52%,rgba(120,53,15,.18));box-shadow:0 18px 50px rgba(0,0,0,.28)}.ll-season-opening-kicker{color:#facc15;font-size:10px;font-weight:950;letter-spacing:1.8px;text-transform:uppercase}.ll-season-opening-title{margin-top:5px;font-family:'Cormorant Garamond',serif;font-size:clamp(34px,6vw,58px);line-height:1}.ll-season-opening-title em{color:#5eead4;font-weight:500}.ll-season-opening-sub{margin-top:9px;color:var(--text2);font-size:13px}
+  .ll-season-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:14px}.ll-season-card{padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(18,24,35,.72)}.ll-season-team-list{display:grid;gap:7px;margin-top:10px}.ll-season-team-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 9px;border-radius:9px;background:rgba(255,255,255,.025)}.ll-season-team-row strong{display:flex;align-items:center;gap:7px;min-width:0;font-size:11px}.ll-season-team-row span{color:var(--text2);font-size:10px;text-align:right}
+  .ll-season-europe-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.ll-season-europe{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,7,18,.28)}.ll-season-europe b{display:block;margin-bottom:7px;color:#c4b5fd;font-size:10px}.ll-season-goal{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px}.ll-season-goal:last-child{border-bottom:0}.ll-season-goal span:last-child{color:#facc15;font-weight:800;text-align:right}
+  @media(max-width:700px){.ll-season-opening-hero{padding:20px 16px}.ll-season-grid,.ll-season-europe-grid{grid-template-columns:1fr}.ll-team-ranks span{white-space:normal}}
+
   @media (prefers-reduced-motion:reduce){
     .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
     .ll-panel.ll-goal-flash::after{display:none}
@@ -1862,6 +1869,7 @@ function llCardUpgradeBadgeHtml(card){
   const label=upgraded?`${llCardDisplayRarity(card)} · GELİŞTİRİLMİŞ`:'⬆ GELİŞTİRİLEBİLİR';
   const color=upgraded?'#facc15':'#67e8f9',border=upgraded?'rgba(250,204,21,.55)':'rgba(103,232,249,.45)',background=upgraded?'rgba(250,204,21,.10)':'rgba(34,211,238,.09)';
   return `<span class="ll-upgrade-badge" style="display:inline-flex;align-items:center;width:max-content;margin:6px 0 2px;padding:4px 8px;border:1px solid ${border};border-radius:999px;background:${background};color:${color};font-size:9px;font-weight:900;letter-spacing:.7px">${label}</span>`;
+}
 function llCardUpgradePreviewHtml(card){
   if(!card||card.upgradeLevel||!LL_CARD_UPGRADE_SOURCE_IDS.has(card.id))return '';
   const definition=LL_CARD_UPGRADE_DEFINITIONS.find(item=>item.from===card.id);
@@ -1869,7 +1877,6 @@ function llCardUpgradePreviewHtml(card){
   const target=llCard(definition.card.id)||{...definition.card,upgradeLevel:1};
   const cost=typeof llUpgradeCost==='function'?llUpgradeCost(card):0;
   return `<div class="ll-upgrade-preview"><div class="ll-upgrade-preview-title">&#11014; Geli&#351;tirme &#246;nizlemesi</div><div class="ll-muted" style="margin-top:5px">Sonu&#231; rastgele de&#287;ildir${cost?` &middot; Bedel: ${cost} LP`:''}. Yaln&#305;zca transfer d&#246;neminde uygulan&#305;r.</div><div class="ll-upgrade-compare"><div class="ll-upgrade-state"><b>&#350;imdiki h&acirc;li &middot; ${llEscape(llCardDisplayRarity(card))}</b>Tetikleyici: ${llEscape(card.trigger)}<br>Etki: ${llEscape(card.effect)}</div><div class="ll-upgrade-state after"><b>Geli&#351;tirilmi&#351; h&acirc;li &middot; ${llEscape(llCardDisplayRarity(target))}</b>Tetikleyici: ${llEscape(target.trigger)}<br>Etki: ${llEscape(target.effect)}</div></div></div>`;
-}
 }
 const LL_CARD_RARITY_RANK={common:1,rare:2,epic:3,legendary:4};
 const llCardFamilyName=card=>card?.name?.replace(/\s*\([^)]*\)\s*$/,'').trim()||'';
@@ -5064,7 +5071,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260718-7"></script>
+<script src="league-v2.js?v=20260719-1"></script>
 <script src="manager-market.js?v=20260718-2"></script>
 </body>
 </html>
