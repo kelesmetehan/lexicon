@@ -25,7 +25,7 @@ assert(manager.includes('target.targetLabel')&&manager.includes('target.europe')
 assert(manager.indexOf('llSave();llRenderSeasonEnd();requestAnimationFrame')>manager.indexOf("market.status='chosen'"),'The manager choice must be saved before animation starts.');
 assert(html.includes('@media(max-width:600px)')&&html.includes('scroll-snap-type:x mandatory'),'Two cards must remain usable on mobile.');
 assert(html.includes('@media(prefers-reduced-motion:reduce)'),'Reduced-motion behavior must be present.');
-assert(html.includes('league-v2.js?v=20260720-2')&&html.includes('manager-market.js?v=20260719-1'),'Script cache versions must be updated.');
+assert(html.includes('league-v2.js?v=20260720-3')&&html.includes('manager-market.js?v=20260719-1'),'Script cache versions must be updated.');
 assert(league.includes('function llPaidPremiumPackUsed(state)'),'Paid elite use must be derived from paid package history.');
 assert(league.includes("item?.source==='paid'"),'A free objective pack must not consume the paid elite allowance.');
 assert(league.includes("'Dashboarda Dön'")&&league.includes("'Sezon Bilgileri'"),'Mid-season season information must not offer to start the season again.');
