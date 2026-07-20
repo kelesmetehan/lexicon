@@ -25,5 +25,13 @@ assert(manager.includes('target.targetLabel')&&manager.includes('target.europe')
 assert(manager.indexOf('llSave();llRenderSeasonEnd();requestAnimationFrame')>manager.indexOf("market.status='chosen'"),'The manager choice must be saved before animation starts.');
 assert(html.includes('@media(max-width:600px)')&&html.includes('scroll-snap-type:x mandatory'),'Two cards must remain usable on mobile.');
 assert(html.includes('@media(prefers-reduced-motion:reduce)'),'Reduced-motion behavior must be present.');
-assert(html.includes('league-v2.js?v=20260719-2')&&html.includes('manager-market.js?v=20260719-1'),'Script cache versions must be updated.');
-console.log('Presentation flows: 14 checks passed.');
+assert(html.includes('league-v2.js?v=20260720-2')&&html.includes('manager-market.js?v=20260719-1'),'Script cache versions must be updated.');
+assert(league.includes('function llPaidPremiumPackUsed(state)'),'Paid elite use must be derived from paid package history.');
+assert(league.includes("item?.source==='paid'"),'A free objective pack must not consume the paid elite allowance.');
+assert(league.includes("'Dashboarda Dön'")&&league.includes("'Sezon Bilgileri'"),'Mid-season season information must not offer to start the season again.');
+const paidHelperSource=league.match(/function llPaidPremiumPackUsed\(state\)\{[^}]+\}/)?.[0];
+assert(paidHelperSource,'Paid elite helper source must be available.');
+const paidHelper=new Function(`${paidHelperSource};return llPaidPremiumPackUsed;`)();
+assert.strictEqual(paidHelper({season:4,premiumPackHistory:[{season:4,source:'voucher'}]}),false,'A free objective pack must leave the paid package available.');
+assert.strictEqual(paidHelper({season:4,premiumPackHistory:[{season:4,source:'paid'}]}),true,'A paid package in the same season must consume the allowance.');
+console.log('Presentation flows: 19 checks passed.');
