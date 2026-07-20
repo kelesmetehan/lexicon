@@ -924,3 +924,101 @@ function llSpawnCinematicParticles(root,count,colors){const host=root?.querySele
 function llSelectPackCard(id){const result=llChooseShopCard(id);if(result!==false)llClosePackOpening();}
 function llDiscardOpenedPack(){const runtime=llPackOpeningRuntime;if(!runtime)return;if(!confirm('Bu iki kart alınmadan paket silinecek ve AP/paket hakkı iade edilmeyecek. Devam edilsin mi?'))return;const mode=runtime.mode;llClosePackOpening();if(mode==='elite')llDeferPremiumPack();else llSkipShopCards();}
 function llClosePackOpening(){const runtime=llPackOpeningRuntime;if(runtime?.timers)runtime.timers.forEach(clearTimeout);document.getElementById('ll-pack-cinematic')?.remove();document.body?.classList.remove('ll-cinematic-open');llPackOpeningRuntime=null;}
+/* Local career slots and portable JSON backups. Vocabulary remains shared between slots. */
+const LL_SAVE_SLOTS_KEY='lexicon_league_save_slots_v1';
+const LL_ACTIVE_SLOT_KEY='lexicon_league_active_slot_v1';
+const LL_SAVE_SLOT_COUNT=3;
+const LL_BACKUP_FORMAT_VERSION=1;
+let llSaveSlotPendingCareer=null;
+let llSaveSlotPendingImport=null;
+
+function llSlotNumber(value){const slot=Number(value);return Number.isInteger(slot)&&slot>=1&&slot<=LL_SAVE_SLOT_COUNT?slot:null;}
+function llSlotClone(value){return value==null?value:JSON.parse(JSON.stringify(value));}
+function llSlotCareerLooksValid(state){return !!(state&&typeof state==='object'&&Number(state.version)===2&&typeof state.playerTeam==='string'&&state.playerTeam&&Number.isFinite(Number(state.season))&&Number.isFinite(Number(state.week))&&state.teams&&typeof state.teams==='object'&&state.teams[state.playerTeam]&&state.leagues&&typeof state.leagues==='object'&&state.standings&&typeof state.standings==='object');}
+function llSlotEmptyStore(){return {version:1,activeSlot:1,slots:{'1':null,'2':null,'3':null}};}
+function llSlotNormalizeRecord(record){if(!record)return null;const state=record.state||record;if(!llSlotCareerLooksValid(state))return null;return {state:llSlotClone(state),updatedAt:typeof record.updatedAt==='string'?record.updatedAt:(state.updatedAt||state.createdAt||new Date().toISOString())};}
+function llSlotWriteStore(store){try{localStorage.setItem(LL_SAVE_SLOTS_KEY,JSON.stringify(store));localStorage.setItem(LL_ACTIVE_SLOT_KEY,String(store.activeSlot));return true;}catch(error){console.error('Kariyer yuvaları kaydedilemedi.',error);alert('Kayıt alanı dolu veya tarayıcı kayda izin vermiyor. Tam yedek alıp kullanılmayan bir kariyeri silmen gerekebilir.');return false;}}
+function llEnsureSaveSlots(){
+  let raw=null;try{raw=JSON.parse(localStorage.getItem(LL_SAVE_SLOTS_KEY)||'null');}catch{raw=null;}
+  const store=llSlotEmptyStore();
+  if(raw&&typeof raw==='object'){
+    for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++)store.slots[String(slot)]=llSlotNormalizeRecord(raw.slots?.[String(slot)]);
+    store.activeSlot=llSlotNumber(localStorage.getItem(LL_ACTIVE_SLOT_KEY))||llSlotNumber(raw.activeSlot)||1;
+  }else{
+    let legacy=null;try{legacy=JSON.parse(localStorage.getItem(LL_V2_SAVE_KEY)||'null');}catch{legacy=null;}
+    if(llSlotCareerLooksValid(legacy))store.slots['1']={state:llSlotClone(legacy),updatedAt:legacy.updatedAt||legacy.createdAt||new Date().toISOString()};
+  }
+  llSlotWriteStore(store);return store;
+}
+function llGetActiveSaveSlot(){const store=llEnsureSaveSlots();return llSlotNumber(localStorage.getItem(LL_ACTIVE_SLOT_KEY))||store.activeSlot||1;}
+function llMirrorActiveCareer(store){const record=store.slots[String(store.activeSlot)];if(record?.state)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(record.state));else localStorage.removeItem(LL_V2_SAVE_KEY);}
+function llSetActiveSaveSlot(slot){const selected=llSlotNumber(slot);if(!selected)return false;const store=llEnsureSaveSlots();store.activeSlot=selected;llSlotWriteStore(store);llMirrorActiveCareer(store);return true;}
+function llRepairPortableCareer(raw){if(!llSlotCareerLooksValid(raw))throw new Error('Kariyer verisinin yapısı geçerli değil.');const state=llV2RepairState(llSlotClone(raw));if(!llSlotCareerLooksValid(state))throw new Error('Kariyer verisi onarılamadı.');return state;}
+
+llSave=function(){
+  if(!lexLeague.state)return false;
+  const store=llEnsureSaveSlots(),slot=llSlotNumber(store.activeSlot)||1,now=new Date().toISOString();
+  lexLeague.state.updatedAt=now;store.activeSlot=slot;store.slots[String(slot)]={state:llSlotClone(lexLeague.state),updatedAt:now};
+  const saved=llSlotWriteStore(store);if(saved)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(lexLeague.state));return saved;
+};
+llLoad=function(slot=null){
+  const store=llEnsureSaveSlots(),selected=llSlotNumber(slot)||llSlotNumber(store.activeSlot)||1,record=store.slots[String(selected)];if(!record)return null;
+  try{const state=llRepairPortableCareer(record.state);store.activeSlot=selected;store.slots[String(selected)]={state:llSlotClone(state),updatedAt:record.updatedAt||new Date().toISOString()};llSlotWriteStore(store);localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(state));return state;}catch(error){console.error('Kariyer yüklenemedi.',error);return null;}
+};
+llContinueGame=function(slot=null){const selected=llSlotNumber(slot)||llGetActiveSaveSlot(),state=llLoad(selected);if(!state){llCreateCareerInSlot(selected);return;}lexLeague.state=state;lexLeague.active=true;llSetWide(true);llSave();if(!state.starterPackClaimed)llRenderStarterShop();else if(state.seasonEnded)llRenderSeasonEnd();else llRenderDashboard();};
+llResetGame=function(slot=null){const selected=llSlotNumber(slot)||llGetActiveSaveSlot(),store=llEnsureSaveSlots(),record=store.slots[String(selected)];if(!record)return;if(!confirm(`${selected}. kariyer yuvasındaki ${record.state.playerTeam} kaydı kalıcı olarak silinsin mi?\n\nKelime ve sözlük ilerlemen silinmez.`))return;store.slots[String(selected)]=null;const next=Object.keys(store.slots).find(key=>store.slots[key]);store.activeSlot=next?Number(next):1;llSlotWriteStore(store);llMirrorActiveCareer(store);lexLeague.state=null;llClearTransient();renderLexiconLeagueLanding();};
+const llSlotTeamSelectBase=llRenderTeamSelect;
+llRenderTeamSelect=function(slot=null){
+  const store=llEnsureSaveSlots();llSaveSlotPendingCareer=llSlotNumber(slot)||llSaveSlotPendingCareer||Number(Object.keys(store.slots).find(key=>!store.slots[key]))||store.activeSlot||1;
+  llSlotTeamSelectBase();const muted=llArea()?.querySelector('.ll-topbar .ll-muted');if(muted)muted.innerHTML=`${llSaveSlotPendingCareer}. kariyer yuvası · 20 kulüp · 6 yıldızlı güç sistemi · Kelime ilerlemesi tüm kariyerlerde ortaktır.`;
+};
+function llCreateCareerInSlot(slot){const selected=llSlotNumber(slot);if(!selected)return;const store=llEnsureSaveSlots(),record=store.slots[String(selected)];if(record&&!confirm(`${selected}. yuvadaki ${record.state.playerTeam} kariyerinin üzerine yeni kariyer yazılsın mı?`))return;llSaveSlotPendingCareer=selected;llRenderTeamSelect(selected);}
+llStartCareer=function(teamName){
+  const store=llEnsureSaveSlots(),slot=llSlotNumber(llSaveSlotPendingCareer)||Number(Object.keys(store.slots).find(key=>!store.slots[key]))||store.activeSlot||1,record=store.slots[String(slot)];
+  if(record&&!confirm(`${slot}. yuvadaki ${record.state.playerTeam} kariyerinin üzerine yeni kariyer yazılsın mı?`))return;
+  store.activeSlot=slot;store.slots[String(slot)]=null;llSlotWriteStore(store);llMirrorActiveCareer(store);lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSaveSlotPendingCareer=null;llSave();llRenderStarterShop();
+};
+
+function llSlotStateLeague(state){if(state?.leagues?.super?.includes(state.playerTeam))return 'super';if(state?.leagues?.first?.includes(state.playerTeam))return 'first';return null;}
+function llSlotPosition(state,key){const rows=Object.values(state?.standings?.[key]||{}).sort((a,b)=>(Number(b.Pts)||0)-(Number(a.Pts)||0)||(Number(b.GD)||0)-(Number(a.GD)||0)||(Number(b.GF)||0)-(Number(a.GF)||0));const index=rows.findIndex(row=>row.team===state.playerTeam);return index>=0?index+1:null;}
+function llSlotDate(value){try{return new Intl.DateTimeFormat('tr-TR',{dateStyle:'short',timeStyle:'short'}).format(new Date(value));}catch{return 'Tarih yok';}}
+function llSlotCardHtml(slot,record,activeSlot){
+  if(!record)return `<div class="ll-save-card empty"><div class="ll-save-slot-label"><span>${slot}. Kariyer Yuvası</span><i>BOŞ</i></div><div class="ll-title" style="font-size:25px;margin-top:18px">Yeni bir <em>hikâye</em> başlat</div><div class="ll-muted" style="margin:9px 0 17px">Bu yuva diğer kariyerlerden bağımsızdır. Kelime ilerlemen ortak kalır.</div><button class="ll-btn gold" onclick="llCreateCareerInSlot(${slot})">Yeni Kariyer Başlat</button></div>`;
+  const state=record.state,key=llSlotStateLeague(state),team=state.teams?.[state.playerTeam]||{},position=key?llSlotPosition(state,key):null,status=state.careerEnded?'Kariyer sona erdi':state.seasonEnded?'Sezon tamamlandı':`${Number(state.week)||1}. hafta`;
+  return `<div class="ll-save-card ${slot===activeSlot?'active':''}"><div class="ll-save-slot-label"><span>${slot}. Kariyer Yuvası</span>${slot===activeSlot?'<i>AKTİF</i>':''}</div><div class="ll-save-team">${llTeamLogo(state.playerTeam,'compact')}<span>${llEscape(state.playerTeam)}</span></div><div class="ll-stars" style="margin-top:8px">${llStars(Math.max(1,Math.min(6,Number(team.stars)||1)))}</div><div class="ll-save-meta"><span>Sezon ${Number(state.season)||1} · ${llEscape(status)}</span><span>${llEscape(key?llLeagueLabel(key):'Lig yok')}${position?` · ${position}. sıra`:''}</span><span>AP ${Math.floor(Number(state.ap)||0)}</span><span>LP ${Math.floor(Number(state.lp)||0)}</span></div><div class="ll-save-updated">Son kayıt: ${llEscape(llSlotDate(record.updatedAt))}</div><div class="ll-save-actions"><button class="ll-btn primary" onclick="llContinueGame(${slot})">Kariyere Devam Et</button><button class="ll-btn" onclick="llExportCareerSlot(${slot})">Dışa Aktar</button><button class="ll-btn danger" onclick="llResetGame(${slot})">Sil</button></div></div>`;
+}
+
+renderLexiconLeagueLanding=function(){
+  lexLeague.active=true;llSetWide(true);llClearTransient();if(typeof llSetEuropeMatchTheme==='function')llSetEuropeMatchTheme(null);const store=llEnsureSaveSlots(),occupied=Object.values(store.slots).filter(Boolean).length;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">🎲⚽</div><div><div class="ll-title">Lexicon <em>League</em></div><div class="ll-muted">3 bağımsız kariyer · Ortak kelime ilerlemesi · Bulutsuz taşınabilir yedek</div></div></div><button class="ll-btn" onclick="llGoMainMenu()">← Ana Menü</button></div><div class="ll-notice"><b>Kariyerler ayrıdır:</b> takım, sezon, AP, LP, kartlar ve kupalar yalnızca kendi yuvasında saklanır. <b>Kelimeler ortaktır:</b> bilme oranı, tekrar geçmişi ve sözlük ilerlemesi üç kariyerde de aynıdır.</div><div class="ll-save-grid">${[1,2,3].map(slot=>llSlotCardHtml(slot,store.slots[String(slot)],store.activeSlot)).join('')}</div><div class="ll-backup-panel"><div class="ll-backup-head"><div><div class="ll-card-title" style="margin-bottom:5px">Cihazlar Arası Kayıt Taşıma</div><div class="ll-sub">Tam yedek; ${occupied} kariyer yuvasını, kelimeleri ve çalışma istatistiklerini tek JSON dosyasında taşır. Bulut bağlantısı kullanılmaz.</div></div><div class="ll-backup-actions"><button class="ll-btn primary" onclick="llExportFullBackup()">Tam Yedeği Dışa Aktar</button><button class="ll-btn" onclick="document.getElementById('ll-backup-file').click()">Yedeği İçe Aktar</button><input id="ll-backup-file" type="file" accept="application/json,.json" hidden onchange="llHandleBackupFile(this)"></div></div><div class="ll-muted" style="margin-top:10px">Telefondan PC'ye: telefonda dışa aktar → JSON dosyasını PC'ye gönder → PC'de içe aktar. İçe aktarmadan önce mevcut kayıt otomatik olarak ayrıca indirilir.</div></div></div></div>`;
+};
+function llBackupFileStamp(){const date=new Date(),pad=n=>String(n).padStart(2,'0');return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}`;}
+function llDownloadJson(filename,payload){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=filename;document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function llBuildFullBackup(){if(lexLeague.state)llSave();const store=llEnsureSaveSlots();let words=[],meta={};try{words=JSON.parse(localStorage.getItem(DB_KEY)||'[]');}catch{words=[];}try{meta=JSON.parse(localStorage.getItem(META_KEY)||'{}');}catch{meta={};}return {app:'lexicon-league',type:'full',formatVersion:LL_BACKUP_FORMAT_VERSION,exportedAt:new Date().toISOString(),activeSlot:store.activeSlot,careerSlots:llSlotClone(store.slots),vocabulary:{words:Array.isArray(words)?words:[],meta:meta&&typeof meta==='object'?meta:{}}};}
+function llExportFullBackup(){llDownloadJson(`lexicon-league-tam-yedek_${llBackupFileStamp()}.json`,llBuildFullBackup());}
+function llExportCareerSlot(slot){const selected=llSlotNumber(slot),record=llEnsureSaveSlots().slots[String(selected)];if(!record)return;llDownloadJson(`lexicon-league-${record.state.playerTeam.replace(/[^a-z0-9çğıöşü_-]+/gi,'-')}-yuva-${selected}_${llBackupFileStamp()}.json`,{app:'lexicon-league',type:'career',formatVersion:LL_BACKUP_FORMAT_VERSION,exportedAt:new Date().toISOString(),career:llSlotClone(record)});}
+function llValidateBackup(payload){
+  if(!payload||typeof payload!=='object'||payload.app!=='lexicon-league'||Number(payload.formatVersion)!==LL_BACKUP_FORMAT_VERSION)throw new Error('Bu dosya geçerli bir Lexicon League yedeği değil.');
+  if(payload.type==='career'){const record=llSlotNormalizeRecord(payload.career);if(!record)throw new Error('Dosyada geçerli kariyer bulunamadı.');return {type:'career',record};}
+  if(payload.type!=='full'||!payload.careerSlots||typeof payload.careerSlots!=='object')throw new Error('Yedek türü desteklenmiyor.');
+  const slots={};for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++){const raw=payload.careerSlots[String(slot)],record=raw?llSlotNormalizeRecord(raw):null;if(raw&&!record)throw new Error(`${slot}. kariyer yuvası bozuk.`);slots[String(slot)]=record;}
+  const words=payload.vocabulary?.words,meta=payload.vocabulary?.meta;if(!Array.isArray(words)||!meta||typeof meta!=='object'||Array.isArray(meta))throw new Error('Kelime veya çalışma istatistiği verisi geçerli değil.');
+  return {type:'full',activeSlot:llSlotNumber(payload.activeSlot)||1,slots,words:llSlotClone(words),meta:llSlotClone(meta),exportedAt:payload.exportedAt||null};
+}
+async function llHandleBackupFile(input){
+  const file=input?.files?.[0];if(!file)return;input.value='';if(file.size>12*1024*1024){alert('Yedek dosyası 12 MB sınırını aşıyor.');return;}
+  try{const validated=llValidateBackup(JSON.parse(await file.text()));if(validated.type==='career'){llSaveSlotPendingImport=validated.record;const store=llEnsureSaveSlots();llOpenModal(`<div class="ll-card-title">Kariyeri Hangi Yuvaya Aktaralım?</div><div class="ll-sub" style="margin-bottom:12px"><b>${llEscape(validated.record.state.playerTeam)}</b> · Sezon ${Number(validated.record.state.season)||1}. Dolu bir yuva seçilirse yalnızca o kariyerin üzerine yazılır; kelime ilerlemesi değişmez.</div><div class="ll-save-grid">${[1,2,3].map(slot=>`<button class="ll-team-option" onclick="llApplyCareerImport(${slot})"><b>${slot}. Yuva</b><div class="ll-range">${store.slots[String(slot)]?llEscape(store.slots[String(slot)].state.playerTeam):'Boş'}</div></button>`).join('')}</div>`);return;}llApplyFullBackup(validated);}catch(error){console.error(error);alert(`Yedek içe aktarılamadı: ${error.message||'Geçersiz dosya'}`);}
+}
+function llApplyCareerImport(slot){
+  const selected=llSlotNumber(slot),record=llSaveSlotPendingImport;if(!selected||!record)return;const store=llEnsureSaveSlots(),existing=store.slots[String(selected)];if(existing&&!confirm(`${selected}. yuvadaki ${existing.state.playerTeam} kariyerinin üzerine yazılsın mı?`))return;
+  try{const state=llRepairPortableCareer(record.state);llDownloadJson(`lexicon-league-aktarim-oncesi_${llBackupFileStamp()}.json`,llBuildFullBackup());store.slots[String(selected)]={state:llSlotClone(state),updatedAt:record.updatedAt||new Date().toISOString()};store.activeSlot=selected;if(!llSlotWriteStore(store))return;llMirrorActiveCareer(store);lexLeague.state=null;llSaveSlotPendingImport=null;llCloseModal();renderLexiconLeagueLanding();alert('Kariyer başarıyla içe aktarıldı. Kelime ilerlemesi değiştirilmedi.');}catch(error){alert(`Kariyer içe aktarılamadı: ${error.message}`);}
+}
+function llApplyFullBackup(validated){
+  const careerCount=Object.values(validated.slots).filter(Boolean).length,wordCount=validated.words.length;if(!confirm(`Yedekte ${careerCount} kariyer ve ${wordCount} kelime kaydı var.\n\nMevcut üç kariyer yuvası ve ortak kelime ilerlemesi bu yedekle değiştirilecek. Devam edilsin mi?`))return;
+  try{const repaired={};for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++){const record=validated.slots[String(slot)];repaired[String(slot)]=record?{state:llRepairPortableCareer(record.state),updatedAt:record.updatedAt||new Date().toISOString()}:null;}llDownloadJson(`lexicon-league-aktarim-oncesi_${llBackupFileStamp()}.json`,llBuildFullBackup());const store={version:1,activeSlot:validated.activeSlot,slots:repaired};if(!store.slots[String(store.activeSlot)]){const first=Object.keys(store.slots).find(key=>store.slots[key]);store.activeSlot=first?Number(first):1;}if(!llSlotWriteStore(store))return;localStorage.setItem(DB_KEY,JSON.stringify(validated.words));localStorage.setItem(META_KEY,JSON.stringify(validated.meta));llMirrorActiveCareer(store);lexLeague.state=null;alert('Tam yedek başarıyla içe aktarıldı. Sayfa yeni kariyerleri ve kelime ilerlemesini yüklemek için yenilenecek.');location.reload();}catch(error){console.error(error);alert(`Tam yedek içe aktarılamadı: ${error.message}`);}
+}
+
+const llSaveSlotDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){llSaveSlotDashboardBase();const actions=llArea()?.querySelector('.ll-topbar .ll-actions');if(actions&&!actions.querySelector('[data-save-manager]'))actions.insertAdjacentHTML('beforeend','<button class="ll-btn" data-save-manager onclick="renderLexiconLeagueLanding()">Kariyerler / Yedek</button>');};
+
+llEnsureSaveSlots();
