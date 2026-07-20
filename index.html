@@ -862,6 +862,24 @@
   .ll-season-europe-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.ll-season-europe{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,7,18,.28)}.ll-season-europe b{display:block;margin-bottom:7px;color:#c4b5fd;font-size:10px}.ll-season-goal{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px}.ll-season-goal:last-child{border-bottom:0}.ll-season-goal span:last-child{color:#facc15;font-weight:800;text-align:right}
   @media(max-width:700px){.ll-season-opening-hero{padding:20px 16px}.ll-season-grid,.ll-season-europe-grid{grid-template-columns:1fr}.ll-team-ranks span{white-space:normal}}
 
+  .ll-save-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px}
+  .ll-save-card{position:relative;min-width:0;min-height:245px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,rgba(25,33,47,.94),rgba(10,15,24,.96));overflow:hidden}
+  .ll-save-card.active{border-color:rgba(94,234,212,.48);box-shadow:0 0 0 2px rgba(45,212,191,.08),0 14px 34px rgba(0,0,0,.25)}
+  .ll-save-card.empty{display:flex;flex-direction:column;justify-content:center;border-style:dashed;background:rgba(18,24,35,.54)}
+  .ll-save-slot-label{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#99f6e4;font-size:10px;font-weight:950;letter-spacing:1.3px;text-transform:uppercase}
+  .ll-save-slot-label i{padding:4px 7px;border-radius:999px;background:rgba(45,212,191,.12);color:#5eead4;font-style:normal;font-size:8px}
+  .ll-save-team{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:'Cormorant Garamond',serif;font-size:25px;line-height:1.05}
+  .ll-save-team .ll-team-logo{width:38px;height:38px;flex:0 0 38px}
+  .ll-save-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px}
+  .ll-save-meta span{min-width:0;padding:8px;border-radius:8px;background:rgba(255,255,255,.035);color:var(--text2);font-size:10px;overflow-wrap:anywhere}
+  .ll-save-updated{margin-top:10px;color:var(--text3);font-size:9px}
+  .ll-save-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}
+  .ll-save-actions .ll-btn:first-child{grid-column:1/-1}
+  .ll-backup-panel{margin-top:16px;padding:16px;border:1px solid rgba(96,165,250,.2);border-radius:13px;background:linear-gradient(135deg,rgba(30,64,175,.10),rgba(15,118,110,.08))}
+  .ll-backup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .ll-backup-actions{display:flex;gap:8px;flex-wrap:wrap}
+  @media(max-width:900px){.ll-save-grid{grid-template-columns:1fr 1fr}.ll-save-card:last-child{grid-column:1/-1}}
+  @media(max-width:600px){.ll-save-grid{grid-template-columns:1fr}.ll-save-card:last-child{grid-column:auto}.ll-save-card{min-height:0}.ll-backup-actions{width:100%}.ll-backup-actions .ll-btn{flex:1;min-width:145px}}
   @media (prefers-reduced-motion:reduce){
     .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
     .ll-panel.ll-goal-flash::after{display:none}
@@ -5167,7 +5185,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260720-2"></script>
+<script src="league-v2.js?v=20260720-3"></script>
 <script src="manager-market.js?v=20260719-1"></script>
 </body>
 </html>
