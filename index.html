@@ -2298,6 +2298,8 @@ function llShowModal(content){
   div.innerHTML=`<div class="ll-modal-card">${content}<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="ll-btn primary" onclick="llCloseModal()">Kapat</button></div></div>`;
   div.addEventListener('click',e=>{if(e.target===div)llCloseModal();}); document.body.appendChild(div);
 }
+// Eski önbellekte kalmış yedek scriptleri için geriye uyumluluk.
+globalThis.llOpenModal=llShowModal;
 function llCloseModal(){ document.getElementById('ll-modal')?.remove(); }
 
 function renderLexiconLeagueLanding(){
@@ -5225,8 +5227,8 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260721-3"></script>
-<script src="save-backup-hardening.js?v=20260721-1"></script>
+<script src="league-v2.js?v=20260721-4"></script>
+<script src="save-backup-hardening.js?v=20260721-2"></script>
 <script src="manager-market.js?v=20260719-1"></script>
 </body>
 </html>
