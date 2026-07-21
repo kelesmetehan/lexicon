@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-18T17:55:33.578Z",
-  "passed": 9,
+  "generatedAt": "2026-07-21T06:57:47.973Z",
+  "passed": 11,
   "failed": 0,
   "checks": [
     "player upgrade spends the correct LP and stops at two upgrades per season",
@@ -11,7 +11,9 @@
     "replacing an upgraded card warns, preserves history and returns only its base card to the pool",
     "the player can cancel the permanent upgrade-loss warning",
     "a replaced normal card can also be found again later",
-    "releasing an expired upgraded card also returns its base version"
+    "releasing an expired upgraded card also returns its base version",
+    "card detail popup opens and includes the deterministic upgrade preview",
+    "season opening and domestic-European ranking hooks are installed"
   ],
   "upgradeDefinitions": 21,
   "upgradeLimitPerSeason": 2

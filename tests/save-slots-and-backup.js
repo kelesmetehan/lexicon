@@ -6,14 +6,14 @@ const source = fs.readFileSync('outputs/league-v2.js', 'utf8');
 const marker = '/* Local career slots and portable JSON backups.';
 const start = source.indexOf(marker);
 assert(start >= 0, 'save-slot block missing');
-const block = source.slice(start);
+const block = source.slice(start) + '\n' + fs.readFileSync('outputs/save-backup-hardening.js', 'utf8');
 
 function career(team, season = 1, week = 1) {
   return {
     version: 2, season, week, playerTeam: team, ap: 10, lp: 20,
-    teams: {[team]: {name: team, stars: 2}},
-    leagues: {super: [], first: [team]},
-    standings: {super: {}, first: {[team]: {team, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0}}},
+    teams: {[team]: {name: team, stars: 2}, Galatasaray: {name: 'Galatasaray', stars: 5}},
+    leagues: {super: ['Galatasaray'], first: [team]},
+    standings: {super: {Galatasaray: {team: 'Galatasaray', P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0}}, first: {[team]: {team, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0}}},
     starterPackClaimed: true, seasonEnded: false, createdAt: '2026-01-01T00:00:00.000Z'
   };
 }
@@ -25,19 +25,20 @@ const localStorage = {
   removeItem: key => data.delete(key)
 };
 localStorage.setItem('lexicon_league_save_v2', JSON.stringify(career('Ümraniyespor')));
-localStorage.setItem('lexicon_words', JSON.stringify([{id: 1, en: 'proof'}]));
+localStorage.setItem('lexicon_words', JSON.stringify([{id: 1, en: 'proof', tr: 'kanıt', example: 'Show me proof.'}]));
 localStorage.setItem('lexicon_meta', JSON.stringify({cycle: 4}));
 
 const area = {innerHTML: '', querySelector: () => null};
+let shownModal = '';
 const context = {
-  console, localStorage, JSON, Date, Intl, Blob, URL, setTimeout,
+  console, localStorage, Date, Intl, Blob, URL, setTimeout,
   LL_V2_SAVE_KEY: 'lexicon_league_save_v2', DB_KEY: 'lexicon_words', META_KEY: 'lexicon_meta',
   lexLeague: {state: null, active: false},
   alert: () => {}, confirm: () => true,
   llSave() {}, llLoad() {}, llContinueGame() {}, llResetGame() {}, llStartCareer() {},
   renderLexiconLeagueLanding() {}, llRenderTeamSelect() {}, llRenderDashboard() {},
   llV2RepairState: state => state, llSetWide() {}, llClearTransient() {}, llSetEuropeMatchTheme() {},
-  llArea: () => area, llRenderStarterShop() {}, llRenderSeasonEnd() {}, llOpenModal() {}, llCloseModal() {},
+  llArea: () => area, llRenderStarterShop() {}, llRenderSeasonEnd() {}, llShowModal: html => { shownModal = html; }, llCloseModal() {},
   llTeamLogo: name => `<logo>${name}</logo>`, llEscape: value => String(value), llStars: n => '*'.repeat(n),
   llLeagueLabel: key => key, llNewState: team => career(team), llAssignStarterCardsToAi() {}, llGoMainMenu() {},
   location: {reload() {}}, document: {body: {appendChild() {}}, createElement: () => ({click() {}, remove() {}}), getElementById: () => null}
@@ -69,6 +70,25 @@ vm.runInContext('llResetGame(1)', context);
 store = JSON.parse(localStorage.getItem('lexicon_league_save_slots_v1'));
 assert.strictEqual(store.slots['1'], null, 'deleting one slot must clear only that slot');
 assert.strictEqual(store.slots['2'].state.playerTeam, 'Bursaspor');
-assert.deepStrictEqual(JSON.parse(localStorage.getItem('lexicon_words')), [{id: 1, en: 'proof'}], 'deleting career must not delete vocabulary');
+assert.deepStrictEqual(JSON.parse(localStorage.getItem('lexicon_words')), [{id: 1, en: 'proof', tr: 'kanıt', example: 'Show me proof.'}], 'deleting career must not delete vocabulary');
 
-console.log('save slots and backup: 12 checks passed');
+(async () => {
+  context.__singleInput = {
+    value: 'selected.json',
+    files: [{
+      size: 512,
+      text: async () => JSON.stringify({
+        app: 'lexicon-league', type: 'career', formatVersion: 1,
+        career: {state: career('Antalyaspor', 3, 9), updatedAt: '2026-07-21T00:00:00.000Z'}
+      })
+    }]
+  };
+  await vm.runInContext('llHandleBackupFile(__singleInput)', context);
+  assert.ok(shownModal.includes('Antalyaspor'), 'single-career import must open the real slot picker');
+  assert.strictEqual(context.__singleInput.value, '', 'file input must reset after reading');
+  assert.ok(!block.includes('llOpenModal('), 'undefined modal function must never be called');
+  const html = fs.readFileSync('outputs/lexicon-fixed.html', 'utf8');
+  assert.ok(html.includes('save-backup-hardening.js'), 'hardening layer must be loaded');
+  assert.ok(html.includes('function llShowModal(content)'), 'application modal function must exist');
+  console.log('save slots and backup: 16 checks passed');
+})().catch(error => { console.error(error); process.exitCode = 1; });
