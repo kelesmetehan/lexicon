@@ -670,11 +670,17 @@
   .ll-forecast-card { color:var(--text2); font-size:10px; line-height:1.5; padding-top:7px; margin-top:7px; border-top:1px solid rgba(255,255,255,.05); }
   .ll-forecast-card.active { color:#dcfce7; background:rgba(34,197,94,.13); border:1px solid rgba(74,222,128,.42); border-radius:9px; padding:10px; box-shadow:0 0 0 2px rgba(34,197,94,.07),0 7px 20px rgba(22,163,74,.10); }
   .ll-forecast-card.inactive { opacity:.58; }
+  .ll-forecast-card.canceled { color:#ffedd5; background:rgba(249,115,22,.10); border:1px solid rgba(251,146,60,.42); border-radius:9px; padding:10px; }
+  .ll-forecast-card.prepared { color:#fef3c7; background:rgba(234,179,8,.10); border:1px solid rgba(250,204,21,.38); border-radius:9px; padding:10px; }
+  .ll-forecast-card.limited { color:#e0f2fe; background:rgba(14,165,233,.10); border:1px solid rgba(56,189,248,.40); border-radius:9px; padding:10px; }
   .ll-forecast-card.uncertain { color:#fef3c7; background:rgba(245,158,11,.08); border:1px solid rgba(251,191,36,.24); border-radius:9px; padding:10px; }
   .ll-forecast-card.blocked { color:#fee2e2; background:rgba(239,68,68,.12); border:1px solid rgba(248,113,113,.44); border-radius:9px; padding:10px; }
   .ll-trigger-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:99px; font-size:9px; font-weight:900; letter-spacing:.8px; margin-bottom:7px; }
   .ll-trigger-badge.active { color:#052e16; background:#4ade80; }
   .ll-trigger-badge.inactive { color:var(--text3); background:rgba(255,255,255,.07); }
+  .ll-trigger-badge.canceled { color:#431407; background:#fb923c; }
+  .ll-trigger-badge.prepared { color:#422006; background:#facc15; }
+  .ll-trigger-badge.limited { color:#082f49; background:#38bdf8; }
   .ll-trigger-badge.uncertain { color:#422006; background:#fbbf24; }
   .ll-trigger-badge.blocked { color:#450a0a; background:#f87171; }
   .ll-shop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
@@ -2223,7 +2229,7 @@ function llCardHtml(cardId,teamName,emptyText='Kart yok'){
   const card=llCard(cardId);
   if(!card) return `<button class="ll-ability empty" type="button">${emptyText}</button>`;
   const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null;
-  const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} tetik (%${llCardTriggerRate(performance)}) · Tetikte ${performance.triggeredWins}G ${performance.triggeredDraws}B ${performance.triggeredLosses}M</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
+  const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} şart (%${llCardTriggerRate(performance)}) · ${performance.applications} gerçek etki (%${llCardEffectRate(performance)})</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
   return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br>${llCardUpgradeBadgeHtml(card)}<span style="display:block"><b>${llEscape(llCardEffectKind(card))}:</b> ${llEscape(card.effect)}</span>${performanceLine}</button>`;
 }
 function llCardPerformance(cardId){
@@ -2231,11 +2237,12 @@ function llCardPerformance(cardId){
   if(!raw||typeof raw!=='object')return null;
   const wins=Math.max(0,Number(raw.wins)||0),draws=Math.max(0,Number(raw.draws)||0),losses=Math.max(0,Number(raw.losses)||0);
   const triggeredWins=Math.max(0,Number(raw.triggeredWins)||0),triggeredDraws=Math.max(0,Number(raw.triggeredDraws)||0),triggeredLosses=Math.max(0,Number(raw.triggeredLosses)||0),triggers=Math.max(triggeredWins+triggeredDraws+triggeredLosses,Math.max(0,Number(raw.triggers)||0));
-  return {...raw,wins,draws,losses,matches:wins+draws+losses,triggers,triggeredWins,triggeredDraws,triggeredLosses,goalsFor:Math.max(0,Number(raw.goalsFor)||0),goalsAgainst:Math.max(0,Number(raw.goalsAgainst)||0)};
+  const appliedWins=Math.max(0,Number(raw.appliedWins)||0),appliedDraws=Math.max(0,Number(raw.appliedDraws)||0),appliedLosses=Math.max(0,Number(raw.appliedLosses)||0),applications=Math.max(appliedWins+appliedDraws+appliedLosses,Math.max(0,Number(raw.applications)||0));
+  return {...raw,wins,draws,losses,matches:wins+draws+losses,triggers,triggeredWins,triggeredDraws,triggeredLosses,applications,appliedWins,appliedDraws,appliedLosses,goalsFor:Math.max(0,Number(raw.goalsFor)||0),goalsAgainst:Math.max(0,Number(raw.goalsAgainst)||0)};
 }
 function llCardWinRate(stat){return stat?.matches?Math.round((stat.wins/stat.matches)*100):0;}
 function llCardTriggerRate(stat){return stat?.matches?Math.round((stat.triggers/stat.matches)*100):0;}
-function llTriggeredPlayerCardIds(match){
+function llCardEffectRate(stat){return stat?.matches?Math.round((stat.applications/stat.matches)*100):0;}function llTriggeredPlayerCardIds(match){
   if(!match)return [];
   const resolution=match.resolution||match.projectedResolution,canonical=resolution?.triggeredCardIds?.a;
   if(Array.isArray(canonical))return [...new Set(canonical.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))];
@@ -2251,33 +2258,33 @@ function llTriggeredPlayerCardIds(match){
   });
   return [...triggered];
 }
-function llRecordPlayerCardPerformance(cardIds,result,competition='league',goalsFor=0,goalsAgainst=0,triggeredCardIds=[]){
+function llAppliedPlayerCardIds(match){
+  if(!match)return [];
+  const resolution=match.resolution||match.projectedResolution,canonical=resolution?.appliedCardIds?.a;
+  return Array.isArray(canonical)?[...new Set(canonical.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))]:llTriggeredPlayerCardIds(match);
+}function llRecordPlayerCardPerformance(cardIds,result,competition='league',goalsFor=0,goalsAgainst=0,conditionMetCardIds=[],appliedCardIds=[]){
   const s=lexLeague.state;if(!s)return;if(!s.cardPerformance||typeof s.cardPerformance!=='object')s.cardPerformance={};
   const validResults=['win','draw','loss'];if(!validResults.includes(result))return;
-  const ids=[...new Set((cardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))];
-  const triggered=new Set((triggeredCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id));
+  const ids=[...new Set((cardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))],conditionMet=new Set((conditionMetCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id)),applied=new Set((appliedCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id));
   ids.forEach(id=>{
     const stat=s.cardPerformance[id]&&typeof s.cardPerformance[id]==='object'?s.cardPerformance[id]:{};
-    stat.wins=Math.max(0,Number(stat.wins)||0);stat.draws=Math.max(0,Number(stat.draws)||0);stat.losses=Math.max(0,Number(stat.losses)||0);
-    stat.triggers=Math.max(0,Number(stat.triggers)||0);stat.triggeredWins=Math.max(0,Number(stat.triggeredWins)||0);stat.triggeredDraws=Math.max(0,Number(stat.triggeredDraws)||0);stat.triggeredLosses=Math.max(0,Number(stat.triggeredLosses)||0);
+    ['wins','draws','losses','triggers','triggeredWins','triggeredDraws','triggeredLosses','applications','appliedWins','appliedDraws','appliedLosses'].forEach(key=>stat[key]=Math.max(0,Number(stat[key])||0));
     stat.goalsFor=Math.max(0,Number(stat.goalsFor)||0)+Math.max(0,Number(goalsFor)||0);stat.goalsAgainst=Math.max(0,Number(stat.goalsAgainst)||0)+Math.max(0,Number(goalsAgainst)||0);
     if(result==='win')stat.wins++;else if(result==='draw')stat.draws++;else stat.losses++;
-    if(triggered.has(id)){stat.triggers++;if(result==='win')stat.triggeredWins++;else if(result==='draw')stat.triggeredDraws++;else stat.triggeredLosses++;}
+    if(conditionMet.has(id)){stat.triggers++;if(result==='win')stat.triggeredWins++;else if(result==='draw')stat.triggeredDraws++;else stat.triggeredLosses++;}
+    if(applied.has(id)){stat.applications++;if(result==='win')stat.appliedWins++;else if(result==='draw')stat.appliedDraws++;else stat.appliedLosses++;}
     stat.matches=stat.wins+stat.draws+stat.losses;stat.firstSeason=stat.firstSeason==null?s.season:Math.min(Number(stat.firstSeason)||s.season,s.season);stat.lastSeason=s.season;
     if(!stat.byCompetition||typeof stat.byCompetition!=='object')stat.byCompetition={};
     const comp=stat.byCompetition[competition]&&typeof stat.byCompetition[competition]==='object'?stat.byCompetition[competition]:{};
-    comp.wins=Math.max(0,Number(comp.wins)||0);comp.draws=Math.max(0,Number(comp.draws)||0);comp.losses=Math.max(0,Number(comp.losses)||0);
-    comp.triggers=Math.max(0,Number(comp.triggers)||0);if(result==='win')comp.wins++;else if(result==='draw')comp.draws++;else comp.losses++;if(triggered.has(id))comp.triggers++;comp.matches=comp.wins+comp.draws+comp.losses;stat.byCompetition[competition]=comp;
+    ['wins','draws','losses','triggers','applications'].forEach(key=>comp[key]=Math.max(0,Number(comp[key])||0));if(result==='win')comp.wins++;else if(result==='draw')comp.draws++;else comp.losses++;if(conditionMet.has(id))comp.triggers++;if(applied.has(id))comp.applications++;comp.matches=comp.wins+comp.draws+comp.losses;stat.byCompetition[competition]=comp;
     s.cardPerformance[id]=stat;
   });
-}
-function llCardPerformanceHtml(cardId,compact=false){
+}function llCardPerformanceHtml(cardId,compact=false){
   const stat=llCardPerformance(cardId);
   if(!stat?.matches)return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart kadrodayken</div><div class="ll-card-performance-empty">Henüz maç verisi yok.</div></div>`;
   const seasons=stat.firstSeason===stat.lastSeason?`Sezon ${stat.firstSeason}`:`Sezon ${stat.firstSeason}–${stat.lastSeason}`;
-  return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart performansı · ${llEscape(seasons)}</div><div class="ll-card-performance-grid"><div class="ll-card-performance-stat"><strong>${stat.matches}</strong><span>Kadroda</span></div><div class="ll-card-performance-stat"><strong>${stat.triggers}</strong><span>Tetik</span></div><div class="ll-card-performance-stat"><strong>%${llCardTriggerRate(stat)}</strong><span>Tetik Oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredWins}</strong><span>Tetikte G</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredDraws}</strong><span>Tetikte B</span></div><div class="ll-card-performance-stat"><strong>${stat.triggeredLosses}</strong><span>Tetikte M</span></div></div>${compact?'':`<div class="ll-card-performance-note">Kart kadrodayken genel takım sonucu ${stat.wins}G ${stat.draws}B ${stat.losses}M; toplam skor ${stat.goalsFor}-${stat.goalsAgainst}. Ana ölçüm tetiklenme oranıdır. G/B/M yalnız kartın gerçekten tetiklendiği maçları gösterir.</div>`}</div>`;
-}
-function llOpponentIcons(teamName){
+  return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart performansı · ${llEscape(seasons)}</div><div class="ll-card-performance-grid"><div class="ll-card-performance-stat"><strong>${stat.matches}</strong><span>Kadroda</span></div><div class="ll-card-performance-stat"><strong>${stat.triggers}</strong><span>Şart oluştu</span></div><div class="ll-card-performance-stat"><strong>%${llCardTriggerRate(stat)}</strong><span>Şart oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.applications}</strong><span>Gerçek etki</span></div><div class="ll-card-performance-stat"><strong>%${llCardEffectRate(stat)}</strong><span>Etki oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.appliedWins}G ${stat.appliedDraws}B ${stat.appliedLosses}M</strong><span>Etki olduğunda</span></div></div>${compact?'':`<div class="ll-card-performance-note">Şart oluşması kartın tetikleyicisinin hazırlandığını; gerçek etki ise zar, düello, skor, reroll veya sonraki maç sonucunun gerçekten değiştiğini gösterir. Genel takım sonucu ${stat.wins}G ${stat.draws}B ${stat.losses}M; toplam skor ${stat.goalsFor}-${stat.goalsAgainst}.</div>`}</div>`;
+}function llOpponentIcons(teamName){
   const team=llTeamState(teamName);
   return `<div class="ll-card-icons">${LL_POSITIONS.map(pos=>{
     const id=team.cards[pos], c=llCard(id);
@@ -2654,18 +2661,31 @@ function llAllDiceEqual(dice){return dice.length===3&&dice.every(d=>d.value===di
 function llHasDoubleWing(dice){const keeper=llFindPosition(dice,'Kaleci'),mid=llFindPosition(dice,'Orta Saha'),forward=llFindPosition(dice,'Forvet');return !!keeper&&!!mid&&!!forward&&keeper.value===forward.value&&mid.value!==keeper.value;}
 function llIsBalancedEleven(dice){const values=dice.map(d=>d.value);return values.length===3&&Math.max(...values)-Math.min(...values)<=1;}
 function llCardGoalAmount(card){const m=card?.effect.match(/\+(\d+)\s+(?:ekstra\s+)?sanal gol/i)||card?.effect.match(/(\d+)\s+(?:ekstra\s+)?sanal gol/i);return m?Number(m[1]):1;}
-function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scoreAgainst){
-  const triggered=new Set();
+function llResolutionCardOutcomes(side,rawDice,events,disabled,scoreFor,scoreAgainst){
+  const outcomes={};
   side.dice.forEach(die=>{
-    const equipped=llCard(die.cardId),equippedBase=llBaseName(equipped);
-    // Scouting plans are simultaneous; an executed scout still receives credit.
-    const card=disabled.has(die.uid)&&equippedBase!=='Sahayı Oku'?null:equipped;
-    if(!card)return;const base=llBaseName(card),labels=[base,llCardFamilyName(card)].filter(Boolean);
-    const rawDie=llFindPosition(rawDice,die.position),logged=events.some(event=>labels.some(label=>event.startsWith(`${side.name}: ${label} →`)||event.startsWith(`${side.name}: ${label} (`))&&!/bulunamadı|sağlanmadı|tetiklenmedi/i.test(event));
-    const formHistory=[...(side.state?.dieHistory?.[die.position]||[]),rawDie?.value].slice(-3),passive=['Metronom','Reflex'].includes(base)||(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(side.dice,die))||(base==='Yıldız Oyuncu'&&(side.state?.stars||0)>=3)||(base==='Yedek Kulübesi'&&(card.upgradeLevel?scoreFor<=scoreAgainst:scoreFor<scoreAgainst))||(base==='Form Tutmuyor'&&(card.upgradeRule==='form-burst'?(formHistory.length===3&&formHistory.filter(value=>value===6).length>=2):((side.state?.sixStreaks?.[die.position]||0)>=2&&rawDie?.value===6)));
-    if(logged||passive)triggered.add(card.id);
+    const card=llCard(die.cardId);if(!card)return;
+    const base=llBaseName(card),family=llCardFamilyName(card),labels=[base,family].filter(Boolean),rawDie=llFindPosition(rawDice,die.position);
+    const relevant=events.filter(event=>labels.some(label=>event.startsWith(`${side.name}: ${label} →`)||event.startsWith(`${side.name}: ${label} (`)));
+    const last=relevant[relevant.length-1]||'';
+    if(disabled.has(die.uid)&&base!=='Sahayı Oku'){
+      outcomes[card.id]={state:'blocked',conditionMet:true,applied:false,reason:`${side.name}: ${family||base} → Sahayı Oku tarafından etkisizleştirildi.`};return;
+    }
+    const formHistory=[...(side.state?.dieHistory?.[die.position]||[]),rawDie?.value].slice(-3);
+    const passive=['Metronom','Reflex'].includes(base)||(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(side.dice,die))||(base==='Yıldız Oyuncu'&&(side.state?.stars||0)>=3)||(base==='Yedek Kulübesi'&&(card.upgradeLevel?scoreFor<=scoreAgainst:scoreFor<scoreAgainst))||(base==='Form Tutmuyor'&&(card.upgradeRule==='form-burst'?(formHistory.length===3&&formHistory.filter(value=>value===6).length>=2):((side.state?.sixStreaks?.[die.position]||0)>=2&&rawDie?.value===6)));
+    const failed=/bulunamadı|sağlanmadı|tetiklenmedi/i.test(last),conditionMet=(!!last&&!failed)||passive;
+    if(!conditionMet){outcomes[card.id]={state:'inactive',conditionMet:false,applied:false,reason:last||'Kesin çözüm zincirinde tetikleme şartı oluşmadı.'};return;}
+    if(/uygulanmadı|sonuç üretmedi|silinemedi|hazırdı ancak|etkisiz kaldı/i.test(last)){outcomes[card.id]={state:'canceled',conditionMet:true,applied:false,reason:last};return;}
+    if(/için hazır|hazırlandı/i.test(last)){outcomes[card.id]={state:'prepared',conditionMet:true,applied:false,reason:last};return;}
+    if(/tavanı yeniden uygulandı|alt sınır|üst sınır|uygulanan [+-]0\b|kısmen uygulandı/i.test(last)){outcomes[card.id]={state:'limited',conditionMet:true,applied:true,reason:last};return;}
+    const passiveReason=base==='Yedek Kulübesi'?'Maç sonucu şartı sağlandı; sonraki maça reroll aktarılacak.':base==='Form Tutmuyor'?'Form şartı sağlandı; sonraki maç bonusu hazırlanacak.':`${llCardEffectKind(card)} etkisi kesin çözümde uygulandı.`;
+    outcomes[card.id]={state:'active',conditionMet:true,applied:true,reason:last||passiveReason};
   });
-  return [...triggered];
+  return outcomes;
+}
+function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scoreAgainst){
+  const outcomes=llResolutionCardOutcomes(side,rawDice,events,disabled,scoreFor,scoreAgainst);
+  return Object.entries(outcomes).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id);
 }
 function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   // Zarları değerlerine göre değil, sabit mevki sırasına göre eşleştir.
@@ -2768,8 +2788,8 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       log(`${bName}: Sakin Kafa → ${b.position} zarı ${old}→${b.value} (kart sınırı +${limit}, uygulanan +${applied}); rakip ${b.position} zarı ${opponent}; ${remaining?`mağlubiyet farkı ${opponent-old}→${remaining} azaldı`:'düello beraberliğe geldi'}.`);
     }
     // Kalenin Efendisi, diğer kartlar Kaleci zarını sonradan yükseltse bile 4 tavanını korur.
-    if(a.position==='Kaleci'&&sideHasBase('a','Kalenin Efendisi'))b.value=Math.min(4,b.value);
-    if(b.position==='Kaleci'&&sideHasBase('b','Kalenin Efendisi'))a.value=Math.min(4,a.value);
+    if(a.position==='Kaleci'&&sideHasBase('a','Kalenin Efendisi')&&b.value>4){const old=b.value;b.value=4;log(`${aName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${b.value}.`);}
+    if(b.position==='Kaleci'&&sideHasBase('b','Kalenin Efendisi')&&a.value>4){const old=a.value;a.value=4;log(`${bName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${a.value}.`);}
     let autoA=false,autoB=false,blocked=false,multA=1,multB=1;
     if(ba==='Kale Direği'&&llOwnTrigger(ca,a.value)){blocked=true;log(`${aName}: Kale Direği → ${a.position} zarı ${a.value}; düello bloke edilip beraberlik sayıldı.`);}
     if(bb==='Kale Direği'&&llOwnTrigger(cb,b.value)){blocked=true;log(`${bName}: Kale Direği → ${b.position} zarı ${b.value}; düello bloke edilip beraberlik sayıldı.`);}
@@ -2826,6 +2846,16 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     }
     if(result==='a'){scoreA+=multA;if(sonPerdeA)log(`${aName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;log(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}}
     if(result==='b'){scoreB+=multB;if(sonPerdeB)log(`${bName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;log(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}}
+    const logPreparedMultiplier=(side,base,mult,resultForSide,opponentAuto,wasBlocked)=>{
+      if(!['Golcü İçgüdüsü','Son Vuruş'].includes(base)||mult<=1)return;
+      const team=side==='a'?aName:bName;
+      if(resultForSide)log(`${team}: ${base} → şart sağlandı, Forvet düellosu kazanıldı; SKOR ÇARPANI x${mult} uygulandı ve maç skoruna +${mult} gol yazıldı.`);
+      else if(wasBlocked)log(`${team}: ${base} → şart sağlandı ancak düello bloke edilip beraberlik sayıldı; SKOR ÇARPANI x${mult} uygulanmadı.`);
+      else if(opponentAuto)log(`${team}: ${base} → şart sağlandı ancak rakibin otomatik düello galibiyeti etkisi üstün geldi; SKOR ÇARPANI x${mult} uygulanmadı.`);
+      else log(`${team}: ${base} → şart sağlandı ancak Forvet düellosu kazanılamadı; SKOR ÇARPANI x${mult} uygulanmadı.`);
+    };
+    logPreparedMultiplier('a',ba,multA,result==='a',autoB&&!autoA,blocked);
+    logPreparedMultiplier('b',bb,multB,result==='b',autoA&&!autoB,blocked);
     pairResults.push({a:a.value,b:b.value,result,aGoals:result==='a'?multA:0,bGoals:result==='b'?multB:0});
     processedPairs=i+1;if(events.length>duelEventStart)eventScores[events.length-1]=projectedScore();
   }
@@ -2838,8 +2868,11 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
   if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
   if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
-  const triggeredCardIds={a:llResolutionTriggeredCardIds(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionTriggeredCardIds(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
-  return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds};
+  const cardOutcomes={a:llResolutionCardOutcomes(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionCardOutcomes(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
+  const conditionMetCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id)};
+  const appliedCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.applied).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.applied).map(([id])=>id)};
+  const triggeredCardIds=conditionMetCardIds;
+  return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds,conditionMetCardIds,appliedCardIds,cardOutcomes};
 }
 function llBeginMatch(plusPos){
   const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
@@ -2964,14 +2997,13 @@ function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set
 }
 function llResolvedForecastStatus(card,rawStatus,resolution,sideKey,teamName){
   if(!resolution)return rawStatus;
-  const triggered=new Set(resolution.triggeredCardIds?.[sideKey]||[]),base=llBaseName(card),prefix=`${teamName}: ${base}`;
-  const event=[...(resolution.events||[])].reverse().find(text=>text.startsWith(prefix)&&!/bulunamad\u0131|sa\u011Flanmad\u0131|tetiklenmedi/i.test(text));
-  if(triggered.has(card.id))return {state:'active',label:'\u2713 KES\u0130N TET\u0130KLEND\u0130',reason:event||rawStatus.reason};
-  if(base==='VAR \u0130ncelemesi'&&rawStatus.state==='active')return {state:'inactive',label:'Tetiklenmedi',reason:'Ham zarlarda beraberlik vard\u0131; \u00F6nceki kartlar zar\u0131 de\u011Fi\u015Ftirdi\u011Fi i\u00E7in VAR s\u0131ras\u0131na beraberlik kalmad\u0131 ve yeniden at\u0131\u015F yap\u0131lmad\u0131.'};
-  if(rawStatus.state==='active'||rawStatus.state==='uncertain')return {state:'inactive',label:'Tetiklenmedi',reason:'Ham \u015Fart g\u00F6r\u00FCnse de \u00F6nceki kart etkilerinden sonra kesin \u00E7\u00F6z\u00FCm zincirinde tetikleme \u015Fart\u0131 olu\u015Fmad\u0131.'};
+  const outcome=resolution.cardOutcomes?.[sideKey]?.[card.id];
+  if(outcome){
+    const labels={active:'✓ KESİN TETİKLENDİ',prepared:'◷ ŞART SAĞLANDI · HAZIRLANDI',canceled:'⚠ ŞART SAĞLANDI · ETKİ UYGULANMADI',blocked:'⛔ BLOKLANDI',limited:'↕ SINIRLANDI',inactive:'Tetiklenmedi'};
+    return {state:outcome.state,label:labels[outcome.state]||labels.inactive,reason:outcome.reason||rawStatus.reason};
+  }
   return {state:'inactive',label:'Tetiklenmedi',reason:rawStatus.reason};
-}
-const llForecastSideCardsRaw=llForecastSideCards;
+}const llForecastSideCardsRaw=llForecastSideCards;
 llForecastSideCards=function(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
   const resolution=lexLeague.match?.projectedResolution;if(!resolution)return llForecastSideCardsRaw(dice,oppDice,label,teamName,isHome,disabled,resolvedDice);
   const sideKey=teamName===lexLeague.match.player?'a':'b',finalDice=sideKey==='a'?resolution.aDice:resolution.bDice;
