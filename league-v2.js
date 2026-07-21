@@ -1,5266 +1,1024 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEXICON — Flashcard Pro</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0c10;
-    --bg2: #0f1218;
-    --bg3: #161b24;
-    --bg4: #1d2430;
-    --gold: #c9a84c;
-    --gold2: #e8c870;
-    --gold-dim: rgba(201,168,76,0.15);
-    --text: #e8e4da;
-    --text2: #9a9589;
-    --text3: #5a5650;
-    --green: #4caf7d;
-    --green-dim: rgba(76,175,125,0.15);
-    --red: #e05c5c;
-    --red-dim: rgba(224,92,92,0.12);
-    --border: rgba(201,168,76,0.12);
-    --radius: 12px;
-    --shadow: 0 8px 40px rgba(0,0,0,0.6);
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-    overflow-x: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
-  body.ll-euro-match-day {
-    --ll-euro-accent:#93c5fd;
-    --ll-euro-border:rgba(96,165,250,.46);
-    background-color:var(--bg);
-    background-repeat:no-repeat;
-    background-attachment:fixed;
-    transition:background-color .28s ease;
-  }
-  body.ll-euro-match-ucl {
-    --ll-euro-accent:#bfdbfe;
-    --ll-euro-border:rgba(96,165,250,.52);
-    background-image:linear-gradient(180deg,rgba(3,7,44,.10),rgba(8,12,24,.72) 74vh,var(--bg) 120vh),url("assets/europe-match-themes/champions-league-desktop-v2.png");
-    background-size:cover,cover;
-    background-position:center,center;
-  }
-  body.ll-euro-match-uel {
-    --ll-euro-accent:#fb923c;
-    --ll-euro-border:rgba(249,115,22,.52);
-    background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(9,12,19,.76) 78vh,var(--bg) 125vh),url("assets/europe-match-themes/europa-league-desktop-v2.png");
-    background-size:cover,cover;
-    background-position:center,center;
-  }
-  body.ll-euro-match-uecl {
-    --ll-euro-accent:#4ade80;
-    --ll-euro-border:rgba(74,222,128,.48);
-    background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(9,12,19,.76) 78vh,var(--bg) 125vh),url("assets/europe-match-themes/conference-league-desktop-v2.png");
-    background-size:cover,cover;
-    background-position:center,center;
-  }
-  body.ll-euro-match-day .ll-panel { background:rgba(10,14,23,.90); border-color:var(--ll-euro-border); backdrop-filter:blur(10px); }
-  body.ll-euro-match-day .ll-title em,
-  body.ll-euro-match-day .ll-card-title { color:var(--ll-euro-accent); }
-  @media (min-width:1200px) {
-    body.ll-euro-match-day .ll-quiz-card { max-width:880px; }
-  }
-
-  .container {
-    width: 100%;
-    max-width: 620px;
-    animation: fadeUp 0.4s ease;
-  }
-
-  .page-header {
-    text-align: center;
-    margin-bottom: 32px;
-  }
-  .page-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    color: var(--text);
-    line-height: 1.1;
-  }
-  .page-title em { color: var(--gold); font-style: italic; }
-  .page-subtitle { color: var(--text2); margin-top: 6px; font-size: 13px; }
-
-  .quiz-progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .progress-bar {
-    flex: 1;
-    height: 3px;
-    background: var(--bg3);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold), var(--gold2));
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-  .progress-text { color: var(--text3); font-size: 12px; white-space: nowrap; }
-  
-  .btn-end-early {
-    background: transparent;
-    border: 1px solid var(--text3);
-    color: var(--text2);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
-  }
-  .btn-end-early:hover {
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-
-  .quiz-start-card {
-    text-align: center;
-    padding: 48px 40px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-  }
-  .quiz-start-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
-  .quiz-start-title em { color: var(--gold); font-style: italic; }
-  .quiz-count-badge { display: inline-block; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 4px 16px; font-size: 13px; margin-bottom: 20px; }
-  
-  .info-box { background: rgba(91,141,238,0.08); border: 1px solid rgba(91,141,238,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #90caf9; margin-bottom: 24px; line-height: 1.6; text-align: left; }
-
-  .quiz-settings-title {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 14px;
-    font-weight: 600;
-    text-align: left;
-  }
-  .quiz-settings {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    text-align: left;
-  }
-  .quiz-settings label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--text2);
-    transition: color 0.2s;
-    padding: 8px 12px;
-    background: var(--bg2);
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .quiz-settings label:hover { color: var(--text); }
-  .quiz-settings input[type="radio"] { accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer; }
-
-  .flashcard-wrap {
-    perspective: 1000px;
-    margin-bottom: 24px;
-    cursor: pointer;
-  }
-  .flashcard {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 56px 48px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    min-height: 240px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    box-shadow: var(--shadow);
-  }
-  .flashcard::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%; transform: translateX(-50%);
-    width: 200px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  }
-  .flashcard.revealed { border-color: rgba(76,175,125,0.3); }
-  .flashcard-front, .flashcard-back { width: 100%; display: flex; flex-direction: column; align-items: center;}
-  .flashcard-back { display: none; }
-  .flashcard.revealed .flashcard-back { display: block; }
-  .flashcard.revealed .reveal-hint { display: none; }
-  
-  .quiz-mode-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
-  .quiz-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,7.5vw,42px); font-weight:300; color:var(--text); margin-bottom:8px; line-height:1.2; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .pronounce-line { display:flex; align-items:center; justify-content:center; gap:9px; max-width:100%; min-width:0; flex-wrap:wrap; }
-  .pronounce-line > span, .english-word-label { min-width:0; max-width:100%; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .pronounce-line.dictionary { justify-content:flex-start; }
-  .pronounce-btn {
-    flex:0 0 auto; width:34px; height:34px; padding:0; border-radius:50%; cursor:pointer;
-    display:inline-flex; align-items:center; justify-content:center; color:#bae6fd;
-    border:1px solid rgba(56,189,248,.34); background:rgba(14,116,144,.14);
-    font-size:16px; line-height:1; transition:background .18s,border-color .18s,transform .18s;
-  }
-  .pronounce-btn:hover { background:rgba(14,116,144,.32); border-color:#38bdf8; transform:scale(1.06); }
-  .pronounce-btn:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
-  .pronounce-btn.compact { width:29px; height:29px; font-size:13px; }
-  .pronounce-btn.speaking { background:rgba(34,197,94,.20); border-color:#4ade80; animation:pronouncePulse .8s ease-in-out infinite alternate; }
-  @keyframes pronouncePulse { from{transform:scale(1)} to{transform:scale(1.09)} }
-  
-  .quiz-example {
-    font-size: 15px;
-    color: var(--text2);
-    font-style: italic;
-    margin-top: 0;
-    max-width: 90%;
-    line-height: 1.5;
-    opacity: 0.7;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .example-block { width:100%; max-width:94%; margin:12px auto 0; }
-  .example-line { display:flex; align-items:flex-start; justify-content:center; gap:8px; }
-  .example-line .quiz-example, .example-line .word-ex { max-width:none; }
-  .example-translate-btn {
-    flex:0 0 auto; min-width:36px; min-height:30px; padding:5px 7px; border-radius:7px;
-    border:1px solid rgba(56,189,248,.34); background:rgba(14,116,144,.12); color:#67e8f9;
-    display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;
-    font:700 9px/1 'DM Sans',sans-serif; letter-spacing:.45px; transition:.18s ease;
-  }
-  .example-translate-btn:hover, .example-translate-btn.active { background:rgba(14,116,144,.30); border-color:#22d3ee; color:#cffafe; }
-  .example-translate-btn:focus-visible { outline:2px solid #22d3ee; outline-offset:2px; }
-  .example-translation {
-    margin:8px auto 0; padding:9px 12px; max-width:92%; border-radius:8px;
-    background:rgba(8,145,178,.10); border-left:3px solid #22d3ee; color:#cffafe;
-    font-size:12px; line-height:1.55; text-align:left; animation:fadeUp .18s ease;
-  }
-  .example-translation[hidden] { display:none; }
-  @media (max-width:560px) {
-    .example-block { max-width:100%; }
-    .example-line { gap:6px; }
-    .example-translate-btn { min-width:40px; min-height:34px; }
-    .example-translation { max-width:100%; }
-  }
-
-  .reveal-hint {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 30px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    animation: pulse 2s infinite;
-  }
-  .flashcard-answer {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    color: var(--green);
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(76,175,125,0.2);
-    width:100%; max-width:100%; min-width:0; overflow-wrap:anywhere; word-break:break-word; hyphens:auto;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    text-decoration: none;
-  }
-  .btn-gold { background: var(--gold); color: var(--bg); font-weight: 600; }
-  .btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
-  .btn-wc { background: linear-gradient(135deg, #1d4ed8, #4f46e5); color: #fff; font-weight: 600; width: 100%; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);}
-  .btn-wc:hover { background: linear-gradient(135deg, #1e40af, #4338ca); transform: translateY(-2px); }
-  
-  .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
-  .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
-  
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .stat-box { background: var(--bg3); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold); line-height: 1; margin-bottom: 6px; }
-  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-
-  .word-list-container { max-height: 420px; overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 10px; }
-  .word-list-container::-webkit-scrollbar { width: 6px; }
-  .word-list-container::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
-  
-  .word-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-  .word-info { flex: 1; padding-right: 12px; }
-  .word-en { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
-  .word-pos-tag { display:inline-block; margin-left:5px; color:var(--gold2); font-family:Inter,system-ui,sans-serif; font-size:.43em; font-weight:800; letter-spacing:.04em; vertical-align:middle; white-space:nowrap; }
-  .word-tr { font-size: 13px; color: var(--gold); margin-bottom: 4px; font-weight: 500; }
-  .word-ex { font-size: 12px; color: var(--text3); font-style: italic; line-height: 1.4; }
-  
-  .word-stats { display: flex; gap: 16px; text-align: center; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 16px; margin-left: auto; min-width: 140px; justify-content: flex-end;}
-  .w-stat { display: flex; flex-direction: column; align-items: center; justify-content: center;}
-  .w-stat-val { font-size: 18px; font-weight: 600; color: var(--text); font-family: 'DM Sans', sans-serif;}
-  .w-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; margin-top: 2px; font-weight: 600; }
-
-  .flashcard-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .flashcard-actions.visible { opacity: 1; pointer-events: all; }
-  
-  .fc-btn {
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.15s;
-    letter-spacing: 0.5px;
-    text-align: center;
-  }
-  .fc-btn:hover { transform: translateY(-2px); }
-  .fc-easy { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
-  .fc-easy:hover { background: rgba(76,175,125,0.25); }
-  .fc-idk { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.25); }
-  .fc-idk:hover { background: rgba(224,92,92,0.2); }
-  .fc-hard { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
-  .fc-hard:hover { background: rgba(201,168,76,0.2); }
-
-  /* WC Tablo Stilleri */
-  .wc-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
-  .wc-table th { color: var(--text3); padding: 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
-  .wc-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .wc-table tr.advanced { background: rgba(76,175,125,0.05); }
-  .wc-table tr.player { font-weight: bold; color: var(--gold); }
-  .wc-score-box { background: var(--bg3); padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin: 20px 0; border: 1px solid rgba(255,255,255,0.08); }
-  .wc-team { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
-  .wc-flag { font-size: 32px; }
-  .wc-team-name { font-size: 14px; font-weight: 600; text-align: center; }
-  .wc-score { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; color: var(--text); padding: 0 20px; }
-
-  @media (max-width: 480px) {
-    .word-item { flex-direction: column; align-items: flex-start; }
-    .word-stats { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); padding-left: 0; margin-left: 0; padding-top: 12px; margin-top: 12px; width: 100%; justify-content: flex-start; }
-    .wc-score-box { flex-direction: column; gap: 16px; }
-  }
-
-  /* ZAR KUPASI */
-
-  .btn-ucl {
-    background: linear-gradient(135deg, #071952, #4338ca 55%, #7c3aed);
-    color: #fff;
-    font-weight: 700;
-    width: 100%;
-    border: 1px solid rgba(255,255,255,.22);
-    box-shadow: 0 6px 22px rgba(67,56,202,.34);
-  }
-  .btn-ucl:hover { transform: translateY(-2px); filter: brightness(1.09); }
-  .ucl-pot-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0; text-align:left; }
-  .ucl-pot-card { background:var(--bg3); border:1px solid rgba(129,140,248,.22); border-radius:12px; padding:14px; }
-  .ucl-pot-title { color:#a5b4fc; font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; margin-bottom:9px; }
-  .ucl-team-line { color:var(--text2); font-size:12px; line-height:1.7; }
-  .ucl-fixtures { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:18px 0; text-align:left; }
-  .ucl-fixture { background:var(--bg3); border:1px solid var(--border); border-radius:9px; padding:11px 12px; font-size:12px; color:var(--text2); }
-  .ucl-fixture b { color:var(--text); }
-  .ucl-table-wrap { max-height:520px; overflow:auto; margin-top:14px; border:1px solid rgba(255,255,255,.05); border-radius:10px; }
-  .ucl-table-wrap .wc-table { margin-top:0; }
-  .wc-table tr.ucl-direct { background:rgba(76,175,125,.09); }
-  .wc-table tr.ucl-playoff { background:rgba(201,168,76,.07); }
-  .wc-table tr.ucl-out { opacity:.62; }
-  .ucl-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; font-size:11px; color:var(--text3); }
-  .ucl-legend span { padding:5px 8px; border-radius:99px; border:1px solid rgba(255,255,255,.07); }
-  .ucl-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:99px; background:rgba(99,102,241,.12); border:1px solid rgba(129,140,248,.26); color:#c7d2fe; font-size:11px; font-weight:700; }
-  @media (max-width: 480px) {
-    .ucl-pot-grid, .ucl-fixtures { grid-template-columns:1fr; }
-  }
-
-  .btn-dice {
-    width: 100%;
-    background: linear-gradient(135deg, #7c3aed, #db2777);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.22);
-    box-shadow: 0 5px 18px rgba(124,58,237,0.30);
-    font-weight: 700;
-    justify-content: center;
-  }
-  .btn-dice:hover { transform: translateY(-2px); filter: brightness(1.08); }
-  .dice-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; margin: 20px 0; }
-  .dice-group-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-  .dice-group-title { color: var(--gold); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
-  .dice-team-option {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    width: 100%; padding: 9px 10px; margin-top: 7px; border-radius: 8px;
-    background: var(--bg2); color: var(--text2); border: 1px solid rgba(255,255,255,0.06);
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .18s;
-  }
-  .dice-team-option:hover { color: var(--text); border-color: rgba(201,168,76,.36); transform: translateX(2px); }
-  .dice-team-option.selected { color: var(--gold2); border-color: var(--gold); background: var(--gold-dim); }
-  .dice-arena { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin: 18px 0; }
-  .dice-score-line { display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:18px; }
-  .dice-score-number { font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:600; min-width:110px; }
-  .dice-columns { display:grid; grid-template-columns:1fr 60px 1fr; gap:10px; align-items:center; }
-  .dice-side { display:flex; flex-direction:column; gap:10px; }
-  .die {
-    width: 62px; height: 62px; margin: 0 auto; border-radius: 13px;
-    display:flex; align-items:center; justify-content:center;
-    background: #f5f1e7; color:#111827; border: 2px solid rgba(255,255,255,.72);
-    box-shadow: inset 0 -5px 10px rgba(0,0,0,.14), 0 7px 18px rgba(0,0,0,.35);
-    font-size: 44px; line-height:1; font-family: Arial, sans-serif;
-    transform-style:preserve-3d; transform-origin:50% 72%; will-change:transform;
-  }
-  .die.rolling { animation:diceReadableRoll .72s cubic-bezier(.22,.72,.28,1) both; animation-delay:var(--dice-delay,0ms); color:#111827; background:#f5f1e7; border-color:#fff; }
-  .die.landed { animation:diceLandThud .22s ease-out both; animation-delay:var(--dice-delay,0ms); }
-  .die.rerolled { outline: 3px solid var(--gold); animation: dicePop .45s ease; }
-  .die.selectable { cursor:pointer; transition:transform .16s ease, outline-color .16s ease, box-shadow .16s ease; padding:0; }
-  .die.selectable:hover { transform:translateY(-3px) scale(1.04); box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 10px 24px rgba(124,58,237,.42); }
-  .die.selected { outline:4px solid #a78bfa; box-shadow:inset 0 -5px 10px rgba(0,0,0,.14), 0 0 0 6px rgba(124,58,237,.18), 0 10px 24px rgba(0,0,0,.42); transform:scale(1.06); }
-  .dice-pair-status { height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; color:var(--text3); text-align:center; }
-  .dice-pair-status.player-win { color:var(--green); }
-  .dice-pair-status.opp-win { color:var(--red); }
-  .dice-pair-status.draw { color:var(--gold); }
-  .dice-rule-box { background:rgba(124,58,237,.10); border:1px solid rgba(167,139,250,.28); color:#c4b5fd; border-radius:10px; padding:13px 15px; font-size:12px; line-height:1.65; text-align:left; margin:18px 0; }
-  .dice-rescue-box { background:rgba(124,58,237,.10); border:1px solid rgba(167,139,250,.30); border-radius:12px; padding:16px; margin-top:16px; }
-  .dice-rescue-progress { display:flex; gap:7px; justify-content:center; margin-bottom:18px; }
-  .dice-rescue-dot { width:30px; height:6px; border-radius:99px; background:var(--bg4); }
-  .dice-rescue-dot.done { background:var(--green); }
-  .dice-rescue-dot.current { background:var(--gold); }
-  .dice-event-note { font-size:12px; color:var(--gold2); background:var(--gold-dim); border:1px solid rgba(201,168,76,.22); padding:10px 12px; border-radius:8px; margin-top:12px; line-height:1.5; }
-  .dice-result-win { color:var(--green); }
-  .dice-result-loss { color:var(--red); }
-  .dice-result-draw { color:var(--gold); }
-  @keyframes diceShake { 0%{transform:rotate(-8deg) scale(.96)} 50%{transform:rotate(8deg) scale(1.04)} 100%{transform:rotate(-8deg) scale(.96)} }
-  @keyframes diceReadableRoll {
-    0% { transform:translateY(0) rotate(0deg) scale(1); }
-    24% { transform:translateY(-16px) rotate(-10deg) scale(1.07); }
-    48% { transform:translateY(-5px) rotate(8deg) scale(.98); }
-    70% { transform:translateY(-11px) rotate(-6deg) scale(1.04); }
-    90% { transform:translateY(2px) rotate(3deg) scale(1.05,.91); }
-    100% { transform:translateY(0) rotate(0deg) scale(1); }
-  }
-  @keyframes diceLandThud { 0%{transform:translateY(-3px) scale(.96)} 50%{transform:translateY(1px) scale(1.06,.9)} 100%{transform:translateY(0) scale(1)} }
-  @keyframes dicePop { 0%{transform:scale(.7) rotate(-20deg)} 70%{transform:scale(1.12) rotate(8deg)} 100%{transform:scale(1) rotate(0)} }
-
-  @media (max-width: 560px) {
-    .dice-group-grid { grid-template-columns:1fr; }
-    .dice-columns { grid-template-columns:1fr 46px 1fr; }
-    .die { width:54px; height:54px; font-size:38px; }
-    .dice-pair-status { height:54px; font-size:10px; }
-  }
-
-
-
-  /* =========================================================
-     LEXICON LEAGUE — SÜPER LİG RPG
-     ========================================================= */
-  .container.league-wide { max-width: 1280px; }
-  .btn-league {
-    width:100%; max-width:420px; justify-content:center;
-    background:linear-gradient(135deg,#075985,#0f766e 55%,#166534);
-    color:#fff; border:1px solid rgba(255,255,255,.22); font-weight:700;
-    box-shadow:0 7px 24px rgba(15,118,110,.28);
-  }
-  .btn-league:hover { transform:translateY(-2px); filter:brightness(1.08); }
-  .ll-shell { width:100%; animation:fadeUp .32s ease; }
-  .ll-panel { background:var(--bg2); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:22px; }
-  .ll-panel.ll-goal-flash { position:relative; isolation:isolate; }
-  .ll-panel.ll-goal-flash::after { content:''; position:absolute; inset:0; z-index:40; pointer-events:none; border-radius:inherit; background:var(--ll-goal-flash,rgba(34,197,94,.24)); animation:llGoalFlash .3s ease-out both; }
-  .ll-panel.ll-goal-flash.player { --ll-goal-flash:rgba(34,197,94,.25); }
-  .ll-panel.ll-goal-flash.opponent { --ll-goal-flash:rgba(239,68,68,.24); }
-  .ll-panel.ll-goal-flash.draw { --ll-goal-flash:rgba(250,204,21,.19); }
-  .ll-topbar { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
-  .ll-brand { display:flex; align-items:center; gap:12px; }
-  .ll-brand-mark { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; font-size:25px; background:linear-gradient(135deg,rgba(14,116,144,.35),rgba(22,101,52,.35)); border:1px solid rgba(94,234,212,.22); }
-  .ll-team-logo { width:30px; height:30px; object-fit:contain; display:inline-block; vertical-align:middle; filter:drop-shadow(0 3px 6px rgba(0,0,0,.28)); }
-  .ll-team-logo.brand { width:40px; height:40px; }
-  .ll-team-logo.match { width:56px; height:56px; }
-  .ll-team-logo.table { width:24px; height:24px; margin-right:7px; }
-  .ll-team-logo.compact { width:32px; height:32px; }
-  .ll-team-logo-fallback { display:none; align-items:center; justify-content:center; font-size:28px; }
-  .ll-team-name.team-with-logo { display:flex; align-items:center; gap:8px; }
-  .ll-title { font-family:'Cormorant Garamond',serif; font-size:34px; line-height:1; font-weight:400; }
-  .ll-title em { color:#5eead4; font-style:italic; }
-  .ll-muted { color:var(--text3); font-size:12px; line-height:1.55; }
-  .ll-sub { color:var(--text2); font-size:13px; line-height:1.55; }
-  .ll-actions { display:flex; gap:9px; flex-wrap:wrap; }
-  .ll-btn { border:1px solid rgba(255,255,255,.10); background:var(--bg3); color:var(--text); border-radius:9px; padding:10px 14px; cursor:pointer; font:600 12px 'DM Sans',sans-serif; transition:.18s; }
-  .ll-btn:hover { transform:translateY(-1px); border-color:rgba(94,234,212,.42); }
-  .ll-btn.primary { background:linear-gradient(135deg,#0e7490,#0f766e); color:white; border-color:rgba(255,255,255,.18); }
-  .ll-btn.gold { background:var(--gold); color:#111827; border-color:var(--gold2); }
-  .ll-btn.danger { color:#fca5a5; border-color:rgba(239,68,68,.26); background:rgba(127,29,29,.15); }
-  .ll-btn:disabled { opacity:.42; cursor:not-allowed; transform:none; }
-  .ll-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:16px; }
-  .ll-grid > * { min-width:0; }
-  .ll-card { background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:16px; }
-  .ll-card-title { color:#99f6e4; font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; margin-bottom:12px; }
-  .ll-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0 16px; }
-  .ll-metric { background:var(--bg3); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:13px; text-align:center; }
-  .ll-metric strong { display:block; font-family:'Cormorant Garamond',serif; font-size:28px; color:#5eead4; line-height:1; margin-bottom:5px; }
-  .ll-metric span { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:1px; }
-  .ll-topbar .ll-actions .ll-btn.gold { display:none; }
-  .ll-transfer-banner { display:flex; justify-content:space-between; align-items:center; gap:18px; margin:0 0 16px; padding:17px 20px; border:1px solid rgba(250,204,21,.62); border-radius:14px; background:linear-gradient(120deg,rgba(120,53,15,.72),rgba(202,138,4,.30),rgba(15,118,110,.22)); box-shadow:0 0 0 3px rgba(250,204,21,.06),0 12px 30px rgba(0,0,0,.25); }
-  .ll-transfer-banner strong { display:block; color:#fef08a; font-size:16px; letter-spacing:.5px; }
-  .ll-transfer-banner span { display:block; margin-top:4px; color:#fde68a; font-size:11px; }
-  .ll-transfer-banner .ll-btn { flex:0 0 auto; min-width:190px; background:#facc15; color:#111827; border-color:#fde047; }
-  .ll-team-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-top:16px; }
-  .ll-team-option { text-align:left; background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:14px; color:var(--text); cursor:pointer; transition:.18s; }
-  .ll-team-option:hover { transform:translateY(-2px); border-color:rgba(94,234,212,.38); box-shadow:0 8px 24px rgba(0,0,0,.25); }
-  .ll-team-name { font-weight:700; margin-bottom:6px; }
-  .ll-stars { color:#facc15; letter-spacing:1px; font-size:13px; }
-  .ll-range { color:var(--text3); font-size:11px; margin-top:4px; }
-  .ll-next-match { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px; padding:18px; border-radius:14px; background:linear-gradient(135deg,rgba(14,116,144,.13),rgba(15,118,110,.08)); border:1px solid rgba(94,234,212,.18); }
-  .ll-club { text-align:center; }
-  .ll-club-icon { font-size:34px; margin-bottom:6px; }
-  .ll-club-rank { margin-top:5px; color:#99f6e4; font-size:10px; font-weight:700; letter-spacing:.35px; }
-  .ll-vs { font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:28px; }
-  .ll-squad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  .ll-slot { background:var(--bg2); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:13px; min-height:126px; }
-  .ll-slot-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:9px; }
-  .ll-position { font-size:11px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; }
-  .ll-die-mini { width:34px; height:34px; border-radius:8px; display:grid; place-items:center; font-weight:800; color:#111827; box-shadow:inset 0 -3px 6px rgba(0,0,0,.2); }
-  .ll-die-mini.star1 { background:#f87171; }
-  .ll-die-mini.star2 { background:#facc15; }
-  .ll-die-mini.star3 { background:#4ade80; }
-  .ll-die-mini.star4 { background:#38bdf8; }
-  .ll-die-mini.star5 { background:#c084fc; }
-  .ll-die-mini.star6 { background:linear-gradient(135deg,#fde047,#f97316);box-shadow:inset 0 -3px 6px rgba(0,0,0,.25),0 0 12px rgba(250,204,21,.35); }
-  .ll-ability { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); border-radius:9px; padding:9px; cursor:pointer; width:100%; color:var(--text2); text-align:left; font:500 11px 'DM Sans'; line-height:1.4; }
-  .ll-ability.empty { cursor:default; color:var(--text3); border-style:dashed; }
-  .ll-ability.common { border-color:rgba(156,163,175,.35); }
-  .ll-ability.rare { border-color:rgba(59,130,246,.55); box-shadow:inset 3px 0 #3b82f6; }
-  .ll-ability.epic { border-color:rgba(168,85,247,.55); box-shadow:inset 3px 0 #a855f7; }
-  .ll-ability.legendary { border-color:rgba(234,179,8,.60); box-shadow:inset 3px 0 #eab308; }
-  .ll-table-wrap { overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:11px; }
-  .ll-table { width:100%; border-collapse:collapse; font-size:12px; min-width:650px; }
-  .ll-table th { position:sticky; top:0; background:var(--bg3); color:var(--text3); text-transform:uppercase; font-size:10px; letter-spacing:1px; padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
-  .ll-table th:nth-child(2), .ll-table td:nth-child(2) { text-align:left; }
-  .ll-table td { padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045); }
-  .ll-table tr.player { background:rgba(94,234,212,.07); color:#99f6e4; font-weight:700; }
-  .ll-table tr.champion-zone { box-shadow:inset 3px 0 #22c55e; }
-  .ll-table tr.playoff-zone { box-shadow:inset 3px 0 #38bdf8; }
-  .ll-table tr.ucl-zone { box-shadow:inset 3px 0 #8b5cf6; }
-  .ll-table tr.uel-zone { box-shadow:inset 3px 0 #f97316; }
-  .ll-table tr.uecl-zone { box-shadow:inset 3px 0 #14b8a6; }
-  .ll-table tr.relegation-zone { box-shadow:inset 3px 0 #ef4444; }
-  .ll-table tr.champion-zone > td:first-child { box-shadow:inset 4px 0 #22c55e; }
-  .ll-table tr.playoff-zone > td:first-child { box-shadow:inset 4px 0 #38bdf8; }
-  .ll-table tr.ucl-zone > td:first-child { box-shadow:inset 4px 0 #8b5cf6; }
-  .ll-table tr.uel-zone > td:first-child { box-shadow:inset 4px 0 #f97316; }
-  .ll-table tr.uecl-zone > td:first-child { box-shadow:inset 4px 0 #14b8a6; }
-  .ll-table tr.relegation-zone > td:first-child { box-shadow:inset 4px 0 #ef4444; }
-  .ll-zone-legend { display:flex; gap:16px; flex-wrap:wrap; margin:10px 2px 0; color:var(--text2); font-size:10px; }
-  .ll-zone-legend span { display:inline-flex; align-items:center; gap:6px; }
-  .ll-zone-dot { width:9px; height:9px; border-radius:3px; display:inline-block; }
-  .ll-zone-dot.direct { background:#22c55e; }
-  .ll-zone-dot.playoff { background:#38bdf8; }
-  .ll-zone-dot.ucl { background:#8b5cf6; }
-  .ll-zone-dot.uel { background:#f97316; }
-  .ll-zone-dot.uecl { background:#14b8a6; }
-  .ll-zone-dot.relegation { background:#ef4444; }
-  .ll-card-icons { display:flex; justify-content:center; gap:6px; margin-top:7px; flex-wrap:wrap; }
-  .ll-icon-btn { width:27px; height:27px; border-radius:7px; border:1px solid rgba(255,255,255,.10); background:var(--bg2); color:var(--text2); cursor:pointer; font-size:13px; }
-  .ll-icon-btn:hover { border-color:var(--gold); color:var(--gold); }
-  .ll-quiz-card { max-width:700px; margin:0 auto; }
-  .ll-progress { height:5px; background:var(--bg4); border-radius:99px; overflow:hidden; margin:12px 0 20px; }
-  .ll-progress > div { height:100%; background:linear-gradient(90deg,#0e7490,#2dd4bf); transition:width .25s; }
-  .ll-question { min-height:240px; display:grid; place-items:center; text-align:center; padding:34px; border-radius:15px; background:var(--bg3); border:1px solid rgba(94,234,212,.16); cursor:pointer; }
-  .ll-question-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,8vw,44px); line-height:1.15; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
-  .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
-  .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
-  .ll-battle { display:grid; grid-template-columns:1fr 100px 1fr; gap:12px; align-items:center; }
-  .ll-dice-side { display:flex; flex-direction:column; gap:11px; }
-  .ll-die-row { display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:10px; }
-  .ll-die-row.selectable { cursor:pointer; }
-  .ll-die-row.selectable:hover, .ll-die-row.selected { border-color:#5eead4; box-shadow:0 0 0 3px rgba(45,212,191,.11); }
-  .ll-die { width:58px; height:58px; flex:0 0 58px; border-radius:13px; display:grid; place-items:center; font:bold 28px Arial; color:#111827; box-shadow:inset 0 -5px 10px rgba(0,0,0,.18),0 7px 18px rgba(0,0,0,.25); transform-style:preserve-3d; transform-origin:50% 72%; will-change:transform; }
-  .ll-die.star1 { background:#f87171; }
-  .ll-die.star2 { background:#facc15; }
-  .ll-die.star3 { background:#4ade80; }
-  .ll-die.star4 { background:#38bdf8; }
-  .ll-die.star5 { background:#c084fc; }
-  .ll-die.star6 { background:linear-gradient(135deg,#fde047,#f97316);box-shadow:inset 0 -5px 10px rgba(0,0,0,.2),0 0 18px rgba(250,204,21,.35); }
-  .ll-die.rolling { color:#111827; outline:3px solid rgba(255,255,255,.48); animation:diceReadableRoll .72s cubic-bezier(.22,.72,.28,1) both; animation-delay:var(--dice-delay,0ms); }
-  .ll-die.landed { animation:diceLandThud .22s ease-out both; animation-delay:var(--dice-delay,0ms); }
-  .ll-die-info { min-width:0; }
-  .ll-die-pos { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:1px; }
-  .ll-die-card { color:var(--text2); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; margin-top:3px; }
-  .ll-pair-column { display:flex; flex-direction:column; gap:11px; }
-  .ll-pair { height:80px; display:grid; place-items:center; text-align:center; color:var(--text3); font-size:11px; }
-  .ll-pair.win { color:#4ade80; }
-  .ll-pair.loss { color:#f87171; }
-  .ll-pair.draw { color:#facc15; }
-  .ll-score { font-family:'Cormorant Garamond',serif; font-size:54px; text-align:center; margin:14px 0; }
-  .ll-score-pop { display:inline-block; animation:llScorePop .56s cubic-bezier(.18,.85,.28,1.35) both; transform-origin:center; }
-  @keyframes llScorePop { 0%{transform:scale(.72);filter:brightness(1)} 42%{transform:scale(1.4);filter:brightness(1.45)} 72%{transform:scale(.94)} 100%{transform:scale(1);filter:brightness(1)} }
-  @keyframes llGoalFlash { 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
-  .ll-event-log { max-height:220px; overflow:auto; display:flex; flex-direction:column; gap:7px; margin-top:12px; }
-  .ll-event { font-size:11px; color:var(--text2); background:var(--bg3); border-left:3px solid rgba(94,234,212,.45); padding:8px 10px; border-radius:6px; }
-  .ll-forecast { margin-top:16px; padding:16px; border-radius:13px; background:rgba(15,23,42,.72); border:1px solid rgba(96,165,250,.25); text-align:left; }
-  .ll-forecast-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
-  .ll-forecast-score { color:#bfdbfe; font-weight:800; white-space:nowrap; }
-  .ll-carded-outcome { margin-top:12px; padding:13px 14px; border-radius:11px; color:#dcfce7; background:rgba(34,197,94,.11); border:1px solid rgba(74,222,128,.36); }
-  .ll-carded-outcome-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .ll-carded-outcome-score { color:#86efac; font-size:25px; font-weight:900; white-space:nowrap; }
-  .ll-forecast-grid { display:flex; flex-direction:column; gap:8px; }
-  .ll-forecast-row { display:grid; grid-template-columns:100px 52px 1fr 52px; gap:8px; align-items:center; background:rgba(255,255,255,.035); border-radius:9px; padding:9px 10px; font-size:11px; }
-  .ll-forecast-value { font-size:20px; font-weight:800; text-align:center; }
-  .ll-forecast-status { text-align:center; font-weight:700; }
-  .ll-forecast-status.player { color:#4ade80; }
-  .ll-forecast-status.opponent { color:#f87171; }
-  .ll-forecast-status.draw { color:#facc15; }
-  .ll-forecast-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
-  .ll-forecast-side { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); border-radius:9px; padding:10px; }
-  .ll-trigger-log { margin-top:12px; padding:12px; border-radius:10px; background:rgba(8,47,73,.24); border:1px solid rgba(56,189,248,.22); }
-  .ll-trigger-log-list { display:flex; flex-direction:column; gap:6px; margin-top:9px; }
-  .ll-trigger-log-item { padding:8px 10px; border-radius:7px; color:var(--text2); background:rgba(255,255,255,.035); border-left:3px solid #64748b; font-size:10px; line-height:1.45; }
-  .ll-trigger-log-item.player { border-left-color:#4ade80; color:#dcfce7; }
-  .ll-trigger-log-item.opponent { border-left-color:#f87171; color:#fee2e2; }
-  .ll-card-chain { display:grid; gap:7px; margin-top:10px; }
-  .ll-chain-step { display:grid; grid-template-columns:34px minmax(0,1fr) auto; gap:9px; align-items:center; padding:9px 10px; border-radius:9px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); }
-  .ll-chain-step.player { border-left:3px solid #2dd4bf; }
-  .ll-chain-step.opponent { border-left:3px solid #fb7185; }
-  .ll-chain-step.final { border-color:rgba(201,168,76,.34); background:rgba(201,168,76,.07); }
-  .ll-chain-index { width:27px; height:27px; border-radius:50%; display:grid; place-items:center; background:var(--bg4); color:var(--gold2); font-size:10px; font-weight:800; }
-  .ll-chain-text { color:var(--text2); font-size:11px; line-height:1.5; }
-  .ll-chain-score { color:#a7f3d0; background:rgba(16,185,129,.10); border:1px solid rgba(52,211,153,.22); border-radius:7px; padding:5px 7px; font-size:10px; font-weight:800; white-space:nowrap; }
-  .ll-synergy-strip { margin-top:10px; padding:9px 11px; border-radius:9px; border:1px solid rgba(34,197,94,.30); background:rgba(34,197,94,.08); color:#bbf7d0; font-size:11px; line-height:1.55; }
-  .ll-forecast-card { color:var(--text2); font-size:10px; line-height:1.5; padding-top:7px; margin-top:7px; border-top:1px solid rgba(255,255,255,.05); }
-  .ll-forecast-card.active { color:#dcfce7; background:rgba(34,197,94,.13); border:1px solid rgba(74,222,128,.42); border-radius:9px; padding:10px; box-shadow:0 0 0 2px rgba(34,197,94,.07),0 7px 20px rgba(22,163,74,.10); }
-  .ll-forecast-card.inactive { opacity:.58; }
-  .ll-forecast-card.canceled { color:#ffedd5; background:rgba(249,115,22,.10); border:1px solid rgba(251,146,60,.42); border-radius:9px; padding:10px; }
-  .ll-forecast-card.prepared { color:#fef3c7; background:rgba(234,179,8,.10); border:1px solid rgba(250,204,21,.38); border-radius:9px; padding:10px; }
-  .ll-forecast-card.limited { color:#e0f2fe; background:rgba(14,165,233,.10); border:1px solid rgba(56,189,248,.40); border-radius:9px; padding:10px; }
-  .ll-forecast-card.uncertain { color:#fef3c7; background:rgba(245,158,11,.08); border:1px solid rgba(251,191,36,.24); border-radius:9px; padding:10px; }
-  .ll-forecast-card.blocked { color:#fee2e2; background:rgba(239,68,68,.12); border:1px solid rgba(248,113,113,.44); border-radius:9px; padding:10px; }
-  .ll-trigger-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:99px; font-size:9px; font-weight:900; letter-spacing:.8px; margin-bottom:7px; }
-  .ll-trigger-badge.active { color:#052e16; background:#4ade80; }
-  .ll-trigger-badge.inactive { color:var(--text3); background:rgba(255,255,255,.07); }
-  .ll-trigger-badge.canceled { color:#431407; background:#fb923c; }
-  .ll-trigger-badge.prepared { color:#422006; background:#facc15; }
-  .ll-trigger-badge.limited { color:#082f49; background:#38bdf8; }
-  .ll-trigger-badge.uncertain { color:#422006; background:#fbbf24; }
-  .ll-trigger-badge.blocked { color:#450a0a; background:#f87171; }
-  .ll-shop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .ll-offers { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
-  .ll-offer { background:var(--bg3); border:1px solid rgba(255,255,255,.08); border-radius:13px; padding:16px; }
-  .ll-offer.common { border-color:rgba(156,163,175,.4); }
-  .ll-offer.rare { border-color:rgba(59,130,246,.65); }
-  .ll-offer.epic { border-color:rgba(168,85,247,.65); }
-  .ll-offer.legendary { border-color:rgba(234,179,8,.72); box-shadow:0 0 22px rgba(234,179,8,.09); }
-  .ll-pack-opened { scroll-margin-top:18px; animation:llPackOpened .48s cubic-bezier(.2,.8,.2,1); }
-  .ll-pack-opened-banner { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 -3px; padding:11px 14px; border:1px solid rgba(250,204,21,.48); border-radius:11px; color:#fef3c7; background:linear-gradient(135deg,rgba(161,98,7,.22),rgba(15,118,110,.14)); font-size:11px; font-weight:900; letter-spacing:.7px; text-align:center; box-shadow:0 0 24px rgba(234,179,8,.10); }
-  @keyframes llPackOpened { 0%{opacity:.25;transform:translateY(12px) scale(.985);filter:brightness(1.5)} 65%{opacity:1;transform:translateY(-2px) scale(1.006)} 100%{transform:none;filter:none} }
-  body.ll-cinematic-open{overflow:hidden}
-  .ll-pack-cinematic{--pack-accent:#60a5fa;--pack-accent2:#bfdbfe;position:fixed;inset:0;z-index:13000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 42%,rgba(30,64,175,.27),rgba(2,6,23,.96) 62%,#000);overflow:hidden;isolation:isolate}
-  .ll-pack-cinematic.elite{--pack-accent:#facc15;--pack-accent2:#fde68a;background:radial-gradient(circle at 50% 42%,rgba(146,64,14,.32),rgba(9,6,5,.97) 63%,#000)}
-  .ll-pack-cinematic::before{content:'';position:absolute;inset:-35%;z-index:-2;opacity:0;background:repeating-conic-gradient(from 0deg,transparent 0 10deg,rgba(255,255,255,.05) 10deg 13deg,transparent 13deg 24deg);animation:llPackRays 9s linear infinite}
-  .ll-pack-cinematic.blast::before{opacity:.55;transition:opacity .35s ease}
-  .ll-pack-cinematic::after{content:'';position:absolute;inset:0;z-index:20;pointer-events:none;background:#fff;opacity:0}
-  .ll-pack-cinematic.blast::after{animation:llPackFlash .58s ease-out}
-  .ll-pack-skip{position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));z-index:30;border:1px solid rgba(147,197,253,.42);border-radius:999px;padding:8px 13px;color:var(--pack-accent2);background:rgba(2,6,23,.58);font:800 10px 'DM Sans';letter-spacing:.7px;cursor:pointer}
-  .elite .ll-pack-skip{border-color:rgba(250,204,21,.48)}
-  .ll-pack-stage{width:min(760px,100%);display:grid;place-items:center;text-align:center}
-  .ll-pack-kicker{color:var(--pack-accent2);font-size:10px;font-weight:950;letter-spacing:2px;text-transform:uppercase}
-  .ll-pack-title{margin-top:5px;color:#fff;font-family:'Cormorant Garamond',serif;font-size:clamp(31px,7vw,54px);line-height:1}
-  .ll-pack-title em{color:var(--pack-accent);font-weight:500}
-  .ll-pack-shell{position:relative;width:220px;height:320px;margin-top:24px;border:2px solid rgba(96,165,250,.52);border-radius:17px;background:linear-gradient(150deg,#1e3a8a,#0b1224 58%,#030712);box-shadow:0 0 48px rgba(96,165,250,.34),0 26px 70px rgba(0,0,0,.7),inset 0 0 38px rgba(147,197,253,.11);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;animation:llPackIdle 2.3s ease-in-out infinite;overflow:hidden}
-  .elite .ll-pack-shell{width:230px;height:335px;border-color:rgba(250,204,21,.58);background:linear-gradient(150deg,#3a2a08,#1c1404 55%,#090603);box-shadow:0 0 58px rgba(250,204,21,.36),0 28px 75px rgba(0,0,0,.75),inset 0 0 42px rgba(253,230,138,.12)}
-  .ll-pack-shell::before{content:'';position:absolute;inset:-70% -90%;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.32) 49%,transparent 56%);transform:translateX(-34%);animation:llPackSheen 3.2s linear infinite}
-  .ll-pack-shell.charging{animation:llPackShake .5s ease-in-out infinite}
-  .ll-pack-shell.launched{animation:none;opacity:0;transform:scale(1.22);transition:opacity .42s ease,transform .42s ease}
-  .ll-pack-crown{font-size:24px;filter:drop-shadow(0 0 9px rgba(250,204,21,.6));margin-bottom:8px}
-  .ll-pack-brand{color:var(--pack-accent2);font-size:15px;font-weight:900;letter-spacing:4px}
-  .ll-pack-line{width:68%;height:2px;margin:14px 0;background:linear-gradient(90deg,transparent,var(--pack-accent),transparent)}
-  .ll-pack-type{color:#94a3b8;font-size:10px;font-weight:800;letter-spacing:2.5px}
-  .elite .ll-pack-type{color:#a8863a}
-  .ll-pack-cost{margin-top:12px;padding:5px 14px;border:1px solid rgba(147,197,253,.42);border-radius:999px;color:var(--pack-accent2);font-size:11px;font-weight:900}
-  .elite .ll-pack-cost{border-color:rgba(250,204,21,.46)}
-  .ll-pack-tap{position:absolute;bottom:18px;color:var(--pack-accent2);font-size:9px;font-weight:900;letter-spacing:1.6px;animation:llPackTap 1.5s ease-in-out infinite}
-  .ll-pack-cards{display:none;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px;perspective:1400px}
-  .ll-pack-cinematic.cards-ready .ll-pack-shell{display:none}
-  .ll-pack-cinematic.cards-ready .ll-pack-cards{display:grid;animation:llPackCardsIn .58s cubic-bezier(.18,.82,.25,1.15) both}
-  .ll-pack-card{position:relative;min-height:362px;transform-style:preserve-3d;transform:rotateY(180deg) scale(.9);transition:transform .88s cubic-bezier(.18,.85,.24,1.18);cursor:pointer;scroll-snap-align:center}
-  .elite .ll-pack-card{transition-duration:1.05s}
-  .ll-pack-card.revealed{transform:rotateY(0) scale(1);cursor:default}
-  .ll-pack-card-face{position:absolute;inset:0;padding:18px;border:2px solid var(--card-color,var(--pack-accent));border-radius:17px;backface-visibility:hidden;overflow:hidden;box-shadow:0 22px 55px rgba(0,0,0,.55),0 0 28px rgba(96,165,250,.16)}
-  .elite .ll-pack-card-face{box-shadow:0 22px 55px rgba(0,0,0,.58),0 0 31px rgba(250,204,21,.14)}
-  .ll-pack-card-back{display:grid;place-items:center;background:linear-gradient(150deg,#172554,#0b1224 58%,#030712);transform:rotateY(180deg);color:var(--pack-accent2);font-size:11px;font-weight:950;letter-spacing:3px}
-  .elite .ll-pack-card-back{background:linear-gradient(150deg,#3a2a08,#1c1404 58%,#090603)}
-  .ll-pack-card-front{display:flex;flex-direction:column;align-items:center;background:linear-gradient(155deg,var(--card-light,#64748b),var(--card-color,#334155) 48%,#111827);color:#fff}
-  .ll-pack-card-front::after{content:'';position:absolute;inset:-55%;pointer-events:none;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.42) 50%,transparent 58%);transform:translateX(-45%)}
-  .ll-pack-card.revealed .ll-pack-card-front::after{animation:llCardRevealSheen 1.15s ease-out .35s}
-  .ll-pack-rarity{position:relative;z-index:1;padding:5px 13px;border-radius:999px;background:rgba(0,0,0,.27);font-size:9px;font-weight:950;letter-spacing:1.4px}
-  .ll-pack-pos-icon{position:relative;z-index:1;width:66px;height:66px;margin-top:14px;border:2px solid rgba(255,255,255,.5);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);font-size:25px}
-  .ll-pack-card-name{position:relative;z-index:1;margin-top:12px;font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:800;line-height:1.05;text-align:center}
-  .ll-pack-card-meta{position:relative;z-index:1;margin-top:5px;color:rgba(255,255,255,.78);font-size:10px;font-weight:800;letter-spacing:.8px}
-  .ll-pack-card-effect{position:relative;z-index:1;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.28);font-size:10px;line-height:1.5;text-align:center}
-  .ll-pack-card-actions{position:relative;z-index:1;width:100%;margin-top:auto;padding-top:14px}
-  .ll-pack-card-actions .ll-btn{width:100%}
-  .ll-pack-cinematic:not(.all-revealed) .ll-pack-card-actions{visibility:hidden}
-  .ll-pack-card:not(.revealed) .ll-pack-card-front{pointer-events:none}
-  .ll-pack-card:not(.revealed) .ll-pack-card-back::after{content:'DOKUN VE AÇ';position:absolute;bottom:25px;font-size:8px;letter-spacing:1.5px;animation:llPackTap 1.5s infinite}
-  .ll-pack-controls{display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:17px}
-  .ll-pack-cinematic.all-revealed .ll-pack-controls{display:flex;animation:llPackControlIn .35s ease both}
-  .ll-pack-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-  .ll-pack-particle{position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;background:var(--particle,var(--pack-accent));box-shadow:0 0 7px var(--particle,var(--pack-accent));animation:llPackParticle var(--duration,1.2s) ease-out var(--delay,0s) forwards}
-  .ll-signing-cinematic{position:fixed;inset:0;z-index:13000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(30,64,175,.27),rgba(2,6,23,.97) 65%,#000);overflow:hidden;text-align:center}
-  .ll-signing-cinematic.stay{background:radial-gradient(circle at 50% 40%,rgba(13,148,136,.24),rgba(2,6,23,.97) 65%,#000)}
-  .ll-signing-stage{position:relative;width:min(620px,100%);padding:25px 18px}
-  .ll-signing-kicker{color:#93c5fd;font-size:10px;font-weight:950;letter-spacing:2px;text-transform:uppercase}
-  .stay .ll-signing-kicker{color:#99f6e4}
-  .ll-signing-crest{width:160px;height:160px;margin:22px auto 16px;padding:20px;border:3px solid rgba(147,197,253,.52);border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#172554,#080f20);box-shadow:0 0 55px rgba(96,165,250,.38);opacity:0;transform:scale(.3) rotate(-24deg)}
-  .stay .ll-signing-crest{border-color:rgba(94,234,212,.5);box-shadow:0 0 55px rgba(45,212,191,.3)}
-  .ll-signing-cinematic.play .ll-signing-crest{animation:llSigningCrest .9s cubic-bezier(.18,.85,.24,1.2) forwards}
-  .ll-signing-crest .ll-team-logo{width:105px!important;height:105px!important;margin:0!important}
-  .ll-signing-team{opacity:0;transform:translateY(12px)}
-  .ll-signing-cinematic.play .ll-signing-team{animation:llSigningText .55s ease .55s forwards}
-  .ll-signing-team h2{margin:0;color:#fff;font-family:'Cormorant Garamond',serif;font-size:clamp(34px,8vw,54px)}
-  .ll-signing-team p{margin:5px 0 0;color:#93a4bf;font-size:11px;line-height:1.6}
-  .ll-signing-stamp{display:inline-block;margin-top:22px;padding:9px 24px;border:3px solid #facc15;border-radius:8px;color:#facc15;font-size:22px;font-weight:950;letter-spacing:3px;opacity:0;transform:scale(3) rotate(-7deg)}
-  .stay .ll-signing-stamp{border-color:#5eead4;color:#5eead4}
-  .ll-signing-cinematic.play .ll-signing-stamp{animation:llSigningStamp .35s ease-out 1.18s forwards}
-  .ll-signing-detail{margin:18px auto 0;max-width:520px;color:#cbd5e1;font-size:11px;line-height:1.65;opacity:0}
-  .ll-signing-cinematic.play .ll-signing-detail{animation:llSigningText .5s ease 1.58s forwards}
-  .ll-signing-actions{margin-top:20px;opacity:0}
-  .ll-signing-cinematic.play .ll-signing-actions{animation:llSigningText .45s ease 1.9s forwards}
-  @keyframes llPackIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(1deg)}}
-  @keyframes llPackShake{0%,100%{transform:translateX(0) scale(1.04)}25%{transform:translateX(-7px) rotate(-1.5deg) scale(1.07)}50%{transform:translateX(7px) rotate(1.5deg) scale(1.09)}75%{transform:translateX(-4px) rotate(-1deg) scale(1.1)}}
-  @keyframes llPackTap{0%,100%{opacity:.42}50%{opacity:1}}
-  @keyframes llPackSheen{from{transform:translateX(-42%)}to{transform:translateX(42%)}}
-  @keyframes llPackRays{to{transform:rotate(360deg)}}
-  @keyframes llPackFlash{0%{opacity:0}12%{opacity:.95}100%{opacity:0}}
-  @keyframes llPackCardsIn{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:scale(1)}}
-  @keyframes llCardRevealSheen{0%{transform:translateX(-45%);opacity:0}30%{opacity:1}100%{transform:translateX(45%);opacity:0}}
-  @keyframes llPackControlIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  @keyframes llPackParticle{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2)}}
-  @keyframes llSigningCrest{0%{opacity:0;transform:scale(.3) rotate(-24deg)}65%{opacity:1;transform:scale(1.1) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
-  @keyframes llSigningText{to{opacity:1;transform:none}}
-  @keyframes llSigningStamp{0%{opacity:0;transform:scale(3) rotate(-7deg)}65%{opacity:1;transform:scale(.9) rotate(-7deg)}100%{opacity:1;transform:scale(1) rotate(-7deg)}}
-  @media(max-width:600px){
-    .ll-pack-cinematic{padding:12px 0}.ll-pack-stage{width:100%}.ll-pack-title{padding:0 48px}.ll-pack-cards{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:min(82vw,285px);gap:12px;padding:0 9vw;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.ll-pack-cards::-webkit-scrollbar{display:none}.ll-pack-card{min-height:355px}.ll-pack-card-name{font-size:22px}.ll-pack-controls{padding:0 14px}.ll-signing-crest{width:138px;height:138px}.ll-signing-crest .ll-team-logo{width:90px!important;height:90px!important}.ll-signing-stamp{font-size:17px;letter-spacing:2px;padding:8px 17px}
-  }
-  @media(prefers-reduced-motion:reduce){
-    .ll-pack-cinematic::before,.ll-pack-shell,.ll-pack-shell::before,.ll-pack-tap,.ll-pack-card-back::after,.ll-pack-particle{animation:none!important}.ll-pack-card,.ll-pack-shell{transition:none!important}.ll-signing-cinematic.play .ll-signing-crest,.ll-signing-cinematic.play .ll-signing-team,.ll-signing-cinematic.play .ll-signing-stamp,.ll-signing-cinematic.play .ll-signing-detail,.ll-signing-cinematic.play .ll-signing-actions{animation-duration:.01ms!important;animation-delay:0ms!important}
-  }
-  .ll-rarity { display:inline-flex; padding:4px 8px; border-radius:99px; font-size:9px; letter-spacing:1px; text-transform:uppercase; background:rgba(255,255,255,.06); margin-bottom:9px; }
-  .ll-modal { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
-  .ll-modal-card { width:min(520px,100%); max-height:calc(100dvh - 24px); overflow-y:auto; overscroll-behavior:contain; background:var(--bg2); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 22px 70px rgba(0,0,0,.7); padding:22px; }
-  .ll-upgrade-preview { margin-top:10px; padding:13px; border:1px solid rgba(103,232,249,.34); border-radius:10px; background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(250,204,21,.06)); }
-  .ll-upgrade-preview-title { color:#a5f3fc; font-size:11px; font-weight:950; letter-spacing:.8px; text-transform:uppercase; }
-  .ll-upgrade-compare { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
-  .ll-upgrade-state { min-width:0; padding:10px; border-radius:8px; background:rgba(255,255,255,.035); color:var(--text2); font-size:10px; line-height:1.55; overflow-wrap:anywhere; }
-  .ll-upgrade-state.after { border:1px solid rgba(250,204,21,.28); background:rgba(250,204,21,.06); }
-  .ll-upgrade-state b { display:block; margin-bottom:5px; color:#fef3c7; }
-  .ll-notice { padding:12px 14px; border-radius:10px; background:rgba(14,116,144,.10); border:1px solid rgba(34,211,238,.20); color:#a5f3fc; font-size:12px; line-height:1.6; }
-  .ll-result-list { display:flex; flex-direction:column; gap:7px; }
-  .ll-result-row { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; padding:9px 10px; border-radius:8px; background:var(--bg2); font-size:11px; }
-  .ll-result-row span:first-child { text-align:right; }
-  .ll-result-row b { color:var(--gold); }
-  .ll-comp-tabs { display:flex; gap:8px; flex-wrap:wrap; padding:5px; margin-bottom:16px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:var(--bg3); }
-  .ll-comp-tab { flex:1; min-width:170px; border:1px solid transparent; border-radius:9px; padding:11px 14px; background:transparent; color:var(--text2); font:700 12px 'DM Sans'; cursor:pointer; }
-  .ll-comp-tab.active { color:#ecfeff; border-color:rgba(45,212,191,.35); background:linear-gradient(135deg,rgba(14,116,144,.38),rgba(15,118,110,.30)); }
-  .ll-subtabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-  .ll-round-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-  .ll-round-card { min-width:0; border:1px solid rgba(255,255,255,.07); border-radius:11px; background:var(--bg3); overflow:hidden; }
-  .ll-round-card[open] { border-color:rgba(94,234,212,.22); }
-  .ll-round-card summary { display:flex; justify-content:space-between; gap:12px; padding:12px 14px; color:#99f6e4; font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; cursor:pointer; list-style:none; }
-  .ll-round-card summary::-webkit-details-marker { display:none; }
-  .ll-round-meta { color:var(--text3); font-weight:500; letter-spacing:0; text-transform:none; }
-  .ll-fixture-list { display:flex; flex-direction:column; gap:6px; padding:0 10px 10px; }
-  .ll-fixture-row { display:grid; grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr); align-items:center; gap:8px; min-height:42px; padding:7px 9px; border-radius:8px; background:var(--bg2); font-size:11px; }
-  .ll-fixture-row.player { box-shadow:inset 3px 0 #2dd4bf; background:rgba(45,212,191,.07); }
-  .ll-fixture-team { display:flex; align-items:center; gap:6px; min-width:0; }
-  .ll-fixture-team.away { justify-content:flex-end; text-align:right; }
-  .ll-fixture-team span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ll-fixture-team .ll-team-logo { width:21px; height:21px; margin:0; flex:0 0 21px; }
-  .ll-fixture-score { text-align:center; color:var(--gold2); font-weight:800; white-space:nowrap; }
-  .ll-cup-status { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
-  .ll-goals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
-  .ll-goal { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:11px 12px; border-radius:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.07); }
-  .ll-goal.success { border-color:rgba(74,222,128,.38); background:rgba(34,197,94,.09); }
-  .ll-goal.fail { border-color:rgba(248,113,113,.28); background:rgba(239,68,68,.06); }
-  .ll-goal-title { font-weight:800; font-size:11px; }
-  .ll-goal-progress { color:var(--text2); font-size:10px; margin-top:3px; }
-  .ll-goal-reward { color:var(--gold2); font-weight:900; font-size:11px; text-align:right; white-space:nowrap; }
-  .ll-big-match { position:relative; overflow:hidden; border-color:rgba(250,204,21,.50)!important; box-shadow:0 0 0 2px rgba(250,204,21,.06),0 18px 45px rgba(234,179,8,.10); }
-  .ll-match-importance { margin:-16px -16px 14px; padding:9px 14px; color:#422006; background:linear-gradient(90deg,#fde047,#fb923c); font-size:11px; font-weight:950; letter-spacing:.8px; text-align:center; }
-  .ll-archive-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-  .ll-archive-card { position:relative; min-height:170px; padding:14px; border-radius:12px; background:var(--bg3); border:1px solid rgba(255,255,255,.08); }
-  .ll-archive-card.common { border-color:rgba(156,163,175,.35); }
-  .ll-archive-card.rare { border-color:rgba(59,130,246,.55); }
-  .ll-archive-card.epic { border-color:rgba(168,85,247,.55); }
-  .ll-archive-card.legendary { border-color:rgba(234,179,8,.65); box-shadow:0 0 18px rgba(234,179,8,.07); }
-  .ll-owned-badge { position:absolute; top:10px; right:10px; padding:4px 7px; border-radius:99px; color:#052e16; background:#4ade80; font-size:8px; font-weight:950; letter-spacing:.6px; }
-  .ll-ability-performance { display:block; margin-top:6px; color:#5eead4; font-size:8px; font-weight:800; line-height:1.35; }
-  .ll-card-performance { margin-top:12px; padding:10px; border-radius:10px; background:rgba(45,212,191,.07); border:1px solid rgba(45,212,191,.20); }
-  .ll-card-performance.compact { margin-top:11px; padding:9px; }
-  .ll-card-performance-title { margin-bottom:8px; color:#5eead4; font-size:9px; font-weight:950; letter-spacing:.55px; text-transform:uppercase; }
-  .ll-card-performance-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; }
-  .ll-card-performance-stat { min-width:0; padding:6px 3px; border-radius:7px; text-align:center; background:rgba(255,255,255,.035); }
-  .ll-card-performance-stat strong { display:block; color:var(--text1); font-size:12px; }
-  .ll-card-performance-stat span { display:block; margin-top:2px; color:var(--text3); font-size:7px; text-transform:uppercase; }
-  .ll-card-performance-empty { color:var(--text3); font-size:9px; line-height:1.4; }
-  .ll-card-performance-note { margin-top:8px; color:var(--text3); font-size:8px; line-height:1.4; }
-  .ll-archive-detail-btn { width:100%; margin-top:10px; padding:7px 9px; }
-  @media(max-width:850px){
-    .ll-grid{grid-template-columns:1fr}.ll-metrics{grid-template-columns:repeat(2,1fr)}.ll-team-grid{grid-template-columns:repeat(2,1fr)}.ll-round-list{grid-template-columns:1fr}
-    .ll-shop-grid{grid-template-columns:1fr}.ll-battle{grid-template-columns:1fr 62px 1fr}.ll-die-card{max-width:110px}.ll-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  }
-  @media(max-width:600px){
-    .ll-panel{padding:15px}.ll-team-grid,.ll-squad,.ll-offers,.ll-cup-status,.ll-goals,.ll-archive-grid{grid-template-columns:1fr}.ll-next-match{grid-template-columns:1fr;}.ll-vs{font-size:20px}.ll-transfer-banner{align-items:stretch;flex-direction:column}.ll-transfer-banner .ll-btn{width:100%;min-width:0}.ll-match-importance{margin:-15px -15px 13px}.ll-card-performance-grid{grid-template-columns:repeat(3,minmax(64px,1fr))}
-    .ll-battle{grid-template-columns:1fr 44px 1fr;gap:6px}.ll-die-row{padding:6px;flex-direction:column;text-align:center}.ll-die{width:48px;height:48px;flex-basis:48px;font-size:24px}.ll-pair{height:92px;font-size:9px}.ll-die-card{max-width:90px}.ll-title{font-size:28px}
-    .ll-forecast-head{flex-direction:column}.ll-carded-outcome-head{align-items:flex-start}.ll-forecast-cards{grid-template-columns:1fr}
-    .ll-question{padding:26px 16px}.ll-modal{padding:10px}.ll-modal-card{padding:16px}.ll-upgrade-compare{grid-template-columns:1fr}
-    .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
-    .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
-    body.ll-euro-match-day{background-attachment:scroll;background-size:cover,cover;background-position:center top,center top}
-    body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
-    body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
-    body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
-  }
-
-  .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
-  .ll-season-opening-hero{padding:28px;border:1px solid rgba(201,168,76,.32);border-radius:18px;background:radial-gradient(circle at 78% 15%,rgba(201,168,76,.15),transparent 31%),linear-gradient(135deg,rgba(14,116,144,.19),rgba(10,14,23,.88) 52%,rgba(120,53,15,.18));box-shadow:0 18px 50px rgba(0,0,0,.28)}.ll-season-opening-kicker{color:#facc15;font-size:10px;font-weight:950;letter-spacing:1.8px;text-transform:uppercase}.ll-season-opening-title{margin-top:5px;font-family:'Cormorant Garamond',serif;font-size:clamp(34px,6vw,58px);line-height:1}.ll-season-opening-title em{color:#5eead4;font-weight:500}.ll-season-opening-sub{margin-top:9px;color:var(--text2);font-size:13px}
-  .ll-season-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:14px}.ll-season-card{padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(18,24,35,.72)}.ll-season-team-list{display:grid;gap:7px;margin-top:10px}.ll-season-team-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 9px;border-radius:9px;background:rgba(255,255,255,.025)}.ll-season-team-row strong{display:flex;align-items:center;gap:7px;min-width:0;font-size:11px}.ll-season-team-row span{color:var(--text2);font-size:10px;text-align:right}
-  .ll-season-europe-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.ll-season-europe{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,7,18,.28)}.ll-season-europe b{display:block;margin-bottom:7px;color:#c4b5fd;font-size:10px}.ll-season-goal{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px}.ll-season-goal:last-child{border-bottom:0}.ll-season-goal span:last-child{color:#facc15;font-weight:800;text-align:right}
-  @media(max-width:700px){.ll-season-opening-hero{padding:20px 16px}.ll-season-grid,.ll-season-europe-grid{grid-template-columns:1fr}.ll-team-ranks span{white-space:normal}}
-
-  .ll-save-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px}
-  .ll-save-card{position:relative;min-width:0;min-height:245px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,rgba(25,33,47,.94),rgba(10,15,24,.96));overflow:hidden}
-  .ll-save-card.active{border-color:rgba(94,234,212,.48);box-shadow:0 0 0 2px rgba(45,212,191,.08),0 14px 34px rgba(0,0,0,.25)}
-  .ll-save-card.empty{display:flex;flex-direction:column;justify-content:center;border-style:dashed;background:rgba(18,24,35,.54)}
-  .ll-save-slot-label{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#99f6e4;font-size:10px;font-weight:950;letter-spacing:1.3px;text-transform:uppercase}
-  .ll-save-slot-label i{padding:4px 7px;border-radius:999px;background:rgba(45,212,191,.12);color:#5eead4;font-style:normal;font-size:8px}
-  .ll-save-team{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:'Cormorant Garamond',serif;font-size:25px;line-height:1.05}
-  .ll-save-team .ll-team-logo{width:38px;height:38px;flex:0 0 38px}
-  .ll-save-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px}
-  .ll-save-meta span{min-width:0;padding:8px;border-radius:8px;background:rgba(255,255,255,.035);color:var(--text2);font-size:10px;overflow-wrap:anywhere}
-  .ll-save-updated{margin-top:10px;color:var(--text3);font-size:9px}
-  .ll-save-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}
-  .ll-save-actions .ll-btn:first-child{grid-column:1/-1}
-  .ll-backup-panel{margin-top:16px;padding:16px;border:1px solid rgba(96,165,250,.2);border-radius:13px;background:linear-gradient(135deg,rgba(30,64,175,.10),rgba(15,118,110,.08))}
-  .ll-backup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
-  .ll-backup-actions{display:flex;gap:8px;flex-wrap:wrap}
-  .ll-backup-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}
-  .ll-backup-guide-item{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,7,18,.25)}
-  .ll-backup-guide-item b{display:block;margin-bottom:5px;color:#fef3c7;font-size:10px}
-  .ll-backup-guide-item span{display:block;color:var(--text2);font-size:10px;line-height:1.55}
-  @media(max-width:700px){.ll-backup-guide{grid-template-columns:1fr}}  @media(max-width:900px){.ll-save-grid{grid-template-columns:1fr 1fr}.ll-save-card:last-child{grid-column:1/-1}}
-  @media(max-width:600px){.ll-save-grid{grid-template-columns:1fr}.ll-save-card:last-child{grid-column:auto}.ll-save-card{min-height:0}.ll-backup-actions{width:100%}.ll-backup-actions .ll-btn{flex:1;min-width:145px}}
-  @media (prefers-reduced-motion:reduce){
-    .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
-    .ll-panel.ll-goal-flash::after{display:none}
-  }
-
-</style>
-</head>
-<body>
-
-<div class="container">
-  <header class="page-header">
-    <h1 class="page-title">Lexicon <em>Flashcard</em></h1>
-    <p class="page-subtitle">Sadece bana ait kelimeler ile çalışma modu</p>
-  </header>
-
-  <div id="flashcard-area"></div>
-</div>
-
-<script>
-const DB_KEY = 'lexicon_words';
-const META_KEY = 'lexicon_meta';
-
-let fcQueue = [];
-let fcIndex = 0;
-let fcCorrect = 0;
-let fcTotal = 0;
-let fcRevealed = false;
-
-// KELİME VERİ TABANI
-const NATIVE_USER_DATA = [
-  {en:"accelerate", tr:"hızlandırmak", example:"Press the gas pedal to accelerate the car.", repetitions:3, interval:15, reviewCount:3, state:"due"},
-  {en:"accumulated", tr:"birikmiş", example:"Dust had accumulated on the old books.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"across", tr:"karşısında", example:"The bakery is right across the street.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"act out of self-interest", tr:"kendi çıkarları doğrultusunda hareket etmek", example:"Many politicians act out of self-interest.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"advertisement", tr:"reklam", example:"I saw a funny advertisement on TV.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"almost never", tr:"neredeyse hiç", example:"She almost never eats fast food.", repetitions:5, interval:14, reviewCount:5, state:"due"},
-  {en:"along with", tr:"yanısıra", example:"He brought his guitar along with him.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"alongside", tr:"yanında", example:"The dog ran alongside his owner.", repetitions:8, interval:6, reviewCount:8, state:"due"},
-  {en:"ambition", tr:"hırs", example:"His main ambition is to become a doctor.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"annoy", tr:"can sıkmak", example:"Loud noises really annoy me.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"anonymity", tr:"anonimlik / kimliğin gizli kalması", example:"The winner asked for complete anonymity.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"apparently", tr:"görünüşe göre / anlaşılan", example:"Apparently, the meeting was canceled.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"applicants", tr:"başvuru sahipleri", example:"There are over fifty applicants for this job.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"apply", tr:"uygulamak", example:"You should apply pressure to the wound.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"apprehended", tr:"yakalanmış", example:"The suspect was apprehended by the police.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"as far as", tr:"kadarıyla", example:"We walked as far as the river.", repetitions:10, interval:6, reviewCount:10, state:"due"},
-  {en:"as far as I know", tr:"bildiğim kadarıyla", example:"As far as I know, he is not coming.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"as far as I’m concerned", tr:"bana göre", example:"As far as I’m concerned, the problem is solved.", repetitions:7, interval:1, reviewCount:7, state:"due"},
-  {en:"as long as", tr:"-dığı sürece", example:"You can stay here as long as you want.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"as well", tr:"ilave olarak", example:"I would like a cup of coffee as well.", repetitions:7, interval:6, reviewCount:7, state:"due"},
-  {en:"as well as", tr:"yanı sıra, birlikte", example:"She speaks French as well as English.", repetitions:8, interval:1, reviewCount:8, state:"learning"},
-  {en:"aspire", tr:"hedeflemek", example:"I aspire to be a successful writer one day.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"assume", tr:"varsaymak", example:"Don't just assume that everyone agrees with you.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"attract", tr:"çekmek / cezbetmek", example:"Bright flowers attract many bees.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"attract attention", tr:"dikkat çekmek", example:"Try not to attract attention to yourself.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"author", tr:"yazar", example:"Who is the author of this famous book?", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"basically", tr:"temelde", example:"Basically, we just need more time.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"be attracted to", tr:"-e ilgi duymak / -den etkilenmek", example:"He tends to be attracted to confident people.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"beforehand", tr:"önceden", example:"We should buy the tickets beforehand.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"bet prediction", tr:"bahis tahmini / iddaa tahmini", example:"I checked the bet prediction before the match.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"bitterly", tr:"acı bir şekilde", example:"She was bitterly disappointed by the results.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"blow off steam", tr:"stres atmak", example:"I go to the gym to blow off steam.", repetitions:6, interval:1, reviewCount:6, state:"learning"},
-  {en:"bother", tr:"rahatsız etmek", example:"Please don't bother me while I'm studying.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"break-in", tr:"hırsızlık", example:"There was a break-in at the jewelry store.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"by the time", tr:"zamana kadar", example:"By the time we arrived, the movie had started.", repetitions:8, interval:9, reviewCount:8, state:"due"},
-  {en:"cable car", tr:"teleferik", example:"We took a cable car to the top of the mountain.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"candidate", tr:"aday", example:"She is the best candidate for the job.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"catfishing", tr:"sahte kimlikle birini kandırma / internetten sahte biri gibi davranma", example:"He was a victim of catfishing on a dating app.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"charity", tr:"yardım kuruluşu / hayır işi", example:"She donates money to charity every month.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"chronically", tr:"kronik olarak", example:"He is chronically late for work.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"claws", tr:"pençeler", example:"The cat has very sharp claws.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"clown", tr:"palyaço", example:"The clown made all the children laugh.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"coffin", tr:"tabut", example:"They slowly lowered the coffin into the grave.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"coincidence", tr:"tesadüf", example:"Meeting you here is a complete coincidence!", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"collections", tr:"koleksiyonlar", example:"The museum has amazing art collections.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"commentator", tr:"yorumcu", example:"The sports commentator was very excited.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"confidence", tr:"özgüven", example:"You need confidence to speak in public.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"confident", tr:"kendinden emin", example:"She felt confident about passing the exam.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"conflict", tr:"çatışma", example:"There is a serious conflict between the two countries.", repetitions:7, interval:11, reviewCount:7, state:"due"},
-  {en:"conscience", tr:"vicdan", example:"My conscience is clear because I told the truth.", repetitions:7, interval:8, reviewCount:7, state:"due"},
-  {en:"consternation", tr:"şaşkınlık / dehşet / telaş", example:"To my consternation, I realized I had lost my wallet.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"constant", tr:"sabit / sürekli", example:"The fridge makes a constant humming noise.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"Consulting", tr:"Danışmanlık", example:"She works for a financial consulting firm.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"continent", tr:"kıta", example:"Asia is the largest continent in the world.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"contribution", tr:"katkı", example:"Thank you for your generous contribution.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"controversial", tr:"tartışmalı", example:"It is a very controversial topic in politics.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"crossword", tr:"kare bulmaca / çengel bulmaca", example:"He loves solving the crossword in the Sunday newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"critics", tr:"eleştirmenler", example:"The movie was highly praised by critics.", repetitions:6, interval:301, reviewCount:6, state:"review"},
-  {en:"currency", tr:"para birimi", example:"The local currency is the Turkish Lira.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
-  {en:"dam", tr:"baraj", example:"The dam holds back millions of gallons of water.", repetitions:4, interval:13, reviewCount:4, state:"due"},
-  {en:"dates back", tr:"eskiye dayanıyor", example:"This ancient castle dates back to the 15th century.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"debate", tr:"tartışma", example:"They had a long debate about climate change.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"debris", tr:"enkaz", example:"The street was covered in debris after the storm.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"debt", tr:"borç", example:"He is working hard to pay off his debt.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"deceive", tr:"aldatmak", example:"He tried to deceive his boss with a fake report.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"deception", tr:"aldatma", example:"Her deception was finally uncovered by the police.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"denomination", tr:"para birimi", example:"The ATM only gives bills in small denominations.", repetitions:5, interval:26, reviewCount:5, state:"review"},
-  {en:"determined", tr:"kararlı, azimli", example:"She is determined to finish the marathon.", repetitions:4, interval:12, reviewCount:4, state:"due"},
-  {en:"diadem", tr:"taç", example:"The queen wore a beautiful diamond diadem.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"different store", tr:"farklı mağaza", example:"I couldn't find it here, let's try a different store.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"differs", tr:"farklılık gösterir", example:"My opinion greatly differs from yours.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"disability", tr:"engellilik", example:"The building has a ramp for people with a physical disability.", repetitions:7, interval:1, reviewCount:7, state:"due"},
-  {en:"disagreement", tr:"anlaşmazlık", example:"We had a minor disagreement about the budget.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"disrupting", tr:"bozma / aksatma / kesintiye uğratma", example:"The bad weather is disrupting the flight schedule.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"district", tr:"bölge / ilçe", example:"They live in a quiet residential district.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"dizziness", tr:"baş dönmesi", example:"She experienced dizziness after standing up too fast.", repetitions:11, interval:1, reviewCount:11, state:"due"},
-  {en:"doomscrolling", tr:"internette sürekli kötü haber okuma", example:"I spent hours doomscrolling on my phone last night.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"dorm", tr:"yurt", example:"I share a room in the college dorm.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"driftwood", tr:"kıyıya vurmuş odun", example:"We collected driftwood on the beach for a fire.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"dwarf", tr:"cüce", example:"In the story, he met a friendly dwarf in the forest.", repetitions:5, interval:10, reviewCount:5, state:"due"},
-  {en:"encounter", tr:"karşılaşmak", example:"We had a strange encounter with a wild animal.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"encourage", tr:"teşvik etmek", example:"I always encourage my students to ask questions.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"epidemic", tr:"salgın", example:"There was a terrible flu epidemic last winter.", repetitions:6, interval:6, reviewCount:6, state:"due"},
-  {en:"era", tr:"dönem", example:"We are currently living in the digital era.", repetitions:4, interval:13, reviewCount:4, state:"due"},
-  {en:"eternity", tr:"sonsuzluk", example:"Waiting for the test results felt like an eternity.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"even more", tr:"Hatta daha da fazlası", example:"I love this city even more than before.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"excitement", tr:"heyecan", example:"The children jumped with excitement.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"expensive", tr:"pahalı", example:"That restaurant is too expensive for us.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"expose", tr:"ortaya çıkarmak", example:"The journalist wants to expose the truth.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"extensive", tr:"geniş", example:"He has extensive knowledge of Roman history.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"extraneous", tr:"gereksiz / alakasız", example:"Please edit out any extraneous details from the report.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"extraordinary day", tr:"olağanüstü bir gün", example:"We had an extraordinary day at the theme park.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"fabric", tr:"kumaş", example:"This dress is made of a very soft fabric.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"facility", tr:"tesis", example:"The new sports facility has a huge pool.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"fancy people", tr:"sosyetik / şık ve gösterişli insanlar", example:"The gala was full of fancy people.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"femur", tr:"uyluk kemiği", example:"The femur is the longest bone in the human body.", repetitions:6, interval:17, reviewCount:6, state:"due"},
-  {en:"fewer", tr:"daha az", example:"There are fewer people here today than yesterday.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"first impression", tr:"ilk izlenim", example:"My first impression of the new teacher was very positive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"flatline", tr:"düz çizgiye dönmek / durma noktasına gelmek", example:"Sales began to flatline after the holidays.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"flee", tr:"kaçmak", example:"They had to flee their homes because of the war.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"floating", tr:"yüzen", example:"I saw a plastic bottle floating in the sea.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"forecast", tr:"tahmin", example:"The weather forecast predicts heavy rain tomorrow.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"fraudster", tr:"dolandırıcı", example:"The fraudster stole thousands of dollars online.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"from scratch", tr:"sıfırdan", example:"She baked this delicious cake entirely from scratch.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"from what I understand", tr:"anladığım kadarıyla", example:"From what I understand, the event is postponed.", repetitions:9, interval:60, reviewCount:9, state:"review"},
-  {en:"getting to know each other", tr:"birbirini tanımak", example:"They spent the evening getting to know each other.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"goldsmith", tr:"kuyumcu", example:"The goldsmith crafted a beautiful gold necklace.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"grandchild", tr:"torun", example:"She bought a toy for her new grandchild.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"grazers", tr:"otlayanlar", example:"Cows and sheep are typical grazers.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"guidelines", tr:"yönergeler", example:"Please follow the safety guidelines closely.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"gullible", tr:"kolayca kanan", example:"He is so gullible that he believes every rumor.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"herbivores", tr:"otçullar", example:"Rabbits and deer are herbivores.", repetitions:5, interval:24, reviewCount:5, state:"review"},
-  {en:"hilarious", tr:"çok komik", example:"That comedian's new show was absolutely hilarious!", repetitions:7, interval:56, reviewCount:7, state:"review"},
-  {en:"hip", tr:"kalça", example:"The old man fell and broke his hip.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"hosting", tr:"ev sahipliği yapmak", example:"We are hosting a dinner party this weekend.", repetitions:6, interval:25, reviewCount:6, state:"review"},
-  {en:"hunted", tr:"avlanmak", example:"The wolves hunted as a pack.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"hustler", tr:"baş belası", example:"Be careful, he is a known street hustler.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"identity", tr:"kimlik", example:"The witness wanted to keep her identity a secret.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"imply", tr:"ima etmek", example:"Are you trying to imply that I'm lying?", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"imprisoned by", tr:"tarafından hapsedilmiş", example:"He felt imprisoned by his own fears.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"in a rush", tr:"aceleyle / acele içinde", example:"I can't talk right now, I'm in a rush.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"in contrast to/with", tr:"-in aksine / -ile karşılaştırıldığında", example:"In contrast to her sister, she is very shy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"individual", tr:"birey", example:"Every individual has the right to free speech.", repetitions:4, interval:38, reviewCount:4, state:"review"},
-  {en:"infected", tr:"bulaşmış", example:"Make sure the wound doesn't get infected.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"infrastructure", tr:"altyapı", example:"The city is spending millions to improve its infrastructure.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"insist", tr:"ısrar etmek", example:"I insist that you let me pay the bill.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"inspection", tr:"inceleme", example:"The restaurant failed its health inspection.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"intense", tr:"yoğun", example:"The heat in the desert was very intense.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"interruptions", tr:"kesintiler / araya girmeler", example:"Please work quietly to avoid any interruptions.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"introduced", tr:"tanıtıldı", example:"My friend introduced me to his brother.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"jeering", tr:"alay etme / yuhalama", example:"The jeering from the crowd made the referee nervous.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"kindergarten", tr:"anaokulu", example:"My daughter is starting kindergarten this year.", repetitions:5, interval:14, reviewCount:5, state:"due"},
-  {en:"knee", tr:"diz", example:"I tripped and scraped my knee.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"lamented", tr:"yakındı / üzüntüyle söyledi", example:"He lamented the fact that he didn't study for the test.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"landlord", tr:"ev sahibi / kiraya veren", example:"My landlord just increased the rent.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"landscape", tr:"manzara", example:"The snowy landscape looked like a painting.", repetitions:6, interval:393, reviewCount:6, state:"review"},
-  {en:"layout", tr:"düzen", example:"I really like the new layout of this website.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"led to", tr:"sonuç olarak / yol açtı", example:"His poor decisions led to his failure.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"liberal-leaning", tr:"liberal eğilimli", example:"It is a liberal-leaning newspaper.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"likely", tr:"muhtemelen", example:"It is highly likely to rain this afternoon.", repetitions:1, interval:1, reviewCount:1, state:"due"},
-  {en:"literally", tr:"kelimenin tam anlamıyla / gerçekten", example:"I was literally jumping for joy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"longevity", tr:"uzun ömür", example:"A healthy diet increases human longevity.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"look at the bright side", tr:"işin iyi tarafına bak", example:"Look at the bright side, at least we are safe.", repetitions:7, interval:1218, reviewCount:7, state:"review"},
-  {en:"lose track of time", tr:"zamanın nasıl geçtiğini unutmak", example:"When I play video games, I completely lose track of time.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"luxury", tr:"lüks", example:"They spent their holiday in pure luxury.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"made off", tr:"kaçıp gitmek", example:"The thieves made off with the stolen diamonds.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"make the most of", tr:"olabildiğince faydalanmak", example:"You should make the most of your vacation.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"mansplaining", tr:"erkek egemenliği", example:"She rolled her eyes at his constant mansplaining.", repetitions:6, interval:9, reviewCount:6, state:"due"},
-  {en:"meanwhile", tr:"bu arada", example:"I cooked dinner; meanwhile, he set the table.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"memorable", tr:"unutulmaz", example:"Our trip to Paris was a truly memorable experience.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"migrate", tr:"Göç etmek", example:"Many birds migrate south for the winter.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"mind-blowing", tr:"akıllara durgunluk veren", example:"The special effects in that movie were mind-blowing.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"mischievous", tr:"yaramaz / muzip", example:"The mischievous child hid his brother's shoes.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"momentum", tr:"ivme / hız kazanmış gidişat", example:"The team gained momentum in the second half of the game.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"municipality", tr:"belediye", example:"The local municipality is repairing the roads.", repetitions:3, interval:1, reviewCount:3, state:"due"},
-  {en:"naivety", tr:"saflık", example:"His naivety makes him an easy target for scammers.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"napkin", tr:"peçete", example:"Could you pass me a paper napkin, please?", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"nauseous", tr:"mide bulantısı", example:"The smell of the garbage made me feel nauseous.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"neither nor", tr:"ne de", example:"He is neither rich nor famous.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"no longer", tr:"artık", example:"I no longer live in that city.", repetitions:4, interval:1, reviewCount:4, state:"due"},
-  {en:"nominated", tr:"aday gösterildi", example:"The film was nominated for three Oscars.", repetitions:5, interval:29, reviewCount:5, state:"review"},
-  {en:"notorious", tr:"kötü şöhretli", example:"He is a notorious hacker.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"occasionally", tr:"ara sıra", example:"We occasionally go out for dinner on Fridays.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"opposition", tr:"muhalefet", example:"There was strong opposition to the new law.", repetitions:4, interval:35, reviewCount:4, state:"review"},
-  {en:"outside", tr:"dışarıda / dışında", example:"Please leave your shoes outside.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"parental", tr:"hamilelik", example:"The company offers generous parental leave.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"participant", tr:"katılımcı", example:"She was an active participant in the debate.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"participants", tr:"katılımcılar", example:"All participants must sign a waiver.", repetitions:6, interval:393, reviewCount:6, state:"review"},
-  {en:"particles", tr:"parçacıklar", example:"You can see dust particles floating in the light.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"people in need", tr:"ihtiyaç sahipleri", example:"We organized a charity event for people in need.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"pissed off", tr:"sinirli", example:"He was really pissed off when his flight was canceled.", repetitions:6, interval:279, reviewCount:6, state:"review"},
-  {en:"plenty of", tr:"bol miktarda / çok sayıda", example:"Don't rush, we have plenty of time.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"polarization", tr:"kutuplaşma", example:"There is a growing political polarization in the country.", repetitions:5, interval:10, reviewCount:5, state:"due"},
-  {en:"pollutants", tr:"kirleticiler", example:"Factories release harmful pollutants into the air.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"precious", tr:"değerli", example:"Time is our most precious resource.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"prevention", tr:"önleme", example:"Crime prevention is a top priority for the mayor.", repetitions:6, interval:18, reviewCount:6, state:"due"},
-  {en:"profound", tr:"derin / etkileyici", example:"The book had a profound impact on my thinking.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"properly", tr:"düzgünce / gerektiği gibi", example:"Make sure you lock the door properly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"pursue", tr:"izlemek", example:"I want to pursue a career in technology.", repetitions:5, interval:1, reviewCount:5, state:"learning"},
-  {en:"rather", tr:"yerine", example:"I would rather stay home tonight.", repetitions:7, interval:1, reviewCount:7, state:"learning"},
-  {en:"rearrange", tr:"yeniden düzenlemek", example:"I need to rearrange the furniture in my room.", repetitions:3, interval:16, reviewCount:3, state:"due"},
-  {en:"regulate", tr:"düzenlemek", example:"The government tries to regulate the prices of medicine.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"reignited", tr:"yeniden alevlenmek", example:"The recent news reignited the old debate.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"relief", tr:"rahatlama", example:"It was a huge relief to finally pass the exam.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"reminder", tr:"hatırlatma", example:"I set a reminder on my phone for the meeting.", repetitions:4, interval:41, reviewCount:4, state:"review"},
-  {en:"reporter", tr:"muhabir", example:"The news reporter asked the mayor a tough question.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"resilience", tr:"dayanıklılık", example:"She showed incredible resilience after the accident.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"resist", tr:"direnmek", example:"I couldn't resist eating another slice of pizza.", repetitions:5, interval:92, reviewCount:5, state:"review"},
-  {en:"reunite", tr:"yeniden bir araya gelmek / kavuşmak", example:"The band plans to reunite for a final concert.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"roughly", tr:"kabaca / yaklaşık olarak", example:"There were roughly 500 people at the concert.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"run away", tr:"kaçmak", example:"You can't just run away from your problems.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"scam", tr:"dolandırıcılık", example:"I ignored the email because it looked like a scam.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"shortage", tr:"kıtlık", example:"There is a severe water shortage in the region.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"sickening", tr:"iğrenç / mide bulandırıcı", example:"The smell coming from the old garbage bag was sickening.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"sleep in", tr:"geç kalkmak / normalden fazla uyumak", example:"I love to sleep in on Sunday mornings.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"slipped into complacency", tr:"rahatlığa kapıldı", example:"The team slipped into complacency and lost the final match.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"smallish", tr:"biraz küçük / küçük sayılır", example:"They live in a smallish apartment downtown.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"snooze", tr:"kestirmek", example:"I hit the snooze button three times this morning.", repetitions:7, interval:6, reviewCount:7, state:"due"},
-  {en:"spectators", tr:"seyirciler / izleyiciler", example:"The spectators cheered when the home team scored.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"spoiled", tr:"şımarık", example:"He is a very spoiled child who gets everything he wants.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"strange", tr:"garip", example:"I heard a strange noise coming from the attic.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"stranger", tr:"yabancı", example:"My parents told me never to talk to a stranger.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"stuck in a rut", tr:"rutin bir hayatın içinde sıkışıp kalmak", example:"I need a new job; I feel completely stuck in a rut.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"stumble upon", tr:"tesadüfen rastlamak", example:"I happened to stumble upon an amazing little cafe.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"substitute", tr:"yerine geçmek", example:"You can use honey as a substitute for sugar.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"subtract a habit", tr:"bir alışkanlığı bırakmak", example:"It is very difficult to subtract a habit from your daily life.", repetitions:3, interval:6, reviewCount:3, state:"due"},
-  {en:"suburbs", tr:"banliyöler / şehir dışı yerleşim yerleri", example:"They moved to the suburbs to have a bigger garden.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"suitcase", tr:"bavul / valiz", example:"I packed my clothes into the suitcase.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"survey", tr:"anket", example:"Please fill out this short survey about our service.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"sustainable", tr:"sürdürülebilir", example:"We must invest in sustainable energy sources.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"temporarily", tr:"geçici olarak", example:"The website is temporarily down for maintenance.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"tend to + verb", tr:"genelde yapmak / -meye eğilimli olmak", example:"I tend to eat too much when I'm stressed.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"tend to someone/something", tr:"biriyle/bir şeyle ilgilenmek", example:"The nurse will tend to the patient shortly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"Things got heated", tr:"Ortam gerildi", example:"Things got heated during the political debate.", repetitions:4, interval:1, reviewCount:4, state:"learning"},
-  {en:"to edit", tr:"düzenlemek", example:"I need to edit this video before posting it.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"to fold away", tr:"katlayıp kaldırmak", example:"Don't forget to fold away your clothes.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"to stem the inflow", tr:"akışı azaltmak", example:"They built a dam to stem the inflow of water.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"torture", tr:"işkence", example:"Waiting for the exam results was pure torture.", repetitions:1, interval:1, reviewCount:1, state:"learning"},
-  {en:"tribute", tr:"saygı duruşu", example:"The concert was a tribute to the late musician.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"turn on the hazard lights", tr:"tehlike ışıklarını yakmak", example:"Turn on the hazard lights if your car breaks down.", repetitions:3, interval:1, reviewCount:3, state:"learning"},
-  {en:"uncovered", tr:"ortaya çıkarılan", example:"The journalist uncovered a huge scandal.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"ungrateful", tr:"nankör", example:"Don't be ungrateful for all the help they gave you.", repetitions:2, interval:1, reviewCount:2, state:"learning"},
-  {en:"unify / unifies", tr:"birleştirmek / birleştirir", example:"A common goal unifies the entire team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unlikely", tr:"olasılık dışı", example:"It is highly unlikely that he will win the race.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"unreliable", tr:"güvenilmez", example:"The public transport in this city is very unreliable.", repetitions:6, interval:1, reviewCount:6, state:"due"},
-  {en:"untrustable", tr:"güvenilmez", example:"That website is a totally untrustable source of information.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"unwittingly", tr:"bilmeden / farkında olmadan", example:"He unwittingly revealed the surprise party.", repetitions:2, interval:1, reviewCount:2, state:"due"},
-  {en:"upsetting", tr:"üzücü", example:"Hearing the bad news was a very upsetting experience.", repetitions:4, interval:45, reviewCount:4, state:"review"},
-  {en:"utilities", tr:"faturalar / temel hizmetler", example:"My rent is cheap, but the utilities are expensive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"variety of", tr:"çeşitlilik / çeşitli", example:"The store sells a wide variety of fresh fruits.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"wagging", tr:"sallanan", example:"The happy dog was wagging its tail.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"waiter", tr:"garson", example:"The waiter brought us the dessert menu.", repetitions:5, interval:131, reviewCount:5, state:"review"},
-  {en:"walrus", tr:"mors", example:"The walrus has two long, sharp tusks.", repetitions:4, interval:6, reviewCount:4, state:"due"},
-  {en:"wear and tear", tr:"aşınma ve yıpranma", example:"The old sofa shows obvious signs of wear and tear.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"wind-blown dust", tr:"rüzgarla savrulan toz", example:"The sky was grey with wind-blown dust.", repetitions:5, interval:1, reviewCount:5, state:"due"},
-  {en:"would like to", tr:"şunu yapmak isterim", example:"I would like to order a cup of tea, please.", repetitions:2, interval:6, reviewCount:2, state:"due"},
-  {en:"would rather", tr:"daha çok", example:"I would rather read a book than watch television.", repetitions:6, interval:6, reviewCount:6, state:"due"},
-  {en:"quote", tr:"alıntı / alıntı yapmak", example:"She began her speech with a famous quote.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"dementia", tr:"demans / bunama", example:"Dementia can affect a person's memory and daily life.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"cognitive", tr:"bilişsel", example:"Regular exercise may improve cognitive function.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"vascular", tr:"damarsal / damarlarla ilgili", example:"Smoking increases the risk of vascular disease.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"stroke", tr:"inme / felç", example:"He received immediate treatment after suffering a stroke.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"inherit", tr:"miras almak / kalıtım yoluyla edinmek", example:"She will inherit her grandmother's house.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"isolation", tr:"yalıtım / yalnızlık", example:"Long periods of social isolation can affect mental health.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"forbid", tr:"yasaklamak", example:"The school rules forbid students from using phones in class.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"confusion", tr:"kafa karışıklığı", example:"The sudden change caused confusion among the passengers.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"shouting", tr:"bağırma / bağırış", example:"We heard shouting coming from the street.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unkind", tr:"kırıcı / kaba", example:"It was unkind of him to laugh at her mistake.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"disapproval", tr:"onaylamama / hoşnutsuzluk", example:"Her parents expressed their disapproval of the decision.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"ruthlessly", tr:"acımasızca", example:"The company ruthlessly eliminated its weaker competitors.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"to nest / to stack", tr:"iç içe yerleştirmek / üst üste dizmek", example:"These containers are designed to nest or stack neatly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"designate", tr:"belirlemek / atamak", example:"The manager will designate someone to lead the project.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"clash", tr:"çatışmak / ters düşmek", example:"The two groups often clash over political issues.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"get along with someone", tr:"biriyle iyi geçinmek", example:"I get along with my new coworkers very well.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"misinformation", tr:"yanlış bilgi", example:"Misinformation spreads quickly on social media.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"the majority of people", tr:"insanların çoğunluğu", example:"The majority of people supported the new proposal.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"drawbacks", tr:"dezavantajlar / olumsuz yönler", example:"Working from home has several drawbacks as well as benefits.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be bounced out of", tr:"bir yerden çıkarılmak / elenmek", example:"The team was bounced out of the tournament in the first round.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"roll over", tr:"yuvarlanmak / diğer tarafa dönmek", example:"The dog rolled over and waited for a treat.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"nagging", tr:"sürekli rahatsız eden / dırdırcı", example:"He has had a nagging pain in his shoulder for weeks.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"keep up with", tr:"ayak uydurmak / geri kalmamak", example:"It is difficult to keep up with rapidly changing technology.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"slip by", tr:"fark edilmeden geçip gitmek", example:"The final weeks of summer seemed to slip by quickly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"rally", tr:"toparlanmak / destek için toplanmak", example:"The team rallied in the second half and won the match.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"squeak out", tr:"zar zor kazanmak / elde etmek", example:"They managed to squeak out a victory in the final minute.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"root for", tr:"desteklemek / tarafını tutmak", example:"I always root for the home team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"boycott", tr:"boykot etmek", example:"Many customers decided to boycott the company.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"embarrassment", tr:"utanç / mahcubiyet", example:"He apologized for the embarrassment he had caused.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"fall flat", tr:"etkisiz kalmak / beklenen etkiyi yaratmamak", example:"His joke fell flat because nobody understood it.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"assumption", tr:"varsayım", example:"Your conclusion is based on a false assumption.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"insight", tr:"içgörü / derin anlayış", example:"The interview gave us valuable insight into her work.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"definitive", tr:"kesin / nihai", example:"There is still no definitive answer to the question.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"downside", tr:"olumsuz yön / dezavantaj", example:"The main downside of the apartment is its small kitchen.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be dying for something", tr:"bir şeyi çok istemek", example:"I am dying for a cup of coffee after that long journey.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"sore loser / bad loser", tr:"yenilgiyi hazmedemeyen kişi", example:"Nobody enjoys playing with a sore loser who always complains.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"come up with", tr:"bulmak / üretmek", example:"We need to come up with a better solution.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"allowance", tr:"harçlık", example:"Her parents give her a weekly allowance.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"odd job", tr:"geçici küçük iş", example:"He earns extra money by doing odd jobs for his neighbors.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"stand", tr:"tezgâh / küçük satış yeri", example:"We bought lemonade from a stand near the park.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"precedent", tr:"emsal / örnek teşkil eden durum", example:"The court's decision could set an important precedent.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"enigmatic", tr:"esrarengiz / gizemli", example:"The artist gave an enigmatic answer to the question.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"on the fritz", tr:"arızalı / çalışmıyor", example:"Our washing machine is on the fritz again.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"clean as a whistle", tr:"tertemiz", example:"After hours of work, the kitchen was clean as a whistle.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be strapped for cash", tr:"nakit sıkıntısı çekmek / parasız olmak", example:"We are strapped for cash until payday.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"appliances", tr:"ev aletleri", example:"The apartment comes with modern kitchen appliances.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"improvise", tr:"doğaçlama yapmak", example:"We had no tools, so we had to improvise.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"window pane", tr:"pencere camı", example:"The ball cracked the kitchen window pane.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"beat", tr:"yenmek / mağlup etmek", example:"Our team beat the champions by two goals.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"gripped", tr:"etkisi altına alınmış / büyülenmiş", example:"The audience was gripped by the final scene.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"thrill-seeking", tr:"heyecan arayan / macera düşkünü", example:"Thrill-seeking tourists often try extreme sports.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"supervise", tr:"denetlemek / gözetmek", example:"An experienced teacher will supervise the exam.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"lead to", tr:"yol açmak / neden olmak", example:"A lack of sleep can lead to serious health problems.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"held", tr:"tuttu / düzenlendi", example:"The annual meeting was held in Ankara.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"expand", tr:"genişletmek / büyütmek", example:"The company plans to expand its business abroad.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"swung", tr:"sallandı / savruldu", example:"The door swung open in the strong wind.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"pay through the nose", tr:"fahiş fiyat ödemek", example:"We had to pay through the nose for last-minute tickets.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"gouge", tr:"fahiş fiyat istemek / oymak", example:"Some sellers try to gouge tourists during the holiday season.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"incidental", tr:"ikincil / tesadüfi", example:"Travel expenses are incidental to the main cost of the project.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"boulder", tr:"büyük kaya parçası", example:"A huge boulder blocked the mountain road.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"choking", tr:"boğulma / boğucu", example:"Choking can happen when food blocks a person's airway.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"anxiety", tr:"kaygı / endişe", example:"Deep breathing can help reduce anxiety.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"distraction theory", tr:"dikkat dağılması teorisi", example:"Distraction theory suggests that pressure divides a person's attention.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"explicit monitoring", tr:"bilinçli ve ayrıntılı izleme", example:"Explicit monitoring can disrupt skills that normally happen automatically.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"susceptible", tr:"yatkın / kolay etkilenen", example:"Young children are more susceptible to this infection.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"self-conscious", tr:"kendinin fazla farkında / çekingen", example:"He felt self-conscious while speaking in front of the class.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"adoption", tr:"benimseme / kullanıma geçiş", example:"The adoption of AI is growing quickly.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"autonomously", tr:"bağımsız olarak / kendi kendine", example:"The robot can work autonomously.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"mundane", tr:"sıradan / rutin / sıkıcı", example:"She was bored with mundane tasks.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"skeptic", tr:"şüpheci kişi", example:"He is a skeptic of miracle cures.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"implement", tr:"uygulamak / hayata geçirmek", example:"They will implement the plan tomorrow.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"uncritically", tr:"sorgulamadan / eleştirmeden", example:"Do not accept online claims uncritically.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"AI skeptics", tr:"yapay zekâ şüphecileri", example:"AI skeptics question its safety.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"AI novices", tr:"yapay zekâya yeni başlayanlar", example:"AI novices often begin with simple chatbots.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"AI explorers", tr:"yapay zekâyı deneyerek keşfeden kullanıcılar", example:"AI explorers enjoy testing new tools.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"AI power users", tr:"yapay zekâyı ileri düzeyde kullananlar", example:"AI power users automate repetitive work.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"claims", tr:"iddialar / öne sürülen görüşler", example:"The report questions his claims.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"repetitive", tr:"tekrarlayan / tekdüze", example:"The job became repetitive and boring.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"revealed", tr:"ortaya çıkardı / açığa çıkardı", example:"The test revealed the real problem.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"instruction", tr:"talimat / yönerge", example:"Please follow the instruction carefully.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"consistency", tr:"tutarlılık / devamlılık", example:"Consistency is more important than speed.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"asked for", tr:"istedi / talep etti", example:"She asked for a glass of water.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"mapping", tr:"haritalama / eşleştirme", example:"The diagram shows the mapping between the two systems.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"as soon as", tr:"olur olmaz / hemen ...ınca", example:"Call me as soon as you arrive.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"compliance", tr:"uyum / kurallara uygunluk", example:"The company checks compliance with safety rules.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"elaborate", tr:"ayrıntılı açıklamak / detaylandırmak", example:"Could you elaborate on your idea?", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"on behalf of", tr:"adına / temsilen", example:"I thanked everyone on behalf of the team.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"propose", tr:"önermek / teklif etmek", example:"I propose a simpler solution.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"compliment", tr:"iltifat / iltifat etmek", example:"She complimented him on his presentation.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"clapped", tr:"alkışladı / el çırptı", example:"The audience clapped loudly at the end.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"if so", tr:"eğer öyleyse / öyleyse", example:"If so, we should change our plan.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"come across", tr:"rastlamak / karşılaşmak", example:"I came across an old photo yesterday.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"resemble", tr:"benzemek", example:"The child resembles his father.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"kill two birds with one stone", tr:"bir taşla iki kuş vurmak", example:"I cycle to work to exercise and save money, killing two birds with one stone.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"abuse", tr:"kötüye kullanmak / istismar etmek", example:"Do not abuse your power.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unless", tr:"-medikçe / eğer ... değilse", example:"I won't go unless you come with me.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"whether or", tr:"olup olmadığı / ister ... ister", example:"We must decide whether to stay or leave.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"proof", tr:"kanıt / delil", example:"Workers need to show proof that they are sick.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"prove", tr:"kanıtlamak / ispatlamak", example:"I need to prove that I am sick.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"boost", tr:"artırmak / güçlendirmek", example:"The plan will help boost the economy.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"bug", tr:"hafif hastalık / mikrobik rahatsızlık (gündelik)", example:"I caught a stomach bug last week.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"spread", tr:"yaymak / yayılmak", example:"Viruses can spread quickly in crowded places.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"infection", tr:"enfeksiyon / iltihap", example:"Going to the office could spread the infection to others.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"parliament", tr:"parlamento / meclis", example:"The government wants to get the plan through parliament.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"sick leave", tr:"hastalık izni / raporlu izin", example:"The new rules will affect sick leave in Germany.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"appointment", tr:"randevu", example:"It may be hard to get a doctor's appointment today.", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"occupation", tr:"meslek / uğraş", example:"She chose teaching as her occupation.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"refugee", tr:"mülteci / sığınmacı", example:"The refugee found a safe place to stay.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unlike", tr:"-den farklı olarak / aksine", example:"Unlike his brother, he is very patient.", pos:"prep", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be humble", tr:"mütevazı olmak", example:"Try to be humble when you succeed.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"You're a creeper", tr:"Sen ürkütücü / rahatsız edici birisin", example:"Stop following me—you're a creeper.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"shady", tr:"şüpheli / güven vermeyen", example:"That deal sounds a little shady.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"permission", tr:"izin", example:"We asked for permission to take photos.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"allow", tr:"izin vermek / olanak sağlamak", example:"This app allows people to study anywhere.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"favor", tr:"iyilik / yardım", example:"Could you do me a favor?", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"entire", tr:"tüm / bütün", example:"It rained for the entire day.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"convince", tr:"ikna etmek", example:"I convinced him to tell the truth.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"admire", tr:"hayran olmak / takdir etmek", example:"I admire her courage.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"inspiration", tr:"ilham / esin kaynağı", example:"My mother is my greatest inspiration.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"rumor", tr:"söylenti / dedikodu", example:"A strange rumor spread through the town.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"nowadays", tr:"günümüzde / bugünlerde", example:"Nowadays, many people work from home.", pos:"adv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"grasshopper", tr:"çekirge", example:"A grasshopper jumped onto the leaf.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"repellent", tr:"böcek kovucu / uzaklaştırıcı madde", example:"This insect repellent keeps mosquitoes away.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"host-seeking", tr:"konak arayan", example:"Host-seeking mosquitoes are attracted to body heat.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"humid", tr:"nemli / rutubetli", example:"The air feels hot and humid after the rain.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"indeed", tr:"gerçekten / hakikaten", example:"The journey was indeed more difficult than expected.", pos:"adv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"unpleasant", tr:"hoş olmayan / rahatsız edici", example:"There was an unpleasant smell in the room.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"detect", tr:"tespit etmek / fark etmek", example:"Sharks can detect blood in the water from far away.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"activate", tr:"etkinleştirmek / çalıştırmak", example:"Carbon dioxide activates mosquitoes' host-seeking behaviour.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"target", tr:"hedef", example:"Adults are attractive targets for mosquitoes.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"moisture", tr:"nem / küçük miktarda sıvı", example:"Mosquitoes respond to body heat and moisture.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"odour", tr:"koku / hoş olmayan koku", example:"Bacteria on the skin can produce a strong odour.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"compound", tr:"bileşik / birleşik madde", example:"Scientists found hundreds of compounds on human skin.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"consistent", tr:"tutarlı / değişmeyen", example:"The results remained consistent for several years.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"vary", tr:"değişmek / farklılık göstermek", example:"Reactions to mosquito bites vary from person to person.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"minimal", tr:"asgari / çok az", example:"Some people show only a minimal response to bites.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"proven", tr:"kanıtlanmış / etkisi gösterilmiş", example:"Use a proven mosquito repellent such as DEET.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+/* Lexicon League V2 — two divisions, promotion/relegation and cups */
+const LL_V2_SAVE_KEY='lexicon_league_save_v2';
+const LL_FIRST_TEAMS=[
+  {name:'Antalyaspor',short:'ANT',stars:3,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/589.png'},
+  {name:'Bursaspor',short:'BUR',stars:3,icon:'🐊',logo:'https://tmssl.akamaized.net/images/wappen/head/20.png'},
+  {name:'Bodrum FK',short:'BDR',stars:3,icon:'🌊',logo:'https://tmssl.akamaized.net/images/wappen/head/44006.png'},
+  {name:'Kayserispor',short:'KAY',stars:3,icon:'🟡',logo:'https://tmssl.akamaized.net/images/wappen/head/3205.png'},
+  {name:'Sivasspor',short:'SİV',stars:3,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/2381.png'},
+  {name:'Fatih Karagümrük',short:'FKG',stars:3,icon:'⚫',logo:'https://tmssl.akamaized.net/images/wappen/head/6646.png'},
+  {name:'Manisa FK',short:'MAN',stars:2,icon:'⚫',logo:'https://tmssl.akamaized.net/images/wappen/head/48913.png'},
+  {name:'Iğdır FK',short:'IĞD',stars:2,icon:'🟢',logo:'https://tmssl.akamaized.net/images/wappen/head/74664.png'},
+  {name:'İstanbulspor',short:'İST',stars:2,icon:'🟡',logo:'https://tmssl.akamaized.net/images/wappen/head/924.png'},
+  {name:'Bandırmaspor',short:'BAN',stars:2,icon:'🟣',logo:'https://tmssl.akamaized.net/images/wappen/head/20760.png'},
+  {name:'Batman Petrolspor',short:'BAT',stars:2,icon:'🟢',logo:'https://tmssl.akamaized.net/images/wappen/head/3211.png'},
+  {name:'Pendikspor',short:'PEN',stars:2,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/3209.png'},
+  {name:'Van Spor FK',short:'VAN',stars:2,icon:'🔵',logo:'https://tmssl.akamaized.net/images/wappen/head/3173.png'},
+  {name:'Ankara Keçiörengücü',short:'KEÇ',stars:2,icon:'🟣',logo:'https://tmssl.akamaized.net/images/wappen/head/12388.png'},
+  {name:'Sarıyerspor',short:'SAR',stars:1,icon:'⚪',logo:'https://tmssl.akamaized.net/images/wappen/head/518.png'},
+  {name:'Esenler Erokspor',short:'ERO',stars:1,icon:'🟢',logo:'https://tmssl.akamaized.net/images/wappen/head/45269.png'},
+  {name:'Ümraniyespor',short:'ÜMR',stars:1,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/24245.png'},
+  {name:'Mardin 1969 Spor',short:'MAR',stars:1,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/68377.png'},
+  {name:'Muğlaspor',short:'MUĞ',stars:1,icon:'🟢',logo:'https://tmssl.akamaized.net/images/wappen/head/2378.png'},
+  {name:'Boluspor',short:'BOL',stars:2,icon:'🔴',logo:'https://tmssl.akamaized.net/images/wappen/head/3207.png'}
 ];
-
-// İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
-// Sıra NATIVE_USER_DATA ile aynıdır; initDatabase mevcut kariyerlere de bu alanı ekler.
-const NATIVE_EXAMPLE_TRANSLATIONS = [
-  "Arabayı hızlandırmak için gaz pedalına bas.",
-  "Eski kitapların üzerinde toz birikmişti.",
-  "Fırın caddenin hemen karşısında.",
-  "Birçok siyasetçi kendi çıkarları doğrultusunda hareket eder.",
-  "Televizyonda komik bir reklam gördüm.",
-  "O neredeyse hiç fast food yemez.",
-  "Gitarını da yanında getirdi.",
-  "Köpek sahibinin yanında koştu.",
-  "En büyük hedefi doktor olmak.",
-  "Yüksek sesler beni gerçekten rahatsız ediyor.",
-  "Kazanan, kimliğinin tamamen gizli tutulmasını istedi.",
-  "Anlaşılan toplantı iptal edilmiş.",
-  "Bu işe elliden fazla başvuran var.",
-  "Yaraya baskı uygulamalısın.",
-  "Şüpheli polis tarafından yakalandı.",
-  "Nehre kadar yürüdük.",
-  "Bildiğim kadarıyla o gelmiyor.",
-  "Bana göre sorun çözüldü.",
-  "İstediğin sürece burada kalabilirsin.",
-  "Ben de bir fincan kahve isterim.",
-  "O, İngilizcenin yanı sıra Fransızca da konuşuyor.",
-  "Bir gün başarılı bir yazar olmayı hedefliyorum.",
-  "Herkesin seninle aynı fikirde olduğunu hemen varsayma.",
-  "Parlak çiçekler birçok arıyı çeker.",
-  "Dikkatleri üzerine çekmemeye çalış.",
-  "Bu ünlü kitabın yazarı kim?",
-  "Aslında sadece daha fazla zamana ihtiyacımız var.",
-  "Genellikle özgüvenli insanlardan etkilenir.",
-  "Biletleri önceden almalıyız.",
-  "Maçtan önce bahis tahminine baktım.",
-  "Sonuçlar onu büyük bir hayal kırıklığına uğrattı.",
-  "Stres atmak için spor salonuna giderim.",
-  "Lütfen ben ders çalışırken beni rahatsız etme.",
-  "Kuyumcuda bir hırsızlık olayı yaşandı.",
-  "Biz vardığımızda film başlamıştı.",
-  "Dağın tepesine teleferikle çıktık.",
-  "O, bu iş için en iyi aday.",
-  "Bir flört uygulamasında sahte kimlikle kandırıldı.",
-  "Her ay bir yardım kuruluşuna para bağışlar.",
-  "İşe sürekli geç kalıyor.",
-  "Kedinin çok keskin pençeleri var.",
-  "Palyaço bütün çocukları güldürdü.",
-  "Tabutu yavaşça mezara indirdiler.",
-  "Seninle burada karşılaşmamız tam bir tesadüf!",
-  "Müzenin harika sanat koleksiyonları var.",
-  "Spor yorumcusu çok heyecanlıydı.",
-  "Topluluk önünde konuşmak için özgüvene ihtiyacın var.",
-  "Sınavı geçeceği konusunda kendinden emindi.",
-  "İki ülke arasında ciddi bir çatışma var.",
-  "Doğruyu söylediğim için vicdanım rahat.",
-  "Cüzdanımı kaybettiğimi fark edince büyük bir telaşa kapıldım.",
-  "Buzdolabı sürekli uğultulu bir ses çıkarıyor.",
-  "Bir finansal danışmanlık şirketinde çalışıyor.",
-  "Asya, dünyanın en büyük kıtasıdır.",
-  "Cömert katkınız için teşekkür ederim.",
-  "Siyasette çok tartışmalı bir konu.",
-  "Pazar gazetesindeki bulmacayı çözmeyi çok seviyor.",
-  "Film eleştirmenler tarafından çok beğenildi.",
-  "Yerel para birimi Türk lirasıdır.",
-  "Baraj milyonlarca galon suyu tutuyor.",
-  "Bu antik kale 15. yüzyıla dayanıyor.",
-  "İklim değişikliği hakkında uzun bir tartışma yaptılar.",
-  "Fırtınadan sonra cadde enkazla kaplanmıştı.",
-  "Borcunu kapatmak için çok çalışıyor.",
-  "Sahte bir raporla patronunu kandırmaya çalıştı.",
-  "Yaptığı aldatmaca sonunda polis tarafından ortaya çıkarıldı.",
-  "ATM yalnızca küçük kupürlü banknotlar veriyor.",
-  "Maratonu bitirmeye kararlı.",
-  "Kraliçe güzel bir elmas taç takıyordu.",
-  "Burada bulamadım, başka bir mağazayı deneyelim.",
-  "Benim fikrim seninkinden büyük ölçüde farklı.",
-  "Binada fiziksel engelli kişiler için bir rampa var.",
-  "Bütçe konusunda küçük bir anlaşmazlık yaşadık.",
-  "Kötü hava uçuş programını aksatıyor.",
-  "Sessiz bir yerleşim bölgesinde yaşıyorlar.",
-  "Çok hızlı ayağa kalkınca başı döndü.",
-  "Dün gece telefonumda saatlerce kötü haberleri kaydırdım.",
-  "Üniversite yurdunda bir odayı paylaşıyorum.",
-  "Ateş yakmak için sahilde kıyıya vurmuş odun topladık.",
-  "Hikâyede ormanda dost canlısı bir cüceyle karşılaştı.",
-  "Vahşi bir hayvanla tuhaf bir karşılaşma yaşadık.",
-  "Öğrencilerimi her zaman soru sormaya teşvik ederim.",
-  "Geçen kış korkunç bir grip salgını vardı.",
-  "Şu anda dijital çağda yaşıyoruz.",
-  "Sınav sonuçlarını beklemek sonsuzluk gibi geldi.",
-  "Bu şehri eskisinden daha çok seviyorum.",
-  "Çocuklar heyecanla zıpladı.",
-  "O restoran bizim için fazla pahalı.",
-  "Gazeteci gerçeği ortaya çıkarmak istiyor.",
-  "Roma tarihi hakkında kapsamlı bilgiye sahip.",
-  "Lütfen rapordaki gereksiz ayrıntıları çıkar.",
-  "Lunaparkta olağanüstü bir gün geçirdik.",
-  "Bu elbise çok yumuşak bir kumaştan yapılmış.",
-  "Yeni spor tesisinde çok büyük bir havuz var.",
-  "Gala şık insanlarla doluydu.",
-  "Uyluk kemiği insan vücudundaki en uzun kemiktir.",
-  "Bugün burada dünden daha az insan var.",
-  "Yeni öğretmen hakkındaki ilk izlenimim çok olumluydu.",
-  "Satışlar tatilden sonra yatay seyretmeye başladı.",
-  "Savaş yüzünden evlerinden kaçmak zorunda kaldılar.",
-  "Denizde yüzen bir plastik şişe gördüm.",
-  "Hava tahmini yarın şiddetli yağmur öngörüyor.",
-  "Dolandırıcı internet üzerinden binlerce dolar çaldı.",
-  "Bu lezzetli pastayı tamamen sıfırdan yaptı.",
-  "Anladığım kadarıyla etkinlik ertelendi.",
-  "Akşamı birbirlerini tanıyarak geçirdiler.",
-  "Kuyumcu güzel bir altın kolye yaptı.",
-  "Yeni torunu için bir oyuncak aldı.",
-  "İnekler ve koyunlar tipik otlayan hayvanlardır.",
-  "Lütfen güvenlik yönergelerini dikkatle uygula.",
-  "O kadar saf ki her söylentiye inanıyor.",
-  "Tavşanlar ve geyikler otoburdur.",
-  "O komedyenin yeni gösterisi kesinlikle çok komikti!",
-  "Yaşlı adam düşüp kalçasını kırdı.",
-  "Bu hafta sonu bir akşam yemeği daveti veriyoruz.",
-  "Kurtlar sürü hâlinde avlandı.",
-  "Dikkatli ol, o tanınmış bir sokak dolandırıcısıdır.",
-  "Tanık kimliğini gizli tutmak istedi.",
-  "Yalan söylediğimi mi ima etmeye çalışıyorsun?",
-  "Kendi korkuları tarafından hapsedilmiş gibi hissediyordu.",
-  "Şu anda konuşamam, acelem var.",
-  "Kız kardeşinin aksine o çok utangaçtır.",
-  "Her bireyin ifade özgürlüğü hakkı vardır.",
-  "Yaranın enfeksiyon kapmamasına dikkat et.",
-  "Şehir altyapısını geliştirmek için milyonlar harcıyor.",
-  "Hesabı benim ödememe izin vermende ısrar ediyorum.",
-  "Restoran sağlık denetiminden geçemedi.",
-  "Çöldeki sıcaklık çok yoğundu.",
-  "Herhangi bir kesintiyi önlemek için lütfen sessiz çalış.",
-  "Arkadaşım beni erkek kardeşiyle tanıştırdı.",
-  "Kalabalığın yuhalaması hakemi tedirgin etti.",
-  "Kızım bu yıl anaokuluna başlıyor.",
-  "Ayağım takıldı ve dizimi sıyırdım.",
-  "Sınava çalışmamış olmasına hayıflandı.",
-  "Ev sahibim kirayı yeni artırdı.",
-  "Karlı manzara bir tablo gibi görünüyordu.",
-  "Bu internet sitesinin yeni düzenini gerçekten beğendim.",
-  "Kötü kararları başarısızlığına yol açtı.",
-  "Bu, liberal eğilimli bir gazetedir.",
-  "Bu öğleden sonra yağmur yağması çok muhtemel.",
-  "Kelimenin tam anlamıyla sevinçten zıplıyordum.",
-  "Sağlıklı beslenme insan ömrünü uzatır.",
-  "İyi tarafından bak, en azından güvendeyiz.",
-  "Video oyunu oynarken zamanın nasıl geçtiğini tamamen unutuyorum.",
-  "Tatillerini tam bir lüks içinde geçirdiler.",
-  "Hırsızlar çalınan elmaslarla kaçtı.",
-  "Tatilini en iyi şekilde değerlendirmelisin.",
-  "Onun sürekli üstten konuşmasına gözlerini devirdi.",
-  "Ben akşam yemeğini yaptım; bu sırada o masayı kurdu.",
-  "Paris gezimiz gerçekten unutulmaz bir deneyimdi.",
-  "Birçok kuş kış için güneye göç eder.",
-  "O filmdeki özel efektler akıllara durgunluk vericiydi.",
-  "Yaramaz çocuk erkek kardeşinin ayakkabılarını sakladı.",
-  "Takım maçın ikinci yarısında ivme kazandı.",
-  "Yerel belediye yolları onarıyor.",
-  "Saflığı onu dolandırıcılar için kolay bir hedef hâline getiriyor.",
-  "Kâğıt peçeteyi bana uzatır mısın lütfen?",
-  "Çöp kokusu midemi bulandırdı.",
-  "O ne zengin ne de ünlü.",
-  "Artık o şehirde yaşamıyorum.",
-  "Film üç Oscar'a aday gösterildi.",
-  "O kötü şöhretli bir bilgisayar korsanı.",
-  "Cuma günleri ara sıra akşam yemeğine çıkarız.",
-  "Yeni yasaya karşı güçlü bir muhalefet vardı.",
-  "Lütfen ayakkabılarını dışarıda bırak.",
-  "Şirket cömert bir ebeveyn izni sunuyor.",
-  "Tartışmaya aktif olarak katıldı.",
-  "Tüm katılımcılar bir feragatname imzalamalıdır.",
-  "Işıkta uçuşan toz parçacıklarını görebilirsin.",
-  "İhtiyaç sahipleri için bir yardım etkinliği düzenledik.",
-  "Uçuşu iptal edilince gerçekten çok sinirlendi.",
-  "Acele etme, bolca vaktimiz var.",
-  "Ülkede giderek artan bir siyasi kutuplaşma var.",
-  "Fabrikalar havaya zararlı kirleticiler salıyor.",
-  "Zaman en değerli kaynağımızdır.",
-  "Suçu önlemek belediye başkanının en önemli önceliğidir.",
-  "Kitap düşüncelerim üzerinde derin bir etki bıraktı.",
-  "Kapıyı düzgünce kilitlediğinden emin ol.",
-  "Teknoloji alanında kariyer yapmak istiyorum.",
-  "Bu gece evde kalmayı tercih ederim.",
-  "Odamdaki mobilyaların yerini yeniden düzenlemem gerekiyor.",
-  "Hükümet ilaç fiyatlarını düzenlemeye çalışıyor.",
-  "Son haberler eski tartışmayı yeniden alevlendirdi.",
-  "Sonunda sınavı geçmek büyük bir rahatlamaydı.",
-  "Toplantı için telefonuma bir hatırlatıcı kurdum.",
-  "Haber muhabiri belediye başkanına zor bir soru sordu.",
-  "Kazadan sonra inanılmaz bir dayanıklılık gösterdi.",
-  "Bir dilim daha pizza yemeye karşı koyamadım.",
-  "Grup son bir konser için yeniden bir araya gelmeyi planlıyor.",
-  "Konserde yaklaşık 500 kişi vardı.",
-  "Sorunlarından öylece kaçamazsın.",
-  "Dolandırıcılık gibi göründüğü için e-postayı görmezden geldim.",
-  "Bölgede ciddi bir su kıtlığı var.",
-  "Eski çöp torbasından gelen koku mide bulandırıcıydı.",
-  "Pazar sabahları geç kalkmayı seviyorum.",
-  "Takım rehavete kapıldı ve final maçını kaybetti.",
-  "Şehir merkezinde biraz küçük bir dairede yaşıyorlar.",
-  "Bu sabah erteleme düğmesine üç kez bastım.",
-  "Ev sahibi takım gol atınca seyirciler tezahürat yaptı.",
-  "İstediği her şeyi alan çok şımarık bir çocuk.",
-  "Tavan arasından gelen tuhaf bir ses duydum.",
-  "Ailem bana asla bir yabancıyla konuşmamamı söyledi.",
-  "Yeni bir işe ihtiyacım var; tamamen tekdüze bir hayatın içinde sıkışmış hissediyorum.",
-  "Tesadüfen harika küçük bir kafeye rastladım.",
-  "Şeker yerine bal kullanabilirsin.",
-  "Günlük hayatından bir alışkanlığı çıkarmak çok zordur.",
-  "Daha büyük bir bahçeleri olsun diye banliyöye taşındılar.",
-  "Kıyafetlerimi bavula koydum.",
-  "Lütfen hizmetimizle ilgili bu kısa anketi doldurun.",
-  "Sürdürülebilir enerji kaynaklarına yatırım yapmalıyız.",
-  "İnternet sitesi bakım nedeniyle geçici olarak kapalı.",
-  "Stresliyken fazla yemek yeme eğilimindeyim.",
-  "Hemşire kısa süre içinde hastayla ilgilenecek.",
-  "Siyasi tartışma sırasında ortam gerildi.",
-  "Bu videoyu yayımlamadan önce düzenlemem gerekiyor.",
-  "Kıyafetlerini katlayıp kaldırmayı unutma.",
-  "Su girişini durdurmak için bir baraj inşa ettiler.",
-  "Sınav sonuçlarını beklemek tam bir işkenceydi.",
-  "Konser, hayatını kaybeden müzisyene bir saygı duruşuydu.",
-  "Araban bozulursa dörtlüleri yak.",
-  "Gazeteci büyük bir skandalı ortaya çıkardı.",
-  "Sana yaptıkları tüm yardımlar için nankörlük etme.",
-  "Ortak bir hedef tüm takımı birleştirir.",
-  "Yarışı kazanması pek olası değil.",
-  "Bu şehirde toplu taşıma çok güvenilmez.",
-  "O internet sitesi tamamen güvenilmez bir bilgi kaynağı.",
-  "Sürpriz partiyi farkında olmadan açıkladı.",
-  "Kötü haberi duymak çok üzücü bir deneyimdi.",
-  "Kiram ucuz ama faturalar pahalı.",
-  "Mağaza çok çeşitli taze meyveler satıyor.",
-  "Mutlu köpek kuyruğunu sallıyordu.",
-  "Garson bize tatlı menüsünü getirdi.",
-  "Morsun iki uzun ve keskin dişi vardır.",
-  "Eski kanepede belirgin yıpranma izleri var.",
-  "Gökyüzü rüzgârla savrulan toz yüzünden griydi.",
-  "Bir fincan çay sipariş etmek istiyorum lütfen.",
-  "Televizyon izlemektense kitap okumayı tercih ederim.",
-  "Konuşmasına ünlü bir alıntıyla başladı.",
-  "Demans bir kişinin hafızasını ve günlük yaşamını etkileyebilir.",
-  "Düzenli egzersiz bilişsel işlevleri geliştirebilir.",
-  "Sigara içmek damar hastalığı riskini artırır.",
-  "Felç geçirdikten sonra hemen tedavi edildi.",
-  "Büyükannesinin evini miras alacak.",
-  "Uzun süren sosyal izolasyon ruh sağlığını etkileyebilir.",
-  "Okul kuralları öğrencilerin derste telefon kullanmasını yasaklıyor.",
-  "Ani değişiklik yolcular arasında kafa karışıklığına neden oldu.",
-  "Sokaktan gelen bağırışlar duyduk.",
-  "Onun hatasına gülmesi kabacaydı.",
-  "Ailesi kararı onaylamadığını ifade etti.",
-  "Şirket daha zayıf rakiplerini acımasızca ortadan kaldırdı.",
-  "Bu kaplar iç içe geçecek veya düzgünce üst üste konacak şekilde tasarlanmıştır.",
-  "Yönetici projeye liderlik edecek birini belirleyecek.",
-  "İki grup siyasi konular yüzünden sık sık çatışıyor.",
-  "Yeni iş arkadaşlarımla çok iyi anlaşıyorum.",
-  "Yanlış bilgi sosyal medyada hızla yayılır.",
-  "İnsanların çoğunluğu yeni öneriyi destekledi.",
-  "Evden çalışmanın faydalarının yanı sıra bazı dezavantajları da vardır.",
-  "Takım turnuvadan ilk turda elendi.",
-  "Köpek yuvarlanıp ödül mamasını bekledi.",
-  "Haftalardır omzunda geçmeyen bir ağrı var.",
-  "Hızla değişen teknolojiye ayak uydurmak zordur.",
-  "Yazın son haftaları hızla geçip gidiyor gibiydi.",
-  "Takım ikinci yarıda toparlandı ve maçı kazandı.",
-  "Son dakikada kıl payı bir galibiyet almayı başardılar.",
-  "Her zaman ev sahibi takımı desteklerim.",
-  "Birçok müşteri şirketi boykot etmeye karar verdi.",
-  "Neden olduğu utanç için özür diledi.",
-  "Kimse anlamadığı için şakası başarısız oldu.",
-  "Vardığın sonuç yanlış bir varsayıma dayanıyor.",
-  "Röportaj bize onun çalışmaları hakkında değerli bir bakış açısı kazandırdı.",
-  "Bu sorunun hâlâ kesin bir cevabı yok.",
-  "Dairenin başlıca dezavantajı küçük mutfağıdır.",
-  "O uzun yolculuktan sonra bir fincan kahve için can atıyorum.",
-  "Sürekli şikâyet eden kötü bir kaybedenle kimse oynamaktan hoşlanmaz.",
-  "Daha iyi bir çözüm bulmamız gerekiyor.",
-  "Ailesi ona haftalık harçlık veriyor.",
-  "Komşuları için ufak tefek işler yaparak ek para kazanıyor.",
-  "Parkın yakınındaki bir tezgahtan limonata aldık.",
-  "Mahkemenin kararı önemli bir emsal oluşturabilir.",
-  "Sanatçı soruya gizemli bir cevap verdi.",
-  "Çamaşır makinemiz yine bozuldu.",
-  "Saatler süren çalışmanın ardından mutfak tertemizdi.",
-  "Maaş gününe kadar nakit sıkıntısı çekiyoruz.",
-  "Daire modern mutfak aletleriyle birlikte geliyor.",
-  "Hiç aletimiz yoktu, bu yüzden doğaçlama yapmak zorunda kaldık.",
-  "Top mutfak penceresinin camını çatlattı.",
-  "Takımımız şampiyonları iki golle yendi.",
-  "Seyirci final sahnesinin etkisine kapıldı.",
-  "Heyecan arayan turistler sık sık ekstrem sporları dener.",
-  "Deneyimli bir öğretmen sınavı denetleyecek.",
-  "Uykusuzluk ciddi sağlık sorunlarına yol açabilir.",
-  "Yıllık toplantı Ankara'da yapıldı.",
-  "Şirket işini yurt dışına genişletmeyi planlıyor.",
-  "Kapı güçlü rüzgârda birden açıldı.",
-  "Son dakika biletleri için fahiş bir ücret ödemek zorunda kaldık.",
-  "Bazı satıcılar tatil sezonunda turistlere fahiş fiyat uygulamaya çalışır.",
-  "Seyahat giderleri projenin ana maliyetine göre ikincil kalır.",
-  "Devasa bir kaya parçası dağ yolunu kapattı.",
-  "Yiyecek bir kişinin soluk borusunu tıkadığında boğulma meydana gelebilir.",
-  "Derin nefes almak kaygıyı azaltmaya yardımcı olabilir.",
-  "Dikkat dağılması teorisi, baskının kişinin dikkatini böldüğünü öne sürer.",
-  "Bilinçli kontrol, normalde otomatik gerçekleşen becerileri bozabilir.",
-  "Küçük çocuklar bu enfeksiyona karşı daha hassastır.",
-  "Sınıfın önünde konuşurken kendini rahatsız hissetti.",
-  "Yapay zekânın benimsenmesi hızla artıyor.",
-  "Robot bağımsız olarak çalışabilir.",
-  "Sıradan görevlerden sıkılmıştı.",
-  "Mucize tedavilere şüpheyle yaklaşır.",
-  "Planı yarın uygulayacaklar.",
-  "İnternetteki iddiaları sorgulamadan kabul etme.",
-  "Yapay zekâ şüphecileri onun güvenliğini sorguluyor.",
-  "Yapay zekâya yeni başlayanlar genellikle basit sohbet robotlarıyla başlar.",
-  "Yapay zekâ keşifçileri yeni araçları denemekten hoşlanır.",
-  "İleri düzey yapay zekâ kullanıcıları tekrarlayan işleri otomatikleştirir.",
-  "Rapor onun iddialarını sorguluyor.",
-  "İş tekrarlayıcı ve sıkıcı hâle geldi.",
-  "Test gerçek sorunu ortaya çıkardı.",
-  "Lütfen talimatı dikkatle uygula.",
-  "Tutarlılık hızdan daha önemlidir.",
-  "Bir bardak su istedi.",
-  "Diyagram iki sistem arasındaki eşlemeyi gösteriyor.",
-  "Varır varmaz beni ara.",
-  "Şirket güvenlik kurallarına uygunluğu kontrol ediyor.",
-  "Fikrini biraz daha ayrıntılı açıklayabilir misin?",
-  "Takım adına herkese teşekkür ettim.",
-  "Daha basit bir çözüm öneriyorum.",
-  "Sunumundan dolayı ona iltifat etti.",
-  "Seyirciler sonunda yüksek sesle alkışladı.",
-  "Eğer öyleyse planımızı değiştirmeliyiz.",
-  "Dün eski bir fotoğrafa rastladım.",
-  "Çocuk babasına benziyor.",
-  "İşe bisikletle giderek hem egzersiz yapıyor hem para biriktiriyorum; bir taşla iki kuş vuruyorum.",
-  "Gücünü kötüye kullanma.",
-  "Benimle gelmezsen gitmeyeceğim.",
-  "Kalmaya mı yoksa ayrılmaya mı karar vermeliyiz.",
-  "Çalışanların hasta olduklarını gösteren bir kanıt sunmaları gerekiyor.",
-  "Hasta olduğumu kanıtlamam gerekiyor.",
-  "Plan ekonomiyi canlandırmaya yardımcı olacak.",
-  "Geçen hafta bir mide rahatsızlığına yakalandım.",
-  "Virüsler kalabalık yerlerde hızla yayılabilir.",
-  "Ofise gitmek enfeksiyonu başkalarına yayabilir.",
-  "Hükûmet planı parlamentodan geçirmek istiyor.",
-  "Yeni kurallar Almanya'daki hastalık izinlerini etkileyecek.",
-  "Bugün doktor randevusu almak zor olabilir.",
-  "Meslek olarak öğretmenliği seçti.",
-  "Mülteci kalmak için güvenli bir yer buldu.",
-  "Kardeşinin aksine o çok sabırlıdır.",
-  "Başarılı olduğunda mütevazı olmaya çalış.",
-  "Beni takip etmeyi bırak—sen ürkütücü birisin.",
-  "Bu anlaşma biraz şüpheli görünüyor.",
-  "Fotoğraf çekmek için izin istedik.",
-  "Bu uygulama insanların her yerde çalışmasına olanak tanır.",
-  "Bana bir iyilik yapabilir misin?",
-  "Bütün gün yağmur yağdı.",
-  "Onu gerçeği söylemeye ikna ettim.",
-  "Onun cesaretine hayranım.",
-  "Annem benim en büyük ilham kaynağımdır.",
-  "Kasabada tuhaf bir söylenti yayıldı.",
-  "Günümüzde birçok insan evden çalışıyor.",
-  "Bir çekirge yaprağın üzerine sıçradı.",
-  "Bu böcek kovucu sivrisinekleri uzak tutar.",
-  "Konak arayan sivrisinekler vücut ısısına çekilir.",
-  "Yağmurdan sonra hava sıcak ve nemli geliyor.",
-  "Yolculuk gerçekten beklenenden daha zordu.",
-  "Odada rahatsız edici bir koku vardı.",
-  "Köpek balıkları sudaki kanı uzaktan tespit edebilir.",
-  "Karbondioksit sivrisineklerin konak arama davranışını etkinleştirir.",
-  "Yetişkinler sivrisinekler için çekici hedeflerdir.",
-  "Sivrisinekler vücut ısısına ve neme tepki verir.",
-  "Derideki bakteriler güçlü bir koku üretebilir.",
-  "Bilim insanları insan derisinde yüzlerce bileşik buldu.",
-  "Sonuçlar birkaç yıl boyunca tutarlı kaldı.",
-  "Sivrisinek ısırıklarına verilen tepkiler kişiden kişiye değişir.",
-  "Bazı insanlar ısırıklara yalnızca çok az tepki gösterir.",
-  "DEET gibi etkisi kanıtlanmış bir sivrisinek kovucu kullanın."
-];
-const LL_WORD_POS_OVERRIDES=Object.freeze({
-  "across":"prep","alongside":"prep","unlike":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","rather":"adv","temporarily":"adv","fewer":"det","likely":"adj","unlikely":"adj",
-  "anonymity":"n","anxiety":"n","charity":"n","currency":"n","disability":"n","disapproval":"n","encounter":"n","epidemic":"n","eternity":"n","fabric":"n","facility":"n","identity":"n","individual":"n","longevity":"n","luxury":"n","municipality":"n","naivety":"n","quote":"n","skeptic":"n","snooze":"n","substitute":"n","survey":"n",
-  "confident":"adj","constant":"adj","determined":"adj","extensive":"adj","infected":"adj","intense":"adj","mundane":"adj","profound":"adj","smallish":"adj","spoiled":"adj","strange":"adj","unkind":"adj","vascular":"adj",
-  "apply":"v","differs":"v","held":"v","imply":"v","introduced":"v","lamented":"v","rally":"v","swung":"v","uncovered":"v",
-  "consulting":"adj","catfishing":"n","disrupting":"v","doomscrolling":"v","floating":"v","hosting":"v","jeering":"n","mansplaining":"n","mapping":"n","nagging":"adj","thrill-seeking":"adj","liberal-leaning":"adj","mind-blowing":"adj","sickening":"adj","upsetting":"adj","wagging":"v","shouting":"n","choking":"n",
-  "claims":"n","repetitive":"adj","revealed":"v","clapped":"v","compliance":"n","instruction":"n","consistency":"n","occupation":"n","refugee":"n","shady":"adj","permission":"n","allow":"v","favor":"n","entire":"adj","convince":"v","admire":"v","inspiration":"n","rumor":"n","nowadays":"adv","grasshopper":"n","repellent":"n","host-seeking":"adj","humid":"adj","indeed":"adv","unpleasant":"adj","detect":"v","activate":"v","target":"n","moisture":"n","odour":"n","compound":"n","consistent":"adj","vary":"v","minimal":"adj","proven":"adj",
-  "act out of self-interest":"v","almost never":"adv","along with":"prep","as far as":"prep","as far as i know":"phrase","as far as i’m concerned":"phrase","as long as":"conj","as well":"adv","as well as":"conj","attract attention":"v","bet prediction":"n","blow off steam":"idiom","by the time":"conj","cable car":"n","different store":"n","even more":"adv","extraordinary day":"n","fancy people":"n","first impression":"n","from scratch":"idiom","from what i understand":"phrase","getting to know each other":"phrase",
-  "imprisoned by":"adj","in a rush":"phrase","in contrast to/with":"prep","look at the bright side":"idiom","lose track of time":"idiom","make the most of":"idiom","neither nor":"conj","no longer":"adv","people in need":"n","pissed off":"adj","plenty of":"det","slipped into complacency":"v","stuck in a rut":"idiom","subtract a habit":"v","things got heated":"phrase","to edit":"v","to stem the inflow":"v","turn on the hazard lights":"pv","unify / unifies":"v","variety of":"n","wear and tear":"n","wind-blown dust":"n","would like to":"v","would rather":"phrase",
-  "to nest / to stack":"v","the majority of people":"n","be dying for something":"idiom","sore loser / bad loser":"n","odd job":"n","on the fritz":"idiom","clean as a whistle":"idiom","be strapped for cash":"idiom","window pane":"n","pay through the nose":"idiom","distraction theory":"n","explicit monitoring":"n","ai skeptics":"n","ai novices":"n","ai explorers":"n","ai power users":"n","asked for":"pv","as soon as":"conj","on behalf of":"prep","if so":"phrase","kill two birds with one stone":"idiom","whether or":"conj","sick leave":"n","be humble":"phrase","you're a creeper":"phrase","be attracted to":"v","tend to + verb":"v"
-});
-const LL_PHRASAL_VERBS=new Set([
-  "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","get along with someone","keep up with","lead to","led to","made off","roll over","root for","run away","sleep in","slip by","squeak out","stumble upon","tend to + verb","tend to someone/something","to fold away"
-]);
-function llInferWordPos(word){
-  const en=String(word?.en||'').trim().toLowerCase(),tr=String(word?.tr||'').trim().toLowerCase(),example=` ${String(word?.example||'').toLowerCase()} `;
-  if(LL_WORD_POS_OVERRIDES[en])return LL_WORD_POS_OVERRIDES[en];
-  const explicit=String(word?.pos||'').trim().toLowerCase();if(explicit)return explicit;
-  if(LL_PHRASAL_VERBS.has(en))return 'pv';
-  if(/\s/.test(en))return 'phrase';
-  if(['and','but','unless','whether'].includes(en))return 'conj';
-  if(['in','on','at','by','for','from','with','without','through','during','despite'].includes(en))return 'prep';
-  if(/ly$/.test(en))return 'adv';
-  if(/ing$/.test(en)){
-    const continuous=[' am ',' is ',' are ',' was ',' were ',' be ',' been ',' being '].some(aux=>example.includes(aux+en));
-    return continuous?'v':'n';
-  }
-  const verbFrames=[' to ',' can ',' could ',' will ',' would ',' should ',' must ',' may ',' might ',' do ',' does ',' did ',' have ',' has ',' had '];
-  if(/m[ae]k(?:\b|\s|\/)/i.test(tr)||verbFrames.some(frame=>example.includes(frame+en+' ')))return 'v';
-  if(/ed$/.test(en)&&[' was ',' were ',' is ',' are ',' had ',' has ',' have '].some(aux=>example.includes(aux+en+' ')))return 'v';
-  if(/(able|ible|al|ful|ic|ical|ive|less|ous|y)$/.test(en))return 'adj';
-  return 'n';
-}
-NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
-NATIVE_USER_DATA.forEach(word=>{word.pos=llInferWordPos(word);});
-
-// 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
-const WC_TEAMS = [
-  { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
-  { name: "Canada", group: "B", stars: 2, flag: "🇨🇦" }, { name: "Bosnia & Herz.", group: "B", stars: 1, flag: "🇧🇦" }, { name: "Qatar", group: "B", stars: 1, flag: "🇶🇦" }, { name: "Switzerland", group: "B", stars: 3, flag: "🇨🇭" },
-  { name: "Brazil", group: "C", stars: 3, flag: "🇧🇷" }, { name: "Morocco", group: "C", stars: 2, flag: "🇲🇦" }, { name: "Haiti", group: "C", stars: 1, flag: "🇭🇹" }, { name: "Scotland", group: "C", stars: 2, flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
-  { name: "United States", group: "D", stars: 2, flag: "🇺🇸" }, { name: "Paraguay", group: "D", stars: 2, flag: "🇵🇾" }, { name: "Australia", group: "D", stars: 2, flag: "🇦🇺" }, { name: "Türkiye", group: "D", stars: 2, flag: "🇹🇷" },
-  { name: "Germany", group: "E", stars: 3, flag: "🇩🇪" }, { name: "Curaçao", group: "E", stars: 1, flag: "🇨🇼" }, { name: "Ivory Coast", group: "E", stars: 2, flag: "🇨🇮" }, { name: "Ecuador", group: "E", stars: 2, flag: "🇪🇨" },
-  { name: "Netherlands", group: "F", stars: 3, flag: "🇳🇱" }, { name: "Japan", group: "F", stars: 2, flag: "🇯🇵" }, { name: "Sweden", group: "F", stars: 2, flag: "🇸🇪" }, { name: "Tunisia", group: "F", stars: 1, flag: "🇹🇳" },
-  { name: "Belgium", group: "G", stars: 3, flag: "🇧🇪" }, { name: "Egypt", group: "G", stars: 2, flag: "🇪🇬" }, { name: "Iran", group: "G", stars: 2, flag: "🇮🇷" }, { name: "New Zealand", group: "G", stars: 1, flag: "🇳🇿" },
-  { name: "Spain", group: "H", stars: 3, flag: "🇪🇸" }, { name: "Cape Verde", group: "H", stars: 1, flag: "🇨🇻" }, { name: "Saudi Arabia", group: "H", stars: 1, flag: "🇸🇦" }, { name: "Uruguay", group: "H", stars: 3, flag: "🇺🇾" },
-  { name: "France", group: "I", stars: 3, flag: "🇫🇷" }, { name: "Senegal", group: "I", stars: 2, flag: "🇸🇳" }, { name: "Iraq", group: "I", stars: 1, flag: "🇮🇶" }, { name: "Norway", group: "I", stars: 2, flag: "🇳🇴" },
-  { name: "Argentina", group: "J", stars: 3, flag: "🇦🇷" }, { name: "Algeria", group: "J", stars: 2, flag: "🇩🇿" }, { name: "Austria", group: "J", stars: 2, flag: "🇦🇹" }, { name: "Jordan", group: "J", stars: 1, flag: "🇯🇴" },
-  { name: "Portugal", group: "K", stars: 3, flag: "🇵🇹" }, { name: "Congo DR", group: "K", stars: 1, flag: "🇨🇩" }, { name: "Uzbekistan", group: "K", stars: 1, flag: "🇺🇿" }, { name: "Colombia", group: "K", stars: 3, flag: "🇨🇴" },
-  { name: "England", group: "L", stars: 3, flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" }, { name: "Croatia", group: "L", stars: 3, flag: "🇭🇷" }, { name: "Ghana", group: "L", stars: 2, flag: "🇬🇭" }, { name: "Panama", group: "L", stars: 1, flag: "🇵🇦" }
-];
-
-let wc = {
-  active: false,
-  playerTeam: null,
-  groupTeams: [],
-  standings: {},
-  stage: 'group', // group, ro32, ro16, qf, sf, final
-  matchIndex: 0,
-  opponent: null,
-  wordCount: 10,
-  inPenalties: false,
-  basePlayerScore: 0,
-  baseOppScore: 0,
-  schedule: [],
-  usedWords: []
+const LL_SUPER_STAR_MAP={Galatasaray:5,'Fenerbahçe':5,'Beşiktaş':4,Trabzonspor:4,'Başakşehir':3,Konyaspor:3,Alanyaspor:3,'Kasımpaşa':3,'Göztepe':3,Samsunspor:3,'Ç. Rizespor':3,Eyüpspor:3,'Amed SK':2,'Çorum FK':2,'Erzurumspor FK':2,'Gaziantep FK':2,'Gençlerbirliği':2,Kocaelispor:2};
+LL_TEAMS.forEach(t=>t.stars=LL_SUPER_STAR_MAP[t.name]||2);
+const LL_ALL_TEAMS=[...LL_TEAMS,...LL_FIRST_TEAMS];
+const LL_COMP_REWARDS={league:{ap:5,win:50,draw:20,loss:5},cup:{ap:5,win:60,draw:20,loss:8},playoff:{ap:5,win:60,draw:20,loss:8},ucl:{ap:7,win:90,draw:40,loss:15},uel:{ap:7,win:85,draw:35,loss:12},uecl:{ap:6,win:80,draw:30,loss:10}};
+const LL_CUP_WEEKS=[3,8,14,20,26,32],LL_EURO_WEEKS=[5,11,17,23,29];
+const LL_CUP_ROUNDS=['1. Tur','Son 32','Son 16','Çeyrek Final','Yarı Final','Final'];
+const LL_EURO_ROUNDS=['Son 32','Son 16','Çeyrek Final','Yarı Final','Final'];
+const LL_EURO_LOGO_IDS={
+  'Paris Saint-Germain':583,'Real Madrid':418,'Manchester City':281,'Bayern München':27,Liverpool:31,Inter:46,Chelsea:631,'Borussia Dortmund':16,Barcelona:131,Arsenal:11,'Bayer Leverkusen':15,'Atlético Madrid':13,Benfica:294,Atalanta:800,Villarreal:1050,Juventus:506,'Eintracht Frankfurt':24,'Club Brugge':2282,'Tottenham Hotspur':148,'PSV Eindhoven':383,Ajax:610,Napoli:6195,'Sporting CP':336,Olympiacos:683,Marseille:244,Copenhagen:190,Monaco:162,Galatasaray:141,'Union Saint-Gilloise':3948,'Qarabağ':10625,'Athletic Club':621,'Newcastle United':762,'Bodø/Glimt':2619,'Slavia Praha':62,Pafos:20401,'Kairat Almaty':10470
 };
-
-const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
-
-const DICE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-const DICE_STAGE_NAMES = {
-  group: 'Grup Aşaması', ro32: 'Son 32 Turu', ro16: 'Son 16 Turu',
-  qf: 'Çeyrek Final', sf: 'Yarı Final', final: 'Büyük Final', won: 'Şampiyon'
-};
-
-let diceCup = {
-  active: false,
-  playerTeam: null,
-  stage: 'group',
-  matchIndex: 0,
-  groupTeams: [],
-  standings: {},
-  schedule: [],
-  opponent: null,
-  wordCount: 10,
-  preMatchCorrect: 0,
-  preMatchTotal: 0,
-  playerDice: [],
-  opponentDice: [],
-  playerScore: 0,
-  opponentScore: 0,
-  extraTimePlayer: 0,
-  extraTimeOpponent: 0,
-  rolled: false,
-  rolling: false,
-  rerollUsed: false,
-  rerollFailed: false,
-  rerollQueue: [],
-  rerollIndex: 0,
-  rerollRevealed: false,
-  selectedRerollIndex: -1,
-  usedWords: [],
-  rerolledValue: null,
-  rerolledIndex: -1,
-  eventNote: '',
-  knockoutOpponentsUsed: [],
-  resultCommitted: false
-};
-
-
-
-// 2025/26 UEFA CHAMPIONS LEAGUE — 36 TAKIM / 4 TORBA
-// Takım gücü zar sonucunu etkilemez; torbalar yalnızca lig fikstürü üretmek için kullanılır.
-const UCL_TEAMS = [
-  { name:'Paris Saint-Germain', short:'Paris SG', country:'FRA', pot:1, flag:'🇫🇷' },
-  { name:'Real Madrid', short:'Real Madrid', country:'ESP', pot:1, flag:'🇪🇸' },
-  { name:'Manchester City', short:'Man City', country:'ENG', pot:1, flag:'🇬🇧' },
-  { name:'Bayern München', short:'Bayern', country:'GER', pot:1, flag:'🇩🇪' },
-  { name:'Liverpool', short:'Liverpool', country:'ENG', pot:1, flag:'🇬🇧' },
-  { name:'Inter', short:'Inter', country:'ITA', pot:1, flag:'🇮🇹' },
-  { name:'Chelsea', short:'Chelsea', country:'ENG', pot:1, flag:'🇬🇧' },
-  { name:'Borussia Dortmund', short:'Dortmund', country:'GER', pot:1, flag:'🇩🇪' },
-  { name:'Barcelona', short:'Barcelona', country:'ESP', pot:1, flag:'🇪🇸' },
-
-  { name:'Arsenal', short:'Arsenal', country:'ENG', pot:2, flag:'🇬🇧' },
-  { name:'Bayer Leverkusen', short:'Leverkusen', country:'GER', pot:2, flag:'🇩🇪' },
-  { name:'Atlético Madrid', short:'Atlético', country:'ESP', pot:2, flag:'🇪🇸' },
-  { name:'Benfica', short:'Benfica', country:'POR', pot:2, flag:'🇵🇹' },
-  { name:'Atalanta', short:'Atalanta', country:'ITA', pot:2, flag:'🇮🇹' },
-  { name:'Villarreal', short:'Villarreal', country:'ESP', pot:2, flag:'🇪🇸' },
-  { name:'Juventus', short:'Juventus', country:'ITA', pot:2, flag:'🇮🇹' },
-  { name:'Eintracht Frankfurt', short:'Frankfurt', country:'GER', pot:2, flag:'🇩🇪' },
-  { name:'Club Brugge', short:'Club Brugge', country:'BEL', pot:2, flag:'🇧🇪' },
-
-  { name:'Tottenham Hotspur', short:'Tottenham', country:'ENG', pot:3, flag:'🇬🇧' },
-  { name:'PSV Eindhoven', short:'PSV', country:'NED', pot:3, flag:'🇳🇱' },
-  { name:'Ajax', short:'Ajax', country:'NED', pot:3, flag:'🇳🇱' },
-  { name:'Napoli', short:'Napoli', country:'ITA', pot:3, flag:'🇮🇹' },
-  { name:'Sporting CP', short:'Sporting CP', country:'POR', pot:3, flag:'🇵🇹' },
-  { name:'Olympiacos', short:'Olympiacos', country:'GRE', pot:3, flag:'🇬🇷' },
-  { name:'Slavia Praha', short:'Slavia Praha', country:'CZE', pot:3, flag:'🇨🇿' },
-  { name:'Bodø/Glimt', short:'Bodø/Glimt', country:'NOR', pot:3, flag:'🇳🇴' },
-  { name:'Marseille', short:'Marseille', country:'FRA', pot:3, flag:'🇫🇷' },
-
-  { name:'Copenhagen', short:'Copenhagen', country:'DEN', pot:4, flag:'🇩🇰' },
-  { name:'Monaco', short:'Monaco', country:'FRA', pot:4, flag:'🇫🇷' },
-  { name:'Galatasaray', short:'Galatasaray', country:'TUR', pot:4, flag:'🇹🇷' },
-  { name:'Union Saint-Gilloise', short:'Union SG', country:'BEL', pot:4, flag:'🇧🇪' },
-  { name:'Qarabağ', short:'Qarabağ', country:'AZE', pot:4, flag:'🇦🇿' },
-  { name:'Athletic Club', short:'Athletic Club', country:'ESP', pot:4, flag:'🇪🇸' },
-  { name:'Newcastle United', short:'Newcastle', country:'ENG', pot:4, flag:'🇬🇧' },
-  { name:'Pafos', short:'Pafos', country:'CYP', pot:4, flag:'🇨🇾' },
-  { name:'Kairat Almaty', short:'Kairat', country:'KAZ', pot:4, flag:'🇰🇿' }
-];
-
-const UCL_DRAW_TEMPLATES = [[[["Bayern München","Villarreal"],["Barcelona","Marseille"],["Atlético Madrid","Copenhagen"],["Chelsea","Pafos"],["Qarabağ","Newcastle United"],["Atalanta","Paris Saint-Germain"],["Ajax","Olympiacos"],["Kairat Almaty","Bayer Leverkusen"],["Union Saint-Gilloise","Sporting CP"],["Tottenham Hotspur","PSV Eindhoven"],["Liverpool","Real Madrid"],["Athletic Club","Juventus"],["Eintracht Frankfurt","Bodø/Glimt"],["Galatasaray","Monaco"],["Borussia Dortmund","Benfica"],["Arsenal","Club Brugge"],["Slavia Praha","Napoli"],["Manchester City","Inter"]],[["Villarreal","Manchester City"],["Copenhagen","Qarabağ"],["Monaco","Ajax"],["Newcastle United","Union Saint-Gilloise"],["Paris Saint-Germain","Kairat Almaty"],["Club Brugge","Marseille"],["Benfica","Liverpool"],["Eintracht Frankfurt","Barcelona"],["Galatasaray","Atalanta"],["Athletic Club","Borussia Dortmund"],["Juventus","Tottenham Hotspur"],["Pafos","Arsenal"],["Bodø/Glimt","Slavia Praha"],["Napoli","Atlético Madrid"],["PSV Eindhoven","Bayer Leverkusen"],["Olympiacos","Inter"],["Real Madrid","Bayern München"],["Sporting CP","Chelsea"]],[["PSV Eindhoven","Barcelona"],["Liverpool","Eintracht Frankfurt"],["Bayer Leverkusen","Atlético Madrid"],["Copenhagen","Club Brugge"],["Marseille","Tottenham Hotspur"],["Real Madrid","Slavia Praha"],["Villarreal","Ajax"],["Benfica","Atalanta"],["Manchester City","Galatasaray"],["Monaco","Kairat Almaty"],["Sporting CP","Newcastle United"],["Athletic Club","Olympiacos"],["Bodø/Glimt","Paris Saint-Germain"],["Inter","Chelsea"],["Borussia Dortmund","Napoli"],["Arsenal","Union Saint-Gilloise"],["Juventus","Qarabağ"],["Pafos","Bayern München"]],[["Napoli","Ajax"],["Paris Saint-Germain","Borussia Dortmund"],["Olympiacos","Benfica"],["Manchester City","Club Brugge"],["Newcastle United","Villarreal"],["Atalanta","Kairat Almaty"],["Copenhagen","Marseille"],["Chelsea","Bodø/Glimt"],["Galatasaray","Real Madrid"],["Athletic Club","Pafos"],["Atlético Madrid","Juventus"],["Union Saint-Gilloise","Eintracht Frankfurt"],["Barcelona","Liverpool"],["PSV Eindhoven","Monaco"],["Arsenal","Bayern München"],["Slavia Praha","Qarabağ"],["Bayer Leverkusen","Sporting CP"],["Inter","Tottenham Hotspur"]],[["Benfica","Newcastle United"],["Bodø/Glimt","Kairat Almaty"],["Ajax","Union Saint-Gilloise"],["Atlético Madrid","Inter"],["Borussia Dortmund","Manchester City"],["Olympiacos","Marseille"],["Liverpool","Monaco"],["Bayern München","Paris Saint-Germain"],["Atalanta","Bayer Leverkusen"],["Real Madrid","Copenhagen"],["Club Brugge","Athletic Club"],["Juventus","Eintracht Frankfurt"],["Galatasaray","PSV Eindhoven"],["Qarabağ","Napoli"],["Slavia Praha","Arsenal"],["Pafos","Tottenham Hotspur"],["Chelsea","Barcelona"],["Sporting CP","Villarreal"]],[["Eintracht Frankfurt","Arsenal"],["Bodø/Glimt","Atalanta"],["Barcelona","Bayer Leverkusen"],["Bayern München","Newcastle United"],["Tottenham Hotspur","Club Brugge"],["Ajax","Real Madrid"],["Union Saint-Gilloise","Chelsea"],["Monaco","Atlético Madrid"],["Marseille","Athletic Club"],["Qarabağ","Paris Saint-Germain"],["Olympiacos","Pafos"],["Villarreal","Benfica"],["Copenhagen","Liverpool"],["Kairat Almaty","Inter"],["Juventus","Borussia Dortmund"],["PSV Eindhoven","Sporting CP"],["Napoli","Galatasaray"],["Slavia Praha","Manchester City"]],[["Club Brugge","Villarreal"],["Kairat Almaty","Copenhagen"],["Newcastle United","Barcelona"],["Real Madrid","Juventus"],["Marseille","Borussia Dortmund"],["Sporting CP","Bodø/Glimt"],["Paris Saint-Germain","PSV Eindhoven"],["Manchester City","Ajax"],["Union Saint-Gilloise","Athletic Club"],["Eintracht Frankfurt","Monaco"],["Atalanta","Slavia Praha"],["Napoli","Liverpool"],["Inter","Arsenal"],["Bayer Leverkusen","Chelsea"],["Tottenham Hotspur","Bayern München"],["Atlético Madrid","Olympiacos"],["Pafos","Galatasaray"],["Qarabağ","Benfica"]],[["Barcelona","Union Saint-Gilloise"],["Newcastle United","Bodø/Glimt"],["Inter","Athletic Club"],["Marseille","Eintracht Frankfurt"],["Arsenal","PSV Eindhoven"],["Tottenham Hotspur","Copenhagen"],["Bayern München","Olympiacos"],["Liverpool","Sporting CP"],["Ajax","Juventus"],["Kairat Almaty","Slavia Praha"],["Club Brugge","Real Madrid"],["Chelsea","Atalanta"],["Monaco","Manchester City"],["Bayer Leverkusen","Galatasaray"],["Borussia Dortmund","Qarabağ"],["Benfica","Napoli"],["Paris Saint-Germain","Atlético Madrid"],["Villarreal","Pafos"]]],[[["Arsenal","Eintracht Frankfurt"],["Paris Saint-Germain","Union Saint-Gilloise"],["Slavia Praha","Ajax"],["Juventus","Chelsea"],["Bayern München","Newcastle United"],["Atalanta","Club Brugge"],["Copenhagen","Liverpool"],["Kairat Almaty","Borussia Dortmund"],["Monaco","Napoli"],["Pafos","Bodø/Glimt"],["Benfica","Athletic Club"],["Bayer Leverkusen","Marseille"],["Real Madrid","Olympiacos"],["Galatasaray","Sporting CP"],["Atlético Madrid","Qarabağ"],["Inter","PSV Eindhoven"],["Villarreal","Tottenham Hotspur"],["Manchester City","Barcelona"]],[["Club Brugge","Benfica"],["Arsenal","Galatasaray"],["Atlético Madrid","Inter"],["Atalanta","Olympiacos"],["Athletic Club","Union Saint-Gilloise"],["Slavia Praha","Real Madrid"],["Ajax","Kairat Almaty"],["Bayer Leverkusen","Manchester City"],["Eintracht Frankfurt","Paris Saint-Germain"],["Borussia Dortmund","Liverpool"],["Qarabağ","Marseille"],["Tottenham Hotspur","Pafos"],["Barcelona","Sporting CP"],["Chelsea","Bodø/Glimt"],["Monaco","Villarreal"],["Juventus","PSV Eindhoven"],["Napoli","Bayern München"],["Copenhagen","Newcastle United"]],[["Real Madrid","Monaco"],["PSV Eindhoven","Liverpool"],["Galatasaray","Eintracht Frankfurt"],["Juventus","Copenhagen"],["Atlético Madrid","Atalanta"],["Villarreal","Bayer Leverkusen"],["Kairat Almaty","Slavia Praha"],["Sporting CP","Club Brugge"],["Borussia Dortmund","Athletic Club"],["Bodø/Glimt","Newcastle United"],["Marseille","Chelsea"],["Qarabağ","Paris Saint-Germain"],["Inter","Arsenal"],["Union Saint-Gilloise","Benfica"],["Olympiacos","Napoli"],["Tottenham Hotspur","Barcelona"],["Ajax","Manchester City"],["Pafos","Bayern München"]],[["Liverpool","Marseille"],["Olympiacos","Arsenal"],["Copenhagen","Club Brugge"],["Newcastle United","Bayer Leverkusen"],["Barcelona","Borussia Dortmund"],["Kairat Almaty","Atlético Madrid"],["Bodø/Glimt","Inter"],["Eintracht Frankfurt","Villarreal"],["Union Saint-Gilloise","Galatasaray"],["PSV Eindhoven","Slavia Praha"],["Paris Saint-Germain","Real Madrid"],["Napoli","Tottenham Hotspur"],["Chelsea","Bayern München"],["Ajax","Sporting CP"],["Qarabağ","Monaco"],["Benfica","Juventus"],["Pafos","Atalanta"],["Athletic Club","Manchester City"]],[["Paris Saint-Germain","Bayer Leverkusen"],["Real Madrid","Atalanta"],["Barcelona","Club Brugge"],["Sporting CP","Bodø/Glimt"],["Villarreal","Borussia Dortmund"],["Liverpool","Inter"],["Eintracht Frankfurt","Union Saint-Gilloise"],["Tottenham Hotspur","PSV Eindhoven"],["Manchester City","Napoli"],["Qarabağ","Juventus"],["Olympiacos","Monaco"],["Marseille","Galatasaray"],["Chelsea","Copenhagen"],["Kairat Almaty","Athletic Club"],["Newcastle United","Pafos"],["Benfica","Slavia Praha"],["Arsenal","Ajax"],["Bayern München","Atlético Madrid"]],[["Copenhagen","Tottenham Hotspur"],["Bayer Leverkusen","Atlético Madrid"],["Borussia Dortmund","Benfica"],["Liverpool","Qarabağ"],["Newcastle United","Ajax"],["PSV Eindhoven","Eintracht Frankfurt"],["Napoli","Athletic Club"],["Chelsea","Villarreal"],["Union Saint-Gilloise","Real Madrid"],["Manchester City","Galatasaray"],["Marseille","Olympiacos"],["Atalanta","Bayern München"],["Arsenal","Barcelona"],["Club Brugge","Bodø/Glimt"],["Sporting CP","Paris Saint-Germain"],["Slavia Praha","Juventus"],["Monaco","Inter"],["Pafos","Kairat Almaty"]],[["Slavia Praha","Union Saint-Gilloise"],["Sporting CP","Qarabağ"],["Marseille","Atlético Madrid"],["Olympiacos","Borussia Dortmund"],["Real Madrid","Manchester City"],["Eintracht Frankfurt","Napoli"],["Ajax","Atalanta"],["Tottenham Hotspur","Bayer Leverkusen"],["Bodø/Glimt","Benfica"],["Newcastle United","Barcelona"],["Bayern München","Paris Saint-Germain"],["Juventus","Arsenal"],["Athletic Club","PSV Eindhoven"],["Inter","Kairat Almaty"],["Galatasaray","Chelsea"],["Club Brugge","Liverpool"],["Monaco","Copenhagen"],["Villarreal","Pafos"]],[["Benfica","Real Madrid"],["Atalanta","Newcastle United"],["PSV Eindhoven","Copenhagen"],["Athletic Club","Arsenal"],["Bayer Leverkusen","Monaco"],["Barcelona","Pafos"],["Bayern München","Ajax"],["Manchester City","Eintracht Frankfurt"],["Club Brugge","Kairat Almaty"],["Atlético Madrid","Sporting CP"],["Galatasaray","Qarabağ"],["Liverpool","Juventus"],["Borussia Dortmund","Slavia Praha"],["Inter","Chelsea"],["Napoli","Villarreal"],["Paris Saint-Germain","Tottenham Hotspur"],["Union Saint-Gilloise","Olympiacos"],["Bodø/Glimt","Marseille"]]],[[["Real Madrid","Monaco"],["Juventus","Pafos"],["Sporting CP","Qarabağ"],["Kairat Almaty","Liverpool"],["Olympiacos","Napoli"],["Club Brugge","Bayern München"],["Marseille","Newcastle United"],["Arsenal","Paris Saint-Germain"],["Bayer Leverkusen","Villarreal"],["Galatasaray","Ajax"],["Athletic Club","Copenhagen"],["Benfica","Manchester City"],["Chelsea","Eintracht Frankfurt"],["Tottenham Hotspur","Barcelona"],["Bodø/Glimt","Borussia Dortmund"],["Inter","Union Saint-Gilloise"],["PSV Eindhoven","Atlético Madrid"],["Atalanta","Slavia Praha"]],[["Chelsea","Qarabağ"],["Atlético Madrid","Inter"],["Kairat Almaty","Club Brugge"],["Atalanta","Real Madrid"],["Tottenham Hotspur","Ajax"],["Slavia Praha","Bayer Leverkusen"],["Borussia Dortmund","Marseille"],["Newcastle United","Sporting CP"],["Olympiacos","Galatasaray"],["Athletic Club","Juventus"],["Benfica","Monaco"],["Pafos","Arsenal"],["Bayern München","PSV Eindhoven"],["Napoli","Paris Saint-Germain"],["Liverpool","Villarreal"],["Barcelona","Bodø/Glimt"],["Copenhagen","Eintracht Frankfurt"],["Union Saint-Gilloise","Manchester City"]],[["Union Saint-Gilloise","Slavia Praha"],["Pafos","Borussia Dortmund"],["Inter","Bayer Leverkusen"],["Eintracht Frankfurt","Napoli"],["Barcelona","Club Brugge"],["Tottenham Hotspur","Athletic Club"],["Marseille","Chelsea"],["Olympiacos","Manchester City"],["Monaco","Galatasaray"],["Sporting CP","Bayern München"],["Arsenal","Copenhagen"],["Atalanta","Qarabağ"],["Bodø/Glimt","Benfica"],["PSV Eindhoven","Real Madrid"],["Villarreal","Juventus"],["Atlético Madrid","Kairat Almaty"],["Paris Saint-Germain","Newcastle United"],["Ajax","Liverpool"]],[["Union Saint-Gilloise","Kairat Almaty"],["Club Brugge","Newcastle United"],["Atlético Madrid","Marseille"],["Qarabağ","Pafos"],["Barcelona","Liverpool"],["Copenhagen","Bayern München"],["Slavia Praha","Inter"],["Villarreal","Borussia Dortmund"],["Benfica","Ajax"],["Eintracht Frankfurt","Athletic Club"],["PSV Eindhoven","Olympiacos"],["Paris Saint-Germain","Sporting CP"],["Napoli","Monaco"],["Tottenham Hotspur","Atalanta"],["Galatasaray","Chelsea"],["Manchester City","Juventus"],["Real Madrid","Arsenal"],["Bayer Leverkusen","Bodø/Glimt"]],[["Borussia Dortmund","Copenhagen"],["Liverpool","Olympiacos"],["Eintracht Frankfurt","Benfica"],["Newcastle United","Bayer Leverkusen"],["Ajax","Sporting CP"],["Real Madrid","Slavia Praha"],["Marseille","Juventus"],["Chelsea","Paris Saint-Germain"],["Pafos","Bodø/Glimt"],["Villarreal","PSV Eindhoven"],["Napoli","Arsenal"],["Bayern München","Athletic Club"],["Monaco","Atalanta"],["Manchester City","Kairat Almaty"],["Club Brugge","Atlético Madrid"],["Qarabağ","Barcelona"],["Inter","Tottenham Hotspur"],["Galatasaray","Union Saint-Gilloise"]],[["Bodø/Glimt","Marseille"],["Arsenal","Eintracht Frankfurt"],["Olympiacos","Club Brugge"],["Villarreal","Union Saint-Gilloise"],["Manchester City","Ajax"],["Real Madrid","Bayern München"],["Benfica","Bayer Leverkusen"],["Atlético Madrid","Atalanta"],["Athletic Club","Paris Saint-Germain"],["Chelsea","Napoli"],["Borussia Dortmund","Inter"],["Barcelona","Galatasaray"],["Juventus","Liverpool"],["Monaco","Tottenham Hotspur"],["Sporting CP","PSV Eindhoven"],["Kairat Almaty","Qarabağ"],["Slavia Praha","Pafos"],["Copenhagen","Newcastle United"]],[["Atalanta","Arsenal"],["Bodø/Glimt","Union Saint-Gilloise"],["Ajax","Copenhagen"],["Inter","Real Madrid"],["Club Brugge","Tottenham Hotspur"],["Kairat Almaty","Olympiacos"],["Eintracht Frankfurt","Barcelona"],["Newcastle United","Monaco"],["Athletic Club","Marseille"],["Paris Saint-Germain","Manchester City"],["Liverpool","Pafos"],["Galatasaray","Villarreal"],["Bayer Leverkusen","Chelsea"],["Napoli","Slavia Praha"],["Bayern München","Benfica"],["Juventus","Sporting CP"],["Qarabağ","PSV Eindhoven"],["Borussia Dortmund","Atlético Madrid"]],[["Liverpool","Borussia Dortmund"],["Ajax","Eintracht Frankfurt"],["Arsenal","Olympiacos"],["Pafos","Athletic Club"],["Marseille","Tottenham Hotspur"],["Paris Saint-Germain","Atalanta"],["Juventus","Club Brugge"],["Newcastle United","Real Madrid"],["PSV Eindhoven","Kairat Almaty"],["Slavia Praha","Bodø/Glimt"],["Qarabağ","Atlético Madrid"],["Bayer Leverkusen","Galatasaray"],["Sporting CP","Villarreal"],["Bayern München","Chelsea"],["Copenhagen","Napoli"],["Monaco","Inter"],["Union Saint-Gilloise","Benfica"],["Manchester City","Barcelona"]]],[[["Inter","Qarabağ"],["Ajax","Slavia Praha"],["PSV Eindhoven","Copenhagen"],["Tottenham Hotspur","Borussia Dortmund"],["Napoli","Bayern München"],["Atlético Madrid","Atalanta"],["Newcastle United","Marseille"],["Eintracht Frankfurt","Athletic Club"],["Olympiacos","Paris Saint-Germain"],["Bodø/Glimt","Liverpool"],["Bayer Leverkusen","Juventus"],["Club Brugge","Monaco"],["Benfica","Chelsea"],["Villarreal","Galatasaray"],["Kairat Almaty","Sporting CP"],["Arsenal","Real Madrid"],["Pafos","Union Saint-Gilloise"],["Barcelona","Manchester City"]],[["Barcelona","Slavia Praha"],["Union Saint-Gilloise","PSV Eindhoven"],["Newcastle United","Borussia Dortmund"],["Copenhagen","Olympiacos"],["Bayer Leverkusen","Tottenham Hotspur"],["Qarabağ","Real Madrid"],["Villarreal","Marseille"],["Sporting CP","Eintracht Frankfurt"],["Kairat Almaty","Galatasaray"],["Chelsea","Paris Saint-Germain"],["Athletic Club","Atalanta"],["Arsenal","Pafos"],["Monaco","Juventus"],["Benfica","Napoli"],["Club Brugge","Bodø/Glimt"],["Ajax","Manchester City"],["Liverpool","Atlético Madrid"],["Inter","Bayern München"]],[["Union Saint-Gilloise","Barcelona"],["Borussia Dortmund","Copenhagen"],["Olympiacos","Benfica"],["PSV Eindhoven","Real Madrid"],["Napoli","Arsenal"],["Bayern München","Newcastle United"],["Paris Saint-Germain","Atalanta"],["Villarreal","Eintracht Frankfurt"],["Marseille","Juventus"],["Bayer Leverkusen","Qarabağ"],["Liverpool","Inter"],["Galatasaray","Ajax"],["Manchester City","Monaco"],["Slavia Praha","Club Brugge"],["Athletic Club","Bodø/Glimt"],["Pafos","Tottenham Hotspur"],["Atlético Madrid","Kairat Almaty"],["Sporting CP","Chelsea"]],[["Newcastle United","Club Brugge"],["Atlético Madrid","Borussia Dortmund"],["Marseille","Napoli"],["Qarabağ","Athletic Club"],["Bayern München","Sporting CP"],["Liverpool","PSV Eindhoven"],["Real Madrid","Pafos"],["Benfica","Bayer Leverkusen"],["Juventus","Olympiacos"],["Chelsea","Ajax"],["Galatasaray","Paris Saint-Germain"],["Atalanta","Barcelona"],["Arsenal","Slavia Praha"],["Copenhagen","Eintracht Frankfurt"],["Tottenham Hotspur","Kairat Almaty"],["Villarreal","Manchester City"],["Bodø/Glimt","Union Saint-Gilloise"],["Monaco","Inter"]],[["Manchester City","Club Brugge"],["Marseille","Barcelona"],["Kairat Almaty","Liverpool"],["Juventus","Union Saint-Gilloise"],["Sporting CP","Pafos"],["Athletic Club","Bayern München"],["Paris Saint-Germain","Borussia Dortmund"],["Ajax","Atalanta"],["Arsenal","Benfica"],["Monaco","Newcastle United"],["Galatasaray","Qarabağ"],["Copenhagen","Chelsea"],["Bodø/Glimt","Bayer Leverkusen"],["Napoli","Olympiacos"],["Tottenham Hotspur","Villarreal"],["Slavia Praha","Inter"],["PSV Eindhoven","Atlético Madrid"],["Real Madrid","Eintracht Frankfurt"]],[["Eintracht Frankfurt","Liverpool"],["Manchester City","Real Madrid"],["Union Saint-Gilloise","Villarreal"],["Atalanta","Copenhagen"],["Atlético Madrid","Sporting CP"],["Club Brugge","Inter"],["Kairat Almaty","Benfica"],["Olympiacos","Athletic Club"],["Borussia Dortmund","Arsenal"],["Bodø/Glimt","PSV Eindhoven"],["Galatasaray","Bayer Leverkusen"],["Paris Saint-Germain","Napoli"],["Bayern München","Chelsea"],["Newcastle United","Pafos"],["Ajax","Monaco"],["Barcelona","Juventus"],["Slavia Praha","Tottenham Hotspur"],["Marseille","Qarabağ"]],[["Benfica","Newcastle United"],["Eintracht Frankfurt","Ajax"],["Manchester City","Olympiacos"],["Borussia Dortmund","Marseille"],["Paris Saint-Germain","Kairat Almaty"],["Inter","Villarreal"],["Club Brugge","Arsenal"],["Atalanta","PSV Eindhoven"],["Qarabağ","Napoli"],["Tottenham Hotspur","Sporting CP"],["Athletic Club","Copenhagen"],["Monaco","Slavia Praha"],["Juventus","Bayern München"],["Pafos","Atlético Madrid"],["Chelsea","Bayer Leverkusen"],["Real Madrid","Bodø/Glimt"],["Liverpool","Union Saint-Gilloise"],["Barcelona","Galatasaray"]],[["Atalanta","Villarreal"],["Slavia Praha","Newcastle United"],["Bayer Leverkusen","Paris Saint-Germain"],["Napoli","Galatasaray"],["Eintracht Frankfurt","Club Brugge"],["Olympiacos","Ajax"],["Inter","Tottenham Hotspur"],["PSV Eindhoven","Marseille"],["Real Madrid","Liverpool"],["Union Saint-Gilloise","Kairat Almaty"],["Juventus","Atlético Madrid"],["Chelsea","Athletic Club"],["Qarabağ","Arsenal"],["Bayern München","Benfica"],["Sporting CP","Bodø/Glimt"],["Pafos","Manchester City"],["Copenhagen","Monaco"],["Borussia Dortmund","Barcelona"]]]];
-
-const UCL_STAGE_WORDS = { league:10, playoff:15, ro16:18, qf:20, sf:22, final:25 };
-const UCL_STAGE_NAMES = {
-  league:'Lig Aşaması', playoff:'Eleme Aşaması Play-off', ro16:'Son 16 Turu',
-  qf:'Çeyrek Final', sf:'Yarı Final', final:'Şampiyonlar Ligi Finali', won:'Şampiyon'
-};
-
-let diceUcl = {
-  active:false, playerTeam:null, stage:'league', leagueMatchIndex:0, standings:{}, schedule:[], leagueRounds:[],
-  opponent:null, home:true, wordCount:10, preMatchCorrect:0, preMatchTotal:0,
-  playerDice:[], opponentDice:[], playerScore:0, opponentScore:0,
-  extraTimePlayer:0, extraTimeOpponent:0, rolled:false, rolling:false,
-  rerollUsed:false, rerollFailed:false, rerollQueue:[], rerollIndex:0,
-  rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
-  rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
-  finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-  knockoutField:[], currentRoundPairings:[]
-};
-
-
-// =============================================================
-// LEXICON LEAGUE — 18 TAKIM / 34 HAFTA / ZAR & MENAJERLİK RPG
-// =============================================================
-const LL_SAVE_KEY = 'lexicon_league_save_v1';
-const LL_POSITIONS = ['Kaleci','Orta Saha','Forvet'];
-const LL_POSITION_ICONS = {'Kaleci':'🧤','Orta Saha':'⚙️','Forvet':'⚽'};
-const LL_RARITY_LABELS = {common:'Yaygın',rare:'Nadir',epic:'Destansı',legendary:'Efsanevi'};
-const LL_RARITY_WEIGHT = {common:50,rare:30,epic:15,legendary:5};
-const LL_TEAMS = [
-  {name:'Galatasaray',short:'GS',stars:3,icon:'🦁',logo:'assets/team-logos/galatasaray.png'},
-  {name:'Fenerbahçe',short:'FB',stars:3,icon:'🟡',logo:'assets/team-logos/fenerbahce.png'},
-  {name:'Beşiktaş',short:'BJK',stars:3,icon:'🦅',logo:'assets/team-logos/besiktas.png'},
-  {name:'Trabzonspor',short:'TS',stars:3,icon:'🌊',logo:'assets/team-logos/trabzonspor.png'},
-  {name:'Başakşehir',short:'BŞK',stars:2,icon:'🟠',logo:'assets/team-logos/basaksehir.png'},
-  {name:'Konyaspor',short:'KON',stars:2,icon:'🟢',logo:'assets/team-logos/konyaspor.png'},
-  {name:'Alanyaspor',short:'ALA',stars:2,icon:'🍊',logo:'assets/team-logos/alanyaspor.png'},
-  {name:'Kasımpaşa',short:'KAS',stars:2,icon:'⚓',logo:'assets/team-logos/kasimpasa.png'},
-  {name:'Göztepe',short:'GÖZ',stars:2,icon:'🔥',logo:'assets/team-logos/goztepe.png'},
-  {name:'Samsunspor',short:'SAM',stars:2,icon:'🔴',logo:'assets/team-logos/samsunspor.png'},
-  {name:'Ç. Rizespor',short:'RİZ',stars:2,icon:'🍵',logo:'assets/team-logos/rizespor.png'},
-  {name:'Eyüpspor',short:'EYP',stars:2,icon:'🟣',logo:'assets/team-logos/eyupspor.png'},
-  {name:'Amed SK',short:'AMED',stars:1,icon:'🟩',logo:'assets/team-logos/amed.png'},
-  {name:'Çorum FK',short:'ÇOR',stars:1,icon:'🔻',logo:'assets/team-logos/corum.png'},
-  {name:'Erzurumspor FK',short:'ERZ',stars:1,icon:'❄️',logo:'assets/team-logos/erzurumspor.png'},
-  {name:'Gaziantep FK',short:'GFK',stars:1,icon:'🌶️',logo:'assets/team-logos/gaziantep.png'},
-  {name:'Gençlerbirliği',short:'GB',stars:1,icon:'⚫',logo:'assets/team-logos/genclerbirligi.png'},
-  {name:'Kocaelispor',short:'KOC',stars:1,icon:'🐬',logo:'assets/team-logos/kocaelispor.png'}
-];
-const LL_CARD_POOL = [{"id":"C001","position":"Kaleci","name":"Kale Direği","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C009","position":"Kaleci","name":"Son Adam","minStar":1,"trigger":"Rakip zarı 6 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"common"},{"id":"C017","position":"Kaleci","name":"Sakin Kafa","minStar":1,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 1 azalt (mağlubiyeti hafifletir)","rarity":"common"},{"id":"C021","position":"Kaleci","name":"Reflex","minStar":1,"trigger":"Maç başında","effect":"1 rakip zarını gör (zar atılmadan önce)","rarity":"common"},{"id":"C025","position":"Kaleci","name":"Kale Duvarı","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥16 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C029","position":"Kaleci","name":"Penaltı Ustası","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"common"},{"id":"C033","position":"Kaleci","name":"Uzun Top","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"common"},{"id":"C041","position":"Kaleci","name":"Vuruşsuz Gece","minStar":1,"trigger":"Rakip zarı 1 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C045","position":"Orta Saha","name":"Metronom","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C049","position":"Orta Saha","name":"Çalım","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"common"},{"id":"C053","position":"Orta Saha","name":"Pas Ustası","minStar":1,"trigger":"Kendi zarın 4 ise","effect":"Diğer bir zarına +1 aktar","rarity":"common"},{"id":"C061","position":"Orta Saha","name":"Alan Hakimiyeti","minStar":1,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+1 sanal gol","rarity":"common"},{"id":"C065","position":"Orta Saha","name":"Kilitleme","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C069","position":"Orta Saha","name":"İkili Oyun","minStar":1,"trigger":"Kendi zarın 2 ise (çift sayı)","effect":"+1 sanal gol","rarity":"common"},{"id":"C073","position":"Orta Saha","name":"Sahayı Oku","minStar":1,"trigger":"Maç başında","effect":"Rakibin 1 kartının etkisini önceden gör","rarity":"common"},{"id":"C077","position":"Orta Saha","name":"Orta Saha Pres'i","minStar":1,"trigger":"Rakip zarı 3'in altındaysa","effect":"O zarı bloke et","rarity":"common"},{"id":"C081","position":"Forvet","name":"Golcü İçgüdüsü","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C087","position":"Forvet","name":"Son Vuruş","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"common"},{"id":"C091","position":"Forvet","name":"Frikik Ustası","minStar":1,"trigger":"Kendi zarın 5 ise","effect":"+1 sanal gol ekle","rarity":"common"},{"id":"C099","position":"Forvet","name":"Hat-trick Ruhu","minStar":1,"trigger":"Bu sezon 5+ galibiyet varsa","effect":"+1 sanal gol","rarity":"common"},{"id":"C103","position":"Forvet","name":"Panenka","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C107","position":"Forvet","name":"Ofsayt Tuzağı","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"common"},{"id":"C111","position":"Forvet","name":"Bitiricilik","minStar":1,"trigger":"Kendi 3 zar toplamı ≥16","effect":"+1 sanal gol","rarity":"common"},{"id":"C115","position":"Forvet","name":"Son Dakika Golü","minStar":1,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"common"},{"id":"C120","position":"Evrensel","name":"Moral Bozukluğu","minStar":1,"trigger":"Rakip art arda 2 maç kaybettiyse","effect":"Rakibin bu maçtaki en yüksek zarı 1 azalır","rarity":"common"},{"id":"C121","position":"Evrensel","name":"Ev Sahibi Avantajı","minStar":1,"trigger":"Maç senin evinde oynanıyorsa","effect":"Kendi 3 zarından birine +1","rarity":"common"},{"id":"C122","position":"Evrensel","name":"Deplasman Ruhu","minStar":1,"trigger":"Maç rakip sahasında oynanıyorsa","effect":"Rakibin en yüksek zarı 1 azalır","rarity":"common"},{"id":"C126","position":"Evrensel","name":"Taktik Tahtası","minStar":1,"trigger":"Transfer haftasında bu kart alınırsa","effect":"Bedeli 100 AP'ye iner (150 değil)","rarity":"common"},{"id":"C127","position":"Evrensel","name":"Sakatlık Şansı","minStar":1,"trigger":"Rakip zarı 1 gelirse","effect":"Rakip bu zarı bir sonraki maça kilitli taşır (aynı sonuç tekrar)","rarity":"common"},{"id":"C128","position":"Evrensel","name":"Form Tutmuyor","minStar":1,"trigger":"Kendi zarın 3 maç üst üste 6 gelirse","effect":"Bu kart geçici olarak 1 maç devre dışı kalır (dengeleme)","rarity":"common"},{"id":"C129","position":"Evrensel","name":"VAR İncelemesi","minStar":1,"trigger":"Berabere biten herhangi bir zar düellosunda","effect":"Zar yeniden atılır (ücretsiz tekrar)","rarity":"common"},{"id":"C131","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C135","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥6 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C139","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C143","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C147","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 3 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C151","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C155","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C159","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥3 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C163","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C167","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C171","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 3 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C175","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C179","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 3 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C183","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥4 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C187","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C191","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C195","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C199","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C203","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 2 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C207","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥3 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C211","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C215","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C219","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 3 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C223","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C227","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 4 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C231","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥2 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C235","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C239","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C243","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 4 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C247","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C251","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C255","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥6 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C259","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C263","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C267","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C271","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C275","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C279","position":"Kaleci","name":"Kale Duvarı (Efsane)","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥4 ise","effect":"1 sanal gol elenir","rarity":"common"},{"id":"C283","position":"Orta Saha","name":"Metronom (Sert)","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"common"},{"id":"C287","position":"Orta Saha","name":"Kilitleme (Gelişmiş)","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"common"},{"id":"C291","position":"Forvet","name":"Golcü İçgüdüsü (Efsane)","minStar":1,"trigger":"Kendi zarın 5 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"common"},{"id":"C295","position":"Forvet","name":"Panenka (Sert)","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"common"},{"id":"C299","position":"Kaleci","name":"Kale Direği (Gelişmiş)","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"common"},{"id":"C002","position":"Kaleci","name":"Kale Direği","minStar":1,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"rare"},{"id":"C003","position":"Kaleci","name":"Kale Direği","minStar":1,"trigger":"Kendi zarın 2 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"rare"},{"id":"C010","position":"Kaleci","name":"Son Adam","minStar":1,"trigger":"Rakip zarı 5 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C011","position":"Kaleci","name":"Son Adam","minStar":1,"trigger":"Rakip zarı 6 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C018","position":"Kaleci","name":"Sakin Kafa","minStar":1,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 1 azalt (mağlubiyeti hafifletir)","rarity":"rare"},{"id":"C022","position":"Kaleci","name":"Reflex","minStar":1,"trigger":"Maç başında","effect":"1 rakip zarını gör (zar atılmadan önce)","rarity":"rare"},{"id":"C026","position":"Kaleci","name":"Kale Duvarı","minStar":1,"trigger":"Rakibin 3 zar toplamı ≥15 ise","effect":"1 sanal gol elenir","rarity":"rare"},{"id":"C030","position":"Kaleci","name":"Penaltı Ustası","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C034","position":"Kaleci","name":"Uzun Top","minStar":1,"trigger":"Kendi zarın 5 gelirse","effect":"Forvet zarına +1 aktar","rarity":"rare"},{"id":"C035","position":"Kaleci","name":"Uzun Top","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"rare"},{"id":"C042","position":"Kaleci","name":"Vuruşsuz Gece","minStar":1,"trigger":"Rakip zarı 2 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"rare"},{"id":"C046","position":"Orta Saha","name":"Metronom","minStar":1,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"rare"},{"id":"C050","position":"Orta Saha","name":"Çalım","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C054","position":"Orta Saha","name":"Pas Ustası","minStar":1,"trigger":"Kendi zarın 4 ise","effect":"Diğer bir zarına +1 aktar","rarity":"rare"},{"id":"C055","position":"Orta Saha","name":"Pas Ustası","minStar":1,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +1 aktar","rarity":"rare"},{"id":"C062","position":"Orta Saha","name":"Alan Hakimiyeti","minStar":1,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+1 sanal gol","rarity":"rare"},{"id":"C066","position":"Orta Saha","name":"Kilitleme","minStar":1,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 1 düşür","rarity":"rare"},{"id":"C070","position":"Orta Saha","name":"İkili Oyun","minStar":1,"trigger":"Kendi zarın 4 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C074","position":"Orta Saha","name":"Sahayı Oku","minStar":1,"trigger":"Maç başında","effect":"Rakibin 1 kartının etkisini önceden gör","rarity":"rare"},{"id":"C078","position":"Orta Saha","name":"Orta Saha Pres'i","minStar":1,"trigger":"Rakip zarı 3'in altındaysa","effect":"O zarı bloke et","rarity":"rare"},{"id":"C082","position":"Forvet","name":"Golcü İçgüdüsü","minStar":1,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"rare"},{"id":"C088","position":"Forvet","name":"Son Vuruş","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C092","position":"Forvet","name":"Frikik Ustası","minStar":1,"trigger":"Kendi zarın 5 ise","effect":"+1 sanal gol ekle","rarity":"rare"},{"id":"C093","position":"Forvet","name":"Frikik Ustası","minStar":1,"trigger":"Kendi zarın 6 ise","effect":"+1 sanal gol ekle","rarity":"rare"},{"id":"C100","position":"Forvet","name":"Hat-trick Ruhu","minStar":1,"trigger":"Bu sezon 4+ galibiyet varsa","effect":"+1 sanal gol","rarity":"rare"},{"id":"C104","position":"Forvet","name":"Panenka","minStar":1,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"rare"},{"id":"C108","position":"Forvet","name":"Ofsayt Tuzağı","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C112","position":"Forvet","name":"Bitiricilik","minStar":1,"trigger":"Kendi 3 zar toplamı ≥15","effect":"+1 sanal gol","rarity":"rare"},{"id":"C116","position":"Forvet","name":"Son Dakika Golü","minStar":1,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"rare"},{"id":"C119","position":"Evrensel","name":"Şans Faktörü","minStar":1,"trigger":"Herhangi bir zarın herhangi bir maçında","effect":"%10 ihtimalle o düello otomatik kazanılır","rarity":"rare"},{"id":"C123","position":"Evrensel","name":"Soğuk Kanlılık","minStar":1,"trigger":"Skor 0-0 giderken","effect":"İlk gole giden taraf +1 ekstra sanal gol kazanır (sen atarsan)","rarity":"rare"},{"id":"C124","position":"Evrensel","name":"Yıldız Oyuncu","minStar":1,"trigger":"3 yıldızlı takımlarda","effect":"Bu zarın minimum değeri 4 olur (1-3 gelmez)","rarity":"rare"},{"id":"C130","position":"Evrensel","name":"Kaptanlık Pazubandı","minStar":1,"trigger":"Sen seçtiğin 1 zarında","effect":"O zar %50 ihtimalle rakibin zarından bağımsız otomatik +1 sayılır","rarity":"rare"},{"id":"C132","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 5 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C136","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C140","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C144","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 2 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C148","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C152","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C156","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 3 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C160","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C164","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C168","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 3 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C172","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C176","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C180","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 1 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C184","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C188","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C192","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 6 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C196","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C200","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C204","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 2 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C208","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C212","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C216","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 1 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C220","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C224","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C228","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 4 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C232","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C236","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C240","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 5 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C244","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C248","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C252","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 2 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C256","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C260","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C264","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 3 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C268","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C272","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C276","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 3 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C280","position":"Kaleci","name":"Penaltı Ustası (Genç)","minStar":1,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"rare"},{"id":"C284","position":"Orta Saha","name":"Çalım (Zeki)","minStar":1,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"rare"},{"id":"C288","position":"Orta Saha","name":"İkili Oyun (Ustalık)","minStar":1,"trigger":"Kendi zarın 6 ise (çift sayı)","effect":"+1 sanal gol","rarity":"rare"},{"id":"C292","position":"Forvet","name":"Son Vuruş (Genç)","minStar":1,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 2'e çıkar","rarity":"rare"},{"id":"C296","position":"Forvet","name":"Ofsayt Tuzağı (Zeki)","minStar":1,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"rare"},{"id":"C300","position":"Kaleci","name":"Son Adam (Ustalık)","minStar":1,"trigger":"Rakip zarı 5 gelirse","effect":"Rakibin o zarını 1 azalt","rarity":"rare"},{"id":"C004","position":"Kaleci","name":"Kale Direği","minStar":2,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"epic"},{"id":"C005","position":"Kaleci","name":"Kale Direği","minStar":2,"trigger":"Kendi zarın 2 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"epic"},{"id":"C012","position":"Kaleci","name":"Son Adam","minStar":2,"trigger":"Rakip zarı 5 gelirse","effect":"Rakibin o zarını 2 azalt","rarity":"epic"},{"id":"C013","position":"Kaleci","name":"Son Adam","minStar":2,"trigger":"Rakip zarı 6 gelirse","effect":"Rakibin o zarını 2 azalt","rarity":"epic"},{"id":"C019","position":"Kaleci","name":"Sakin Kafa","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C023","position":"Kaleci","name":"Reflex","minStar":2,"trigger":"Maç başında","effect":"2 rakip zarını gör (zar atılmadan önce)","rarity":"epic"},{"id":"C027","position":"Kaleci","name":"Kale Duvarı","minStar":2,"trigger":"Rakibin 3 zar toplamı ≥14 ise","effect":"1 sanal gol elenir","rarity":"epic"},{"id":"C031","position":"Kaleci","name":"Penaltı Ustası","minStar":2,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"epic"},{"id":"C036","position":"Kaleci","name":"Uzun Top","minStar":2,"trigger":"Kendi zarın 5 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C037","position":"Kaleci","name":"Uzun Top","minStar":2,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C043","position":"Kaleci","name":"Vuruşsuz Gece","minStar":2,"trigger":"Rakip zarı 2 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"epic"},{"id":"C047","position":"Orta Saha","name":"Metronom","minStar":2,"trigger":"Her maç başında","effect":"1 ekstra ücretsiz reroll hakkı","rarity":"epic"},{"id":"C051","position":"Orta Saha","name":"Çalım","minStar":2,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"epic"},{"id":"C056","position":"Orta Saha","name":"Pas Ustası","minStar":2,"trigger":"Kendi zarın 4 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C057","position":"Orta Saha","name":"Pas Ustası","minStar":2,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C063","position":"Orta Saha","name":"Alan Hakimiyeti","minStar":2,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+1 sanal gol","rarity":"epic"},{"id":"C067","position":"Orta Saha","name":"Kilitleme","minStar":2,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 2 düşür","rarity":"epic"},{"id":"C071","position":"Orta Saha","name":"İkili Oyun","minStar":2,"trigger":"Kendi zarın 6 ise (çift sayı)","effect":"+1 sanal gol","rarity":"epic"},{"id":"C075","position":"Orta Saha","name":"Sahayı Oku","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C079","position":"Orta Saha","name":"Orta Saha Pres'i","minStar":2,"trigger":"Rakip zarı 4'in altındaysa","effect":"O zarı bloke et","rarity":"epic"},{"id":"C083","position":"Forvet","name":"Golcü İçgüdüsü","minStar":2,"trigger":"Kendi zarın 5 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"epic"},{"id":"C084","position":"Forvet","name":"Golcü İçgüdüsü","minStar":2,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x2 say (çarpan)","rarity":"epic"},{"id":"C089","position":"Forvet","name":"Son Vuruş","minStar":2,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 3'e çıkar","rarity":"epic"},{"id":"C094","position":"Forvet","name":"Frikik Ustası","minStar":2,"trigger":"Kendi zarın 5 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C095","position":"Forvet","name":"Frikik Ustası","minStar":2,"trigger":"Kendi zarın 6 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C101","position":"Forvet","name":"Hat-trick Ruhu","minStar":2,"trigger":"Bu sezon 3+ galibiyet varsa","effect":"+1 sanal gol","rarity":"epic"},{"id":"C105","position":"Forvet","name":"Panenka","minStar":2,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"epic"},{"id":"C109","position":"Forvet","name":"Ofsayt Tuzağı","minStar":2,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"epic"},{"id":"C113","position":"Forvet","name":"Bitiricilik","minStar":2,"trigger":"Kendi 3 zar toplamı ≥14","effect":"+1 sanal gol","rarity":"epic"},{"id":"C117","position":"Forvet","name":"Son Dakika Golü","minStar":2,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"epic"},{"id":"C125","position":"Evrensel","name":"Yedek Kulübesi","minStar":2,"trigger":"Maç kaybedilirse","effect":"Gelecek maçta bu kart 1 kez daha kullanılabilir","rarity":"epic"},{"id":"C133","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C137","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 5 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C141","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C145","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C149","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C153","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥1","effect":"+1 sanal gol","rarity":"epic"},{"id":"C157","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C161","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C165","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 4 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C169","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C173","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C177","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥6","effect":"+1 sanal gol","rarity":"epic"},{"id":"C181","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C185","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 4 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C189","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 3 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C193","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C197","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 1 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C201","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥5","effect":"+1 sanal gol","rarity":"epic"},{"id":"C205","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C209","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C213","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 3 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C217","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C221","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C225","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥2","effect":"+1 sanal gol","rarity":"epic"},{"id":"C229","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C233","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C237","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C241","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C245","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C249","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥1","effect":"+1 sanal gol","rarity":"epic"},{"id":"C253","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C257","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 5 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C261","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C265","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C269","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 1 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C273","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥6","effect":"+1 sanal gol","rarity":"epic"},{"id":"C277","position":"Kaleci","name":"Sakin Kafa (Şampiyon)","minStar":2,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 2 azalt (mağlubiyeti hafifletir)","rarity":"epic"},{"id":"C281","position":"Kaleci","name":"Uzun Top (Deneyimli)","minStar":2,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +1 aktar","rarity":"epic"},{"id":"C285","position":"Orta Saha","name":"Pas Ustası (Hızlı)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"Diğer bir zarına +1 aktar","rarity":"epic"},{"id":"C289","position":"Orta Saha","name":"Sahayı Oku (Şampiyon)","minStar":2,"trigger":"Maç başında","effect":"Rakibin 2 kartının etkisini önceden gör","rarity":"epic"},{"id":"C293","position":"Forvet","name":"Frikik Ustası (Deneyimli)","minStar":2,"trigger":"Kendi zarın 2 ise","effect":"+1 sanal gol ekle","rarity":"epic"},{"id":"C297","position":"Forvet","name":"Bitiricilik (Hızlı)","minStar":2,"trigger":"Kendi 3 zar toplamı ≥5","effect":"+1 sanal gol","rarity":"epic"},{"id":"C006","position":"Kaleci","name":"Kale Direği","minStar":3,"trigger":"Kendi zarın 1 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"legendary"},{"id":"C007","position":"Kaleci","name":"Kale Direği","minStar":3,"trigger":"Kendi zarın 2 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"legendary"},{"id":"C008","position":"Kaleci","name":"Kale Direği","minStar":3,"trigger":"Kendi zarın 3 gelirse","effect":"O zarı bloke et (düello iptal, berabere sayılır)","rarity":"legendary"},{"id":"C014","position":"Kaleci","name":"Son Adam","minStar":3,"trigger":"Rakip zarı 4 gelirse","effect":"Rakibin o zarını 2 azalt","rarity":"legendary"},{"id":"C015","position":"Kaleci","name":"Son Adam","minStar":3,"trigger":"Rakip zarı 5 gelirse","effect":"Rakibin o zarını 2 azalt","rarity":"legendary"},{"id":"C016","position":"Kaleci","name":"Son Adam","minStar":3,"trigger":"Rakip zarı 6 gelirse","effect":"Rakibin o zarını 2 azalt","rarity":"legendary"},{"id":"C020","position":"Kaleci","name":"Sakin Kafa","minStar":3,"trigger":"Kendi zarın rakibinkinden düşükse","effect":"Farkı 3 azalt (mağlubiyeti hafifletir)","rarity":"legendary"},{"id":"C024","position":"Kaleci","name":"Reflex","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C028","position":"Kaleci","name":"Kale Duvarı","minStar":3,"trigger":"Rakibin 3 zar toplamı ≥13 ise","effect":"2 sanal gol elenir","rarity":"legendary"},{"id":"C032","position":"Kaleci","name":"Penaltı Ustası","minStar":3,"trigger":"Kaleci düellosu berabere biterse","effect":"Otomatik kaleci galibiyeti sayılır","rarity":"legendary"},{"id":"C038","position":"Kaleci","name":"Uzun Top","minStar":3,"trigger":"Kendi zarın 4 gelirse","effect":"Forvet zarına +2 aktar","rarity":"legendary"},{"id":"C039","position":"Kaleci","name":"Uzun Top","minStar":3,"trigger":"Kendi zarın 5 gelirse","effect":"Forvet zarına +2 aktar","rarity":"legendary"},{"id":"C040","position":"Kaleci","name":"Uzun Top","minStar":3,"trigger":"Kendi zarın 6 gelirse","effect":"Forvet zarına +2 aktar","rarity":"legendary"},{"id":"C044","position":"Kaleci","name":"Vuruşsuz Gece","minStar":3,"trigger":"Rakip zarı 3 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C048","position":"Orta Saha","name":"Metronom","minStar":3,"trigger":"Her maç başında","effect":"2 ekstra ücretsiz reroll hakkı","rarity":"legendary"},{"id":"C052","position":"Orta Saha","name":"Çalım","minStar":3,"trigger":"Kendi zarın rakibe eşitse","effect":"Beraberliği galibiyet say","rarity":"legendary"},{"id":"C058","position":"Orta Saha","name":"Pas Ustası","minStar":3,"trigger":"Kendi zarın 3 ise","effect":"Diğer bir zarına +2 aktar","rarity":"legendary"},{"id":"C059","position":"Orta Saha","name":"Pas Ustası","minStar":3,"trigger":"Kendi zarın 4 ise","effect":"Diğer bir zarına +2 aktar","rarity":"legendary"},{"id":"C060","position":"Orta Saha","name":"Pas Ustası","minStar":3,"trigger":"Kendi zarın 5 ise","effect":"Diğer bir zarına +2 aktar","rarity":"legendary"},{"id":"C064","position":"Orta Saha","name":"Alan Hakimiyeti","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C068","position":"Orta Saha","name":"Kilitleme","minStar":3,"trigger":"Rakibin en yüksek zarına karşı","effect":"O zarı 2 düşür","rarity":"legendary"},{"id":"C072","position":"Orta Saha","name":"İkili Oyun","minStar":3,"trigger":"Kendi zarın 2 ise (çift sayı)","effect":"+1 sanal gol","rarity":"legendary"},{"id":"C076","position":"Orta Saha","name":"Sahayı Oku","minStar":3,"trigger":"Maç başında","effect":"Rakibin 3 kartının etkisini önceden gör","rarity":"legendary"},{"id":"C080","position":"Orta Saha","name":"Orta Saha Pres'i","minStar":3,"trigger":"Rakip zarı 4'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C085","position":"Forvet","name":"Golcü İçgüdüsü","minStar":3,"trigger":"Kendi zarın 5 gelirse","effect":"O düelloyu x3 say (çarpan)","rarity":"legendary"},{"id":"C086","position":"Forvet","name":"Golcü İçgüdüsü","minStar":3,"trigger":"Kendi zarın 6 gelirse","effect":"O düelloyu x3 say (çarpan)","rarity":"legendary"},{"id":"C090","position":"Forvet","name":"Son Vuruş","minStar":3,"trigger":"Kendi zarın rakibi 1 farkla yenerse","effect":"Farkı 3'e çıkar","rarity":"legendary"},{"id":"C096","position":"Forvet","name":"Frikik Ustası","minStar":3,"trigger":"Kendi zarın 4 ise","effect":"+2 sanal gol ekle","rarity":"legendary"},{"id":"C097","position":"Forvet","name":"Frikik Ustası","minStar":3,"trigger":"Kendi zarın 5 ise","effect":"+2 sanal gol ekle","rarity":"legendary"},{"id":"C098","position":"Forvet","name":"Frikik Ustası","minStar":3,"trigger":"Kendi zarın 6 ise","effect":"+2 sanal gol ekle","rarity":"legendary"},{"id":"C102","position":"Forvet","name":"Hat-trick Ruhu","minStar":3,"trigger":"Bu sezon 2+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C106","position":"Forvet","name":"Panenka","minStar":3,"trigger":"Rakip aynı sayıyı 2. kez atarsa","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C110","position":"Forvet","name":"Ofsayt Tuzağı","minStar":3,"trigger":"Rakibin en düşük zarına karşı","effect":"O zarı yeniden attır","rarity":"legendary"},{"id":"C114","position":"Forvet","name":"Bitiricilik","minStar":3,"trigger":"Kendi 3 zar toplamı ≥13","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C118","position":"Forvet","name":"Son Dakika Golü","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C134","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C138","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 4 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C142","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C146","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 4'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C150","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 2+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C154","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C158","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C162","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 4 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C166","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C170","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 5'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C174","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 6+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C178","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C182","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C186","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 6 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C190","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C194","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 6'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C198","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 5+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C202","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C206","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C210","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 5 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C214","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C218","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 4'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C222","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 5+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C226","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C230","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C234","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 2 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C238","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C242","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 5'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C246","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 2+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C250","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C254","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C258","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 1 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C262","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C266","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 1'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C270","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 6+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C274","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"},{"id":"C278","position":"Kaleci","name":"Reflex (Klasik)","minStar":3,"trigger":"Maç başında","effect":"3 rakip zarını gör (zar atılmadan önce)","rarity":"legendary"},{"id":"C282","position":"Kaleci","name":"Vuruşsuz Gece (Elit)","minStar":3,"trigger":"Rakip zarı 6 veya altı ise","effect":"O düello otomatik kazanılır","rarity":"legendary"},{"id":"C286","position":"Orta Saha","name":"Alan Hakimiyeti (Soğukkanlı)","minStar":3,"trigger":"Kendi 3 zar toplamı rakibin toplamından fazlaysa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C290","position":"Orta Saha","name":"Orta Saha Pres'i (Klasik)","minStar":3,"trigger":"Rakip zarı 6'in altındaysa","effect":"O zarı bloke et","rarity":"legendary"},{"id":"C294","position":"Forvet","name":"Hat-trick Ruhu (Elit)","minStar":3,"trigger":"Bu sezon 2+ galibiyet varsa","effect":"+2 sanal gol","rarity":"legendary"},{"id":"C298","position":"Forvet","name":"Son Dakika Golü (Soğukkanlı)","minStar":3,"trigger":"Maç öncesi skor berabereyse","effect":"Bu düello otomatik kazanılır","rarity":"legendary"}];
-LL_CARD_POOL.forEach(card=>{
-  const base=card.name.replace(/\s*\([^)]*\)\s*$/,'').trim(),amount=Number(card.effect.match(/\d+/)?.[0]||1);
-  if(base==='Reflex'){card.trigger='Her maç başında';card.effect=`${amount} ekstra ücretsiz reroll hakkı`;}
-  if(base==='Sahayı Oku'){card.trigger='Her maç başında';card.effect=`Rakibin tetiklenmeye hazır en güçlü ${amount} kartını bu maç etkisizleştir`;}
-  if(base==='Yedek Kulübesi'){card.trigger='Maç kaybedilirse';card.effect='Gelecek maça +1 ücretsiz reroll hakkı taşı';}
-  if(base==='Form Tutmuyor'){card.trigger='Bu mevki zarı 3 maç üst üste 6 gelirse';card.effect='Gelecek maç aynı mevki zarına +1';}
-  if(base==='Ev Sahibi Avantajı')card.effect='Kendi en düşük zarına +1';
-  if(base==='Kaptanlık Pazubandı'){card.trigger='Her maç başında';card.effect='Kendi en düşük zarına %50 ihtimalle +1';}
-  if(base==='Şans Faktörü'){card.trigger='Her maç başında';card.effect='%10 ihtimalle rastgele bir düelloyu otomatik kazan';}
-  if(base==='Sakatlık Şansı')card.trigger='Rakibin üç zarından herhangi biri 1 gelirse';
-});
-
-// Kart havuzunun ilk sürümündeki 300 kayıt, aynı işlevlerin çok sayıda kopyasını
-// ve nadirliğiyle uyuşmayan rastgele eşikleri içeriyordu. Eski kimlikleri yalnızca
-// kayıtlı kariyerleri yeni dengeli karşılıklarına taşımak için saklıyoruz.
-const LL_LEGACY_CARD_POOL=LL_CARD_POOL.map(card=>({...card}));
-const LL_BALANCED_CARD_POOL=[
-  // Kaleci
-  {id:'RBK01',position:'Kaleci',name:'Kale Direği',minStar:1,trigger:'Kendi zarın 1 gelirse',effect:'O zarı bloke et (düello iptal, berabere sayılır)',rarity:'common'},
-  {id:'RBK02',position:'Kaleci',name:'Son Adam',minStar:1,trigger:'Rakip zarı 6 gelirse',effect:'Rakibin o zarını 1 azalt',rarity:'common'},
-  {id:'RBK03',position:'Kaleci',name:'Son Adam',minStar:2,trigger:'Rakip zarı 4, 5 veya 6 gelirse',effect:'Rakibin o zarını 2 azalt',rarity:'epic'},
-  {id:'RBK04',position:'Kaleci',name:'Sakin Kafa',minStar:1,trigger:'Kendi zarın rakibinkinden düşükse',effect:'Farkı 1 azalt (mağlubiyeti hafifletir)',rarity:'common'},
-  {id:'RBK05',position:'Kaleci',name:'Sakin Kafa',minStar:1,trigger:'Kendi zarın rakibinkinden düşükse',effect:'Farkı 2 azalt (mağlubiyeti hafifletir)',rarity:'rare'},
-  {id:'RBK06',position:'Kaleci',name:'Sakin Kafa',minStar:2,trigger:'Kendi zarın rakibinkinden düşükse',effect:'Farkı 3 azalt (mağlubiyeti hafifletir)',rarity:'epic'},
-  {id:'RBK07',position:'Kaleci',name:'Refleks',logicName:'Reflex',minStar:1,trigger:'Her maç başında',effect:'Yalnızca Kaleci zarına 1 ekstra ücretsiz reroll hakkı',rarity:'rare'},
-  {id:'RBK08',position:'Kaleci',name:'Refleks',logicName:'Reflex',minStar:2,trigger:'Her maç başında',effect:'Yalnızca Kaleci zarına 2 ekstra ücretsiz reroll hakkı',rarity:'epic'},
-  {id:'RBK09',position:'Kaleci',name:'Refleks',logicName:'Reflex',minStar:3,trigger:'Her maç başında',effect:'Yalnızca Kaleci zarına 3 ekstra ücretsiz reroll hakkı',rarity:'legendary'},
-  {id:'RBK10',position:'Kaleci',name:'Kale Duvarı',minStar:1,trigger:'Rakibin 3 zar toplamı ≥15 ise',effect:'1 sanal gol elenir',rarity:'rare'},
-  {id:'RBK11',position:'Kaleci',name:'Kale Duvarı',minStar:2,trigger:'Rakibin 3 zar toplamı ≥14 ise',effect:'1 sanal gol elenir',rarity:'epic'},
-  {id:'RBK12',position:'Kaleci',name:'Kale Duvarı',minStar:3,trigger:'Rakibin 3 zar toplamı ≥13 ise',effect:'2 sanal gol elenir',rarity:'legendary'},
-  {id:'RBK13',position:'Kaleci',name:'Penaltı Ustası',minStar:1,trigger:'Kaleci düellosu berabere biterse',effect:'Otomatik kaleci galibiyeti sayılır',rarity:'rare'},
-  {id:'RBK14',position:'Kaleci',name:'Uzun Top',minStar:1,trigger:'Kendi zarın 5 veya 6 gelirse',effect:'Forvet zarına +1 aktar',rarity:'rare'},
-  {id:'RBK15',position:'Kaleci',name:'Uzun Top',minStar:2,trigger:'Kendi zarın 4, 5 veya 6 gelirse',effect:'Forvet zarına +2 aktar',rarity:'epic'},
-  {id:'RBK16',position:'Kaleci',name:'Vuruşsuz Gece',minStar:1,trigger:'Rakip zarı 1 veya altı ise',effect:'O düello berabere sayılır',rarity:'common'},
-  {id:'RBK17',position:'Kaleci',name:'Vuruşsuz Gece',minStar:1,trigger:'Rakip zarı 2 veya altı ise',effect:'O düello berabere sayılır',rarity:'rare'},
-  {id:'RBK18',position:'Kaleci',name:'Vuruşsuz Gece',minStar:2,trigger:'Rakip zarı 3 veya altı ise',effect:'O düello berabere sayılır',rarity:'epic'},
-  {id:'RBK19',position:'Kaleci',name:'Vuruşsuz Gece',minStar:3,trigger:'Rakip zarı 4 veya altı ise',effect:'O düello berabere sayılır',rarity:'legendary'},
-
-  // Orta Saha
-  {id:'RBM01',position:'Orta Saha',name:'Metronom',minStar:1,trigger:'Her maç başında',effect:'Yalnızca Orta Saha zarına 1 ekstra ücretsiz reroll hakkı',rarity:'rare'},
-  {id:'RBM02',position:'Orta Saha',name:'Metronom',minStar:2,trigger:'Her maç başında',effect:'Yalnızca Orta Saha zarına 2 ekstra ücretsiz reroll hakkı',rarity:'epic'},
-  {id:'RBM03',position:'Orta Saha',name:'Metronom',minStar:3,trigger:'Her maç başında',effect:'Yalnızca Orta Saha zarına 3 ekstra ücretsiz reroll hakkı',rarity:'legendary'},
-  {id:'RBM04',position:'Orta Saha',name:'Çalım',minStar:1,trigger:'Kendi zarın rakibe eşitse',effect:'Beraberliği galibiyet say',rarity:'rare'},
-  {id:'RBM05',position:'Orta Saha',name:'Pas Ustası',minStar:1,trigger:'Kendi zarın 4 veya 5 ise',effect:'Diğer bir zarına +1 aktar',rarity:'rare'},
-  {id:'RBM06',position:'Orta Saha',name:'Pas Ustası',minStar:2,trigger:'Kendi zarın 3, 4 veya 5 ise',effect:'Diğer bir zarına +2 aktar',rarity:'epic'},
-  {id:'RBM07',position:'Orta Saha',name:'Alan Hakimiyeti',minStar:2,trigger:'Kendi 3 zar toplamı rakibin toplamından fazlaysa',effect:'+1 sanal gol',rarity:'epic'},
-  {id:'RBM08',position:'Orta Saha',name:'Alan Hakimiyeti',minStar:3,trigger:'Kendi 3 zar toplamı rakibin toplamından fazlaysa',effect:'+2 sanal gol',rarity:'legendary'},
-  {id:'RBM09',position:'Orta Saha',name:'Kilitleme',minStar:2,trigger:'Her maç başında',effect:'Rakibin en yüksek zarını 1 düşür',rarity:'epic'},
-  {id:'RBM10',position:'Orta Saha',name:'Kilitleme',minStar:3,trigger:'Her maç başında',effect:'Rakibin en yüksek zarını 2 düşür',rarity:'legendary'},
-  {id:'RBM11',position:'Orta Saha',name:'Merkezden Şut',logicName:'İkili Oyun',minStar:1,trigger:'Kendi zarın 4 ise',effect:'+1 sanal gol',rarity:'rare'},
-  {id:'RBM12',position:'Orta Saha',name:'Sahayı Oku',minStar:2,trigger:'Her maç başında',effect:'Rakibin tetiklenmeye hazır en güçlü 1 kartını bu maç etkisizleştir',rarity:'epic'},
-  {id:'RBM13',position:'Orta Saha',name:'Sahayı Oku',minStar:3,trigger:'Her maç başında',effect:'Rakibin tetiklenmeye hazır en güçlü 1 kartını etkisizleştir; üç kartını da kesin göster',rarity:'legendary'},
-  {id:'RBM14',position:'Orta Saha',name:"Orta Saha Pres'i",minStar:1,trigger:'Rakip zarı 1 ise',effect:'O düello otomatik kazanılır',rarity:'rare'},
-  {id:'RBM15',position:'Orta Saha',name:"Orta Saha Pres'i",minStar:2,trigger:'Rakip zarı 1 veya 2 ise',effect:'O düello otomatik kazanılır',rarity:'epic'},
-  {id:'RBM16',position:'Orta Saha',name:"Orta Saha Pres'i",minStar:3,trigger:'Rakip zarı 1, 2 veya 3 ise',effect:'O düello otomatik kazanılır',rarity:'legendary'},
-
-  // Forvet
-  {id:'RBF01',position:'Forvet',name:'Golcü İçgüdüsü',minStar:2,trigger:'Kendi zarın 6 gelirse',effect:'O düello x2 gol sayılır',rarity:'epic'},
-  {id:'RBF02',position:'Forvet',name:'Golcü İçgüdüsü',minStar:3,trigger:'Kendi zarın 5 veya 6 gelirse',effect:'O düello x3 gol sayılır',rarity:'legendary'},
-  {id:'RBF03',position:'Forvet',name:'Son Vuruş',minStar:2,trigger:'Kendi zarın rakibi 1 farkla yenerse',effect:'O düello x2 gol sayılır',rarity:'epic'},
-  {id:'RBF04',position:'Forvet',name:'Son Vuruş',minStar:3,trigger:'Kendi zarın rakibi 1 farkla yenerse',effect:'O düello x3 gol sayılır',rarity:'legendary'},
-  {id:'RBF05',position:'Forvet',name:'Frikik Ustası',minStar:1,trigger:'Kendi zarın 4 ise',effect:'+1 sanal gol ekle',rarity:'rare'},
-  {id:'RBF06',position:'Forvet',name:'Frikik Ustası',minStar:2,trigger:'Kendi zarın 6 ise',effect:'+2 sanal gol ekle',rarity:'epic'},
-  {id:'RBF07',position:'Forvet',name:'Hat-trick Ruhu',minStar:2,trigger:'Son 5 resmi maçın en az 3’ünü kazandıysan',effect:'+1 sanal gol',rarity:'epic'},
-  {id:'RBF08',position:'Forvet',name:'Hat-trick Ruhu',minStar:3,trigger:'Son 5 resmi maçın en az 4’ünü kazandıysan',effect:'+2 sanal gol',rarity:'legendary'},
-  {id:'RBF09',position:'Forvet',name:'Panenka',minStar:3,trigger:'Rakibin üç zarından herhangi ikisi aynıysa',effect:'Forvet düellosu otomatik kazanılır',rarity:'legendary'},
-  {id:'RBF10',position:'Orta Saha',name:'Ofsayt Tuzağı',minStar:2,trigger:'Her maç başında',effect:'Rakibin en yüksek zarını yeniden attır',rarity:'epic'},
-  {id:'RBF11',position:'Forvet',name:'Bitiricilik',minStar:1,trigger:'Kendi 3 zar toplamı ≥16',effect:'+1 sanal gol',rarity:'rare'},
-  {id:'RBF12',position:'Forvet',name:'Bitiricilik',minStar:2,trigger:'Kendi 3 zar toplamı ≥14',effect:'+1 sanal gol',rarity:'epic'},
-  {id:'RBF13',position:'Forvet',name:'Bitiricilik',minStar:3,trigger:'Kendi 3 zar toplamı ≥13',effect:'+2 sanal gol',rarity:'legendary'},
-  {id:'RBF14',position:'Forvet',name:'Son Dakika Golü',minStar:2,trigger:'Forvet düellosu öncesinde skor berabereyse',effect:'Forvet düellosu otomatik kazanılır',rarity:'epic'},
-  {id:'RBF15',position:'Forvet',name:'Son Dakika Golü',minStar:3,trigger:'Forvet düellosu öncesinde skor berabereyse',effect:'Forvet düellosu otomatik kazanılır ve +1 sanal gol',rarity:'legendary'},
-
-  // Evrensel
-  {id:'RBU01',position:'Evrensel',name:'Moral Bozukluğu',minStar:1,trigger:'Rakip art arda 2 maç kaybettiyse',effect:'Rakibin bu maçtaki en yüksek zarı 1 azalır',rarity:'rare'},
-  {id:'RBU02',position:'Evrensel',name:'Ev Sahibi Avantajı',minStar:1,trigger:'Maç senin evinde oynanıyorsa',effect:'Kendi en düşük zarına +1',rarity:'rare'},
-  {id:'RBU03',position:'Evrensel',name:'Deplasman Ruhu',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en yüksek zarı 1 azalır',rarity:'rare'},
-  {id:'RBU04',position:'Kulüp/Market',name:'Taktik Tahtası',minStar:1,trigger:'Transfer döneminde',effect:'Kasa açma bedeli 150 AP yerine 100 AP olur',rarity:'rare',clubCard:true},
-  {id:'RBU05',position:'Evrensel',name:'Sakatlık Riski',logicName:'Sakatlık Şansı',minStar:2,trigger:'Rakibin üç zarından herhangi biri 1 gelirse',effect:'O zar gelecek maça 1 olarak kilitlenir',rarity:'epic'},
-  {id:'RBU06',position:'Evrensel',name:'Form Patlaması',logicName:'Form Tutmuyor',minStar:1,trigger:'Bu mevki zarı 3 maç üst üste 6 gelirse',effect:'Gelecek maç aynı mevki zarına +1',rarity:'common'},
-  {id:'RBU07',position:'Evrensel',name:'VAR İncelemesi',minStar:1,trigger:'Berabere biten herhangi bir zar düellosunda',effect:'Kart sahibinin berabere kalan zarı yeniden atılır',rarity:'common'},
-  {id:'RBU08',position:'Evrensel',name:'Şans Faktörü',minStar:1,trigger:'Her maç başında',effect:'%10 ihtimalle rastgele bir düelloyu otomatik kazan',rarity:'rare'},
-  {id:'RBU09',position:'Evrensel',name:'Soğuk Kanlılık',minStar:2,trigger:'Takım maçtaki ilk düelloyu kazandığında',effect:'İlk gole +1 sanal gol eklenir',rarity:'epic'},
-  {id:'RBU10',position:'Evrensel',name:'Yıldız Oyuncu',minStar:3,trigger:'Takım 3 veya daha fazla yıldızlıysa',effect:'Bu mevki zarının minimum değeri 4 olur',rarity:'epic'},
-  {id:'RBU11',position:'Evrensel',name:'Kaptanlık Pazubandı',minStar:1,trigger:'Her maç başında',effect:'Kendi en düşük zarına %50 ihtimalle +1',rarity:'rare'},
-  {id:'RBU12',position:'Evrensel',name:'Yedek Kulübesi',minStar:1,trigger:'Maç kaybedilirse',effect:'Gelecek maça +1 ücretsiz reroll hakkı taşı',rarity:'rare'},
-
-  // Zar kombinasyonu aileleri
-  {id:'RBC01',position:'Orta Saha',name:'Çift Ayak',minStar:1,trigger:'Temel Orta Saha zarın çift ve rakibinkinden tam 1 düşükse',effect:'Orta Saha düellosu berabere sayılır',rarity:'common'},
-  {id:'RBC02',position:'Orta Saha',name:'İkili Pres',minStar:1,trigger:'Temel üç zarından tam ikisi aynıysa ve Orta Saha bu ikilideyse',effect:'Orta Saha zarına +1',rarity:'rare'},
-  {id:'RBC03',position:'Orta Saha',name:'Kusursuz Hat',minStar:2,trigger:'Temel üç zarın art arda üç sayı oluşturursa',effect:'+1 sanal gol',rarity:'epic'},
-  {id:'RBC04',position:'Orta Saha',name:'Uğurlu Sayılar',logicName:'Altın Seri',minStar:1,trigger:'Temel üç zarının toplamı tam 8 veya 13 ise',effect:'+1 sanal gol',rarity:'rare'},
-  {id:'RBC05',position:'Forvet',name:'Üçlü Hücum',minStar:2,trigger:'Tüm kart etkileri ve yeniden atışlar tamamlandığında üç zarın da aynı değeri gösterirse',effect:'+2 sanal gol',rarity:'epic'},
-  {id:'RBC06',position:'Forvet',name:'Direkt Oyun',logicName:'Çift Kanat',minStar:2,trigger:'Temel Kaleci ve Forvet zarların aynı, Orta Saha zarın farklıysa',effect:'Forvet zarına +1',rarity:'rare'},
-  {id:'RBC07',position:'Orta Saha',name:'Dengeli On Bir',minStar:2,trigger:'Temel en yüksek ve en düşük zarın arasındaki fark en fazla 1 ise',effect:'Mevki sırasındaki ilk en düşük zarına +1',rarity:'epic'},
-  {id:'RBC08',position:'Forvet',name:'Son Perde',minStar:2,trigger:'Forvet düellosu öncesinde gerideysen',effect:'Forvet düellosunu kazanırsan o düello x2 gol sayılır',rarity:'epic'},
-
-  // Kadro ve kart sinerjisi aileleri
-  {id:'RBS01',position:'Evrensel',name:'Boş Kadro',minStar:1,trigger:'Diğer kart yuvalarından biri veya ikisi boşsa',effect:'Takılı olduğu zar boş yuva başına +1 kazanır (en fazla +2)',rarity:'epic'},
-  {id:'RBS02',position:'Evrensel',name:'Takım Kimyası',minStar:2,trigger:'Kaleci, Orta Saha ve Forvet yuvalarının üçü de doluysa',effect:'Takımın en düşük zarına +1',rarity:'epic'},
-  {id:'RBS03',position:'Evrensel',name:'Nadir Kimya',minStar:3,trigger:'Diğer iki kartın da Nadir veya daha üstündeyse',effect:'+1 ekstra ücretsiz reroll hakkı',rarity:'epic'},
-
-  // Yeni özgün kart aileleri
-  {id:'NCL01',position:'Kaleci',name:'Kalenin Efendisi',minStar:3,trigger:'Kaleci düellosunda her zaman',effect:'Rakibin Kaleci zarı en fazla 4 sayılır',rarity:'legendary'},
-  {id:'NCL03',position:'Forvet',name:'Katil İçgüdü',minStar:3,trigger:'Forvet düellosunu en az 2 farkla kazanırsan',effect:'O düello x3 gol sayılır',rarity:'legendary'},
-  {id:'NCL04',position:'Evrensel',name:'Mükemmeliyetçi',minStar:3,trigger:'Üç düellonun tamamını kazanırsan',effect:'+2 ekstra sanal gol',rarity:'legendary'},
-  {id:'NCM02',position:'Evrensel',name:'Dev Avcısı',minStar:1,trigger:'Rakibin yıldızı senden yüksekse',effect:'Rakibin en yüksek zarı -1',rarity:'rare'},
-  {id:'NCM04',position:'Evrensel',name:'Deplasman Disiplini',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en düşük zarı -1',rarity:'common'},
-  {id:'NCM06',position:'Forvet',name:'Fırsatçı',minStar:1,trigger:'Forvet düellosu öncesinde öndeysen',effect:'+1 sanal gol',rarity:'rare'}
-];
-const LL_CARD_UPGRADE_DEFINITIONS=[
-  {from:'RBK02',card:{id:'UPK01',position:'Kaleci',name:'Son Adam (Geliştirilmiş)',minStar:1,trigger:'Rakip zarı 5 veya 6 gelirse',effect:'Rakibin o zarını 1 azalt',rarity:'common'}},
-  {from:'RBK04',card:{id:'UPK02',position:'Kaleci',name:'Sakin Kafa (Geliştirilmiş)',minStar:1,trigger:'Kendi zarın rakibinkinden düşükse',effect:'Kendi zarın 1–2 ise farkı 2, diğer sonuçlarda 1 azalt',rarity:'common',upgradeRule:'calm-common'}},
-  {from:'RBK05',card:{id:'UPK03',position:'Kaleci',name:'Sakin Kafa (Geliştirilmiş)',minStar:1,trigger:'Kendi zarın rakibinkinden düşükse',effect:'Farkı 2 azalt; daha güçlü rakibin en yüksek zarı Kaleciyse farkı 3 azalt',rarity:'rare',upgradeRule:'calm-rare'}},
-  {from:'RBK10',card:{id:'UPK04',position:'Kaleci',name:'Kale Duvarı (Geliştirilmiş)',minStar:1,trigger:'Rakibin 3 zar toplamı ≥14 ise',effect:'1 sanal gol elenir',rarity:'rare'}},
-  {from:'RBK14',card:{id:'UPK05',position:'Kaleci',name:'Uzun Top (Geliştirilmiş)',minStar:1,trigger:'Kendi zarın 5 veya 6 gelirse',effect:'Forvet zarına +1; Kaleci 6 ve Forvet kartı Destansı/Efsaneviyse +2 aktar',rarity:'rare',upgradeRule:'long-ball'}},
-  {from:'RBM05',card:{id:'UPM01',position:'Orta Saha',name:'Pas Ustası (Geliştirilmiş)',minStar:1,trigger:'Kendi zarın 4 veya 5 ise',effect:'En düşük diğer zarına +1; diğer iki zar eşit en düşükse ikisine de +1',rarity:'rare',upgradeRule:'pass-master'}},
-  {from:'RBM11',card:{id:'UPM02',position:'Orta Saha',name:'Merkezden Şut (Geliştirilmiş)',logicName:'İkili Oyun',minStar:1,trigger:'Kendi zarın 4 veya 5 ise',effect:'+1 sanal gol',rarity:'rare'}},
-  {from:'RBC01',card:{id:'UPM03',position:'Orta Saha',name:'Çift Ayak (Geliştirilmiş)',minStar:1,trigger:'Temel Orta Saha zarın rakibinkinden tam 1 düşükse',effect:'Orta Saha düellosu berabere sayılır',rarity:'common'}},
-  {from:'RBC02',card:{id:'UPM04',position:'Orta Saha',name:'İkili Pres (Geliştirilmiş)',minStar:1,trigger:'Temel üç zarından tam ikisi aynıysa ve Orta Saha bu ikilideyse',effect:'Eşleşen değer 1–3 ise Orta Saha +1; 4–6 ise +2',rarity:'rare',upgradeRule:'double-press'}},
-  {from:'RBC04',card:{id:'UPM05',position:'Orta Saha',name:'Uğurlu Sayılar (Geliştirilmiş)',logicName:'Altın Seri',minStar:1,trigger:'Temel üç zarının toplamı tam 8, 12 veya 13 ise',effect:'+1 sanal gol',rarity:'rare'}},
-  {from:'RBF05',card:{id:'UPF01',position:'Forvet',name:'Frikik Ustası (Geliştirilmiş)',minStar:1,trigger:'Kendi zarın 4 veya 5 ise',effect:'+1 sanal gol ekle',rarity:'rare'}},
-  {from:'RBF11',card:{id:'UPF02',position:'Forvet',name:'Bitiricilik (Geliştirilmiş)',minStar:1,trigger:'Kendi 3 zar toplamı ≥15',effect:'+1 sanal gol',rarity:'rare'}},
-  {from:'RBC06',card:{id:'UPF03',position:'Forvet',name:'Direkt Oyun (Geliştirilmiş)',logicName:'Çift Kanat',minStar:2,trigger:'Temel Kaleci ve Forvet zarların aynıysa',effect:'Forvet zarına +1',rarity:'rare',upgradeRule:'direct-play'}},
-  {from:'RBU01',card:{id:'UPU01',position:'Evrensel',name:'Moral Bozukluğu (Geliştirilmiş)',minStar:1,trigger:'Rakip son 2 maçını kaybettiyse veya son 3 maçta kazanamadıysa',effect:'Rakibin bu maçtaki en yüksek zarı 1 azalır',rarity:'rare',upgradeRule:'morale'}},
-  {from:'RBU02',card:{id:'UPU02',position:'Evrensel',name:'Ev Sahibi Avantajı (Geliştirilmiş)',minStar:1,trigger:'Maç senin evinde oynanıyorsa',effect:'Kartın takılı olduğu zar en düşükse ona +2; değilse kendi en düşük zarına +1',rarity:'rare',upgradeRule:'home-advantage'}},
-  {from:'RBU06',card:{id:'UPU03',position:'Evrensel',name:'Form Patlaması (Geliştirilmiş)',logicName:'Form Tutmuyor',minStar:1,trigger:'Bu mevki zarı son 3 resmi maçın ikisinde 6 geldiyse',effect:'Gelecek maç aynı mevki zarına +1',rarity:'common',upgradeRule:'form-burst'}},
-  {from:'RBU08',card:{id:'UPU04',position:'Evrensel',name:'Şans Faktörü (Geliştirilmiş)',minStar:1,trigger:'Her maç başında',effect:'%10 ihtimalle rastgele bir düelloyu kazan; 4 başarısız maçtan sonra 5. maç garanti',rarity:'rare',upgradeRule:'chance-pity'}},
-  {from:'RBU11',card:{id:'UPU05',position:'Evrensel',name:'Kaptanlık Pazubandı (Geliştirilmiş)',minStar:1,trigger:'Her maç başında',effect:'Kendi en düşük zarın 1–2 ise kesin +1; 3 veya üstüyse %50 ihtimalle +1',rarity:'rare',upgradeRule:'captain'}},
-  {from:'RBU12',card:{id:'UPU06',position:'Evrensel',name:'Yedek Kulübesi (Geliştirilmiş)',minStar:1,trigger:'Maç berabere biter veya kaybedilirse',effect:'Gelecek maça +1 ücretsiz reroll hakkı taşı',rarity:'rare'}},
-  {from:'NCM02',card:{id:'UPU07',position:'Evrensel',name:'Dev Avcısı (Geliştirilmiş)',minStar:1,trigger:'Rakibin yıldızı senden yüksekse',effect:'Rakibin en yüksek zarı -1; en yüksek iki zar eşitse ikisi de -1',rarity:'rare',upgradeRule:'giant-killer'}},
-  {from:'NCM04',card:{id:'UPU08',position:'Evrensel',name:'Deplasman Disiplini (Geliştirilmiş)',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en düşük zarı -1; en düşük iki zar eşitse ikisi de -1',rarity:'common',upgradeRule:'away-discipline'}}
-];
-LL_CARD_UPGRADE_DEFINITIONS.forEach(({from,card})=>LL_BALANCED_CARD_POOL.push({...card,upgradeFrom:from,upgradeOnly:true,upgradeLevel:1}));
-const LL_CARD_UPGRADE_SOURCE_IDS=new Set(LL_CARD_UPGRADE_DEFINITIONS.map(item=>item.from));
-function llCardDisplayRarity(card){return `${LL_RARITY_LABELS[card?.rarity]||card?.rarity||''}${card?.upgradeLevel?'+':''}`;}
-function llCardUpgradeBadgeHtml(card){
-  if(!card)return '';
-  const upgraded=!!card.upgradeLevel,upgradeable=LL_CARD_UPGRADE_SOURCE_IDS.has(card.id);
-  if(!upgraded&&!upgradeable)return '';
-  const label=upgraded?`${llCardDisplayRarity(card)} · GELİŞTİRİLMİŞ`:'⬆ GELİŞTİRİLEBİLİR';
-  const color=upgraded?'#facc15':'#67e8f9',border=upgraded?'rgba(250,204,21,.55)':'rgba(103,232,249,.45)',background=upgraded?'rgba(250,204,21,.10)':'rgba(34,211,238,.09)';
-  return `<span class="ll-upgrade-badge" style="display:inline-flex;align-items:center;width:max-content;margin:6px 0 2px;padding:4px 8px;border:1px solid ${border};border-radius:999px;background:${background};color:${color};font-size:9px;font-weight:900;letter-spacing:.7px">${label}</span>`;
+const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=5,LL_TEAM_TARGET_VERSION=3,LL_SEASON_HISTORY_VERSION=1;
+function llV2PlayerLeagueInState(state){return state?.leagues?.super?.includes(state.playerTeam)?'super':'first';}
+function llV2TeamStarsInState(state,name){return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||LL_ALL_TEAMS.find(t=>t.name===name)?.stars||1)));}
+function llV2TeamTargetOptions(league,stars){
+  if(league==='first'){
+    if(stars>=3)return [
+      {type:'champion',label:'TFF 1. Lig şampiyonu ol',reward:{ap:180,lp:220}},
+      {type:'direct_promote',label:'İlk 2’ye girerek doğrudan yüksel',reward:{ap:140,lp:200}},
+      {type:'promote',label:'Süper Lig’e yüksel',reward:{ap:100,lp:180}}
+    ];
+    if(stars===2)return [
+      {type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:100,lp:80}},
+      {type:'playoff',label:'Play-Off bileti al',reward:{ap:120,lp:100}},
+      {type:'league_position',value:8,label:'Ligi ilk 8 içinde bitir',reward:{ap:110,lp:90}}
+    ];
+    return [
+      {type:'first_survive',label:'TFF 1. Lig’de kümede kal',reward:{ap:100,lp:60}},
+      {type:'league_position',value:15,label:'Ligi ilk 15 içinde bitir',reward:{ap:105,lp:60}},
+      {type:'league_position',value:14,label:'Ligi ilk 14 içinde bitir',reward:{ap:110,lp:70}}
+    ];
+  }
+  if(stars>=5)return [
+    {type:'champion',label:'Süper Lig şampiyonu ol',reward:{ap:220,lp:240}},
+    {type:'league_position',value:2,label:'Ligi ilk 2 içinde bitir',reward:{ap:180,lp:190}}
+  ];
+  if(stars===4)return [
+    {type:'league_position',value:3,label:'Ligi ilk 3 içinde bitir',reward:{ap:170,lp:170}},
+    {type:'europe',label:'Avrupa kupalarına katıl',reward:{ap:160,lp:160}}
+  ];
+  if(stars===3)return [
+    {type:'league_position',value:7,label:'Ligi ilk 7 içinde bitir',reward:{ap:130,lp:100}},
+    {type:'league_position',value:5,label:'Ligi ilk 5 içinde bitir',reward:{ap:150,lp:120}},
+    {type:'europe',label:'Avrupa kupalarına katıl',reward:{ap:170,lp:140}}
+  ];
+  if(stars===2)return [
+    {type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:120,lp:80}},
+    {type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:130,lp:90}},
+    {type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:150,lp:100}}
+  ];
+  return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:140,lp:90}}];
 }
-function llCardUpgradePreviewHtml(card){
-  if(!card||card.upgradeLevel||!LL_CARD_UPGRADE_SOURCE_IDS.has(card.id))return '';
-  const definition=LL_CARD_UPGRADE_DEFINITIONS.find(item=>item.from===card.id);
-  if(!definition)return '';
-  const target=llCard(definition.card.id)||{...definition.card,upgradeLevel:1};
-  const cost=typeof llUpgradeCost==='function'?llUpgradeCost(card):0;
-  return `<div class="ll-upgrade-preview"><div class="ll-upgrade-preview-title">&#11014; Geli&#351;tirme &#246;nizlemesi</div><div class="ll-muted" style="margin-top:5px">Sonu&#231; rastgele de&#287;ildir${cost?` &middot; Bedel: ${cost} LP`:''}. Yaln&#305;zca transfer d&#246;neminde uygulan&#305;r.</div><div class="ll-upgrade-compare"><div class="ll-upgrade-state"><b>&#350;imdiki h&acirc;li &middot; ${llEscape(llCardDisplayRarity(card))}</b>Tetikleyici: ${llEscape(card.trigger)}<br>Etki: ${llEscape(card.effect)}</div><div class="ll-upgrade-state after"><b>Geli&#351;tirilmi&#351; h&acirc;li &middot; ${llEscape(llCardDisplayRarity(target))}</b>Tetikleyici: ${llEscape(target.trigger)}<br>Etki: ${llEscape(target.effect)}</div></div></div>`;
+function llV2PreviousTeamContext(state,name){
+  const previous=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-1);if(!previous)return null;
+  const superIndex=(previous.superRows||[]).findIndex(row=>row.team===name),firstIndex=(previous.firstRows||[]).findIndex(row=>row.team===name),league=superIndex>=0?'super':firstIndex>=0?'first':null,index=league==='super'?superIndex:firstIndex;
+  if(!league||index<0)return null;const row=(league==='super'?previous.superRows:previous.firstRows)[index];
+  return {league,position:Number(row?.position)||index+1,promoted:(previous.promoted||[]).includes(name),relegated:(previous.relegated||[]).includes(name)};
 }
-const LL_CARD_RARITY_RANK={common:1,rare:2,epic:3,legendary:4};
-const llCardFamilyName=card=>card?.name?.replace(/\s*\([^)]*\)\s*$/,'').trim()||'';
-const LL_LEGACY_CARD_REPLACEMENTS=Object.fromEntries(LL_LEGACY_CARD_POOL.map(oldCard=>{
-  const candidates=LL_BALANCED_CARD_POOL.filter(card=>!card.upgradeOnly&&!card.clubCard&&llCardFamilyName(card)===llCardFamilyName(oldCard));
-  const best=[...candidates].sort((a,b)=>{
-    const rarityGapA=Math.abs(LL_CARD_RARITY_RANK[a.rarity]-LL_CARD_RARITY_RANK[oldCard.rarity]);
-    const rarityGapB=Math.abs(LL_CARD_RARITY_RANK[b.rarity]-LL_CARD_RARITY_RANK[oldCard.rarity]);
-    if(rarityGapA!==rarityGapB)return rarityGapA-rarityGapB;
-    return LL_CARD_RARITY_RANK[a.rarity]-LL_CARD_RARITY_RANK[b.rarity];
-  })[0];
-  return [oldCard.id,best?.id||null];
-}));
-LL_CARD_POOL.splice(0,LL_CARD_POOL.length,...LL_BALANCED_CARD_POOL);
-const LL_CARD_MAP = Object.fromEntries(LL_CARD_POOL.map(c => [c.id,c]));
+function llV2ContextualTeamTargetOptions(state,name,league,stars){
+  const previous=llV2PreviousTeamContext(state,name);if(!previous)return llV2TeamTargetOptions(league,stars);
+  if(league==='super'&&previous.promoted){
+    if(stars>=4)return [{type:'league_position',value:8,label:'Ligi ilk 8 içinde bitir',reward:{ap:155,lp:125}}];
+    if(stars===3)return [{type:'league_position',value:previous.position<=2?10:12,label:`Ligi ilk ${previous.position<=2?10:12} içinde bitir`,reward:{ap:145,lp:110}}];
+    if(stars===2&&previous.position<=2)return [{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:135,lp:95}}];
+    return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:130,lp:90}}];
+  }
+  if(league==='first'&&previous.relegated){
+    if(stars>=3)return [{type:'direct_promote',label:'İlk 2’ye girerek doğrudan yüksel',reward:{ap:160,lp:210}}];
+    if(stars===2)return [{type:'playoff',label:'Play-Off bileti al',reward:{ap:130,lp:110}}];
+    return [{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:115,lp:80}}];
+  }
+  if(league==='super'&&previous.league==='super'){
+    if(stars>=5)return previous.position===1?[{type:'champion',label:'Süper Lig şampiyonu ol',reward:{ap:220,lp:240}}]:[{type:'league_position',value:2,label:'Ligi ilk 2 içinde bitir',reward:{ap:185,lp:195}}];
+    if(stars===4)return previous.position<=3?[{type:'league_position',value:3,label:'Ligi ilk 3 içinde bitir',reward:{ap:175,lp:175}}]:previous.position<=6?[{type:'europe',label:'Avrupa kupalarına katıl',reward:{ap:165,lp:165}}]:[{type:'league_position',value:7,label:'Ligi ilk 7 içinde bitir',reward:{ap:150,lp:130}}];
+    if(stars===3)return previous.position<=6?[{type:'league_position',value:7,label:'Ligi ilk 7 içinde bitir',reward:{ap:140,lp:110}}]:previous.position<=10?[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:130,lp:100}}]:[{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:125,lp:90}}];
+    if(stars===2)return previous.position<=10?[{type:'league_position',value:12,label:'Ligi ilk 12 içinde bitir',reward:{ap:130,lp:90}}]:[{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:120,lp:80}}];
+    return [{type:'survive',label:'Süper Lig’de kümede kal',reward:{ap:140,lp:90}}];
+  }
+  if(league==='first'&&previous.league==='first'){
+    if(stars>=3)return previous.position<=7?[{type:'promote',label:'Süper Lig’e yüksel',reward:{ap:120,lp:190}}]:previous.position<=12?[{type:'playoff',label:'Play-Off bileti al',reward:{ap:125,lp:110}}]:[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:115,lp:90}}];
+    if(stars===2)return previous.position<=7?[{type:'playoff',label:'Play-Off bileti al',reward:{ap:120,lp:100}}]:previous.position<=12?[{type:'league_position',value:10,label:'Ligi ilk 10 içinde bitir',reward:{ap:105,lp:85}}]:[{type:'league_position',value:14,label:'Ligi ilk 14 içinde bitir',reward:{ap:105,lp:70}}];
+    return [{type:'first_survive',label:'TFF 1. Lig’de kümede kal',reward:{ap:100,lp:60}}];
+  }
+  return llV2TeamTargetOptions(league,stars);
+}
+function llV2TeamTierIndex(state,name,league){const stars=llV2TeamStarsInState(state,name),same=(state.leagues?.[league]||[]).filter(n=>llV2TeamStarsInState(state,n)===stars).sort((a,b)=>a.localeCompare(b,'tr'));return Math.max(0,same.indexOf(name));}
+function llV2CreateTeamSeasonTargets(state){
+  const targets={};
+  ['super','first'].forEach(league=>(state.leagues?.[league]||[]).forEach(name=>{const stars=llV2TeamStarsInState(state,name),options=llV2ContextualTeamTargetOptions(state,name,league,stars),choice=options[llV2TeamTierIndex(state,name,league)%options.length];targets[name]={...choice,team:name,league,stars};}));
+  return {version:LL_TEAM_TARGET_VERSION,season:state.season,targets,evaluated:false,results:{}};
+}
+function llV2EnsureTeamSeasonTargets(state=lexLeague.state){
+  if(!state)return null;
+  const expected=(state.leagues?.super?.length||0)+(state.leagues?.first?.length||0),current=state.teamSeasonTargets;
+  if(!current||current.version!==LL_TEAM_TARGET_VERSION||current.season!==state.season||Object.keys(current.targets||{}).length!==expected)state.teamSeasonTargets=llV2CreateTeamSeasonTargets(state);
+  return state.teamSeasonTargets;
+}
+function llV2TeamTarget(name,state=lexLeague.state){return llV2EnsureTeamSeasonTargets(state)?.targets?.[name]||null;}
+function llV2CupGoalForTeam(state,name,league,stars){
+  const variant=llV2TeamTierIndex(state,name,league),pool=stars>=5?
+    [{type:'cup_win',label:'Türkiye Kupası’nı kazan',reward:{ap:180,lp:180}},{type:'cup_final',label:'Türkiye Kupası finaline çık',reward:{ap:160,lp:160}}]:stars===4?
+    [{type:'cup_final',label:'Türkiye Kupası finaline çık',reward:{ap:150,lp:140}},{type:'cup_sf',label:'Türkiye Kupası’nda yarı final gör',reward:{ap:130,lp:120}}]:stars===3?
+    [{type:'cup_sf',label:'Türkiye Kupası’nda yarı final gör',reward:{ap:130,lp:100}},{type:'cup_qf',label:'Türkiye Kupası’nda çeyrek final gör',reward:{ap:110,lp:90}}]:stars===2?
+    [{type:'cup_qf',label:'Türkiye Kupası’nda çeyrek final gör',reward:{ap:110,lp:80}},{type:'cup_ro16',label:'Türkiye Kupası’nda son 16’ya kal',reward:{ap:90,lp:70}}]:
+    [{type:'cup_ro16',label:'Türkiye Kupası’nda son 16’ya kal',reward:{ap:100,lp:60}},{type:'cup_win_one',label:'Türkiye Kupası’nda en az 1 maç kazan',reward:{ap:80,lp:50}}];
+  return {...pool[variant%pool.length],id:'cup_expectation'};
+}
+function llV2CreateSeasonGoals(state){
+  const league=llV2PlayerLeagueInState(state),team=state.playerTeam,stars=llV2TeamStarsInState(state,team),primary={...llV2TeamTarget(team,state),id:'club_primary'},wins=(league==='first'?[0,10,13,17,20,22,24]:[0,8,10,13,16,19,22])[stars],goalsFor=(league==='first'?[0,32,42,52,60,68,74]:[0,28,36,45,54,62,68])[stars],items=[
+    primary,
+    llV2CupGoalForTeam(state,team,league,stars),
+    {id:'league_wins',type:'wins',value:wins,label:`En az ${wins} lig maçı kazan`,reward:{ap:0,lp:stars>=4?160:stars===3?140:120}},
+    {id:'league_goals',type:'goals_for',value:goalsFor,label:`Ligde en az ${goalsFor} gol at`,reward:{ap:stars>=4?150:stars===3?130:110,lp:0}}
+  ];
+  return {version:LL_SEASON_GOAL_VERSION,season:state.season,league,stars,items,evaluated:false,results:[],earnedAp:0,earnedLp:0,promotionSupportAp:0,badge:null};
+}
+const LL_V2_CARD_REPAIR_VERSION=1;
+function llV2CardFitsSlot(card,position,stars){return !!card&&(card.position===position||card.position==='Evrensel')&&Number(card.minStar||1)<=Number(stars||1);}
+function llV2RepairCardId(oldId,position,stars,usedFamilies=new Set()){
+  if(!oldId)return null;
+  const migratedId=LL_LEGACY_CARD_REPLACEMENTS[oldId]||oldId,migrated=llCard(migratedId);
+  if(llV2CardFitsSlot(migrated,position,stars))return migratedId;
+  const legacy=LL_LEGACY_CARD_POOL.find(card=>card.id===oldId),legacyFamily=llCardFamilyName(legacy),targetRank=LL_CARD_RARITY_RANK[legacy?.rarity]||LL_CARD_RARITY_RANK.rare;
+  const candidates=LL_CARD_POOL.filter(card=>!card.upgradeOnly&&!card.clubCard&&llV2CardFitsSlot(card,position,stars)&&!usedFamilies.has(llCardFamilyName(card)));
+  return [...candidates].sort((a,b)=>{
+    const familyA=legacyFamily&&llCardFamilyName(a)===legacyFamily?0:1,familyB=legacyFamily&&llCardFamilyName(b)===legacyFamily?0:1;
+    if(familyA!==familyB)return familyA-familyB;
+    const gapA=Math.abs((LL_CARD_RARITY_RANK[a.rarity]||1)-targetRank),gapB=Math.abs((LL_CARD_RARITY_RANK[b.rarity]||1)-targetRank);
+    if(gapA!==gapB)return gapA-gapB;
+    const exactA=a.position===position?0:1,exactB=b.position===position?0:1;if(exactA!==exactB)return exactA-exactB;
+    return a.id.localeCompare(b.id);
+  })[0]?.id||null;
+}
+function llV2RepairState(state){
+  if(!state)return state;
+  Object.entries(state.teams||{}).forEach(([teamName,team])=>{
+    if(!team.cards||typeof team.cards!=='object')team.cards={'Kaleci':null,'Orta Saha':null,'Forvet':null};
+    const usedFamilies=new Set();
+    LL_POSITIONS.forEach(position=>{
+      const repairedId=llV2RepairCardId(team.cards[position],position,team.stars,usedFamilies),card=llCard(repairedId);
+      team.cards[position]=card?repairedId:null;
+      const family=llCardFamilyName(card);if(family)usedFamilies.add(family);
+    });
+    if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];
+    usedFamilies.forEach(family=>{if(!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);});
+  });
+  state.cardRepairVersion=LL_V2_CARD_REPAIR_VERSION;
+  if(!Array.isArray(state.discoveredCards))state.discoveredCards=[];
+  const owned=Object.values(state.teams?.[state.playerTeam]?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id));
+  state.discoveredCards=[...new Set([...state.discoveredCards.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)),...owned])];
+  const repairedPerformance={};
+  Object.entries(state.cardPerformance||{}).forEach(([rawId,raw])=>{
+    const id=LL_LEGACY_CARD_REPLACEMENTS[rawId]||rawId;if(!llCard(id)||!raw||typeof raw!=='object')return;
+    const target=repairedPerformance[id]||{wins:0,draws:0,losses:0,matches:0,triggers:0,triggeredWins:0,triggeredDraws:0,triggeredLosses:0,goalsFor:0,goalsAgainst:0,firstSeason:null,lastSeason:null,byCompetition:{}};
+    target.wins+=Math.max(0,Number(raw.wins)||0);target.draws+=Math.max(0,Number(raw.draws)||0);target.losses+=Math.max(0,Number(raw.losses)||0);target.matches=target.wins+target.draws+target.losses;
+    target.triggers+=Math.max(0,Number(raw.triggers)||0);target.triggeredWins+=Math.max(0,Number(raw.triggeredWins)||0);target.triggeredDraws+=Math.max(0,Number(raw.triggeredDraws)||0);target.triggeredLosses+=Math.max(0,Number(raw.triggeredLosses)||0);target.triggers=Math.max(target.triggers,target.triggeredWins+target.triggeredDraws+target.triggeredLosses);
+    target.goalsFor+=Math.max(0,Number(raw.goalsFor)||0);target.goalsAgainst+=Math.max(0,Number(raw.goalsAgainst)||0);
+    const first=Number(raw.firstSeason),last=Number(raw.lastSeason);if(Number.isFinite(first)&&first>0)target.firstSeason=target.firstSeason==null?first:Math.min(target.firstSeason,first);if(Number.isFinite(last)&&last>0)target.lastSeason=target.lastSeason==null?last:Math.max(target.lastSeason,last);
+    Object.entries(raw.byCompetition||{}).forEach(([competition,comp])=>{if(!comp||typeof comp!=='object')return;const entry=target.byCompetition[competition]||{wins:0,draws:0,losses:0,matches:0,triggers:0};entry.wins+=Math.max(0,Number(comp.wins)||0);entry.draws+=Math.max(0,Number(comp.draws)||0);entry.losses+=Math.max(0,Number(comp.losses)||0);entry.triggers+=Math.max(0,Number(comp.triggers)||0);entry.matches=entry.wins+entry.draws+entry.losses;target.byCompetition[competition]=entry;});
+    repairedPerformance[id]=target;
+  });
+  state.cardPerformance=repairedPerformance;
+  if(!Array.isArray(state.clubBadges))state.clubBadges=[];
+  if(!Array.isArray(state.seasonHistory))state.seasonHistory=[];
+  if(state.seasonEnded&&state.lastSeasonSummary?.superRows&&state.lastSeasonSummary?.firstRows)llV2ArchiveSeason(state,state.lastSeasonSummary);
+  if(!state.shopSeenByWindow||typeof state.shopSeenByWindow!=='object')state.shopSeenByWindow={};
+  Object.values(state.teams||{}).forEach(team=>{if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];Object.values(team.cards||{}).forEach(id=>{const family=llCardFamilyName(llCard(id));if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);});});
+  llV2EnsureEuropeStandings(state);
+  llV2EnsureTeamSeasonTargets(state);
+  if(!state.seasonGoals||state.seasonGoals.season!==state.season||(!state.seasonGoals.evaluated&&state.seasonGoals.version!==LL_SEASON_GOAL_VERSION))state.seasonGoals=llV2CreateSeasonGoals(state);
+  return state;
+}
+function llV2CupMaxRoundReached(state,team=state.playerTeam){
+  let max=-1;const history=state.cup?.history||{};
+  Object.entries(history).forEach(([round,field])=>{if(Array.isArray(field)&&field.includes(team))max=Math.max(max,Number(round));});
+  (state.results||[]).forEach(r=>{if(r.competition==='cup'&&(r.home===team||r.away===team))max=Math.max(max,llV2CupResultRound(r));});
+  if(state.cup?.winner===team)max=Math.max(max,LL_CUP_ROUNDS.length-1);return max;
+}
+function llV2CupMatchWon(state,team=state.playerTeam){return (state.results||[]).some(r=>r.competition==='cup'&&(r.home===team||r.away===team)&&((r.home===team&&r.homeGoals>r.awayGoals)||(r.away===team&&r.awayGoals>r.homeGoals)));}
+function llV2TargetStatus(state,goal,team=state.playerTeam,summary=null){
+  const league=goal.league||summary?.playerLeague||((state.leagues?.super||[]).includes(team)?'super':'first'),rows=summary?(league==='super'?summary.superRows:summary.firstRows):Object.values(state.standings?.[league]||{}).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr')),row=rows.find(r=>r.team===team),position=rows.findIndex(r=>r.team===team)+1,wins=Number(row?.W||0),goalsFor=Number(row?.GF||0),type=goal.type||goal.id;
+  if(type==='league_position')return {achieved:position>0&&position<=goal.value,progress:`${position||'—'}. sıra / hedef ilk ${goal.value}`};
+  if(type==='champion')return {achieved:position===1,progress:`${position||'—'}. sıra / hedef şampiyonluk`};
+  if(type==='direct_promote')return {achieved:position>0&&position<=2,progress:`${position||'—'}. sıra / doğrudan yükselme ilk 2`};
+  if(type==='playoff')return {achieved:position>0&&position<=7,progress:`${position||'—'}. sıra / Play-Off sınırı ilk 7`};
+  if(type==='survive'||type==='first_survive'){const safeLimit=Math.max(1,rows.length-(league==='super'?3:4));return {achieved:position>0&&position<=safeLimit,progress:`${position||'—'}. sıra / güvenli bölge ilk ${safeLimit}`};}
+  if(type==='promote'){const achieved=summary?!!summary.promoted?.includes(team):position>0&&position<=2;return {achieved,progress:summary?(achieved?'Süper Lig’e yükseldi':'Yükselemedi'):`${position||'—'}. sıra · ilk 2 veya Play-Off`};}
+  if(type==='europe'||type==='ucl'){const q=summary?.qualifications||(league==='super'?llV2Qualifications(rows,state.cup?.winner):{ucl:[],uel:[],uecl:[]}),clubs=type==='ucl'?q.ucl:[...q.ucl,...q.uel,...q.uecl],achieved=clubs.includes(team);return {achieved,progress:achieved?(type==='ucl'?'Şampiyonlar Ligi bileti alındı':'Avrupa bileti alındı'):`${position||'—'}. sıra · Avrupa hattı takip ediliyor`};}
+  if(type==='wins')return {achieved:wins>=goal.value,progress:`${wins}/${goal.value} lig galibiyeti`};
+  if(type==='goals_for')return {achieved:goalsFor>=goal.value,progress:`${goalsFor}/${goal.value} lig golü`};
+  const cupRound=llV2CupMaxRoundReached(state,team),cupTargets={cup_ro16:2,cup_qf:3,cup_sf:4,cup_final:5};
+  if(type==='cup_win')return {achieved:state.cup?.winner===team,progress:state.cup?.winner===team?'Kupa kazanıldı':`${cupRound>=0?LL_CUP_ROUNDS[cupRound]:'Henüz kupa maçı yok'} · hedef şampiyonluk`};
+  if(type==='cup_win_one'){const achieved=llV2CupMatchWon(state,team);return {achieved,progress:achieved?'En az 1 kupa maçı kazanıldı':'Henüz kupa galibiyeti yok'};}
+  if(type in cupTargets){const targetRound=cupTargets[type],achieved=cupRound>=targetRound;return {achieved,progress:achieved?`${LL_CUP_ROUNDS[targetRound]} görüldü`:`Ulaşılan: ${cupRound>=0?LL_CUP_ROUNDS[cupRound]:'Henüz kupa maçı yok'}`};}
+  return {achieved:false,progress:'Sonuç yok'};
+}
+function llV2GoalStatus(state,goal,summary=null){return llV2TargetStatus(state,goal,state.playerTeam,summary);}
+function llV2EvaluateTeamTargets(state,summary){const profile=llV2EnsureTeamSeasonTargets(state);if(profile.evaluated)return profile;profile.results=Object.fromEntries(Object.entries(profile.targets).map(([team,target])=>[team,llV2TargetStatus(state,target,team,summary)]));profile.evaluated=true;return profile;}
+function llV2EnsureSeasonGoals(state=lexLeague.state){if(!state)return null;llV2RepairState(state);return state.seasonGoals;}
+function llV2EvaluateSeasonGoals(state,summary){
+  const goals=llV2EnsureSeasonGoals(state);if(goals.evaluated)return goals;
+  goals.results=goals.items.map(goal=>{const status=llV2GoalStatus(state,goal,summary),ap=status.achieved?Number(goal.reward.ap||0):0,lp=status.achieved?Number(goal.reward.lp||0):0;return {...goal,...status,awardedAp:ap,awardedLp:lp};});
+  goals.earnedAp=goals.results.reduce((sum,g)=>sum+g.awardedAp,0);goals.earnedLp=goals.results.reduce((sum,g)=>sum+g.awardedLp,0);
+  goals.promotionSupportAp=summary.promoted.includes(state.playerTeam)?LL_PROMOTION_SUPPORT_AP:0;state.ap+=goals.earnedAp+goals.promotionSupportAp;state.lp+=goals.earnedLp;
+  if(goals.results.every(g=>g.achieved)){goals.badge='Yönetimden Tam Not';if(!state.clubBadges.some(b=>b.season===state.season&&b.name===goals.badge))state.clubBadges.push({season:state.season,name:goals.badge});}
+  goals.evaluated=true;return goals;
+}
+function llV2RewardText(goal,achieved){const ap=Number(goal.reward?.ap||0),lp=Number(goal.reward?.lp||0);return achieved?`${ap?`+${ap} AP`:''}${ap&&lp?' · ':''}${lp?`+${lp} LP`:''}`:`0 ${ap?'AP':'LP'}`;}
+function llV2SeasonGoalsHtml(final=false){
+  const s=lexLeague.state,goals=llV2EnsureSeasonGoals(s),items=final&&goals.evaluated?goals.results:goals.items.map(g=>({...g,...llV2GoalStatus(s,g)}));
+  return `<div class="ll-card"><div class="ll-card-title">${final?'Yönetim Hedefleri · Sezon Sonu':'Sezonluk Yönetim Hedefleri'}</div><div class="ll-muted" style="margin-bottom:10px">${llStars(goals.stars||llV2TeamStarsInState(s,s.playerTeam))} ${llEscape(llLeagueLabel(goals.league))} beklentileri · kulübün gücüne göre belirlendi</div><div class="ll-goals">${items.map(g=>`<div class="ll-goal ${final?(g.achieved?'success':'fail'):''}"><div><div class="ll-goal-title">${final?(g.achieved?'✓':'✕'):'◆'} ${llEscape(g.label)}</div><div class="ll-goal-progress">${llEscape(g.progress)}</div></div><div class="ll-goal-reward">${llV2RewardText(g,final?g.achieved:true)}</div></div>`).join('')}</div>${final?`<div class="ll-notice" style="margin-top:12px"><b>Hedef ödülleri:</b> +${goals.earnedAp} AP · +${goals.earnedLp} LP${goals.promotionSupportAp?`<br><b>Yükselme desteği:</b> +${goals.promotionSupportAp} AP`:''}${goals.badge?`<br><b>Kulüp rozeti:</b> 🏅 ${llEscape(goals.badge)}`:''}</div>`:`<div class="ll-muted" style="margin-top:10px">Hedefler sezon başında sabitlenir. Yıldızın sezon içinde yükselirse mevcut hedef değişmez; daha güçlü hedefler sonraki sezon başlar. Başarılmayan hedef 0 puan verir.</div>`}</div>`;
+}
+function llIsTransferWindow(week=lexLeague.state?.week){const s=lexLeague.state,n=Number(week);return !!s?.seasonEnded||(n>=1&&n<=3)||[10,20,30].includes(n);}
+function llV2MatchImportance(f,key){
+  const s=lexLeague.state,comp=f.competition||'league',pair=[f.home,f.away].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),derbies=new Set([['Galatasaray','Fenerbahçe'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Galatasaray','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Fenerbahçe','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|')]);
+  if(comp==='cup'&&/Final/i.test(f.roundLabel||''))return '🏆 TÜRKİYE KUPASI FİNALİ';
+  if(comp==='playoff'&&/Final/i.test(f.roundLabel||''))return '🚀 SÜPER LİG’E YÜKSELME FİNALİ';
+  if(comp==='playoff')return '🚀 YÜKSELME PLAY-OFF MAÇI';
+  if(comp==='league'&&derbies.has(pair))return '🔥 BÜYÜK DERBİ';
+  if(comp==='league'&&Number(s.week)>=20){const rows=llSortTable(key),positions=[f.home,f.away].map(n=>rows.findIndex(r=>r.team===n)+1);if(key==='super'&&positions.some(p=>p>rows.length-5))return '⚠️ DÜŞME HATTI MAÇI';if(key==='first'&&positions.some(p=>p>0&&p<=7))return '⬆️ YÜKSELME YARIŞI MAÇI';}
+  if(comp==='league'&&Number(s.week)>=20&&key==='super'){const rows=llSortTable(key),positions=[f.home,f.away].map(n=>rows.findIndex(r=>r.team===n)+1);if(positions.some(p=>p>0&&p<=6))return '\uD83C\uDF0D AVRUPA YARI\u015eI MA\u00c7I';}
+  return '';
+}
 
-let lexLeague = {
-  active:false,
-  state:null,
-  quiz:null,
-  match:null,
-  shop:null
-};
-
-function llEscape(value){
-  return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+function llTeamDef(name){
+  const domestic=LL_ALL_TEAMS.find(t=>t.name===name);if(domestic)return domestic;
+  const euro=UCL_TEAMS.find(t=>t.name===name),logoId=LL_EURO_LOGO_IDS[name];return euro?{name:euro.name,short:euro.short,stars:euro.pot===1?6:euro.pot===2?5:euro.pot===3?4:3,icon:euro.flag,logo:logoId?`https://tmssl.akamaized.net/images/wappen/head/${logoId}.png`:''}:{name,short:name,stars:3,icon:'🌍',logo:''};
 }
-function llEnglishWordHtml(word,text=word?.en||''){
-  const pos=String(word?.pos||llInferWordPos(word)||'').trim();
-  return `<span class="english-word-label">${llEscape(text)}${pos?` <span class="word-pos-tag">(${llEscape(pos)})</span>`:''}</span>`;
-}
-let llActiveSpeechButton=null;
-function llSpeakEnglish(text,button=null){
-  const synth=window.speechSynthesis;
-  if(!synth||typeof SpeechSynthesisUtterance==='undefined'){alert('Bu tarayıcı sesli telaffuzu desteklemiyor.');return;}
-  synth.cancel();if(llActiveSpeechButton)llActiveSpeechButton.classList.remove('speaking');
-  const utterance=new SpeechSynthesisUtterance(String(text||''));utterance.lang='en-US';utterance.rate=.86;utterance.pitch=1;
-  const voices=synth.getVoices?.()||[],voice=voices.find(v=>/^en-US/i.test(v.lang))||voices.find(v=>/^en-/i.test(v.lang));if(voice)utterance.voice=voice;
-  const clear=()=>{if(button)button.classList.remove('speaking');if(llActiveSpeechButton===button)llActiveSpeechButton=null;};
-  utterance.onend=clear;utterance.onerror=clear;if(button){button.classList.add('speaking');llActiveSpeechButton=button;}synth.speak(utterance);
-}
-function llPronounceButton(text,compact=false){
-  const safe=llEscape(text);return `<button type="button" class="pronounce-btn${compact?' compact':''}" data-pronounce="${safe}" onclick="event.stopPropagation();llSpeakEnglish(this.dataset.pronounce,this)" aria-label="${safe} kelimesinin İngilizce telaffuzunu dinle" title="İngilizce telaffuzu dinle">🔊</button>`;
-}
-function llSetWide(on=true){
-  const container=document.querySelector('.container');
-  if(container) container.classList.toggle('league-wide',on);
-}
-const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl'];
-function llSetEuropeMatchTheme(competition=null){
-  if(typeof document==='undefined'||!document.body)return;
-  document.body.classList.remove(...LL_EURO_MATCH_THEME_CLASSES);
-  if(!['ucl','uel','uecl'].includes(competition))return;
-  document.body.classList.add('ll-euro-match-day','ll-euro-match-'+competition);
-}
-function llSyncEuropeMatchTheme(){
-  const host=typeof llArea==='function'?llArea():null;
-  const matchCompetition=lexLeague?.match?.fixture?.competition;
-  const fixtureCompetition=typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null;
-  const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
-  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
-}
-if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
-  const llEuropeThemeHost=document.getElementById('flashcard-area');
-  if(llEuropeThemeHost)new MutationObserver(()=>llSyncEuropeMatchTheme()).observe(llEuropeThemeHost,{childList:true});
-}
-function llArea(){ return document.getElementById('flashcard-area'); }
-function llTeamDef(name){ return LL_TEAMS.find(t=>t.name===name); }
 function llTeamLogo(teamOrName,variant=''){
-  const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;
-  if(!team)return '';
-  return `<img class="ll-team-logo ${variant}" src="${team.logo}" alt="${llEscape(team.name)} logosu" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="ll-team-logo-fallback">${team.icon}</span>`;
+  const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
+  if(!team.logo)return `<span class="ll-team-logo-fallback" style="display:inline-flex">${team.icon||'⚽'}</span>`;
+  return `<img class="ll-team-logo ${variant}" src="${team.logo}" alt="${llEscape(team.name)} logosu" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="ll-team-logo-fallback">${team.icon||'⚽'}</span>`;
 }
-function llTeamState(name){ return lexLeague.state?.teams?.[name]; }
-function llCard(id){ return id ? LL_CARD_MAP[id] : null; }
-function llBaseName(card){ return card ? (card.logicName||card.name.replace(/\s*\([^)]*\)\s*$/,'').trim()) : ''; }
-function llStars(n){ return '⭐'.repeat(n); }
-function llRange(stars){ return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6]; }
-function llRangeText(stars){ const [a,b]=llRange(stars); return `${a}-${b}`; }
-function llRandomInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
-function llShuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
-function llDeep(obj){ return JSON.parse(JSON.stringify(obj)); }
-function llSave(){
-  if(!lexLeague.state) return;
-  localStorage.setItem(LL_SAVE_KEY,JSON.stringify(lexLeague.state));
+function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
+function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
+function llStars(n){return '⭐'.repeat(n);}
+function llTeamLeague(name){const s=lexLeague.state;if(s?.leagues?.super?.includes(name))return 'super';if(s?.leagues?.first?.includes(name))return 'first';return null;}
+function llLeagueLabel(key){return key==='super'?'Süper Lig':'TFF 1. Lig';}
+function llLeaguePositionLabel(name){const key=llTeamLeague(name);if(!key)return 'Avrupa kupası rakibi';const position=llSortTable(key).findIndex(row=>row.team===name)+1;return `${llLeagueLabel(key)} · ${position>0?`${position}. sıra`:'Sıralama yok'}`;}
+function llBlankStandings(names){return Object.fromEntries(names.map(n=>[n,llBlankStanding(n)]));}
+function llV2EuroLabel(type){return type==='ucl'?'Şampiyonlar Ligi':type==='uel'?'Avrupa Ligi':'Konferans Ligi';}
+function llV2ApplyEuropeStanding(state,type,home,homeGoals,away,awayGoals){
+  const table=state?.europeStandings?.[type];if(!table)return;
+  [home,away].forEach(name=>{if(!table.standings[name])table.standings[name]=llBlankStanding(name);if(!table.teams.includes(name))table.teams.push(name);});
+  [[home,homeGoals,awayGoals],[away,awayGoals,homeGoals]].forEach(([name,gf,ga])=>{const row=table.standings[name];row.P++;row.GF+=gf;row.GA+=ga;row.GD=row.GF-row.GA;if(gf>ga){row.W++;row.Pts+=3;}else if(gf===ga){row.D++;row.Pts++;}else row.L++;});
 }
-function llLoad(){
-  try{
-    const parsed=JSON.parse(localStorage.getItem(LL_SAVE_KEY)||'null');
-    if(parsed && parsed.version===1){
-      Object.entries(parsed.teams||{}).forEach(([name,team])=>{
-        LL_POSITIONS.forEach(pos=>{
-          const oldId=team.cards?.[pos];
-          if(!oldId)return;
-          const migratedId=LL_LEGACY_CARD_REPLACEMENTS[oldId]||oldId;
-          team.cards[pos]=LL_CARD_MAP[migratedId]?migratedId:null;
-        });
-        if(!Number.isFinite(team.aiAp)){
-          const row=parsed.standings?.[name];
-          team.aiAp=name===parsed.playerTeam?0:row?(row.W*20)+(row.D*12)+(row.L*6):0;
-        }
-        if(!Number.isFinite(team.nextMatchRerolls))team.nextMatchRerolls=0;
-        if(!team.sixStreaks)team.sixStreaks={};
-        if(!team.nextMatchBonuses)team.nextMatchBonuses={};
-      });
-      if(typeof parsed.starterPackClaimed!=='boolean')parsed.starterPackClaimed=true;
-      if(typeof parsed.starterAiAssigned!=='boolean')parsed.starterAiAssigned=true;
-      if(parsed.starterOffers){
-        Object.keys(parsed.starterOffers).forEach(pos=>{
-          parsed.starterOffers[pos]=[...new Set((parsed.starterOffers[pos]||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>LL_CARD_MAP[id]))];
-        });
-      }
-      parsed.cardBalanceVersion=2;
-      if((parsed.aiShopVersion||0)<2){parsed.aiShopVersion=2;parsed.aiTransferWindows={};}
-      return parsed;
-    }
-  }catch(e){ console.warn('Lexicon League save okunamadı',e); }
-  return null;
+function llV2CreateEuropeStandings(state){
+  const types=['ucl','uel','uecl'],all=[...new Set(UCL_TEAMS.map(team=>team.name))],shift=((Number(state.season)||1)-1)*12%all.length,rotated=[...all.slice(shift),...all.slice(0,shift)],groups={ucl:rotated.slice(0,12),uel:rotated.slice(12,24),uecl:rotated.slice(24,36)};
+  if(state.europe?.type&&types.includes(state.europe.type)){types.forEach(type=>groups[type]=groups[type].filter(name=>name!==state.playerTeam));groups[state.europe.type]=[state.playerTeam,...groups[state.europe.type].slice(0,11)];}
+  const standings={season:state.season};types.forEach(type=>{const teams=groups[type],fixtures=llGenerateSchedule(teams).slice(0,LL_EURO_WEEKS.length);standings[type]={teams:[...teams],standings:llBlankStandings(teams),fixtures,playedRounds:0};});
+  state.europeStandings=standings;
+  (state.results||[]).filter(result=>types.includes(result.competition)&&Number(result.season)===Number(state.season)).forEach(result=>llV2ApplyEuropeStanding(state,result.competition,result.home,result.homeGoals,result.away,result.awayGoals));
+  return standings;
 }
-function llClearTransient(){ lexLeague.quiz=null; lexLeague.match=null; lexLeague.shop=null; fcQueue=[]; }
-function llGoMainMenu(){
-  llClearTransient(); lexLeague.active=false; llSetWide(false); renderPreStart();
+function llV2EnsureEuropeStandings(state){
+  if(!state.europeStandings||Number(state.europeStandings.season)!==Number(state.season))return llV2CreateEuropeStandings(state);
+  const types=['ucl','uel','uecl'],valid=types.every(type=>{const table=state.europeStandings[type];return table&&Array.isArray(table.teams)&&table.standings&&Array.isArray(table.fixtures);});
+  if(!valid)return llV2CreateEuropeStandings(state);
+  types.forEach(type=>{const table=state.europeStandings[type];table.playedRounds=Math.max(0,Math.min(LL_EURO_WEEKS.length,Number(table.playedRounds)||0));});
+  return state.europeStandings;
 }
-function llResetGame(){
-  if(!confirm('Lexicon League kariyer kaydı tamamen silinsin mi?')) return;
-  localStorage.removeItem(LL_SAVE_KEY); lexLeague.state=null; llClearTransient(); renderLexiconLeagueLanding();
+function llV2SortEuropeTable(type){const table=llV2EnsureEuropeStandings(lexLeague.state)?.[type];return table?Object.values(table.standings).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr')):[];}
+function llV2SimpleEuropeScore(home,away){
+  const homeStars=llTeamDef(home)?.stars||3,awayStars=llTeamDef(away)?.stars||3,roll=stars=>Math.max(0,Math.min(5,Math.floor(Math.random()*3)+Math.floor((stars-2)/2)));
+  return {homeGoals:roll(homeStars)+(homeStars>awayStars&&Math.random()<.35?1:0),awayGoals:roll(awayStars)+(awayStars>homeStars&&Math.random()<.25?1:0)};
 }
-function llGenerateSchedule(teamNames){
-  const list=[...teamNames];
-  if(list.length%2) list.push('BAY');
-  const n=list.length, rounds=[];
-  let rotation=[...list];
-  for(let r=0;r<n-1;r++){
-    const matches=[];
-    for(let i=0;i<n/2;i++){
-      let home=rotation[i], away=rotation[n-1-i];
-      if(r%2===1 && i===0) [home,away]=[away,home];
-      if(home!=='BAY'&&away!=='BAY') matches.push({home,away});
-    }
-    rounds.push(matches);
-    rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];
-  }
-  const second=rounds.map(round=>round.map(m=>({home:m.away,away:m.home})));
-  return [...rounds,...second];
+function llV2SimulateEuropeTables(){
+  const s=lexLeague.state,tables=llV2EnsureEuropeStandings(s),due=LL_EURO_WEEKS.filter(week=>Number(s.week)>=week).length;
+  ['ucl','uel','uecl'].forEach(type=>{const table=tables[type];while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const involvesPlayer=fixture.home===s.playerTeam||fixture.away===s.playerTeam;if(involvesPlayer)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,LL_EURO_WEEKS[roundIndex],false,type,'euro-table');});table.playedRounds++;}});
 }
-function llBlankStanding(team){ return {team,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
 function llNewState(teamName){
-  const teams={};
-  LL_TEAMS.forEach(t=>{
-    teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};
-  });
-  return {
-    version:1,season:1,week:1,playerTeam:teamName,ap:0,lp:0,
-    teams,
-    standings:Object.fromEntries(LL_TEAMS.map(t=>[t.name,llBlankStanding(t.name)])),
-    schedule:llGenerateSchedule(LL_TEAMS.map(t=>t.name)),results:[],usedWords:[],
-    transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,starterOffers:{},cardPerformance:{},seasonEnded:false,lastSeasonSummary:null,createdAt:new Date().toISOString()
-  };
+  const teams={};LL_ALL_TEAMS.forEach(t=>teams[t.name]={name:t.name,stars:t.stars,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}});
+  const superNames=LL_TEAMS.map(t=>t.name),firstNames=LL_FIRST_TEAMS.map(t=>t.name);
+  const state={version:2,season:1,week:1,playerTeam:teamName,ap:0,lp:0,teams,leagues:{super:superNames,first:firstNames},standings:{super:llBlankStandings(superNames),first:llBlankStandings(firstNames)},schedules:{super:llGenerateSchedule(superNames),first:llGenerateSchedule(firstNames)},results:[],usedWords:[],transferWindowsVisited:{},aiTransferWindows:{},aiShopVersion:2,starterPackClaimed:false,starterAiAssigned:false,starterOffers:{},cardPerformance:{},seasonEnded:false,lastSeasonSummary:null,seasonHistory:[],pendingFixture:null,playoff:null,europe:null,europeStandings:null,trophies:[],discoveredCards:[],clubBadges:[],shopSeenByWindow:{},teamSeasonTargets:null,seasonGoals:null,createdAt:new Date().toISOString()};
+  llV2InitCup(state);llV2RepairState(state);return state;
 }
-function llSortTable(){
-  return Object.values(lexLeague.state.standings).sort((a,b)=>
-    b.Pts-a.Pts || b.GD-a.GD || b.GF-a.GF || a.team.localeCompare(b.team,'tr')
-  );
-}
-function llUpdateStanding(team,gf,ga){
-  const s=lexLeague.state.standings[team];
-  s.P++; s.GF+=gf; s.GA+=ga; s.GD=s.GF-s.GA;
-  const t=llTeamState(team);
-  if(gf>ga){s.W++;s.Pts+=3;t.wins++;t.lastResults.push('W');}
-  else if(gf===ga){s.D++;s.Pts+=1;t.lastResults.push('D');}
-  else{s.L++;t.lastResults.push('L');}
-  if(t.lastResults.length>5)t.lastResults.shift();
-}
-function llCurrentRound(){ return lexLeague.state.schedule[lexLeague.state.week-1] || []; }
-function llPlayerFixture(){
-  const p=lexLeague.state.playerTeam;
-  return llCurrentRound().find(m=>m.home===p||m.away===p);
-}
-function llCardEffectKind(card){
-  const effect=String(card?.effect||''),trigger=String(card?.trigger||'');
-  if(/reroll hakkı/i.test(effect))return 'REROLL HAKKI';
-  if(/yeniden at/i.test(effect))return 'ZAR YENİDEN ATIŞI';
-  if(/sanal gol elenir|golü sil|koruma/i.test(effect))return 'SKOR KORUMASI';
-  if(/x\d+\s+gol|x\d+\s+say/i.test(effect))return 'SKOR ÇARPANI';
-  if(/sanal gol|kart golü|ekstra gol/i.test(effect))return 'SKOR BONUSU';
-  if(/otomatik.*kazan|beraberliği galibiyet|düello.*kazan|berabere say/i.test(effect))return 'DÜELLO SONUCU';
-  if(/zar|farkı\s+\d+\s+azalt|minimum değeri/i.test(effect))return 'ZAR DEĞİŞİMİ';
-  if(/kart.*etkisiz|kartını.*blok/i.test(effect))return 'KART BLOKAJI';
-  if(/gelecek maç|bir sonraki maç/i.test(effect)||/gelecek maç/i.test(trigger))return 'SONRAKİ MAÇ ETKİSİ';
-  if(/AP|bedel/i.test(effect))return 'EKONOMİ ETKİSİ';
-  return 'ÖZEL ETKİ';
-}
-function llCardHtml(cardId,teamName,emptyText='Kart yok'){
-  const card=llCard(cardId);
-  if(!card) return `<button class="ll-ability empty" type="button">${emptyText}</button>`;
-  const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null;
-  const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} şart (%${llCardTriggerRate(performance)}) · ${performance.applications} gerçek etki (%${llCardEffectRate(performance)})</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
-  return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br>${llCardUpgradeBadgeHtml(card)}<span style="display:block"><b>${llEscape(llCardEffectKind(card))}:</b> ${llEscape(card.effect)}</span>${performanceLine}</button>`;
-}
-function llCardPerformance(cardId){
-  const id=LL_LEGACY_CARD_REPLACEMENTS[cardId]||cardId,raw=lexLeague.state?.cardPerformance?.[id];
-  if(!raw||typeof raw!=='object')return null;
-  const wins=Math.max(0,Number(raw.wins)||0),draws=Math.max(0,Number(raw.draws)||0),losses=Math.max(0,Number(raw.losses)||0);
-  const triggeredWins=Math.max(0,Number(raw.triggeredWins)||0),triggeredDraws=Math.max(0,Number(raw.triggeredDraws)||0),triggeredLosses=Math.max(0,Number(raw.triggeredLosses)||0),triggers=Math.max(triggeredWins+triggeredDraws+triggeredLosses,Math.max(0,Number(raw.triggers)||0));
-  const appliedWins=Math.max(0,Number(raw.appliedWins)||0),appliedDraws=Math.max(0,Number(raw.appliedDraws)||0),appliedLosses=Math.max(0,Number(raw.appliedLosses)||0),applications=Math.max(appliedWins+appliedDraws+appliedLosses,Math.max(0,Number(raw.applications)||0));
-  return {...raw,wins,draws,losses,matches:wins+draws+losses,triggers,triggeredWins,triggeredDraws,triggeredLosses,applications,appliedWins,appliedDraws,appliedLosses,goalsFor:Math.max(0,Number(raw.goalsFor)||0),goalsAgainst:Math.max(0,Number(raw.goalsAgainst)||0)};
-}
-function llCardWinRate(stat){return stat?.matches?Math.round((stat.wins/stat.matches)*100):0;}
-function llCardTriggerRate(stat){return stat?.matches?Math.round((stat.triggers/stat.matches)*100):0;}
-function llCardEffectRate(stat){return stat?.matches?Math.round((stat.applications/stat.matches)*100):0;}function llTriggeredPlayerCardIds(match){
-  if(!match)return [];
-  const resolution=match.resolution||match.projectedResolution,canonical=resolution?.triggeredCardIds?.a;
-  if(Array.isArray(canonical))return [...new Set(canonical.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))];
-  const events=resolution?.events||[],prefix=`${match.player}:`,disabled=match.scouting?.disabled?.a||new Set(),triggered=new Set();
-  (match.playerDice||[]).forEach(die=>{
-    const card=llCard(die.cardId);if(!card||disabled.has(die.uid))return;const base=llBaseName(card);
-    if(events.some(event=>(event.startsWith(`${prefix} ${base} →`)||event.startsWith(`${prefix} ${base} (`))&&!/bulunamadı|şartı sağlanmadı/i.test(event)))triggered.add(card.id);
-    if(['Metronom','Reflex'].includes(base))triggered.add(card.id);
-    if(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(match.playerDice,die))triggered.add(card.id);
-    if(base==='Yıldız Oyuncu'&&(llTeamState(match.player)?.stars||0)>=3)triggered.add(card.id);
-    if(base==='Yedek Kulübesi'&&resolution?.scoreA<resolution?.scoreB)triggered.add(card.id);
-    if(base==='Form Tutmuyor'&&(llTeamState(match.player)?.sixStreaks?.[die.position]||0)>=2&&die.value===6)triggered.add(card.id);
-  });
-  return [...triggered];
-}
-function llAppliedPlayerCardIds(match){
-  if(!match)return [];
-  const resolution=match.resolution||match.projectedResolution,canonical=resolution?.appliedCardIds?.a;
-  return Array.isArray(canonical)?[...new Set(canonical.map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))]:llTriggeredPlayerCardIds(match);
-}function llRecordPlayerCardPerformance(cardIds,result,competition='league',goalsFor=0,goalsAgainst=0,conditionMetCardIds=[],appliedCardIds=[]){
-  const s=lexLeague.state;if(!s)return;if(!s.cardPerformance||typeof s.cardPerformance!=='object')s.cardPerformance={};
-  const validResults=['win','draw','loss'];if(!validResults.includes(result))return;
-  const ids=[...new Set((cardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id)))],conditionMet=new Set((conditionMetCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id)),applied=new Set((appliedCardIds||[]).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id));
-  ids.forEach(id=>{
-    const stat=s.cardPerformance[id]&&typeof s.cardPerformance[id]==='object'?s.cardPerformance[id]:{};
-    ['wins','draws','losses','triggers','triggeredWins','triggeredDraws','triggeredLosses','applications','appliedWins','appliedDraws','appliedLosses'].forEach(key=>stat[key]=Math.max(0,Number(stat[key])||0));
-    stat.goalsFor=Math.max(0,Number(stat.goalsFor)||0)+Math.max(0,Number(goalsFor)||0);stat.goalsAgainst=Math.max(0,Number(stat.goalsAgainst)||0)+Math.max(0,Number(goalsAgainst)||0);
-    if(result==='win')stat.wins++;else if(result==='draw')stat.draws++;else stat.losses++;
-    if(conditionMet.has(id)){stat.triggers++;if(result==='win')stat.triggeredWins++;else if(result==='draw')stat.triggeredDraws++;else stat.triggeredLosses++;}
-    if(applied.has(id)){stat.applications++;if(result==='win')stat.appliedWins++;else if(result==='draw')stat.appliedDraws++;else stat.appliedLosses++;}
-    stat.matches=stat.wins+stat.draws+stat.losses;stat.firstSeason=stat.firstSeason==null?s.season:Math.min(Number(stat.firstSeason)||s.season,s.season);stat.lastSeason=s.season;
-    if(!stat.byCompetition||typeof stat.byCompetition!=='object')stat.byCompetition={};
-    const comp=stat.byCompetition[competition]&&typeof stat.byCompetition[competition]==='object'?stat.byCompetition[competition]:{};
-    ['wins','draws','losses','triggers','applications'].forEach(key=>comp[key]=Math.max(0,Number(comp[key])||0));if(result==='win')comp.wins++;else if(result==='draw')comp.draws++;else comp.losses++;if(conditionMet.has(id))comp.triggers++;if(applied.has(id))comp.applications++;comp.matches=comp.wins+comp.draws+comp.losses;stat.byCompetition[competition]=comp;
-    s.cardPerformance[id]=stat;
-  });
-}function llCardPerformanceHtml(cardId,compact=false){
-  const stat=llCardPerformance(cardId);
-  if(!stat?.matches)return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart kadrodayken</div><div class="ll-card-performance-empty">Henüz maç verisi yok.</div></div>`;
-  const seasons=stat.firstSeason===stat.lastSeason?`Sezon ${stat.firstSeason}`:`Sezon ${stat.firstSeason}–${stat.lastSeason}`;
-  return `<div class="ll-card-performance ${compact?'compact':''}"><div class="ll-card-performance-title">Kart performansı · ${llEscape(seasons)}</div><div class="ll-card-performance-grid"><div class="ll-card-performance-stat"><strong>${stat.matches}</strong><span>Kadroda</span></div><div class="ll-card-performance-stat"><strong>${stat.triggers}</strong><span>Şart oluştu</span></div><div class="ll-card-performance-stat"><strong>%${llCardTriggerRate(stat)}</strong><span>Şart oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.applications}</strong><span>Gerçek etki</span></div><div class="ll-card-performance-stat"><strong>%${llCardEffectRate(stat)}</strong><span>Etki oranı</span></div><div class="ll-card-performance-stat"><strong>${stat.appliedWins}G ${stat.appliedDraws}B ${stat.appliedLosses}M</strong><span>Etki olduğunda</span></div></div>${compact?'':`<div class="ll-card-performance-note">Şart oluşması kartın tetikleyicisinin hazırlandığını; gerçek etki ise zar, düello, skor, reroll veya sonraki maç sonucunun gerçekten değiştiğini gösterir. Genel takım sonucu ${stat.wins}G ${stat.draws}B ${stat.losses}M; toplam skor ${stat.goalsFor}-${stat.goalsAgainst}.</div>`}</div>`;
-}function llOpponentIcons(teamName){
-  const team=llTeamState(teamName);
-  return `<div class="ll-card-icons">${LL_POSITIONS.map(pos=>{
-    const id=team.cards[pos], c=llCard(id);
-    return `<button class="ll-icon-btn" title="${llEscape(pos)}" onclick="${id?`llShowCardPopup('${id}','${llEscape(teamName)}')`:`llShowEmptyCard('${llEscape(teamName)}','${llEscape(pos)}')`}">${c?LL_POSITION_ICONS[pos]:'·'}</button>`;
-  }).join('')}</div>`;
-}
-function llShowEmptyCard(team,pos){
-  llShowModal(`<div class="ll-card-title">${llEscape(team)} · ${llEscape(pos)}</div><div class="ll-sub">Bu mevkide henüz yetenek kartı yok.</div>`);
-}
-function llShowCardPopup(cardId,teamName=''){
-  const c=llCard(cardId);if(!c)return;
-  const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;
-  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${llCardUpgradePreviewHtml(c)}${showPerformance?llCardPerformanceHtml(c.id):''}`);
-}
-function llShowModal(content){
-  const old=document.getElementById('ll-modal'); if(old)old.remove();
-  const div=document.createElement('div'); div.id='ll-modal'; div.className='ll-modal';
-  div.innerHTML=`<div class="ll-modal-card">${content}<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="ll-btn primary" onclick="llCloseModal()">Kapat</button></div></div>`;
-  div.addEventListener('click',e=>{if(e.target===div)llCloseModal();}); document.body.appendChild(div);
-}
-// Eski önbellekte kalmış yedek scriptleri için geriye uyumluluk.
-globalThis.llOpenModal=llShowModal;
-function llCloseModal(){ document.getElementById('ll-modal')?.remove(); }
+function llSave(){if(lexLeague.state)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(lexLeague.state));}
+function llLoad(){try{const s=JSON.parse(localStorage.getItem(LL_V2_SAVE_KEY)||'null');return s?.version===2?llV2RepairState(s):null;}catch{return null;}}
+function llResetGame(){if(!confirm('İki ligli kariyer kaydı tamamen silinsin mi?'))return;localStorage.removeItem(LL_V2_SAVE_KEY);lexLeague.state=null;llClearTransient();renderLexiconLeagueLanding();}
+function llContinueGame(){const s=llLoad();if(!s){llRenderTeamSelect();return;}lexLeague.state=s;llSave();lexLeague.active=true;llSetWide(true);if(!s.starterPackClaimed)llRenderStarterShop();else if(s.seasonEnded)llRenderSeasonEnd();else llRenderDashboard();}
+function llRenderTeamSelect(){lexLeague.active=true;llSetWide(true);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">TFF 1. Lig'den <em>Başla</em></div><div class="ll-muted">20 kulüp · 6 yıldızlı yeni güç sistemi · Hedef Süper Lig</div></div><button class="ll-btn" onclick="renderLexiconLeagueLanding()">← Geri</button></div><div class="ll-team-grid">${LL_FIRST_TEAMS.map(t=>`<button class="ll-team-option" onclick="llStartCareer('${llEscape(t.name)}')"><div class="ll-team-name team-with-logo">${llTeamLogo(t,'compact')}<span>${llEscape(t.name)}</span></div><div class="ll-stars">${llStars(t.stars)}</div><div class="ll-range">Zar aralığı ${llRangeText(t.stars)}</div></button>`).join('')}</div></div></div>`;}
+function llAssignStarterCardsToAi(){const s=lexLeague.state;if(!s||s.starterAiAssigned)return;LL_ALL_TEAMS.map(t=>t.name).filter(n=>n!==s.playerTeam).forEach(llAssignAiCard);s.starterAiAssigned=true;}
+function llHeldCardIds(){const ids=new Set();Object.values(lexLeague.state.teams).forEach(t=>LL_POSITIONS.forEach(p=>{if(t.cards?.[p])ids.add(t.cards[p]);}));return ids;}
 
-function renderLexiconLeagueLanding(){
-  lexLeague.active=true; llSetWide(true); llClearTransient();
-  const saved=llLoad();
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel">
-    <div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">🎲⚽</div><div><div class="ll-title">Lexicon <em>League</em></div><div class="ll-muted">Kelime öğrenme + zar düellosu + menajerlik RPG</div></div></div><button class="ll-btn" onclick="llGoMainMenu()">← Ana Menü</button></div>
-    <div class="ll-grid"><div class="ll-card"><div class="ll-card-title">Lig Anayasası</div>
-      <div class="ll-sub">18 takım, çift devreli 34 hafta. Her maç öncesi 10 kelime; doğru kelime başına 5 AP. Zarlar mevkileri temsil eder ve yıldız seviyesi yalnızca atış aralığını belirler.</div>
-      <div class="ll-metrics"><div class="ll-metric"><strong>18</strong><span>Takım</span></div><div class="ll-metric"><strong>34</strong><span>Hafta</span></div><div class="ll-metric"><strong>300</strong><span>Kart</span></div><div class="ll-metric"><strong>3</strong><span>Zar</span></div></div>
-      <div class="ll-notice"><b>Ham zar aralıkları:</b> 1★ = 1-4, 2★ = 1-5, 3★ = 2-6, 4★ = 3-6, 5★ = 4-6. Sınav ve kart bonusları ham sonucu aralığın üzerine çıkarabilir. Takım gücünden kendiliğinden sanal gol gelmez.</div>
-    </div><div class="ll-card"><div class="ll-card-title">Kariyer</div>
-      ${saved?`<div class="ll-sub" style="margin-bottom:14px"><b>${llEscape(saved.playerTeam)}</b> · Sezon ${saved.season} · ${saved.seasonEnded?'Sezon tamamlandı':`${saved.week}. hafta`}<br>AP ${saved.ap} · LP ${saved.lp}</div><button class="ll-btn primary" style="width:100%;margin-bottom:9px" onclick="llContinueGame()">Kariyere Devam Et</button>`:''}
-      <button class="ll-btn gold" style="width:100%;margin-bottom:9px" onclick="llRenderTeamSelect()">Yeni Kariyer Başlat</button>
-      ${saved?`<button class="ll-btn danger" style="width:100%" onclick="llResetGame()">Kayıtlı Kariyeri Sil</button>`:''}
-    </div></div>
-  </div></div>`;
+function llSortTable(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){return Object.values(lexLeague.state.standings[key]).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr'));}
+function llUpdateStanding(team,gf,ga){const key=llTeamLeague(team),r=lexLeague.state.standings[key][team];r.P++;r.GF+=gf;r.GA+=ga;r.GD=r.GF-r.GA;if(gf>ga){r.W++;r.Pts+=3;}else if(gf===ga){r.D++;r.Pts++;}else r.L++;const ts=llTeamState(team);ts.lastResults.push(gf>ga?'W':gf===ga?'D':'L');ts.lastResults=ts.lastResults.slice(-5);if(gf>ga)ts.wins++;}
+function llPlayerFixture(){const s=lexLeague.state;if(s.pendingFixture)return s.pendingFixture;const key=llTeamLeague(s.playerTeam),round=s.schedules[key][s.week-1]||[];const f=round.find(x=>x.home===s.playerTeam||x.away===s.playerTeam);return f?{...f,competition:'league',league:key,roundLabel:`${s.week}. Hafta`}:null;}
+function llCurrentRound(key=llTeamLeague(lexLeague.state.playerTeam)){return lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];}
+function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
+  const rows=llSortTable(key),qualifications=key==='super'?llV2Qualifications(rows,lexLeague.state.cup?.winner):null;
+  const euroZones=qualifications?{ucl:new Set(qualifications.ucl),uel:new Set(qualifications.uel),uecl:new Set(qualifications.uecl)}:null;
+  const legend=key==='first'
+    ?`<div class="ll-zone-legend"><span><i class="ll-zone-dot direct"></i>1–2: Doğrudan Süper Lig'e yükselir</span><span><i class="ll-zone-dot playoff"></i>3–7: Play-Off oynar</span></div>`
+    :`<div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span><span><i class="ll-zone-dot relegation"></i>Son 3: TFF 1. Lig'e düşer</span></div>`;
+  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>llCardContractSlotActive(t,p)).length,euroClass=key!=='super'?'':euroZones.ucl.has(r.team)?'ucl-zone ':euroZones.uel.has(r.team)?'uel-zone ':euroZones.uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euroClass}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}`;}
+function llV2CupResultRound(result){
+  if(Number.isInteger(result?.cupRound))return result.cupRound;
+  let round=0;for(let i=0;i<LL_CUP_WEEKS.length;i++)if(Number(result?.week)>=LL_CUP_WEEKS[i])round=i;return round;
 }
-function llContinueGame(){
-  const saved=llLoad(); if(!saved){llRenderTeamSelect();return;}
-  lexLeague.state=saved; lexLeague.active=true; llSetWide(true);
-  if(!saved.starterPackClaimed)llRenderStarterShop();
-  else if(saved.seasonEnded) llRenderSeasonEnd(); else llRenderDashboard();
+function llV2FixtureResult(home,away,competition='league',week=null,round=null){
+  return [...(lexLeague.state.results||[])].reverse().find(r=>r.season===lexLeague.state.season&&r.competition===competition&&r.home===home&&r.away===away&&(week==null||Number(r.week)===Number(week))&&(round==null||llV2CupResultRound(r)===round));
 }
-function llRenderTeamSelect(){
-  lexLeague.active=true;llSetWide(true);
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Kulübünü <em>Seç</em></div><div class="ll-muted">Başlangıç yıldızı kalıcı zar aralığını belirler; LP ile yükseltilebilir.</div></div><button class="ll-btn" onclick="renderLexiconLeagueLanding()">← Geri</button></div>
-    <div class="ll-team-grid">${LL_TEAMS.map(t=>`<button class="ll-team-option" onclick="llStartCareer('${llEscape(t.name)}')"><div class="ll-team-name team-with-logo">${llTeamLogo(t,'compact')}<span>${llEscape(t.name)}</span></div><div class="ll-stars">${llStars(t.stars)}</div><div class="ll-range">Zar aralığı ${llRangeText(t.stars)}</div></button>`).join('')}</div></div></div>`;
+function llV2FixtureTeamHtml(name,away=false){
+  if(!name)return `<div class="ll-fixture-team ${away?'away':''}"><span>BAY</span></div>`;
+  return `<div class="ll-fixture-team ${away?'away':''}">${away?`<span>${llEscape(name)}</span>${llTeamLogo(name,'table')}`:`${llTeamLogo(name,'table')}<span>${llEscape(name)}</span>`}</div>`;
 }
-function llStartCareer(teamName){
-  if(localStorage.getItem(LL_SAVE_KEY) && !confirm('Mevcut Lexicon League kariyerinin üzerine yeni kariyer yazılsın mı?'))return;
-  lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSave();llRenderStarterShop();
+function llV2FixtureRow(home,away,result=null){
+  const player=lexLeague.state.playerTeam,isPlayer=home===player||away===player,score=!home||!away?'BAY':result?`${result.homeGoals} - ${result.awayGoals}`:'VS';
+  return `<div class="ll-fixture-row ${isPlayer?'player':''}">${llV2FixtureTeamHtml(home)}<div class="ll-fixture-score">${score}</div>${llV2FixtureTeamHtml(away,true)}</div>`;
 }
-function llAssignStarterCardsToAi(){
-  const state=lexLeague.state;if(!state||state.starterAiAssigned)return;
-  LL_TEAMS.map(t=>t.name).filter(name=>name!==state.playerTeam).forEach(llAssignAiCard);
-  state.starterAiAssigned=true;
+function llV2LeagueFixturesHtml(key){
+  const s=lexLeague.state,schedule=s.schedules[key]||[],focus=Math.min(Math.max(Number(s.week)||1,1),schedule.length);
+  return `<div class="ll-round-list">${schedule.map((round,index)=>{const week=index+1,played=round.filter(f=>llV2FixtureResult(f.home,f.away,'league',week)).length;return `<details class="ll-round-card" ${week===focus?'open':''}><summary><span>${week}. Hafta</span><span class="ll-round-meta">${played}/${round.length} oynandı</span></summary><div class="ll-fixture-list">${round.map(f=>llV2FixtureRow(f.home,f.away,llV2FixtureResult(f.home,f.away,'league',week))).join('')}</div></details>`;}).join('')}</div>`;
 }
-function llRenderStarterShop(){
-  const state=lexLeague.state;if(!state)return;
-  if(state.starterPackClaimed){llRenderDashboard();return;}
-  llEnsureStarterOffers();
-  lexLeague.active=true;llSetWide(true);lexLeague.shop={mode:'starter',position:null,offers:[]};
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Ücretsiz <em>Başlangıç Kartı</em></div><div class="ll-muted">Yalnızca ilk sezonun başında, kariyer başına bir kez</div></div></div><div class="ll-notice"><b>Bütün takımlar bir başlangıç kartı aldı.</b> Sen de bir mevki seçip açılan iki tekliften yalnızca bir kart alacaksın. Bu seçim ücretsizdir ve atlanamaz.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(state.playerTeam).stars)}</div></div><div class="ll-muted">Bu mevkiye uygun iki kart teklifi açılır.</div><button class="ll-btn gold" style="width:100%;margin-top:14px" onclick="llOpenStarterPack('${pos}')">Ücretsiz Teklifleri Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
+function llV2CupRoundField(round){
+  const c=lexLeague.state.cup||{},saved=c.history?.[round];if(Array.isArray(saved)&&saved.length)return saved;
+  if(c.round===round&&Array.isArray(c.field)&&c.field.length)return c.field;
+  const results=(lexLeague.state.results||[]).filter(r=>r.competition==='cup'&&llV2CupResultRound(r)===round);return results.length?results.flatMap(r=>[r.home,r.away]):null;
 }
-function llEnsureStarterOffers(){
-  const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
-  if(!state.starterOffers||typeof state.starterOffers!=='object')state.starterOffers={};
-  const reserved=new Set(Object.values(state.starterOffers).flat().map(id=>llCardFamilyName(llCard(id))).filter(Boolean));
-  LL_POSITIONS.forEach(pos=>{
-    const saved=state.starterOffers[pos];
-    if(Array.isArray(saved)&&saved.length===2&&saved.every(id=>llCard(id))&&new Set(saved.map(id=>llCardFamilyName(llCard(id)))).size===2)return;
-    const pool=llEligibleCards(state.playerTeam,pos).filter(c=>!c.clubCard&&!c.upgradeOnly&&!reserved.has(llCardFamilyName(c)));
-    const offers=llPickDistinctOfferPair(pool);
-    state.starterOffers[pos]=offers.map(c=>c.id);
-    offers.forEach(c=>reserved.add(llCardFamilyName(c)));
-  });
-  llSave();
+function llV2CupRoundsHtml(){
+  const s=lexLeague.state,c=s.cup||{},cupResults=(s.results||[]).filter(r=>r.competition==='cup');
+  return `<div class="ll-round-list">${LL_CUP_ROUNDS.map((name,round)=>{const field=llV2CupRoundField(round),roundResults=cupResults.filter(r=>llV2CupResultRound(r)===round),pairs=[];if(field)for(let i=0;i<field.length;i+=2)pairs.push([field[i]||null,field[i+1]||null]);const stateText=c.winner||round<c.round?'Tamamlandı':round===c.round?'Güncel tur':'Bekliyor',rows=pairs.length?pairs.map(([home,away])=>llV2FixtureRow(home,away,home&&away?roundResults.find(r=>r.home===home&&r.away===away):null)).join(''):`<div class="ll-muted" style="padding:4px 4px 10px">Eşleşmeler önceki tur tamamlanınca belli olacak.</div>`;return `<details class="ll-round-card" ${round===c.round&&!c.winner?'open':''}><summary><span>${name}</span><span class="ll-round-meta">${LL_CUP_WEEKS[round]}. hafta öncesi · ${stateText}</span></summary><div class="ll-fixture-list">${rows}</div></details>`;}).join('')}</div>`;
 }
-function llOpenStarterPack(pos){
-  const state=lexLeague.state;if(!state||state.starterPackClaimed)return;
-  llEnsureStarterOffers();const offers=state.starterOffers?.[pos]||[];
-  if(offers.length<2){alert('Bu mevki için yeterli uygun kart kalmadı.');return;}
-  lexLeague.shop={mode:'starter',position:pos,offers:[...offers]};llDiscoverCards(offers);llSave();llRenderShopOffers();llRevealOpenedPack();
+function llV2EuropeTableHtml(type){
+  const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam;
+  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>`<tr class="${row.team===player?'player ':''}${index<4?'ucl-zone ':''}"><td>${index+1}</td><td>${llTeamLogo(row.team,'table')}${llEscape(row.team)}</td><td>${row.P}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td><td>${row.GF}</td><td>${row.GA}</td><td>${row.GD}</td><td><b>${row.Pts}</b></td></tr>`).join('')}</tbody></table></div><div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>İlk 4: en yüksek Avrupa performansı</span><span>Puan eşitliğinde averaj ve atılan gol uygulanır</span></div>`;
 }
+function llV2EuropeFixturesHtml(type){
+  const s=lexLeague.state,table=llV2EnsureEuropeStandings(s)[type],results=(s.results||[]).filter(result=>result.competition===type&&result.league==='euro-table');
+  return `<div class="ll-round-list">${(table.fixtures||[]).map((round,index)=>{const played=round.filter(f=>results.some(r=>r.home===f.home&&r.away===f.away)).length;return `<details class="ll-round-card" ${index===Math.min(table.playedRounds,LL_EURO_WEEKS.length-1)?'open':''}><summary><span>${LL_EURO_ROUNDS[index]} · ${LL_EURO_WEEKS[index]}. hafta</span><span class="ll-round-meta">${played}/${round.length} oynandı</span></summary><div class="ll-fixture-list">${round.map(f=>llV2FixtureRow(f.home,f.away,results.find(r=>r.home===f.home&&r.away===f.away)||null)).join('')}</div></details>`;}).join('')}</div>`;
+}
+function llV2EuropeResultRound(result){if(result?.euroRound!=null&&Number.isInteger(Number(result.euroRound)))return Number(result.euroRound);const index=LL_EURO_WEEKS.indexOf(Number(result?.week));return index>=0?index:null;}
+function llV2EuropePlayerResult(type,round){const player=lexLeague.state.playerTeam;return (lexLeague.state.results||[]).find(result=>result.competition===type&&result.userMatch&&(result.home===player||result.away===player)&&llV2EuropeResultRound(result)===round)||null;}
+function llV2EuropeRoadHtml(type){
+  const s=lexLeague.state,e=s.europe,participates=e?.type===type,player=s.playerTeam;
+  return `<div class="ll-round-list">${LL_EURO_ROUNDS.map((name,round)=>{const result=llV2EuropePlayerResult(type,round),pending=s.pendingFixture?.competition===type&&Number(e?.round)===round?s.pendingFixture:null,current=participates&&e?.alive&&Number(e.round)===round;if(result){const advanced=result.knockoutWinner?result.knockoutWinner===player:(Number(e?.round)>round||e?.winner===player),stateText=advanced?(round===LL_EURO_ROUNDS.length-1?'Kupa kazanıldı':'Tur geçildi'):'Elendi';return `<details class="ll-round-card" ${round===Number(e?.round)||(!e?.alive&&!advanced)?'open':''}><summary><span>${name}</span><span class="ll-round-meta">${stateText}</span></summary><div class="ll-fixture-list">${llV2FixtureRow(result.home,result.away,result)}<div class="ll-muted" style="padding:8px 4px">${advanced?(round===LL_EURO_ROUNDS.length-1?`${llV2EuroLabel(type)} şampiyonluğu`:`Sıradaki tur: ${LL_EURO_ROUNDS[round+1]}`):`${name} aşamasında Avrupa serüveni sona erdi.`}</div></div></details>`;}const status=current?'Güncel tur':participates&&!e?.alive?'Serüven sona erdi':'Bekliyor',body=pending?llV2FixtureRow(pending.home,pending.away,null):`<div class="ll-muted" style="padding:8px 4px">${current?`${LL_EURO_WEEKS[round]}. hafta civarında oynanacak; eşleşme hazır olduğunda rakip burada görünür.`:'Eşleşme önceki tur tamamlanınca belli olacak.'}</div>`;return `<details class="ll-round-card" ${current?'open':''}><summary><span>${name}</span><span class="ll-round-meta">${LL_EURO_WEEKS[round]}. hafta · ${status}</span></summary><div class="ll-fixture-list">${body}</div></details>`;}).join('')}</div>`;
+}
+function llRenderCompetitionCenter(tab='league',key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
+  const s=lexLeague.state;if(!s){renderLexiconLeagueLanding();return;}llSetWide(true);llV2RepairCupProgress(s);llV2EnsureEuropeStandings(s);const c=s.cup||{},playerCupMatches=(s.results||[]).filter(r=>r.competition==='cup'&&(r.home===s.playerTeam||r.away===s.playerTeam)).length,cupStatus=c.winner?`Şampiyon: ${c.winner}`:c.alive?'Kupada devam ediyor':'Kupadan elendi',euroType=['ucl','uel','uecl'].includes(key)?key:(s.europe?.type||'ucl'),leagueKey=['super','first'].includes(key)?key:(llTeamLeague(s.playerTeam)||'first');
+  const tabs=`<div class="ll-comp-tabs"><button class="ll-comp-tab ${tab==='league'?'active':''}" onclick="llRenderCompetitionCenter('league','${llTeamLeague(s.playerTeam)||'first'}')">Ligler ve Fikstür</button><button class="ll-comp-tab ${tab==='cup'?'active':''}" onclick="llRenderCompetitionCenter('cup','${llTeamLeague(s.playerTeam)||'first'}')">Ziraat Türkiye Kupası</button><button class="ll-comp-tab ${tab==='europe'?'active':''}" onclick="llRenderCompetitionCenter('europe','${euroType}')">Avrupa Kupaları</button></div>`;
+  const league=`<div class="ll-subtabs"><button class="ll-btn ${leagueKey==='super'?'primary':''}" onclick="llRenderCompetitionCenter('league','super')">Süper Lig</button><button class="ll-btn ${leagueKey==='first'?'primary':''}" onclick="llRenderCompetitionCenter('league','first')">TFF 1. Lig</button></div><div class="ll-card"><div class="ll-card-title">${llLeagueLabel(leagueKey)} Puan Tablosu</div>${llTableHtml(leagueKey)}</div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">${llLeagueLabel(leagueKey)} · Tüm Eşleşmeler</div>${llV2LeagueFixturesHtml(leagueKey)}</div>`;
+  const cup=`<div class="ll-cup-status"><div class="ll-metric"><strong>${cupStatus}</strong><span>Durum</span></div><div class="ll-metric"><strong>${c.winner?LL_CUP_ROUNDS.length:Math.min((c.round||0)+1,LL_CUP_ROUNDS.length)}/${LL_CUP_ROUNDS.length}</strong><span>Tur</span></div><div class="ll-metric"><strong>${playerCupMatches}</strong><span>Oynadığın Kupa Maçı</span></div></div><div class="ll-card"><div class="ll-card-title">Türkiye Kupası · Tüm Turlar ve Eşleşmeler</div>${llV2CupRoundsHtml()}</div>`;
+  const activeText=s.europe?.type===euroType?(s.europe.alive?`${llV2EuroLabel(euroType)}'nde devam ediyorsun`:`${llV2EuroLabel(euroType)} serüvenin tamamlandı`):`Bu sezon ${llV2EuroLabel(euroType)} katılımın yok`,playerEuroMatches=(s.results||[]).filter(r=>r.competition===euroType&&(r.home===s.playerTeam||r.away===s.playerTeam)).length;
+  const europe=`<div class="ll-subtabs"><button class="ll-btn ${euroType==='ucl'?'primary':''}" onclick="llRenderCompetitionCenter('europe','ucl')">Şampiyonlar Ligi</button><button class="ll-btn ${euroType==='uel'?'primary':''}" onclick="llRenderCompetitionCenter('europe','uel')">Avrupa Ligi</button><button class="ll-btn ${euroType==='uecl'?'primary':''}" onclick="llRenderCompetitionCenter('europe','uecl')">Konferans Ligi</button></div><div class="ll-cup-status"><div class="ll-metric"><strong>${activeText}</strong><span>Senin Durumun</span></div><div class="ll-metric"><strong>${playerEuroMatches}</strong><span>Oynadığın Maç</span></div><div class="ll-metric"><strong>${llV2EnsureEuropeStandings(s)[euroType].playedRounds}/${LL_EURO_WEEKS.length}</strong><span>İşlenen Tur</span></div></div><div class="ll-notice">Bu puan tablosu Avrupa eleme maçlarındaki sezon performansını karşılaştırır. Galibiyet 3, beraberlik 1 puandır; tur atlamayı puan sırası değil, oynanan eleme maçının sonucu belirler.</div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">${llV2EuroLabel(euroType)} · Üst Tur Yol Haritası</div>${llV2EuropeRoadHtml(euroType)}</div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">${llV2EuroLabel(euroType)} · Puan Durumu</div>${llV2EuropeTableHtml(euroType)}</div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">${llV2EuroLabel(euroType)} · Tüm Eşleşmeler</div>${llV2EuropeFixturesHtml(euroType)}</div>`;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Müsabaka <em>Merkezi</em></div><div class="ll-muted">Sezon ${s.season} · Lig, kupa ve Avrupa eşleşmeleri</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${tabs}${tab==='cup'?cup:tab==='europe'?europe:league}</div></div>`;
+}
+function llRenderStandings(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){llRenderCompetitionCenter('league',key);}
+function llV2RewardTable(){return `<div class="ll-card"><div class="ll-card-title">AP / LP Ödülleri</div><div class="ll-table-wrap"><table class="ll-table" style="min-width:520px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>Galibiyet LP</th><th>Beraberlik LP</th><th>Mağlubiyet LP</th></tr></thead><tbody>${[['Lig',LL_COMP_REWARDS.league],['Türkiye Kupası',LL_COMP_REWARDS.cup],['Play-Off',LL_COMP_REWARDS.playoff],['Şampiyonlar Ligi',LL_COMP_REWARDS.ucl],['Avrupa Ligi',LL_COMP_REWARDS.uel],['Konferans Ligi',LL_COMP_REWARDS.uecl]].map(([n,r])=>`<tr><td>${n}</td><td>${r.ap}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td></tr>`).join('')}</tbody></table></div><div class="ll-muted" style="margin-top:9px">Aktif yanlış listesindeki bir kelimeyi doğru bilmek ayrıca +${LL_RECOVERY_AP} AP kazandırır.</div></div>`;}
+function llTransferWindowBanner(week){if(!llIsTransferWindow(week))return '';const seasonEnd=!!lexLeague.state?.seasonEnded,n=Number(week),early=n>=1&&n<=3,cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:early?`Sezon başlangıcı · ${n}/3. açık hafta`:`${week}. hafta`;return `<div class="ll-transfer-banner"><div><strong>🛒 TRANSFER DÖNEMİ AÇIK</strong><span>${period} · Kart kasası ${cost} AP · Mevcut AP: ${lexLeague.state.ap}${early?' · 4. hafta kapanır':''}</span></div><button class="ll-btn" onclick="llRenderShop()">Transfer Merkezine Git</button></div>`;}
 function llRenderDashboard(){
-  lexLeague.active=true;llSetWide(true);llClearTransient();
-  const s=lexLeague.state;if(!s){renderLexiconLeagueLanding();return;}
-  if(s.seasonEnded){llRenderSeasonEnd();return;}
-  const team=llTeamState(s.playerTeam),def=llTeamDef(s.playerTeam),fixture=llPlayerFixture();
-  const opponentName=fixture.home===s.playerTeam?fixture.away:fixture.home;
-  const opp=llTeamState(opponentName),oppDef=llTeamDef(opponentName),isHome=fixture.home===s.playerTeam;
-  const upgradeCost=({1:800,2:1400,3:2300,4:3500,5:5000})[team.stars]||null;
-  const transferOpen=[10,20,30].includes(s.week);
-  const recent=s.results.slice(-5).reverse();
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel">
-    <div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">${llTeamLogo(def,'brand')}</div><div><div class="ll-title">${llEscape(s.playerTeam)}</div><div class="ll-muted">Sezon ${s.season} · ${s.week}. Hafta / 34</div></div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings()">📊 Lig Tablosu</button><button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div>
-    <div class="ll-metrics"><div class="ll-metric"><strong>${s.ap}</strong><span>AP</span></div><div class="ll-metric"><strong>${s.lp}</strong><span>LP</span></div><div class="ll-metric"><strong>${llStars(team.stars)}</strong><span>Yıldız</span></div><div class="ll-metric"><strong>${llSortTable().findIndex(x=>x.team===s.playerTeam)+1}.</strong><span>Sıra</span></div></div>
-    <div class="ll-grid"><div><div class="ll-card"><div class="ll-card-title">Sıradaki Maç</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b><div class="ll-stars">${llStars(team.stars)}</div></div><div class="ll-vs">${isHome?'EV':'DEP'}<br>VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(opponentName)}</b><div class="ll-stars">${llStars(opp.stars)}</div>${llOpponentIcons(opponentName)}</div></div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="ll-btn primary" onclick="llStartMatchPreparation()">10 Kelimelik Maça Başla</button>${transferOpen?`<button class="ll-btn gold" onclick="llRenderShop()">🛒 ${s.week}. Hafta Transfer Merkezi</button>`:''}</div></div>
-      <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>
-      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px">${upgradeCost?`<button class="ll-btn" onclick="llUpgradeStars()">Yıldızı Yükselt · ${upgradeCost} LP</button><span class="ll-muted">${team.stars}★ → ${team.stars+1}★</span>`:`<span class="ll-notice">Takım maksimum 6 yıldıza ulaştı.</span>`}</div></div></div>
-      <div><div class="ll-card"><div class="ll-card-title">Son Sonuçlar</div>${recent.length?`<div class="ll-result-list">${recent.map(r=>`<div class="ll-result-row"><span>${llEscape(r.home)}</span><b>${r.homeGoals}-${r.awayGoals}</b><span>${llEscape(r.away)}</span></div>`).join('')}</div>`:`<div class="ll-muted">Henüz maç oynanmadı.</div>`}</div>
-      <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Ekonomi</div><div class="ll-sub">Doğru kelime: <b>5 AP</b><br>Galibiyet: <b>50 LP</b><br>Beraberlik: <b>20 LP</b><br>Mağlubiyet: <b>5 LP</b><br>10/10: ayrıca <b>10 LP + maçlık +1</b><br>9/10: <b>1 reroll</b></div></div></div></div>
-  </div></div>`;
-}
-function llUpgradeStars(){
-  const t=llTeamState(lexLeague.state.playerTeam); const cost=({1:800,2:1400,3:2300,4:3500})[t.stars]||null;
-  if(!cost)return; if(lexLeague.state.lp<cost){alert(`Yetersiz LP. Gerekli: ${cost} LP`);return;}
-  if(!confirm(`${cost} LP harcayarak takımı ${t.stars+1} yıldıza yükseltmek istiyor musun?`))return;
-  lexLeague.state.lp-=cost;t.stars++;llSave();llRenderDashboard();
-}
-function llTableHtml(){
-  const rows=llSortTable();
-  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const team=llTeamState(r.team),cardCount=LL_POSITIONS.filter(pos=>team.cards[pos]).length;return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${i<3?'champion-zone ':''}${i>=15?'relegation-zone':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(team.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td><b>${cardCount}/3</b></td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(team.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>`;
-}
-function llRenderStandings(){
-  llSetWide(true);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Lig <em>Tablosu</em></div><div class="ll-muted">Sezon ${lexLeague.state.season} · ${Math.min(lexLeague.state.week-1,34)} hafta tamamlandı</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${llTableHtml()}</div></div>`;
+  const s=lexLeague.state;if(!s){renderLexiconLeagueLanding();return;}if(s.seasonEnded){llRenderSeasonEnd();return;}lexLeague.active=true;llSetWide(true);llClearTransient();llV2EnsureSpecial();
+  const f=llPlayerFixture();if(!f){llCompleteSeason();return;}const key=llTeamLeague(s.playerTeam),team=llTeamState(s.playerTeam),def=llTeamDef(s.playerTeam),oppName=f.home===s.playerTeam?f.away:f.home,opp=llTeamState(oppName),oppDef=llTeamDef(oppName),comp=f.competition||'league';
+  const compLabel=comp==='league'?llLeagueLabel(key):comp==='cup'?'Ziraat Türkiye Kupası':comp==='playoff'?'1. Lig Play-Off':comp==='ucl'?'Şampiyonlar Ligi':comp==='uel'?'Avrupa Ligi':'Konferans Ligi',importance=llV2MatchImportance(f,key);
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">${llTeamLogo(def,'brand')}</div><div><div class="ll-title">${llEscape(s.playerTeam)}</div><div class="ll-muted">Sezon ${s.season} · ${llLeagueLabel(key)} · ${s.week}. hafta</div></div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings('${key}')">Lig Tablosu</button><button class="ll-btn" onclick="llRenderStandings('${key==='super'?'first':'super'}')">Diğer Lig</button><button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${s.europe?.type||'ucl'}')">Avrupa Kupaları</button><button class="ll-btn" onclick="llRenderSeasonArchive()">Sezon Arşivi</button><button class="ll-btn" onclick="llRenderCardArchive()">Kart Arşivi</button>${llIsTransferWindow(s.week)?'<button class="ll-btn gold" onclick="llRenderShop()">Transfer Merkezi</button>':''}<button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div><div class="ll-metrics"><div class="ll-metric"><strong>${s.ap}</strong><span>AP</span></div><div class="ll-metric"><strong>${s.lp}</strong><span>LP</span></div><div class="ll-metric"><strong>${llStars(team.stars)}</strong><span>Yıldız</span></div><div class="ll-metric"><strong>${llSortTable(key).findIndex(x=>x.team===s.playerTeam)+1}.</strong><span>Sıra</span></div></div><div class="ll-grid"><div><div class="ll-card ${importance?'ll-big-match':''}">${importance?`<div class="ll-match-importance">${importance}</div>`:''}<div class="ll-card-title">${compLabel} · ${f.roundLabel||''}</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b></div><div class="ll-vs">VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(oppName)}</b></div></div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llStartMatchPreparation()">10 Kelimelik Maça Başla</button></div><div class="ll-card" style="margin-top:12px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>${llRealCardSynergyHtml(s.playerTeam)}<button class="ll-btn" style="width:100%;margin-top:12px" ${team.stars>=6?'disabled':''} onclick="llUpgradeStars()">${team.stars>=6?'Maksimum 6 yıldız':`Yıldızı Yükselt · ${llV2UpgradeCost(team.stars)} LP`}</button></div><div style="margin-top:12px">${llV2SeasonGoalsHtml(false)}</div>${llV2RewardTable()}</div><div>${llTableHtml(key)}</div></div></div></div>`;
+  const transferBanner=llTransferWindowBanner(s.week);if(transferBanner)llArea().innerHTML=llArea().innerHTML.replace('<div class="ll-grid">',`${transferBanner}<div class="ll-grid">`);
 }
 
-// ------------------------- KELİME SINAVI -------------------------
-function llPickQuizWords(count=10){
-  let words=loadUserWords(); if(!words.length)return [];
-  const target=Math.min(count,words.length),used=new Set(lexLeague.state.usedWords);
-  const remaining=llShuffle(words.filter(w=>!used.has(w.id)));
-  const closing=remaining.slice(0,target),queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false}));
-  if(queue.length<target){
-    const closingIds=new Set(closing.map(w=>w.id));
-    const nextCycle=llShuffle(words.filter(w=>!closingIds.has(w.id))).slice(0,target-queue.length);
-    nextCycle.forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
-  }
-  return queue;
+function llFinishLeagueQuiz(){const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;const comp=llPlayerFixture()?.competition||'league',reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league,baseAp=q.correct*reward.ap,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;const completed=!q.skipped&&q.index>=q.queue.length;let bonus='none';if(completed&&q.correct===10){bonus='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct===9)bonus='reroll';q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=bonus;q.totalAnswered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index;llSave();llRenderQuizReward();}
+function llRecordMatch(home,away,hg,ag,week,userMatch=false,competition='league',league=null){
+  if(competition==='league'){llUpdateStanding(home,hg,ag);llUpdateStanding(away,ag,hg);[[home,hg,ag],[away,ag,hg]].forEach(([n,gf,ga])=>{if(n===lexLeague.state.playerTeam)return;const t=llTeamState(n);t.aiAp=(t.aiAp||0)+(gf>ga?20:gf===ga?12:6);});}
+  else if(['ucl','uel','uecl'].includes(competition)&&league==='euro-table')llV2ApplyEuropeStanding(lexLeague.state,competition,home,hg,away,ag);
+  const euroRound=userMatch&&['ucl','uel','uecl'].includes(competition)?Number(lexLeague.state.europe?.round):null;lexLeague.state.results.push({season:lexLeague.state.season,week,home,away,homeGoals:hg,awayGoals:ag,userMatch,competition,league,cupRound:competition==='cup'?lexLeague.state.cup?.round:null,euroRound:Number.isInteger(euroRound)?euroRound:null});
 }
-function llMarkQuizWordUsed(ref){
-  const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
-  const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
+function llV2SimFixture(f,competition='league',league=null,week=lexLeague.state.week){const sim=llSimulateMatch(f.home,f.away);llRecordMatch(f.home,f.away,sim.homeGoals,sim.awayGoals,week,false,competition,league);llApplyLocks(sim.resolution,f.home,f.away);return sim.homeGoals===sim.awayGoals?(Math.random()<.5?f.home:f.away):sim.homeGoals>sim.awayGoals?f.home:f.away;}
+function llV2PlayLeagueWeek(key,skipFixture){const round=lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];round.filter(f=>!skipFixture||!(f.home===skipFixture.home&&f.away===skipFixture.away)).forEach(f=>llV2SimFixture(f,'league',key));}
+function llCommitCurrentMatch(){
+  const m=lexLeague.match;if(!m||m.committed||!m.resolution)return;m.committed=true;const s=lexLeague.state,f=m.fixture,comp=f.competition||'league',r=m.resolution,hg=m.playerHome?r.scoreA:r.scoreB,ag=m.playerHome?r.scoreB:r.scoreA,pg=r.scoreA,og=r.scoreB,reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league;
+  const lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;s.lp+=lp;
+  const usedCardIds=(m.playerDice||[]).map(die=>die.cardId).filter(Boolean),conditionMetCardIds=llTriggeredPlayerCardIds(m),appliedCardIds=llAppliedPlayerCardIds(m);llRecordPlayerCardPerformance(usedCardIds,pg>og?'win':pg===og?'draw':'loss',comp,pg,og,conditionMetCardIds,appliedCardIds);
+  llRecordMatch(f.home,f.away,hg,ag,s.week,true,comp,f.league||null);llApplyLocks(r,m.player,m.opponent);
+  let winner=pg===og?(Math.random()<.5?m.player:m.opponent):pg>og?m.player:m.opponent;
+  if(comp!=='league'){const recorded=s.results[s.results.length-1];if(recorded?.userMatch)recorded.knockoutWinner=winner;}
+  if(comp==='league'){llV2PlayLeagueWeek('super',f.league==='super'?f:null);llV2PlayLeagueWeek('first',f.league==='first'?f:null);llDevelopOpponents(s.week);s.week++;}
+  else if(comp==='cup')llV2FinishCupRound(winner);
+  else if(['ucl','uel','uecl'].includes(comp))llV2FinishEuropeRound(winner);
+  else if(comp==='playoff')llV2FinishPlayoffMatch(winner);
+  s.pendingFixture=null;llSave();llRenderRoundSummary(s.week-(comp==='league'?1:0),lp,pg,og,comp,winner===m.player);
 }
-function llStartMatchPreparation(){
-  fcQueue=[];
-  const queue=llPickQuizWords(10);
-  if(queue.length<10){alert('Lig maçı için en az 10 kelime gerekiyor. Kelime veritabanında yeterli kart yok.');return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2};
-  llRenderLeagueQuiz();
-}
-function llQuizApPerWord(){
-  try{const comp=llPlayerFixture()?.competition||'league';return typeof LL_COMP_REWARDS!=='undefined'?(LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league).ap:5;}catch{return 5;}
-}
-function llRenderLeagueQuiz(){
-  const q=lexLeague.quiz;if(!q)return;
-  if(q.index>=q.queue.length){llFinishLeagueQuiz();return;}
-  const ref=q.queue[q.index],word=loadUserWords().find(w=>w.id===ref.id);
-  if(!word){q.index++;llRenderLeagueQuiz();return;}
-  const question=ref.askTrToEn?word.tr.split(',')[0].trim():word.en;
-  const answer=ref.askTrToEn?word.en:word.tr;
-  let example='';
-  if(word.example){
-    if(ref.askTrToEn)example=llMaskAnswerInExample(word.example,word.en);
-    else example=word.example;
-  }
-  const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
-  const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEnglishWordHtml(word,question)}</span>${llPronounceButton(word.en)}</div>`;
-  const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
-  const pct=(q.index/q.queue.length)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
-  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
-  <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
-  markNewWordFrame(word,llArea().querySelector('.ll-question'));
-}
-function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
-function llSkipLeagueQuiz(){
-  const q=lexLeague.quiz;if(!q||q.committed)return;const answered=q.index,earned=q.correct*llQuizApPerWord()+Number(q.recoveryBonus||0);
-  if(!confirm(answered?`Sınavı burada bitirip ${answered} cevaptaki ${q.correct} doğru için ${earned} AP alarak maça devam etmek istiyor musun?`:'Hiç soru cevaplamadın. 0 AP ile doğrudan maça devam etmek istiyor musun?'))return;
-  q.skipped=true;q.totalAnswered=answered;llFinishLeagueQuiz();
-}
-function llRateLeagueQuiz(correct){
-  const q=lexLeague.quiz;if(!q||!q.revealed)return;
-  const ref=q.queue[q.index],words=loadUserWords(),card=words.find(w=>w.id===ref.id),quality=correct?5:1;
-  if(card){
-    const recovered=correct&&card.isActiveMistake===true;
-    const updated=sm2(card,quality);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(card.reviewCount||0)+1;
-    if(correct)card.isActiveMistake=false;else{card.wrongCount=(card.wrongCount||0)+1;card.isActiveMistake=true;}
-    if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(q.recoveredWords||0)+1;q.recoveryBonus=(q.recoveryBonus||0)+bonus;}
-    saveWordsToStorage(words);
-    const meta=loadMeta();if(!meta.activity)meta.activity={};const t=todayStr();if(!meta.activity[t])meta.activity[t]={reviews:0,correct:0};meta.activity[t].reviews++;if(correct)meta.activity[t].correct++;saveMeta(meta);
-  }
-  llMarkQuizWordUsed(ref);if(correct)q.correct++;q.index++;q.revealed=false;llSave();llRenderLeagueQuiz();
-}
-function llFinishLeagueQuiz(){
-  const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
-  const baseAp=q.correct*5,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;
-  const completed=!q.skipped&&q.index>=q.queue.length;let reward='none';if(completed&&q.correct===10){reward='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct===9)reward='reroll';
-  q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=reward;llSave();llRenderQuizReward();
-}
-function llRenderQuizReward(){
-  const q=lexLeague.quiz;
-  const answered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index,completed=!q.skipped&&answered>=q.queue.length,recoveryAp=Number(q.recoveryApEarned||0),text=(q.skipped?`${answered} soru cevaplandı; yalnızca bu cevapların AP kazancı işlendi. Cevaplanmayan kelimeler kullanılmış sayılmadı ve sonraki maçlarda yeniden gelebilir.`:q.correct===10?'Kusursuz! +10 LP, seçtiğin mevkiye maçlık +1 ve ayrıca 1 reroll kazandın.':q.correct===9?'Formdasın! Maç içinde bir zarını yeniden atabileceksin.':'Taktik ödülü yok; AP kazancın kasaya işlendi.')+(recoveryAp?` Daha önce yanlış bildiğin ${q.recoveredWords} kelimeyi düzelttiğin için ayrıca +${recoveryAp} AP aldın.`:'');
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div style="font-size:52px">${completed&&q.correct===10?'🏆':completed&&q.correct===9?'🎯':q.skipped?'⏭️':'📚'}</div><div class="quiz-start-title" style="margin-top:8px">${q.correct}/${answered} <em>Doğru</em></div><div class="ll-metrics" style="grid-template-columns:${recoveryAp?'repeat(3,1fr)':'1fr 1fr'};max-width:${recoveryAp?'600px':'420px'};margin:18px auto"><div class="ll-metric"><strong>+${q.apEarned}</strong><span>Toplam AP</span></div>${recoveryAp?`<div class="ll-metric"><strong>+${recoveryAp}</strong><span>Hata Geri Kazanım AP</span></div>`:''}<div class="ll-metric"><strong>${completed&&q.correct===10?'+10':'0'}</strong><span>LP</span></div></div><div class="ll-notice" style="text-align:left">${text}</div>
-  ${q.reward==='plusOne'||q.reward==='perfect'?`<div class="ll-card-title" style="margin-top:20px">+1 Uygulanacak Zarı Seç</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<button class="ll-team-option" onclick="llBeginMatch('${pos}')"><div class="ll-team-name">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-range">Bu maç zar sonucuna +1${q.reward==='perfect'?' · 1 reroll ayrıca hazır':''}</div></button>`).join('')}</div>`:`<button class="ll-btn primary" style="margin-top:18px" onclick="llBeginMatch(null)">Zar Düellosuna Geç</button>`}
-  </div></div>`;
+function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=false){
+  const isEurope=['ucl','uel','uecl'].includes(comp),label=comp==='league'?'Lig':comp==='cup'?'Türkiye Kupası':comp==='playoff'?'Play-Off':isEurope?llV2EuroLabel(comp):comp.toUpperCase(),result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet',e=lexLeague.state.europe;
+  const completedRound=isEurope?Math.max(0,Math.min(LL_EURO_ROUNDS.length-1,advanced?Number(e?.round||1)-1:Number(e?.round||0))):null,stageName=isEurope?LL_EURO_ROUNDS[completedRound]:'',nextStage=isEurope&&advanced?(e?.winner===lexLeague.state.playerTeam?'Avrupa kupasını kazandın.':`Sıradaki tur: ${LL_EURO_ROUNDS[Number(e?.round)||0]} · ${LL_EURO_WEEKS[Number(e?.round)||0]}. hafta`):isEurope?`${stageName} aşamasında elendin.`:'';
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel" style="text-align:center"><div class="quiz-start-title">${label} · ${result} <em>${pg}-${og}</em></div><div class="ll-notice">+${lp} LP${comp!=='league'&&pg===og?` · Penaltılar: ${advanced?'Tur atladın':'Elendin'}`:''}${isEurope?`<br><b>${stageName}:</b> ${llEscape(nextStage)}`:''}</div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">${isEurope?`<button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${comp}')">Avrupa Tur Yolunu Gör</button>`:''}<button class="ll-btn primary" onclick="llRenderDashboard()">Devam Et</button></div></div></div>`;
 }
 
-// ------------------------- ZAR MOTORU -------------------------
-function llRollValue(teamName,pos){
-  const team=llTeamState(teamName),[min,max]=llRange(team.stars);
-  const locked=team.lockedDice?.[pos];
-  let value;if(Number.isFinite(locked)){delete team.lockedDice[pos];value=locked;}else value=llRandomInt(min,max);
-  const bonus=Number(team.nextMatchBonuses?.[pos]||0);if(bonus){delete team.nextMatchBonuses[pos];value+=bonus;}
-  const card=llCard(team.cards[pos]);
-  if(llBaseName(card)==='Yıldız Oyuncu'&&team.stars>=3)value=Math.max(4,value);
-  return value;
+function llV2InitCup(state){
+  const domestic=llShuffle([...state.leagues.super,...state.leagues.first]),preliminary=domestic.slice(0,12),byes=domestic.slice(12),field=[...preliminary,...byes.flatMap(team=>[team,null])];
+  state.cup={round:0,field,alive:true,winner:null,pending:null,formatVersion:2,history:{0:[...field]}};
 }
-function llMakeDice(teamName,plusPos=null){
-  const team=llTeamState(teamName);
-  return LL_POSITIONS.map(pos=>({uid:`${teamName}-${pos}-${Math.random()}`,position:pos,value:llRollValue(teamName,pos)+(pos===plusPos?1:0),cardId:team.cards[pos],stars:team.stars}));
-}
-function llOrderDiceByPosition(dice){
-  return LL_POSITIONS.map(pos=>dice.find(d=>d.position===pos)).filter(Boolean);
-}
-function llEffectAmount(card,fallback=1){
-  if(!card)return fallback;const m=card.effect.match(/(?:\+|x|Farkı\s+)(\d+)/i)||card.effect.match(/en güçlü\s+(\d+)\s+kart/i)||card.effect.match(/(\d+)\s+(?:sanal gol|azalt|düşür|aktar|elendir|elenir|ekstra ücretsiz reroll)/i);return m?Number(m[1]):fallback;
-}
-function llThreshold(text,fallback=0){const m=String(text).match(/≥\s*(\d+)/)||String(text).match(/(\d+)\s*\+/)||String(text).match(/(\d+)['’]?(?:[iıuü]n)?\s+alt/i)||String(text).match(/(\d+)\s+veya alt/i);return m?Number(m[1]):fallback;}
-function llTriggerNumbers(text){return [...String(text).matchAll(/\b([1-6])\b/g)].map(m=>Number(m[1]));}
-function llOwnTrigger(card,value){
-  if(!card)return false;const t=card.trigger;
-  if(!/Kendi zarın/i.test(t))return true;
-  const nums=llTriggerNumbers(t);if(!nums.length)return true;
-  if(/veya/i.test(t))return nums.includes(value);
-  return value===nums[0];
-}
-function llOppTrigger(card,value){
-  if(!card)return false;const t=card.trigger;
-  const n=llThreshold(t,NaN);
-  if(/veya alt/i.test(t))return value<=n;
-  if(/altındaysa/i.test(t))return value<n;
-  const nums=llTriggerNumbers(t);return nums.length?nums.includes(value):true;
-}
-function llHasBase(teamName,base){return LL_POSITIONS.some(p=>llBaseName(llCard(llTeamState(teamName).cards[p]))===base);}
-function llNadirKimyaActiveForTeam(teamName,slot){
-  const team=llTeamState(teamName),otherCards=LL_POSITIONS.filter(pos=>pos!==slot).map(pos=>llCard(team?.cards?.[pos]));
-  return otherCards.length===2&&otherCards.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);
-}
-function llNadirKimyaActiveForDice(dice,die){
-  const otherCards=dice.filter(other=>other.uid!==die.uid).map(other=>llCard(other.cardId));
-  return otherCards.length===2&&otherCards.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);
-}
-function llRealCardSynergies(teamName){
-  const team=llTeamState(teamName);if(!team)return [];
-  const slots=LL_POSITIONS.map(position=>({position,card:llCard(team.cards?.[position])})),active=[];
-  const full=slots.every(slot=>slot.card),teamChemistry=slots.find(slot=>llBaseName(slot.card)==='Takım Kimyası');
-  if(teamChemistry&&full)active.push({name:'Takım Kimyası',reason:'Üç kart yuvası da dolu; takımın en düşük zarı +1 kazanır.'});
-  const rareChemistry=slots.find(slot=>llBaseName(slot.card)==='Nadir Kimya');
-  if(rareChemistry){const others=slots.filter(slot=>slot.position!==rareChemistry.position).map(slot=>slot.card),ready=others.length===2&&others.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);if(ready)active.push({name:'Nadir Kimya',reason:'Diğer iki kart Nadir veya üstü; +1 ücretsiz reroll hazır.'});}
-  return active;
-}
-function llRealCardSynergyHtml(teamName,showTeam=false){
-  const synergies=llRealCardSynergies(teamName);if(!synergies.length)return '';
-  return `<div class="ll-synergy-strip"><b>✓ GERÇEK KART UYUMU${showTeam?` · ${llEscape(teamName)}`:''}</b><br>${synergies.map(item=>`${llEscape(item.name)}: ${llEscape(item.reason)}`).join('<br>')}</div>`;
-}
-const LL_CARD_REROLL_CAP=4;
-function llRerollCreditsFromDice(dice,disabled=new Set()){
-  const credits={general:0,Kaleci:0,'Orta Saha':0};
-  dice.forEach(d=>{const c=disabled.has(d.uid)?null:llCard(d.cardId),base=llBaseName(c);if(base==='Reflex')credits.Kaleci+=llEffectAmount(c,1);else if(base==='Metronom')credits['Orta Saha']+=llEffectAmount(c,1);else if(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(dice,d))credits.general+=1;});
-  const total=credits.general+credits.Kaleci+credits['Orta Saha'];if(total<=LL_CARD_REROLL_CAP)return credits;
-  let left=LL_CARD_REROLL_CAP;for(const key of ['Kaleci','Orta Saha','general']){const take=Math.min(left,credits[key]);credits[key]=take;left-=take;}return credits;
-}
-function llExtraRerolls(teamName){const dice=LL_POSITIONS.map(pos=>({uid:`preview-${pos}`,position:pos,cardId:llActiveCardId(teamName,pos)}));const c=llRerollCreditsFromDice(dice);return c.general+c.Kaleci+c['Orta Saha'];}
-function llExtraRerollsFromDice(dice,disabled=new Set()){const c=llRerollCreditsFromDice(dice,disabled);return c.general+c.Kaleci+c['Orta Saha'];}
-function llSetupMatchRerolls(m,disabled=new Set()){
-  m.rerollCredits=llRerollCreditsFromDice(m.playerDice,disabled);m.rerollCredits.base=Math.max(0,Number(m.baseRerolls)||0);llRefreshRerollTotal(m);
-}
-function llRefreshRerollTotal(m){const c=m?.rerollCredits||{};m.rerolls=Math.max(0,Number(c.base)||0)+Math.max(0,Number(c.general)||0)+Math.max(0,Number(c.Kaleci)||0)+Math.max(0,Number(c['Orta Saha'])||0);return m.rerolls;}
-function llCanRerollDie(m,position){const c=m?.rerollCredits||{};return (Number(c.base)||0)>0||(Number(c.general)||0)>0||(Number(c[position])||0)>0;}
-function llSpendRerollForDie(m,position){const c=m?.rerollCredits;if(!c)return false;if((Number(c[position])||0)>0)c[position]--;else if((Number(c.general)||0)>0)c.general--;else if((Number(c.base)||0)>0)c.base--;else return false;llRefreshRerollTotal(m);return true;}
-function llAutoRerollWithCredits(teamName,dice,credits={},general=0){
-  const out=llDeep(dice);for(const pos of ['Kaleci','Orta Saha'])for(let i=0;i<(Number(credits[pos])||0);i++){const d=llFindPosition(out,pos);if(d)d.value=llRollValue(teamName,pos);}
-  return llAutoReroll(teamName,out,(Number(credits.general)||0)+Math.max(0,Number(general)||0));
-}
-function llRawScoreBeforePosition(ownDice,oppDice,position){
-  let own=0,opp=0;const stop=LL_POSITIONS.indexOf(position);
-  for(let i=0;i<stop;i++){const a=llFindPosition(ownDice,LL_POSITIONS[i]),b=llFindPosition(oppDice,LL_POSITIONS[i]);if(!a||!b)continue;if(a.value>b.value)own++;else if(b.value>a.value)opp++;}
-  return {own,opp};
-}
-function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,isHome,randoms,key){
-  if(!card||!die)return false;const base=llBaseName(card),own=die.value,opp=llFindPosition(oppDice,die.position)?.value,team=llTeamState(teamName),rival=llTeamState(oppName);
-  switch(base){
-    case 'Sahayı Oku': case 'Metronom': case 'Reflex': case 'Kalenin Efendisi': return true;
-    case 'Yıldız Oyuncu': return team?.stars>=3;
-    case 'Ev Sahibi Avantajı': return isHome;
-    case 'Deplasman Ruhu': case 'Deplasman Disiplini': return !isHome;
-    case 'Dev Avcısı': return (team?.stars||0)<(rival?.stars||0);
-    case 'Moral Bozukluğu': return rival?.lastResults?.length>=2&&rival.lastResults.slice(-2).every(x=>x==='L');
-    case 'Uzun Top': case 'Pas Ustası': case 'İkili Oyun': case 'Frikik Ustası': case 'Golcü İçgüdüsü': case 'Kale Direği': return llOwnTrigger(card,own);
-    case 'Son Adam': case 'Vuruşsuz Gece': case "Orta Saha Pres'i": return llOppTrigger(card,opp);
-    case 'Sakin Kafa': return own<opp;
-    case 'Penaltı Ustası': return die.position==='Kaleci'&&own===opp;
-    case 'Çalım': return own===opp;
-    case 'VAR İncelemesi': return LL_POSITIONS.some(pos=>llFindPosition(ownDice,pos)?.value===llFindPosition(oppDice,pos)?.value);
-    case 'Son Vuruş': return own===opp+1;
-    case 'Panenka': return llHasAnyDuplicate(oppDice);
-    case 'Sakatlık Şansı': return oppDice.some(d=>d.value===1);
-    case 'Kilitleme': case 'Ofsayt Tuzağı': return true;
-    case 'Alan Hakimiyeti': return llSum(ownDice)>llSum(oppDice);
-    case 'Kale Duvarı': return llSum(oppDice)>=llThreshold(card.trigger,99);
-    case 'Bitiricilik': return llSum(ownDice)>=llThreshold(card.trigger,99);
-    case 'Hat-trick Ruhu': return llHatTrickForm(teamName,card).active;
-    case 'Son Dakika Golü': {const score=llRawScoreBeforePosition(ownDice,oppDice,die.position);return score.own===score.opp;}
-    case 'Kaptanlık Pazubandı': if(typeof randoms[key].captain[die.uid]!=='boolean')randoms[key].captain[die.uid]=Math.random()<.5;return randoms[key].captain[die.uid];
-    case 'Şans Faktörü': if(!randoms[key].chance)randoms[key].chance={active:Math.random()<.10,index:Math.floor(Math.random()*3)};return randoms[key].chance.active;
-    case 'Soğuk Kanlılık': {for(const pos of LL_POSITIONS){const a=llFindPosition(ownDice,pos),b=llFindPosition(oppDice,pos);if(!a||!b||a.value===b.value)continue;return a.value>b.value;}return false;}
-    case 'Çift Ayak': return die.position==='Orta Saha'&&(card.upgradeLevel||own%2===0)&&own===opp-1;
-    case 'İkili Pres': return die.position==='Orta Saha'&&llDieBelongsToExactPair(ownDice,die);
-    case 'Kusursuz Hat': return llIsConsecutiveLine(ownDice);
-    case 'Altın Seri': return (card.upgradeLevel?[8,12,13]:[8,13]).includes(llSum(ownDice));
-    case 'Üçlü Hücum': return llAllDiceEqual(ownDice);
-    case 'Çift Kanat': return card.upgradeRule==='direct-play'?llFindPosition(ownDice,'Kaleci')?.value===llFindPosition(ownDice,'Forvet')?.value:llHasDoubleWing(ownDice);
-    case 'Dengeli On Bir': return llIsBalancedEleven(ownDice);
-    case 'Son Perde': {const score=llRawScoreBeforePosition(ownDice,oppDice,die.position);return die.position==='Forvet'&&score.own<score.opp&&own>opp;}
-    case 'Katil İçgüdü': return die.position==='Forvet'&&own>=opp+2;
-    case 'Mükemmeliyetçi': return LL_POSITIONS.every(pos=>llFindPosition(ownDice,pos)?.value>llFindPosition(oppDice,pos)?.value);
-    case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp;}
-    case 'Boş Kadro': return LL_POSITIONS.some(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos));
-    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos));
-    case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die);
-    case 'Taktik Tahtası': case 'Yedek Kulübesi': return false;
-    case 'Form Tutmuyor': return (team?.sixStreaks?.[die.position]||0)>=2&&own===6;
-    default:
-      if(/maç başında|her maç başında/i.test(card.trigger))return true;
-      if(/Kendi zarın/i.test(card.trigger))return llOwnTrigger(card,own);
-      if(/Rakip zarı/i.test(card.trigger))return llOppTrigger(card,opp);
-      return false;
+function llV2RepairCupProgress(state){
+  const c=state?.cup;if(!c||c.pending||c.winner||!c.alive||!Array.isArray(c.field))return;
+  if(c.round===0){
+    const hasEmptyPair=Array.from({length:Math.ceil(c.field.length/2)},(_,i)=>[c.field[i*2],c.field[i*2+1]]).some(([a,b])=>!a&&!b);
+    if(hasEmptyPair){llV2InitCup(state);return;}c.history=c.history||{0:[...c.field]};c.formatVersion=2;return;
   }
+  const player=state.playerTeam,played=(state.results||[]).filter(r=>r.competition==='cup'&&(r.home===player||r.away===player));
+  const openingPlayed=played.some(r=>Number(r.week)<=LL_CUP_WEEKS[0]),maxProcessed=Math.min(LL_CUP_ROUNDS.length,played.length+(openingPlayed?0:1));
+  const expectedCurrent=64>>Math.min(c.round,5),skippedPlayerRound=c.round>maxProcessed,malformedSize=c.field.length!==expectedCurrent;
+  if(!skippedPlayerRound&&!malformedSize){c.history=c.history||{};if(!c.history[c.round])c.history[c.round]=[...c.field];c.formatVersion=2;return;}
+  const targetRound=skippedPlayerRound?maxProcessed:c.round,expectedSize=64>>Math.min(targetRound,5),domestic=[...state.leagues.super,...state.leagues.first];
+  const candidates=[...new Set([...c.field.filter(Boolean),...llShuffle(domestic)])].filter(n=>n!==player),field=[player,...candidates.slice(0,Math.max(0,expectedSize-1))];
+  c.round=targetRound;c.field=llShuffle(field);c.pending=null;c.formatVersion=2;c.history=c.history||{};c.history[targetRound]=[...c.field];
+  if(state.pendingFixture?.competition==='cup')state.pendingFixture=null;
 }
-function llPrepareScouting(aName,bName,aDice,bDice,ctx={}){
-  const disabled={a:new Set(),b:new Set()},events=[],randoms=ctx.randoms||{a:{captain:{},chance:null},b:{captain:{},chance:null}};
-  const sides={a:{name:aName,opp:bName,dice:aDice,oppDice:bDice,home:!!ctx.aHome},b:{name:bName,opp:aName,dice:bDice,oppDice:aDice,home:!ctx.aHome}};
-  const plans=[];
-  [['a','b'],['b','a']].forEach(([ownerKey,oppKey])=>{
-    const owner=sides[ownerKey],opponent=sides[oppKey],scoutDie=owner.dice.find(d=>llBaseName(llCard(d.cardId))==='Sahayı Oku'),scout=scoutDie&&llCard(scoutDie.cardId);if(!scout)return;
-    const amount=llEffectAmount(scout,1),targets=opponent.dice.filter(d=>{const c=llCard(d.cardId);return c&&llCardTriggeredForScouting(c,d,opponent.dice,owner.dice,opponent.name,owner.name,opponent.home,randoms,oppKey);}).sort((x,y)=>llAiCardScore(llCard(y.cardId))-llAiCardScore(llCard(x.cardId))).slice(0,amount);
-    plans.push({ownerKey,oppKey,owner,targets});
-  });
-  plans.forEach(plan=>{
-    plan.targets.forEach(d=>disabled[plan.oppKey].add(d.uid));
-    if(plan.targets.length){const names=plan.targets.map(d=>`${d.position} · ${llCard(d.cardId).name}`).join(', ');events.push(`${plan.owner.name}: Sahayı Oku → rakibin ${names} kartı etkisizleştirildi.`);}
-    else events.push(`${plan.owner.name}: Sahayı Oku → tetiklenmeye hazır rakip kartı bulunamadı.`);
-  });
-  return {disabled,events,randoms};
+function llV2EnsureSpecial(){const s=lexLeague.state;if(s.pendingFixture||s.seasonEnded)return;if(s.playoff){llV2EnsurePlayoff();return;}llV2EnsureCup();if(s.pendingFixture)return;llV2EnsureEurope();}
+function llV2EnsureCup(){const s=lexLeague.state;llV2RepairCupProgress(s);const c=s.cup;if(!c||c.round>=LL_CUP_WEEKS.length||s.week<LL_CUP_WEEKS[c.round]||c.pending)return;c.history=c.history||{};c.history[c.round]=[...c.field];const next=[];let playerPair=null;for(let i=0;i<c.field.length;i+=2){const a=c.field[i],b=c.field[i+1];if(!a&&!b)continue;if(!a||!b){next.push(a||b);continue;}if(a===s.playerTeam||b===s.playerTeam){playerPair=[a,b];continue;}next.push(llV2SimFixture({home:a,away:b},'cup'));}if(playerPair){c.pending={next,pair:playerPair};s.pendingFixture={home:playerPair[0],away:playerPair[1],competition:'cup',roundLabel:LL_CUP_ROUNDS[c.round]};}else{c.field=next;c.round++;if(c.field.length===1){c.winner=c.field[0];c.alive=false;}}}
+function llV2FinishCupRound(winner){const c=lexLeague.state.cup;if(!c?.pending)return;c.pending.next.push(winner);c.field=c.pending.next;c.pending=null;c.round++;if(winner!==lexLeague.state.playerTeam)c.alive=false;if(c.field.length===1){c.winner=c.field[0];if(c.winner===lexLeague.state.playerTeam)lexLeague.state.trophies.push({season:lexLeague.state.season,name:'Ziraat Türkiye Kupası'});}}
+function llV2EnsureEurope(){
+  const s=lexLeague.state;llV2SimulateEuropeTables();const e=s.europe;if(!e||!e.alive||e.round>=LL_EURO_WEEKS.length||s.week<LL_EURO_WEEKS[e.round]||e.pending)return;
+  const table=llV2EnsureEuropeStandings(s)[e.type],scheduled=table?.fixtures?.[e.round]?.find(f=>f.home===s.playerTeam||f.away===s.playerTeam),fallback=table?.teams?.find(name=>name!==s.playerTeam)||UCL_TEAMS.find(team=>team.name!==s.playerTeam)?.name,home=scheduled?.home||(e.round%2?s.playerTeam:fallback),away=scheduled?.away||(e.round%2?fallback:s.playerTeam),oppName=home===s.playerTeam?away:home,opp=UCL_TEAMS.find(team=>team.name===oppName);
+  if(!s.teams[oppName])s.teams[oppName]={name:oppName,stars:opp?.pot===1?6:opp?.pot===2?5:opp?.pot===3?4:3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};
+  e.pending=oppName;s.pendingFixture={home,away,competition:e.type,league:'euro-table',roundLabel:LL_EURO_ROUNDS[e.round]};
 }
-function llTakeCarriedRerolls(teamName){const team=llTeamState(teamName),n=Number(team.nextMatchRerolls||0);team.nextMatchRerolls=0;return n;}
-function llAutoReroll(teamName,dice,count){
-  const out=llOrderDiceByPosition(llDeep(dice));for(let i=0;i<count;i++){const target=llLowestDie(out);target.value=llRollValue(teamName,target.position);}return out;
-}
-function llDuplicates(dice,value){return dice.filter(d=>d.value===value).length>=2;}
-function llDuplicateValues(dice){return [...new Set(dice.map(d=>d.value).filter(value=>llDuplicates(dice,value)))];}
-function llHasAnyDuplicate(dice){return llDuplicateValues(dice).length>0;}
-function llLowestDie(dice){return dice.reduce((a,b)=>a.value<=b.value?a:b);}
-function llHighestDie(dice){return dice.reduce((a,b)=>a.value>=b.value?a:b);}
-function llFindPosition(dice,pos){return dice.find(d=>d.position===pos);}
-function llSum(dice){return dice.reduce((s,d)=>s+d.value,0);}
-function llHatTrickForm(teamName,card){
-  const match=card?.trigger?.match(/Son\s+(\d+).*en az\s+(\d+)/i),windowSize=Math.max(1,Number(match?.[1])||5),need=Math.max(1,Number(match?.[2])||3),season=Number(lexLeague.state?.season)||1;
-  const recent=(lexLeague.state?.results||[]).filter(result=>Number(result.season)===season&&(result.home===teamName||result.away===teamName)).slice(-windowSize);
-  const wins=recent.filter(result=>(result.home===teamName&&result.homeGoals>result.awayGoals)||(result.away===teamName&&result.awayGoals>result.homeGoals)).length;
-  return {windowSize,need,played:recent.length,wins,active:recent.length>=windowSize&&wins>=need};
-}
-function llValueCounts(dice){return dice.reduce((counts,die)=>(counts[die.value]=(counts[die.value]||0)+1,counts),{});}
-function llHasExactPair(dice){return Object.values(llValueCounts(dice)).sort((a,b)=>a-b).join(',')==='1,2';}
-function llDieBelongsToExactPair(dice,die){return llHasExactPair(dice)&&llValueCounts(dice)[die.value]===2;}
-function llIsConsecutiveLine(dice){const values=dice.map(d=>d.value).sort((a,b)=>a-b);return values.length===3&&values[1]===values[0]+1&&values[2]===values[1]+1;}
-function llAllDiceEqual(dice){return dice.length===3&&dice.every(d=>d.value===dice[0].value);}
-function llHasDoubleWing(dice){const keeper=llFindPosition(dice,'Kaleci'),mid=llFindPosition(dice,'Orta Saha'),forward=llFindPosition(dice,'Forvet');return !!keeper&&!!mid&&!!forward&&keeper.value===forward.value&&mid.value!==keeper.value;}
-function llIsBalancedEleven(dice){const values=dice.map(d=>d.value);return values.length===3&&Math.max(...values)-Math.min(...values)<=1;}
-function llCardGoalAmount(card){const m=card?.effect.match(/\+(\d+)\s+(?:ekstra\s+)?sanal gol/i)||card?.effect.match(/(\d+)\s+(?:ekstra\s+)?sanal gol/i);return m?Number(m[1]):1;}
-function llResolutionCardOutcomes(side,rawDice,events,disabled,scoreFor,scoreAgainst){
-  const outcomes={};
-  side.dice.forEach(die=>{
-    const card=llCard(die.cardId);if(!card)return;
-    const base=llBaseName(card),family=llCardFamilyName(card),labels=[base,family].filter(Boolean),rawDie=llFindPosition(rawDice,die.position);
-    const relevant=events.filter(event=>labels.some(label=>event.startsWith(`${side.name}: ${label} →`)||event.startsWith(`${side.name}: ${label} (`)));
-    const last=relevant[relevant.length-1]||'';
-    if(disabled.has(die.uid)&&base!=='Sahayı Oku'){
-      outcomes[card.id]={state:'blocked',conditionMet:true,applied:false,reason:`${side.name}: ${family||base} → Sahayı Oku tarafından etkisizleştirildi.`};return;
-    }
-    const formHistory=[...(side.state?.dieHistory?.[die.position]||[]),rawDie?.value].slice(-3);
-    const passive=['Metronom','Reflex'].includes(base)||(base==='Nadir Kimya'&&llNadirKimyaActiveForDice(side.dice,die))||(base==='Yıldız Oyuncu'&&(side.state?.stars||0)>=3)||(base==='Yedek Kulübesi'&&(card.upgradeLevel?scoreFor<=scoreAgainst:scoreFor<scoreAgainst))||(base==='Form Tutmuyor'&&(card.upgradeRule==='form-burst'?(formHistory.length===3&&formHistory.filter(value=>value===6).length>=2):((side.state?.sixStreaks?.[die.position]||0)>=2&&rawDie?.value===6)));
-    const failed=/bulunamadı|sağlanmadı|tetiklenmedi/i.test(last),conditionMet=(!!last&&!failed)||passive;
-    if(!conditionMet){outcomes[card.id]={state:'inactive',conditionMet:false,applied:false,reason:last||'Kesin çözüm zincirinde tetikleme şartı oluşmadı.'};return;}
-    if(/uygulanmadı|sonuç üretmedi|silinemedi|hazırdı ancak|etkisiz kaldı/i.test(last)){outcomes[card.id]={state:'canceled',conditionMet:true,applied:false,reason:last};return;}
-    if(/için hazır|hazırlandı/i.test(last)){outcomes[card.id]={state:'prepared',conditionMet:true,applied:false,reason:last};return;}
-    if(/tavanı yeniden uygulandı|alt sınır|üst sınır|uygulanan [+-]0\b|kısmen uygulandı/i.test(last)){outcomes[card.id]={state:'limited',conditionMet:true,applied:true,reason:last};return;}
-    const passiveReason=base==='Yedek Kulübesi'?'Maç sonucu şartı sağlandı; sonraki maça reroll aktarılacak.':base==='Form Tutmuyor'?'Form şartı sağlandı; sonraki maç bonusu hazırlanacak.':`${llCardEffectKind(card)} etkisi kesin çözümde uygulandı.`;
-    outcomes[card.id]={state:'active',conditionMet:true,applied:true,reason:last||passiveReason};
-  });
-  return outcomes;
-}
-function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scoreAgainst){
-  const outcomes=llResolutionCardOutcomes(side,rawDice,events,disabled,scoreFor,scoreAgainst);
-  return Object.entries(outcomes).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id);
-}
-function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
-  // Zarları değerlerine göre değil, sabit mevki sırasına göre eşleştir.
-  // Böylece Kaleci daima Kaleciyle, Orta Saha Orta Sahayla ve Forvet Forvetle düello yapar.
-  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[])],eventScores=(scouting.events||[]).map(()=>null),nextLocks={a:{},b:{}};
-  const rawADice=llDeep(aDice),rawBDice=llDeep(bDice);
-  const aState=llTeamState(aName),bState=llTeamState(bName);
-  const sides={a:{name:aName,dice:aDice,state:aState,home:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:!ctx.aHome,extra:0,shield:0}};
-  const disabled={a:new Set(scouting.disabled?.a||[]),b:new Set(scouting.disabled?.b||[])};
-  let scoreA=0,scoreB=0,processedPairs=0,extrasCommitted=false;
-  const shieldCommitted={a:false,b:false};
-  function projectedScore(){
-    let a=scoreA,b=scoreB;
-    for(let i=processedPairs;i<3;i++){const left=aDice[i],right=bDice[i];if(left.value>right.value)a++;else if(right.value>left.value)b++;}
-    if(!extrasCommitted){a+=sides.a.extra;b+=sides.b.extra;}
-    if(!shieldCommitted.a&&sides.a.shield)b=Math.max(0,b-sides.a.shield);
-    if(!shieldCommitted.b&&sides.b.shield)a=Math.max(0,a-sides.b.shield);
-    return {scoreA:a,scoreB:b};
-  }
-  function log(msg){events.push(msg);eventScores.push(projectedScore());}
-  function activeCard(d,key){return disabled[key].has(d.uid)?null:llCard(d.cardId);}
-  function sideHasBase(key,base){return sides[key].dice.some(d=>llBaseName(activeCard(d,key))===base);}
-  function applyCombinationCards(me,key,rawDice){
-    me.dice.forEach(d=>{
-      const c=activeCard(d,key),base=llBaseName(c),rawDie=llFindPosition(rawDice,d.position);if(!c||!rawDie)return;
-      if(base==='İkili Pres'&&d.position==='Orta Saha'&&llDieBelongsToExactPair(rawDice,rawDie)){const old=d.value,bonus=c.upgradeRule==='double-press'&&rawDie.value>=4?2:1;d.value+=bonus;log(`${me.name}: İkili Pres → Orta Saha zarı ${old}→${d.value} (zar etkisi, uygulanan +${bonus}).`);}
-      if(base==='Kusursuz Hat'&&llIsConsecutiveLine(rawDice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Kusursuz Hat → SKOR BONUSU +${n} (zara değil, maç skoruna eklenir).`);}
-      if(base==='Altın Seri'&&(c.upgradeLevel?[8,12,13]:[8,13]).includes(llSum(rawDice))){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Uğurlu Sayılar → temel zar toplamı ${llSum(rawDice)}; SKOR BONUSU +${n}.`);}
-      if(base==='Çift Kanat'&&(c.upgradeRule==='direct-play'?llFindPosition(rawDice,'Kaleci')?.value===llFindPosition(rawDice,'Forvet')?.value:llHasDoubleWing(rawDice))){const forward=llFindPosition(me.dice,'Forvet'),old=forward.value;forward.value+=1;log(`${me.name}: Direkt Oyun → Forvet zarı ${old}→${forward.value} (zar etkisi, uygulanan +1).`);}
-      if(base==='Dengeli On Bir'&&llIsBalancedEleven(rawDice)){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position),old=target.value;target.value+=1;log(`${me.name}: Dengeli On Bir → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +1).`);}
-      if(base==='Boş Kadro'){const emptyCount=LL_POSITIONS.filter(pos=>pos!==d.position&&!llCardContractSlotActive(me.state,pos)).length,bonus=Math.min(2,emptyCount);if(bonus){const old=d.value;d.value+=bonus;log(`${me.name}: Boş Kadro → ${d.position} zarı ${old}→${d.value} (zar etkisi, uygulanan +${bonus}).`);}}
-      if(base==='Takım Kimyası'&&LL_POSITIONS.every(pos=>llCardContractSlotActive(me.state,pos))){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position),old=target.value;target.value+=1;log(`${me.name}: Takım Kimyası → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +1).`);}
-    });
-  }
-  function applyFinalCombinationCards(me,key){
-    me.dice.forEach(d=>{
-      const c=activeCard(d,key),base=llBaseName(c);if(!c||base!=='Üçlü Hücum')return;
-      const values=llOrderDiceByPosition(me.dice).map(x=>x.value);
-      if(llAllDiceEqual(me.dice)){
-        const n=llCardGoalAmount(c);me.extra+=n;
-        log(`${me.name}: Üçlü Hücum → tüm kart etkileri sonrası zarlar ${values.join('-')}; SKOR BONUSU +${n} (maç skoruna eklenir).`);
-      }
-    });
-  }
-  const globalPhaseCards={
-    self:new Set(['Ev Sahibi Avantajı','Kaptanlık Pazubandı','Uzun Top','Pas Ustası']),
-    opponent:new Set(['Deplasman Ruhu','Deplasman Disiplini','Dev Avcısı','Kalenin Efendisi','Moral Bozukluğu','Kilitleme','Ofsayt Tuzağı']),
-    post:new Set(['Sakatlık Şansı'])
-  };
-  function applyGlobals(me,opp,key,phase){
-    me.dice.forEach(d=>{
-      const c=activeCard(d,key),base=llBaseName(c);if(!c||!globalPhaseCards[phase]?.has(base))return;
-      if(base==='Ev Sahibi Avantajı'&&me.home){const own=llFindPosition(me.dice,d.position),min=Math.min(...me.dice.map(x=>x.value)),target=c.upgradeRule==='home-advantage'&&own?.value===min?own:llLowestDie(me.dice),bonus=c.upgradeRule==='home-advantage'&&target===own?2:1,old=target.value;target.value+=bonus;log(`${me.name}: Ev Sahibi Avantajı → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +${bonus}).`);}
-      const preparedCaptain=scouting.randoms?.[key]?.captain?.[d.uid],captainActive=c.upgradeRule==='captain'&&llLowestDie(me.dice).value<=2?true:(typeof preparedCaptain==='boolean'?preparedCaptain:Math.random()<.5);
-      if(base==='Kaptanlık Pazubandı'&&captainActive){const low=llLowestDie(me.dice),old=low.value;low.value+=1;log(`${me.name}: Kaptanlık Pazubandı → ${low.position} zarı ${old}→${low.value} (zar etkisi, uygulanan +1).`);}
-      if(base==='Deplasman Ruhu'&&!me.home){const high=llHighestDie(opp.dice),old=high.value;high.value=Math.max(1,old-1);log(`${me.name}: Deplasman Ruhu → rakibin ${high.position} zarı ${old}→${high.value}.`);}
-      if(base==='Deplasman Disiplini'&&!me.home){const min=Math.min(...opp.dice.map(x=>x.value)),targets=c.upgradeRule==='away-discipline'?opp.dice.filter(x=>x.value===min).slice(0,2):[llLowestDie(opp.dice)];targets.forEach(low=>{const old=low.value;low.value=Math.max(1,low.value-1);log(`${me.name}: Deplasman Disiplini → rakibin ${low.position} zarı ${old}→${low.value}.`);});}
-      if(base==='Dev Avcısı'&&me.state.stars<opp.state.stars){const max=Math.max(...opp.dice.map(x=>x.value)),targets=c.upgradeRule==='giant-killer'?opp.dice.filter(x=>x.value===max).slice(0,2):[llHighestDie(opp.dice)];targets.forEach(high=>{const old=high.value;high.value=Math.max(1,high.value-1);log(`${me.name}: Dev Avcısı → daha güçlü rakibin ${high.position} zarı ${old}→${high.value}.`);});}
-      if(base==='Kalenin Efendisi'){const keeper=llFindPosition(opp.dice,'Kaleci'),old=keeper?.value;if(keeper){keeper.value=Math.min(4,keeper.value);log(`${me.name}: Kalenin Efendisi → rakip Kaleci zarı ${old}; 4 tavanından sonra ${keeper.value} sayıldı.`);}}
-      if(base==='Moral Bozukluğu'&&((opp.state.lastResults.length>=2&&opp.state.lastResults.slice(-2).every(x=>x==='L'))||(c.upgradeRule==='morale'&&opp.state.lastResults.length>=3&&opp.state.lastResults.slice(-3).every(x=>x!=='W')))){const high=llHighestDie(opp.dice),old=high.value;high.value=Math.max(1,old-1);log(`${me.name}: Moral Bozukluğu → rakibin ${high.position} zarı ${old}→${high.value}.`);}
-      if(base==='Uzun Top'&&llOwnTrigger(c,d.value)){const f=llFindPosition(me.dice,'Forvet');if(f){const forwardCard=activeCard(f,key),bonus=c.upgradeRule==='long-ball'&&d.value===6&&['epic','legendary'].includes(forwardCard?.rarity)?2:llEffectAmount(c,1),old=f.value;f.value+=bonus;log(`${me.name}: Uzun Top → Forvet zarı ${old}→${f.value} (zar etkisi, uygulanan +${bonus}).`);}}
-      if(base==='Pas Ustası'&&llOwnTrigger(c,d.value)){const candidates=me.dice.filter(x=>x.uid!==d.uid);if(candidates.length){const min=Math.min(...candidates.map(x=>x.value)),targets=c.upgradeRule==='pass-master'?candidates.filter(x=>x.value===min):[llLowestDie(candidates)];targets.forEach(target=>{const n=llEffectAmount(c,1),old=target.value;target.value+=n;log(`${me.name}: Pas Ustası → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +${n}).`);});}}
-      if(base==='Kilitleme'){const high=llHighestDie(opp.dice),n=llEffectAmount(c,1),old=high.value;high.value=Math.max(1,old-n);log(`${me.name}: Kilitleme → rakibin ${high.position} zarı ${old}→${high.value} (uygulanan -${old-high.value}).`);}
-      if(base==='Ofsayt Tuzağı'){const high=llHighestDie(opp.dice),old=high.value;high.value=llRollValue(opp.name,high.position);log(`${me.name}: Ofsayt Tuzağı → rakibin ${high.position} zarı yeniden atıldı ${old}→${high.value}.`);}
-      if(base==='Sakatlık Şansı')opp.dice.filter(x=>x.value===1).forEach(x=>{nextLocks[key==='a'?'b':'a'][x.position]=1;log(`${me.name}: Sakatlık Riski → rakibin ${x.position} zarı gelecek maça 1 kilitlendi.`);});
-    });
-  }
-  // Total-die and virtual-goal cards run after all die changes and VAR rerolls.
-  function applyFinalScoreCards(me,opp,key){
-    me.dice.forEach(d=>{
-      const c=activeCard(d,key),base=llBaseName(c);if(!c)return;
-      if(base==='Alan Hakimiyeti'&&llSum(me.dice)>llSum(opp.dice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Alan Hakimiyeti \u2192 son zar toplam\u0131 ${llSum(me.dice)}-${llSum(opp.dice)}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='\u0130kili Oyun'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: \u0130kili Oyun \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='Frikik Ustas\u0131'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Frikik Ustas\u0131 \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='Hat-trick Ruhu'){const form=llHatTrickForm(me.name,c);if(form.active){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Hat-trick Ruhu \u2192 son ${form.windowSize} resmi ma\u00E7ta ${form.wins} galibiyet; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
-      if(base==='Bitiricilik'){const need=llThreshold(c.trigger,99),total=llSum(me.dice);if(total>=need){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Bitiricilik \u2192 yeniden at\u0131\u015Flar sonras\u0131 toplam ${total}/${need}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
-      if(base==='Kale Duvar\u0131'){const need=llThreshold(c.trigger,99),total=llSum(opp.dice);if(total>=need){const m=c.effect.match(/(\d+)\s+sanal gol elenir/i);me.shield+=m?Number(m[1]):1;}}
-    });
-  }
+function llV2FinishEuropeRound(winner){const e=lexLeague.state.europe;if(!e)return;e.pending=null;if(winner!==lexLeague.state.playerTeam){e.alive=false;return;}e.round++;if(e.round>=LL_EURO_ROUNDS.length){e.winner=lexLeague.state.playerTeam;e.alive=false;lexLeague.state.trophies.push({season:lexLeague.state.season,name:e.type==='ucl'?'UEFA Şampiyonlar Ligi':e.type==='uel'?'UEFA Avrupa Ligi':'UEFA Konferans Ligi'});}}
 
-  applyCombinationCards(sides.a,'a',rawADice);applyCombinationCards(sides.b,'b',rawBDice);
-  applyGlobals(sides.a,sides.b,'a','self');applyGlobals(sides.b,sides.a,'b','self');
-  applyGlobals(sides.a,sides.b,'a','opponent');applyGlobals(sides.b,sides.a,'b','opponent');
-  applyGlobals(sides.a,sides.b,'a','post');applyGlobals(sides.b,sides.a,'b','post');
-  const chance={a:scouting.randoms?.a?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)},b:scouting.randoms?.b?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)}};
-  const chanceCardA=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Şans Faktörü'),chanceCardB=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Şans Faktörü');chance.a.active=!!chanceCardA&&(chance.a.active||(chanceCardA.upgradeRule==='chance-pity'&&Number(aState.chanceMisses||0)>=4));chance.b.active=!!chanceCardB&&(chance.b.active||(chanceCardB.upgradeRule==='chance-pity'&&Number(bState.chanceMisses||0)>=4));
-  const pairResults=[];
-  for(let i=0;i<3;i++){
-    const a=aDice[i],b=bDice[i],ca=activeCard(a,'a'),cb=activeCard(b,'b'),ba=llBaseName(ca),bb=llBaseName(cb);
-    const duelEventStart=events.length;
-    const rawA=llFindPosition(rawADice,a.position),rawB=llFindPosition(rawBDice,b.position);
-    if(ba==='Son Adam'&&llOppTrigger(ca,b.value)){const n=llEffectAmount(ca,1),old=b.value;b.value=Math.max(1,old-n);log(`${aName}: Son Adam → rakibin ${b.position} zarı ${old}→${b.value} (zar etkisi, uygulanan -${old-b.value}; kart sınırı -${n}).`);}
-    if(bb==='Son Adam'&&llOppTrigger(cb,a.value)){const n=llEffectAmount(cb,1),old=a.value;a.value=Math.max(1,old-n);log(`${bName}: Son Adam → rakibin ${a.position} zarı ${old}→${a.value} (zar etkisi, uygulanan -${old-a.value}; kart sınırı -${n}).`);}
-    if(ba==='Sakin Kafa'&&a.value<b.value){
-      const old=a.value,opponent=b.value,limit=ca.upgradeRule==='calm-common'?(old<=2?2:1):ca.upgradeRule==='calm-rare'&&aState.stars<bState.stars&&b.value===Math.max(...bDice.map(x=>x.value))?3:llEffectAmount(ca,1);a.value=Math.min(opponent,old+limit);const applied=a.value-old,remaining=opponent-a.value;
-      log(`${aName}: Sakin Kafa → ${a.position} zarı ${old}→${a.value} (kart sınırı +${limit}, uygulanan +${applied}); rakip ${a.position} zarı ${opponent}; ${remaining?`mağlubiyet farkı ${opponent-old}→${remaining} azaldı`:'düello beraberliğe geldi'}.`);
-    }
-    if(bb==='Sakin Kafa'&&b.value<a.value){
-      const old=b.value,opponent=a.value,limit=cb.upgradeRule==='calm-common'?(old<=2?2:1):cb.upgradeRule==='calm-rare'&&bState.stars<aState.stars&&a.value===Math.max(...aDice.map(x=>x.value))?3:llEffectAmount(cb,1);b.value=Math.min(opponent,old+limit);const applied=b.value-old,remaining=opponent-b.value;
-      log(`${bName}: Sakin Kafa → ${b.position} zarı ${old}→${b.value} (kart sınırı +${limit}, uygulanan +${applied}); rakip ${b.position} zarı ${opponent}; ${remaining?`mağlubiyet farkı ${opponent-old}→${remaining} azaldı`:'düello beraberliğe geldi'}.`);
-    }
-    // Kalenin Efendisi, diğer kartlar Kaleci zarını sonradan yükseltse bile 4 tavanını korur.
-    if(a.position==='Kaleci'&&sideHasBase('a','Kalenin Efendisi')&&b.value>4){const old=b.value;b.value=4;log(`${aName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${b.value}.`);}
-    if(b.position==='Kaleci'&&sideHasBase('b','Kalenin Efendisi')&&a.value>4){const old=a.value;a.value=4;log(`${bName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${a.value}.`);}
-    let autoA=false,autoB=false,blocked=false,multA=1,multB=1;
-    if(ba==='Kale Direği'&&llOwnTrigger(ca,a.value)){blocked=true;log(`${aName}: Kale Direği → ${a.position} zarı ${a.value}; düello bloke edilip beraberlik sayıldı.`);}
-    if(bb==='Kale Direği'&&llOwnTrigger(cb,b.value)){blocked=true;log(`${bName}: Kale Direği → ${b.position} zarı ${b.value}; düello bloke edilip beraberlik sayıldı.`);}
-    if(ba==='Çift Ayak'&&(ca.upgradeLevel||rawA.value%2===0)&&rawA.value===rawB.value-1){blocked=true;log(`${aName}: Çift Ayak → Orta Saha düellosu berabere sayıldı.`);}
-    if(bb==='Çift Ayak'&&(cb.upgradeLevel||rawB.value%2===0)&&rawB.value===rawA.value-1){blocked=true;log(`${bName}: Çift Ayak → Orta Saha düellosu berabere sayıldı.`);}
-    if(ba==='Vuruşsuz Gece'&&llOppTrigger(ca,b.value)){blocked=true;log(`${aName}: Vuruşsuz Gece → rakip ${b.value} attı; ${a.position} düellosu gol yemeden berabere sayıldı.`);}
-    if(bb==='Vuruşsuz Gece'&&llOppTrigger(cb,a.value)){blocked=true;log(`${bName}: Vuruşsuz Gece → rakip ${a.value} attı; ${b.position} düellosu gol yemeden berabere sayıldı.`);}
-    if(ba==="Orta Saha Pres'i"&&llOppTrigger(ca,b.value)){autoA=true;log(`${aName}: Orta Saha Pres'i → rakip ${b.value} attı; Orta Saha düellosu otomatik kazanıldı.`);}
-    if(bb==="Orta Saha Pres'i"&&llOppTrigger(cb,a.value)){autoB=true;log(`${bName}: Orta Saha Pres'i → rakip ${a.value} attı; Orta Saha düellosu otomatik kazanıldı.`);}
-    if(ba==='Panenka'&&llHasAnyDuplicate(bDice)){autoA=true;log(`${aName}: Panenka → rakibin ${llDuplicateValues(bDice).join(', ')} zarı tekrarlandı; Forvet düellosu otomatik kazanıldı.`);}
-    if(bb==='Panenka'&&llHasAnyDuplicate(aDice)){autoB=true;log(`${bName}: Panenka → rakibin ${llDuplicateValues(aDice).join(', ')} zarı tekrarlandı; Forvet düellosu otomatik kazanıldı.`);}
-    if(ba==='Son Dakika Golü'&&scoreA===scoreB){
-      autoA=true;const bonus=/\+\d+\s+sanal gol/i.test(ca.effect)?llCardGoalAmount(ca):0;sides.a.extra+=bonus;
-      log(`${aName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} maç skoruna eklendi`:''}.`);
-    }
-    if(bb==='Son Dakika Golü'&&scoreA===scoreB){
-      autoB=true;const bonus=/\+\d+\s+sanal gol/i.test(cb.effect)?llCardGoalAmount(cb):0;sides.b.extra+=bonus;
-      log(`${bName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} maç skoruna eklendi`:''}.`);
-    }
-    if(i===2&&sideHasBase('a','Fırsatçı')&&scoreA>scoreB){sides.a.extra+=1;log(`${aName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 maç skoruna eklendi.`);}
-    if(i===2&&sideHasBase('b','Fırsatçı')&&scoreB>scoreA){sides.b.extra+=1;log(`${bName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 maç skoruna eklendi.`);}
-    if(chance.a.active&&chance.a.index===i){autoA=true;log(`${aName}: Şans Faktörü → ${a.position} düellosu otomatik kazanıldı.`);}
-    if(chance.b.active&&chance.b.index===i){autoB=true;log(`${bName}: Şans Faktörü → ${b.position} düellosu otomatik kazanıldı.`);}
-    if(ba==='Golcü İçgüdüsü'&&llOwnTrigger(ca,a.value)){multA=llEffectAmount(ca,2);log(`${aName}: Golcü İçgüdüsü → Forvet zarı ${a.value}; düello x${multA} gol için hazır.`);}
-    if(bb==='Golcü İçgüdüsü'&&llOwnTrigger(cb,b.value)){multB=llEffectAmount(cb,2);log(`${bName}: Golcü İçgüdüsü → Forvet zarı ${b.value}; düello x${multB} gol için hazır.`);}
-    if(ba==='Son Vuruş'&&a.value===b.value+1){multA=llEffectAmount(ca,2);log(`${aName}: Son Vuruş → rakibi tam 1 farkla geçti; düello x${multA} gol için hazır.`);}
-    if(bb==='Son Vuruş'&&b.value===a.value+1){multB=llEffectAmount(cb,2);log(`${bName}: Son Vuruş → rakibi tam 1 farkla geçti; düello x${multB} gol için hazır.`);}
-    if(ba==='Katil İçgüdü'&&a.position==='Forvet'&&a.value>=b.value+2)multA=llEffectAmount(ca,3);
-    if(bb==='Katil İçgüdü'&&b.position==='Forvet'&&b.value>=a.value+2)multB=llEffectAmount(cb,3);
-    const sonPerdeA=ba==='Son Perde'&&a.position==='Forvet'&&scoreA<scoreB,sonPerdeB=bb==='Son Perde'&&b.position==='Forvet'&&scoreB<scoreA;
-    if(sonPerdeA)multA=llEffectAmount(ca,2);
-    if(sonPerdeB)multB=llEffectAmount(cb,2);
-    const varA=sideHasBase('a','VAR İncelemesi'),varB=sideHasBase('b','VAR İncelemesi');
-    if(!blocked&&a.value===b.value&&(varA||varB)){
-      const oldA=a.value,oldB=b.value;
-      if(varA){
-        a.value=llRollValue(aName,a.position);
-        const state=a.value>b.value?'kart sahibi önde':a.value<b.value?'rakip önde':'berabere';
-        log(`${aName}: VAR İncelemesi → ${a.position} düellosu ${oldA}-${oldB} berabereydi; kendi ${a.position} zarı yeniden atıldı ${oldA}→${a.value}; yeni düello ${a.value}-${b.value} (${state}).`);
-      }
-      if(varB){
-        b.value=llRollValue(bName,b.position);
-        const state=b.value>a.value?'kart sahibi önde':b.value<a.value?'rakip önde':'berabere';
-        log(`${bName}: VAR İncelemesi → ${b.position} düellosu ${oldB}-${oldA} berabereydi; kendi ${b.position} zarı yeniden atıldı ${oldB}→${b.value}; yeni düello ${b.value}-${a.value} (${state}).`);
-      }
-    }
-    let result='draw';
-    if(!blocked){
-      if(autoA&&!autoB)result='a';else if(autoB&&!autoA)result='b';else if(a.value>b.value)result='a';else if(b.value>a.value)result='b';
-      else{
-        if(ba==='Penaltı Ustası'||ba==='Çalım'){result='a';log(`${aName}: ${ba} → ${a.position} beraberliği galibiyet sayıldı.`);}
-        if(bb==='Penaltı Ustası'||bb==='Çalım'){result=result==='a'?'draw':'b';log(`${bName}: ${bb} → ${b.position} beraberliği galibiyet sayıldı.`);}
-      }
-    }
-    if(result==='a'){scoreA+=multA;if(sonPerdeA)log(`${aName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;log(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}}
-    if(result==='b'){scoreB+=multB;if(sonPerdeB)log(`${bName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;log(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}}
-    const logPreparedMultiplier=(side,base,mult,resultForSide,opponentAuto,wasBlocked)=>{
-      if(!['Golcü İçgüdüsü','Son Vuruş'].includes(base)||mult<=1)return;
-      const team=side==='a'?aName:bName;
-      if(resultForSide)log(`${team}: ${base} → şart sağlandı, Forvet düellosu kazanıldı; SKOR ÇARPANI x${mult} uygulandı ve maç skoruna +${mult} gol yazıldı.`);
-      else if(wasBlocked)log(`${team}: ${base} → şart sağlandı ancak düello bloke edilip beraberlik sayıldı; SKOR ÇARPANI x${mult} uygulanmadı.`);
-      else if(opponentAuto)log(`${team}: ${base} → şart sağlandı ancak rakibin otomatik düello galibiyeti etkisi üstün geldi; SKOR ÇARPANI x${mult} uygulanmadı.`);
-      else log(`${team}: ${base} → şart sağlandı ancak Forvet düellosu kazanılamadı; SKOR ÇARPANI x${mult} uygulanmadı.`);
-    };
-    logPreparedMultiplier('a',ba,multA,result==='a',autoB&&!autoA,blocked);
-    logPreparedMultiplier('b',bb,multB,result==='b',autoA&&!autoB,blocked);
-    pairResults.push({a:a.value,b:b.value,result,aGoals:result==='a'?multA:0,bGoals:result==='b'?multB:0});
-    processedPairs=i+1;if(events.length>duelEventStart)eventScores[events.length-1]=projectedScore();
+function llV2FinishRemainingLeague(){const s=lexLeague.state;for(const key of ['super','first'])for(let w=0;w<s.schedules[key].length;w++){const round=s.schedules[key][w];if(round.every(f=>s.results.some(r=>r.season===s.season&&r.competition==='league'&&r.home===f.home&&r.away===f.away)))continue;round.forEach(f=>llV2SimFixture(f,'league',key,w+1));}}
+function llV2AiPlayoffWinner(rows){const win=(a,b)=>llV2SimFixture({home:a,away:b},'playoff');const q1=win(rows[3].team,rows[6].team),q2=win(rows[4].team,rows[5].team),sf=win(q1,q2);return win(rows[2].team,sf);}
+function llCompleteSeason(){const s=lexLeague.state;llV2FinishRemainingLeague();const first=llSortTable('first'),pos=first.findIndex(r=>r.team===s.playerTeam)+1;if(llTeamLeague(s.playerTeam)==='first'&&pos>=3&&pos<=7){llV2StartPlayerPlayoff(first,pos);llSave();llRenderDashboard();return;}llV2FinalizeSeason(llV2AiPlayoffWinner(first));}
+function llV2StartPlayerPlayoff(rows,pos){const s=lexLeague.state,seed3=rows[2].team,q1=[rows[3].team,rows[6].team],q2=[rows[4].team,rows[5].team];s.playoff={seed3,stage:null,other:null};if(pos===3){const w1=llV2SimFixture({home:q1[0],away:q1[1]},'playoff'),w2=llV2SimFixture({home:q2[0],away:q2[1]},'playoff'),sf=llV2SimFixture({home:w1,away:w2},'playoff');s.playoff.stage='final';s.playoff.opponent=sf;}else{const mine=q1.includes(s.playerTeam)?q1:q2,other=mine===q1?q2:q1;s.playoff.other=llV2SimFixture({home:other[0],away:other[1]},'playoff');s.playoff.stage='qf';s.playoff.opponent=mine.find(n=>n!==s.playerTeam);}}
+function llV2EnsurePlayoff(){const s=lexLeague.state,p=s.playoff;if(!p||s.pendingFixture)return;s.pendingFixture={home:s.playerTeam,away:p.opponent,competition:'playoff',roundLabel:p.stage==='qf'?'Play-Off 1. Tur':p.stage==='sf'?'Play-Off Yarı Final':'Play-Off Final'};}
+function llV2FinishPlayoffMatch(winner){const s=lexLeague.state,p=s.playoff;if(winner!==s.playerTeam){const aiWinner=p.stage==='final'?p.opponent:p.stage==='sf'?llV2SimFixture({home:p.opponent,away:p.seed3},'playoff'):llV2SimFixture({home:llV2SimFixture({home:p.opponent,away:p.other},'playoff'),away:p.seed3},'playoff');s.playoff=null;llV2FinalizeSeason(aiWinner);return;}if(p.stage==='qf'){p.stage='sf';p.opponent=p.other;}else if(p.stage==='sf'){p.stage='final';p.opponent=p.seed3;}else{s.playoff=null;llV2FinalizeSeason(s.playerTeam);}}
+function llV2Qualifications(superRows,cupWinner){const q={ucl:[superRows[0].team,superRows[1].team],uel:[],uecl:[]},used=new Set(q.ucl);if(cupWinner&&!used.has(cupWinner)){q.uel.push(cupWinner);used.add(cupWinner);}for(const row of superRows){if(used.has(row.team))continue;if(q.uel.length<2){q.uel.push(row.team);used.add(row.team);}else if(q.uecl.length<2){q.uecl.push(row.team);used.add(row.team);}if(q.uecl.length===2)break;}return q;}
+function llV2SnapshotRows(rows,state){return (rows||[]).map((row,index)=>({...llDeep(row),position:index+1,stars:llV2TeamStarsInState(state,row.team)}));}
+function llV2ArchiveSeason(state,summary){
+  if(!state||!summary?.superRows||!summary?.firstRows)return null;if(!Array.isArray(state.seasonHistory))state.seasonHistory=[];
+  const entry={version:LL_SEASON_HISTORY_VERSION,season:Number(summary.season),superRows:llV2SnapshotRows(summary.superRows,state),firstRows:llV2SnapshotRows(summary.firstRows,state),cupWinner:summary.cupWinner||null,playoffWinner:summary.playoffWinner||null,relegated:[...(summary.relegated||[])],promoted:[...(summary.promoted||[])],qualifications:llDeep(summary.qualifications||{ucl:[],uel:[],uecl:[]}),playerLeague:summary.playerLeague||null,playerPosition:Number(summary.playerPosition||0)};
+  const index=state.seasonHistory.findIndex(item=>Number(item.season)===entry.season);if(index>=0)state.seasonHistory[index]=entry;else state.seasonHistory.push(entry);state.seasonHistory.sort((a,b)=>a.season-b.season);return entry;
+}
+function llV2ArchivedTableHtml(entry,key){
+  const rows=key==='super'?entry.superRows:entry.firstRows,q=entry.qualifications||{ucl:[],uel:[],uecl:[]},ucl=new Set(q.ucl||[]),uel=new Set(q.uel||[]),uecl=new Set(q.uecl||[]);
+  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const euro=key!=='super'?'':ucl.has(r.team)?'ucl-zone ':uel.has(r.team)?'uel-zone ':uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euro}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(Number(r.stars||llV2TeamStarsInState(lexLeague.state,r.team)))}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>`;
+}
+function llRenderSeasonArchive(season=null,key='super'){
+  const s=lexLeague.state,history=[...(s?.seasonHistory||[])].sort((a,b)=>b.season-a.season);llSetWide(true);if(!history.length){llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Sezon <em>Arşivi</em></div><div class="ll-muted">Tamamlanan sezonların iki lig tablosu burada saklanacak.</div></div><button class="ll-btn" onclick="${s?.seasonEnded?'llRenderSeasonEnd()':'llRenderDashboard()'}">← Geri</button></div><div class="ll-notice">Henüz tamamlanmış ve arşivlenmiş sezon yok.</div></div></div>`;return;}
+  const requested=Number(season),entry=history.find(item=>item.season===requested)||history[0],league=key==='first'?'first':'super',back=s.seasonEnded?'llRenderSeasonEnd()':'llRenderDashboard()';
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Sezon <em>Arşivi</em></div><div class="ll-muted">Süper Lig ve TFF 1. Lig sezon sonu puan durumları kalıcı olarak saklanır.</div></div><button class="ll-btn" onclick="${back}">← Geri</button></div><div class="ll-comp-tabs">${history.map(item=>`<button class="ll-comp-tab ${item.season===entry.season?'active':''}" onclick="llRenderSeasonArchive(${item.season},'${league}')">Sezon ${item.season}</button>`).join('')}</div><div class="ll-actions" style="margin:13px 0"><button class="ll-btn ${league==='super'?'primary':''}" onclick="llRenderSeasonArchive(${entry.season},'super')">Süper Lig</button><button class="ll-btn ${league==='first'?'primary':''}" onclick="llRenderSeasonArchive(${entry.season},'first')">TFF 1. Lig</button></div><div class="ll-metrics"><div class="ll-metric"><strong>${llEscape(entry.superRows?.[0]?.team||'—')}</strong><span>Süper Lig Şampiyonu</span></div><div class="ll-metric"><strong>${llEscape(entry.firstRows?.[0]?.team||'—')}</strong><span>1. Lig Şampiyonu</span></div><div class="ll-metric"><strong>${llEscape(entry.cupWinner||'—')}</strong><span>Türkiye Kupası</span></div><div class="ll-metric"><strong>${entry.playerPosition||'—'}.</strong><span>Senin Sıran</span></div></div><div class="ll-card-title" style="margin:16px 0 9px">Sezon ${entry.season} · ${llLeagueLabel(league)} Puan Durumu</div>${llV2ArchivedTableHtml(entry,league)}<div class="ll-zone-legend">${league==='first'?'<span><i class="ll-zone-dot direct"></i>1–2 Doğrudan yükselir</span><span><i class="ll-zone-dot playoff"></i>3–7 Play-Off</span>':'<span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span><span><i class="ll-zone-dot relegation"></i>Son 3 düşer</span>'}</div></div></div>`;
+}
+function llV2FinalizeSeason(playoffWinner){const s=lexLeague.state,superRows=llSortTable('super'),firstRows=llSortTable('first'),relegated=superRows.slice(-3).map(r=>r.team),promoted=[firstRows[0].team,firstRows[1].team,playoffWinner],qualifications=llV2Qualifications(superRows,s.cup?.winner),playerLeague=llTeamLeague(s.playerTeam),summary={season:s.season,superRows:llV2SnapshotRows(superRows,s),firstRows:llV2SnapshotRows(firstRows,s),relegated,promoted,playoffWinner,cupWinner:s.cup?.winner,qualifications,playerLeague,playerPosition:(playerLeague==='super'?superRows:firstRows).findIndex(r=>r.team===s.playerTeam)+1,aiPromotionSupportApplied:true};promoted.filter(name=>name!==s.playerTeam).forEach(name=>{const team=s.teams[name];if(team)team.aiAp=Number(team.aiAp||0)+LL_PROMOTION_SUPPORT_AP;});s.lastSeasonSummary=summary;llV2EvaluateTeamTargets(s,summary);llV2EvaluateSeasonGoals(s,summary);llV2ArchiveSeason(s,summary);s.seasonEnded=true;llSave();llRenderSeasonEnd();}
+function llRenderSeasonEnd(){const x=lexLeague.state.lastSeasonSummary;if(!x){llRenderDashboard();return;}llV2EvaluateTeamTargets(lexLeague.state,x);llV2EvaluateSeasonGoals(lexLeague.state,x);llV2ArchiveSeason(lexLeague.state,x);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="quiz-start-title">Sezon ${x.season} <em>Tamamlandı</em></div><div class="ll-metrics"><div class="ll-metric"><strong>${x.playerPosition}.</strong><span>Sıra</span></div><div class="ll-metric"><strong>${x.cupWinner||'—'}</strong><span>Türkiye Kupası</span></div><div class="ll-metric"><strong>${x.promoted.length}</strong><span>Yükselen</span></div><div class="ll-metric"><strong>${x.relegated.length}</strong><span>Düşen</span></div></div>${llTransferWindowBanner(lexLeague.state.week)}${llV2SeasonGoalsHtml(true)}<div class="ll-grid" style="margin-top:14px"><div><div class="ll-card"><div class="ll-card-title">Süper Lig'den Düşenler</div><div class="ll-sub">${x.relegated.join(' · ')}</div></div><div class="ll-card" style="margin-top:12px"><div class="ll-card-title">Süper Lig'e Yükselenler</div><div class="ll-sub">${x.promoted.join(' · ')}</div></div></div>${llV2RewardTable()}</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="ll-btn primary" onclick="llStartNextSeason()">Transferlerini Tamamla · Yeni Sezona Başla</button><button class="ll-btn" onclick="llRenderSeasonArchive(${x.season})">Sezon ${x.season} Puan Durumları</button></div></div></div>`;}
+function llStartNextSeason(){const s=lexLeague.state,x=s.lastSeasonSummary,superSet=new Set(s.leagues.super),firstSet=new Set(s.leagues.first);x.relegated.forEach(n=>{superSet.delete(n);firstSet.add(n);});x.promoted.forEach(n=>{firstSet.delete(n);superSet.add(n);});s.leagues={super:[...superSet],first:[...firstSet]};s.season++;s.week=1;s.seasonEnded=false;s.standings={super:llBlankStandings(s.leagues.super),first:llBlankStandings(s.leagues.first)};s.schedules={super:llGenerateSchedule(s.leagues.super),first:llGenerateSchedule(s.leagues.first)};s.pendingFixture=null;s.playoff=null;s.results=[];s.europeStandings=null;s.aiTransferWindows={};s.lastSeasonSummary=null;s.teamSeasonTargets=null;s.seasonGoals=null;Object.values(s.teams).forEach(t=>{t.lastResults=[];t.wins=0;t.lockedDice={};});x.promoted.filter(name=>name!==s.playerTeam).forEach(name=>{const t=s.teams[name];while(t&&t.aiAp>=150){const attempt=llAiShopAttempt(name);if(!attempt.spent)break;}});const type=x.qualifications.ucl.includes(s.playerTeam)?'ucl':x.qualifications.uel.includes(s.playerTeam)?'uel':x.qualifications.uecl.includes(s.playerTeam)?'uecl':null;s.europe=type?{type,round:0,alive:true,pending:null,winner:null}:null;llV2InitCup(s);llV2RepairState(s);llSave();llRenderDashboard();}
+function llDevelopOpponents(completedWeek){const s=lexLeague.state;if(completedWeek<10)return;if(!s.aiTransferWindows)s.aiTransferWindows={};[10,20,30].filter(w=>completedWeek>=w&&!s.aiTransferWindows[`${s.season}-${w}`]).forEach(w=>{LL_ALL_TEAMS.map(t=>t.name).filter(n=>n!==s.playerTeam).forEach(n=>{const t=llTeamState(n);while(t.aiAp>=150){const r=llAiShopAttempt(n);if(!r.spent)break;}});s.aiTransferWindows[`${s.season}-${w}`]=true;});}
+
+/* Premium card packs and UEFA 2026/27 league-phase compatibility layer. */
+const LL_PREMIUM_PACK_COST=900;
+const LL_PREMIUM_EPIC_CHANCE=.65;
+const LL_EURO_FORMAT_VERSION=3;
+const LL_EURO_LEAGUE_WEEKS={ucl:[4,7,10,13,16,19,22,25],uel:[4,7,10,13,16,19,22,25],uecl:[4,7,10,13,16,19]};
+const LL_EURO_KNOCKOUT_LABELS={playoff:'Eleme Turu Play-Off',r16:'Son 16',qf:'Çeyrek Final',sf:'Yarı Final',final:'Final'};
+
+function llV3EnsurePremiumState(state){
+  if(!state)return state;
+  state.premiumPackPaidSeason=Math.max(0,Number(state.premiumPackPaidSeason)||0);
+  state.sealedPremiumPacks=Math.max(0,Number(state.sealedPremiumPacks)||0);
+  if(!Array.isArray(state.premiumPackHistory))state.premiumPackHistory=[];
+  if(!state.objectivePremiumGranted||typeof state.objectivePremiumGranted!=='object')state.objectivePremiumGranted={};
+  const pending=state.pendingPremiumPack;
+  if(pending&&(!LL_POSITIONS.includes(pending.position)||!Array.isArray(pending.offers)||pending.offers.length!==2||pending.offers.some(id=>!llCard(id))))state.pendingPremiumPack=null;
+  const regular=state.pendingRegularPack;
+  if(regular&&(!LL_POSITIONS.includes(regular.position)||!Array.isArray(regular.offers)||regular.offers.length!==2||regular.offers.some(id=>!llCard(id))))state.pendingRegularPack=null;
+  return state;
+}
+function llPaidPremiumPackUsed(state){return !!state&&(state.premiumPackHistory||[]).some(item=>Number(item?.season)===Number(state.season)&&item?.source==='paid');}
+function llV3GrantObjectivePack(state,goals){
+  llV3EnsurePremiumState(state);if(!goals?.evaluated)return false;
+  const primary=(goals.results||[]).find(goal=>goal.id==='club_primary');
+  const key=String(goals.season||state.season);if(!primary?.achieved||state.objectivePremiumGranted[key])return false;
+  state.objectivePremiumGranted[key]=true;state.sealedPremiumPacks++;goals.premiumPackEarned=true;return true;
+}
+function llV3PremiumPool(position){
+  const s=lexLeague.state,team=llTeamState(s.playerTeam),seen=new Set(llEnsureDiscoveredCards()),used=llTeamCardFamilyHistory(s.playerTeam);
+  return LL_CARD_POOL.filter(card=>card.position===position&&['epic','legendary'].includes(card.rarity)&&Number(card.minStar||1)<=Number(team.stars||1)&&!seen.has(card.id)&&!used.has(llCardFamilyName(card)));
+}
+function llV3PickPremiumPair(pool){
+  const pick=(source,blockedFamily)=>{const available=source.filter(card=>llCardFamilyName(card)!==blockedFamily),wanted=Math.random()<LL_PREMIUM_EPIC_CHANCE?'epic':'legendary',same=available.filter(card=>card.rarity===wanted),choices=same.length?same:available;return choices[Math.floor(Math.random()*choices.length)]||null;};
+  const first=pick(pool,''),second=first?pick(pool,llCardFamilyName(first)):null;return first&&second?[first,second]:[];
+}
+function llOpenPremiumPack(position,source='paid'){
+  const s=lexLeague.state;llV3EnsurePremiumState(s);
+  if(!llIsTransferWindow(s.week)){alert('Elit rol paketi yalnızca transfer döneminde açılabilir.');return;}
+  if(s.pendingPremiumPack){lexLeague.shop={mode:'premium',position:s.pendingPremiumPack.position,offers:[...s.pendingPremiumPack.offers],source:s.pendingPremiumPack.source};llRenderShopOffers();return;}
+  if(s.pendingRegularPack){alert('Önce açık normal kasadaki iki karttan birini seç veya kasadan vazgeç.');lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
+  if(!LL_POSITIONS.includes(position))return;
+  if(source==='voucher'&&s.sealedPremiumPacks<1){alert('Kapalı ücretsiz elit paketin yok.');return;}
+  if(source==='paid'&&llPaidPremiumPackUsed(s)){alert('Bu sezon ücretli elit paket hakkını kullandın. Hedef ödülü paketi bu sınırı tüketmez.');return;}
+  if(source==='paid'&&s.ap<LL_PREMIUM_PACK_COST){alert(`Yetersiz AP. Gerekli: ${LL_PREMIUM_PACK_COST} AP`);return;}
+  const pool=llV3PremiumPool(position);if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu rol ve takım yıldızı için iki farklı, kullanılabilir ve yeni Destansı/Efsanevi kart bulunmuyor. AP veya paket hakkı harcanmadı.');return;}
+  const offers=llV3PickPremiumPair(pool);if(offers.length<2)return;
+  if(source==='paid'){s.ap-=LL_PREMIUM_PACK_COST;s.premiumPackPaidSeason=s.season;}else s.sealedPremiumPacks--;
+  const pending={season:s.season,source,position,offers:offers.map(card=>card.id),openedAt:new Date().toISOString()};s.pendingPremiumPack=pending;
+  s.premiumPackHistory.push({...pending,status:'pending'});lexLeague.shop={mode:'premium',position,offers:[...pending.offers],source};llDiscoverCards(pending.offers);llSave();llRenderShop();
+  llShowPackOpening('elite',pending.offers,{cost:source==='paid'?LL_PREMIUM_PACK_COST:0,source});
+}
+function llDeferPremiumPack(){
+  const s=lexLeague.state;llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack;
+  if(pending){
+    const history=[...s.premiumPackHistory].reverse().find(item=>item.status==='pending'&&Number(item.season)===Number(pending.season)&&item.position===pending.position&&item.offers?.length===pending.offers?.length&&item.offers.every(id=>pending.offers.includes(id)));
+    if(history){history.status='skipped';history.skippedAt=new Date().toISOString();}
   }
-  applyFinalScoreCards(sides.a,sides.b,'a');
-  applyFinalScoreCards(sides.b,sides.a,'b');
-  applyFinalCombinationCards(sides.a,'a');
-  applyFinalCombinationCards(sides.b,'b');
-  if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
-  if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;log(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
-  scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
-  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
-  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
-  const cardOutcomes={a:llResolutionCardOutcomes(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionCardOutcomes(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
-  const conditionMetCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id)};
-  const appliedCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.applied).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.applied).map(([id])=>id)};
-  const triggeredCardIds=conditionMetCardIds;
-  return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds,conditionMetCardIds,appliedCardIds,cardOutcomes};
+  s.pendingPremiumPack=null;lexLeague.shop=null;llSave();llRenderShop();
 }
-function llBeginMatch(plusPos){
-  const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
-  const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
-  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,committed:false};
-  llRenderMatch();
-}
-function llRefreshMatchProjection(m){
-  if(!m?.playerDice?.length||!m?.opponentDice?.length){if(m)m.projectedResolution=null;return;}
-  const randoms=m.scouting?.randoms;m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,randoms});m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
-}
-function llAnimateVisibleDice(m,token,duration){
-  const tick=()=>{if(lexLeague.match!==m||m.rollAnimationToken!==token)return;document.querySelectorAll('.ll-die.rolling').forEach((el,i)=>{el.textContent=String(1+Math.floor(Math.random()*6));el.setAttribute('aria-label',`Zar dönüyor: ${el.textContent}`);});};
-  tick();const timer=setInterval(tick,82);setTimeout(()=>clearInterval(timer),Math.max(80,duration-35));
-}
-function llRollCurrentMatch(){
-  const m=lexLeague.match;if(!m||m.phase!=='ready')return;
-  m.playerDice=llMakeDice(m.player,m.plusPos);m.opponentDice=llMakeDice(m.opponent,null);
-  m.phase='rolling';m.rollingAll=true;m.justLandedAll=false;m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
-  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:950;llAnimateVisibleDice(m,token,wait);
-  setTimeout(()=>{
-    if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
-    m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
-    llSetupMatchRerolls(m,m.scouting.disabled.a);
-    const oppCredits=llRerollCreditsFromDice(m.opponentDice,m.scouting.disabled.b),oppCarry=llTakeCarriedRerolls(m.opponent);if(oppCarry||llExtraRerollsFromDice(m.opponentDice,m.scouting.disabled.b))m.opponentDice=llAutoRerollWithCredits(m.opponent,m.opponentDice,oppCredits,oppCarry);
-    llRefreshMatchProjection(m);m.rollingAll=false;m.justLandedAll=true;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
-    setTimeout(()=>{if(lexLeague.match===m)m.justLandedAll=false;},420);
-  },wait);
-}
-function llSelectReroll(uid){const m=lexLeague.match;if(m?.phase!=='reroll')return;const die=m.playerDice.find(d=>d.uid===uid);if(!die||!llCanRerollDie(m,die.position))return;m.selectedUid=uid;llRenderMatch();}
-function llUseReroll(){
-  const m=lexLeague.match;if(!m||m.phase!=='reroll'||!m.selectedUid||m.rerolls<=0)return;
-  const uid=m.selectedUid,die=m.playerDice.find(d=>d.uid===uid);if(!die||!llSpendRerollForDie(m,die.position))return;
-  m.selectedUid=null;m.rollingUid=uid;m.justLandedUid=null;m.phase='rerollRolling';m.rollAnimationToken=Number(m.rollAnimationToken||0)+1;const token=m.rollAnimationToken;llRenderMatch();
-  const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:830;llAnimateVisibleDice(m,token,wait);
-  setTimeout(()=>{
-    if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
-    const current=m.playerDice.find(d=>d.uid===uid);if(!current)return;
-    current.value=llRollValue(m.player,current.position)+(current.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);llRefreshMatchProjection(m);
-    m.rollingUid=null;m.justLandedUid=uid;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
-    setTimeout(()=>{if(lexLeague.match===m)m.justLandedUid=null;},420);
-  },wait);
-}
-function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.rerollCredits={base:0,general:0,Kaleci:0,'Orta Saha':0};m.selectedUid=null;m.phase='preview';llRenderMatch();}
-function llFinalizeCurrentMatch(){
-  const m=lexLeague.match;if(!m||m.resolution)return;
-  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
-  if(m.resolution.scoreA>0||m.resolution.scoreB>0){m.scorePop=true;m.scoreFlash=m.resolution.scoreA>m.resolution.scoreB?'player':m.resolution.scoreB>m.resolution.scoreA?'opponent':'draw';}
-  m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
-}
-function llDieRow(die,side,selectable=false,selected=false,rolling=false,landed=false,animationIndex=0){
-  const c=llCard(die.cardId),motionClass=rolling?'rolling':landed?'landed':'',shownValue=rolling?1+(animationIndex*2)%6:die.value;return `<div class="ll-die-row ${selectable?'selectable':''} ${selected?'selected':''}" ${selectable?`onclick="llSelectReroll('${die.uid}')"`:''}><div class="ll-die star${die.stars} ${motionClass}" style="--dice-delay:${animationIndex*38}ms" aria-label="${rolling?'Zar dönüyor':`Zar sonucu ${die.value}`}">${shownValue}</div><div class="ll-die-info"><div class="ll-die-pos">${LL_POSITION_ICONS[die.position]} ${die.position}</div><div class="ll-die-card">${c?`${llEscape(c.name)}${llCardUpgradeBadgeHtml(c)}`:'Kart yok'}</div></div></div>`;
-}
-function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedDice=null){
-  const base=llBaseName(card),opp=llFindPosition(oppDice,die.position),team=llTeamState(teamName);
-  const active=reason=>({state:'active',label:'✓ TETİKLENDİ',reason});
-  const inactive=reason=>({state:'inactive',label:'Tetiklenmedi',reason});
-  const uncertain=reason=>({state:'uncertain',label:'? BELİRSİZ',reason});
-  const ownValue=die.value,oppValue=opp?.value;
-  switch(base){
-    case 'Metronom': return active('Reroll hakkı maç başında verildi.');
-    case 'Yıldız Oyuncu': return team?.stars>=3?active('Takım en az 3 yıldızlı; zar alt sınırı uygulandı.'):inactive('Yalnızca 3 veya daha fazla yıldızlı takımda çalışır.');
-    case 'Ev Sahibi Avantajı': return isHome?active('Takım ev sahibi.'):inactive('Takım deplasmanda.');
-    case 'Deplasman Ruhu': return !isHome?active('Takım deplasmanda.'):inactive('Takım ev sahibi.');
-    case 'Deplasman Disiplini': return !isHome?active(`Takım deplasmanda; rakibin en düşük zarı ${llLowestDie(oppDice)?.value}.`):inactive('Takım ev sahibi.');
-    case 'Dev Avcısı': {const rival=llTeamState(teamName===lexLeague.match.player?lexLeague.match.opponent:lexLeague.match.player);return (team?.stars||0)<(rival?.stars||0)?active(`Rakip ${rival.stars}★, kart sahibi ${team.stars}★.`):inactive('Rakip daha yüksek yıldızlı değil.');}
-    case 'Kalenin Efendisi': {const keeper=llFindPosition(oppDice,'Kaleci');return active(`Rakip Kaleci zarı ${keeper?.value}; düelloda en fazla 4 sayılacak.`);}
-    case 'Moral Bozukluğu': {const rival=llTeamState(teamName===lexLeague.match.player?lexLeague.match.opponent:lexLeague.match.player);return rival?.lastResults?.length>=2&&rival.lastResults.slice(-2).every(x=>x==='L')?active('Rakip son iki maçını kaybetti.'):inactive('Rakibin iki maçlık mağlubiyet serisi yok.');}
-    case 'Uzun Top': case 'Pas Ustası': case 'İkili Oyun': case 'Frikik Ustası': case 'Golcü İçgüdüsü': case 'Kale Direği':
-      return llOwnTrigger(card,ownValue)?active(`Kendi zarın ${ownValue}; sayı şartı sağlandı.`):inactive(`Kendi zarın ${ownValue}; sayı şartı sağlanmadı.`);
-    case 'Son Adam': case 'Vuruşsuz Gece': case "Orta Saha Pres'i":
-      return llOppTrigger(card,oppValue)?active(`Rakip ${oppValue} attı; rakip zar şartı sağlandı.`):inactive(`Rakip ${oppValue} attı; şart sağlanmadı.`);
-    case 'Sakin Kafa': return ownValue<oppValue?active(`${ownValue}, rakibin ${oppValue} zarından düşük.`):inactive('Kendi zarın rakipten düşük değil.');
-    case 'Penaltı Ustası': return die.position==='Kaleci'&&ownValue===oppValue?active('Kaleci düellosu berabere.'):inactive('Kaleci düellosu berabere değil.');
-    case 'Çalım': return ownValue===oppValue?active(`Düello ${ownValue}-${oppValue} berabere.`):inactive('Düello berabere değil.');
-    case 'VAR İncelemesi': {const ties=LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value===llFindPosition(oppDice,pos)?.value);return ties.length?active(`${ties.join(', ')} düellosunda beraberlik var.`):inactive('Berabere düello yok.');}
-    case 'Son Vuruş': return ownValue===oppValue+1?active('Rakibi tam 1 farkla geçiyorsun.'):inactive('Tam 1 farkla önde değilsin.');
-    case 'Panenka': {const repeats=llDuplicateValues(oppDice);return repeats.length?active(`Rakibin üç zarı içinde ${repeats.join(', ')} değeri tekrarlandı; Forvet düellosu otomatik kazanılacak.`):inactive('Rakibin üç zarı içinde tekrarlanan sayı yok.');}
-    case 'Sakatlık Şansı': {const ones=oppDice.filter(d=>d.value===1).map(d=>d.position);return ones.length?active(`Rakibin ${ones.join(', ')} zarı 1 geldi.`):inactive('Rakibin üç zarı içinde 1 yok.');}
-    case 'Kilitleme': return llHighestDie(oppDice)?.uid===opp?.uid?active('Bu düellodaki rakip zar, rakibin en yüksek zarı.'):active('Kart rakibin başka bir mevkideki en yüksek zarını etkileyecek.');
-    case 'Ofsayt Tuzağı': return llHighestDie(oppDice)?.uid===opp?.uid?active('Bu düellodaki rakip zar, rakibin en yüksek zarı.'):active('Kart rakibin başka bir mevkideki en yüksek zarını yeniden attıracak.');
-    case 'Alan Hakimiyeti': return llSum(ownDice)>llSum(oppDice)?active(`Toplam zar ${llSum(ownDice)}-${llSum(oppDice)} üstün.`):inactive(`Toplam zar ${llSum(ownDice)}-${llSum(oppDice)}; üstünlük yok.`);
-    case 'Kale Duvarı': {const n=llThreshold(card.trigger,99);return llSum(oppDice)>=n?active(`Rakip toplamı ${llSum(oppDice)}, eşik ${n}.`):inactive(`Rakip toplamı ${llSum(oppDice)}, gereken ${n}.`);}
-    case 'Bitiricilik': {const n=llThreshold(card.trigger,99);return llSum(ownDice)>=n?active(`Kendi toplamın ${llSum(ownDice)}, eşik ${n}.`):inactive(`Kendi toplamın ${llSum(ownDice)}, gereken ${n}.`);}
-    case 'Hat-trick Ruhu': {const form=llHatTrickForm(teamName,card),text=`Son ${form.windowSize} resmi maç: ${form.played}/${form.windowSize} oynandı, ${form.wins}/${form.need} galibiyet`;return form.active?active(`${text}; form şartı sağlandı.`):inactive(`${text}; form şartı sağlanmadı.`);}
-    case 'Son Dakika Golü': return uncertain(`İlk iki düellonun kartlı sonucu berabere kalırsa Forvet düellosu otomatik kazanılır${/\+\d+\s+sanal gol/i.test(card.effect)?' ve +1 sanal gol eklenir':''}.`);
-    case 'Kaptanlık Pazubandı': return uncertain('En düşük zarına +1 gelmesi %50 şansa bağlı.');
-    case 'Şans Faktörü': return uncertain('Rastgele bir düellonun otomatik kazanılması %10 şansa bağlı.');
-    case 'Soğuk Kanlılık': return uncertain('Takımın ilk golünün hangi düelloda geleceğine bağlı.');
-    case 'Çift Ayak': return ownValue%2===0&&ownValue===oppValue-1?active(`Orta Saha zarın ${ownValue}; rakibin ${oppValue} zarından tam 1 düşük ve çift.`):inactive('Çift sayı ve tam 1 düşük olma şartı birlikte sağlanmadı.');
-    case 'İkili Pres': return llDieBelongsToExactPair(ownDice,die)?active(`Orta Saha ${ownValue}, takımındaki tam ikili zarın bir parçası.`):inactive('Orta Saha zarını içeren tam bir ikili yok.');
-    case 'Kusursuz Hat': return llIsConsecutiveLine(ownDice)?active('Temel zarlar art arda üç sayı oluşturuyor.'):inactive('Temel zarlar art arda üç sayı oluşturmuyor.');
-    case 'Altın Seri': return [8,13].includes(llSum(ownDice))?active(`Temel zar toplamın ${llSum(ownDice)}.`):inactive(`Temel zar toplamın ${llSum(ownDice)}; gereken 8 veya 13.`);
-    case 'Üçlü Hücum': {
-      const finalDice=resolvedDice?.length?resolvedDice:ownDice,values=llOrderDiceByPosition(finalDice).map(x=>x.value).join('-');
-      return llAllDiceEqual(finalDice)?active(`Tüm kart etkileri sonrası zarlar ${values}; üçü de aynı.`):inactive(`Tüm kart etkileri sonrası zarlar ${values}; üçü aynı değil.`);
-    }
-    case 'Çift Kanat': return llHasDoubleWing(ownDice)?active('Kaleci ve Forvet eşit, Orta Saha farklı.'):inactive('Kaleci–Forvet eşitliği ve farklı Orta Saha şartı sağlanmadı.');
-    case 'Dengeli On Bir': {const values=ownDice.map(d=>d.value),gap=Math.max(...values)-Math.min(...values);return gap<=1?active(`En yüksek ve en düşük zar farkı ${gap}.`):inactive(`Zar farkı ${gap}; en fazla 1 olmalı.`);}
-    case 'Son Perde': return uncertain('İlk iki düellonun kartlı sonucunda geride kalır ve Forvet düellosunu kazanırsan x2 gol verir.');
-    case 'Katil İçgüdü': return ownValue>=oppValue+2?active(`Forvet zarı ${ownValue}-${oppValue}; en az 2 fark şartı sağlandı ve düello x3 gol sayılacak.`):inactive(`Forvet zarı ${ownValue}-${oppValue}; x3 için en az 2 fark gerekiyor.`);
-    case 'Mükemmeliyetçi': {const wins=LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value>llFindPosition(oppDice,pos)?.value).length;return wins===3?active('Üç ham düelloda da öndesin; kartlı çözüm korunursa +2 gol.'):uncertain(`Ham zarlarda ${wins}/3 düello önde; diğer kart etkileri sonucu değiştirebilir.`);}
-    case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp?active(`İlk iki ham düelloda ${score.own}-${score.opp} öndesin.`):inactive(`İlk iki ham düello ${score.own}-${score.opp}; önde değilsin.`);}
-    case 'Boş Kadro': {const empty=LL_POSITIONS.filter(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos)).length;return empty?active(`${empty} boş veya sözleşmesi bitmiş yuva var; ${die.position} zarına +${Math.min(2,empty)} uygulanacak.`):inactive('Diğer iki kart yuvası da aktif.');}
-    case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos))?active('Üç kart yuvası da aktif.'):inactive('Üç aktif kart yuvasının tamamı dolu değil.');
-    case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die)?active('Diğer iki kart da Nadir veya daha üstü; +1 reroll hazır.'):inactive('Diğer iki kartın ikisi de Nadir veya daha üstü değil.');
-    case 'Taktik Tahtası': return inactive('Bu kart yalnızca transfer haftasında çalışır.');
-    case 'Reflex': return active(`${llEffectAmount(card,1)} ekstra reroll hakkı maç başında verildi.`);
-    case 'Sahayı Oku': return active(`Rakibin tetiklenmeye hazır en güçlü ${llEffectAmount(card,1)} kartı bu maç etkisizleştirilecek.`);
-    case 'Yedek Kulübesi': return uncertain('Maç kaybedilirse gelecek maça +1 reroll taşınacak.');
-    case 'Form Tutmuyor': return (team?.sixStreaks?.[die.position]||0)>=2&&ownValue===6?active('Üçüncü üst üste 6 geldi; gelecek maç bu mevkiye +1 hazır.'):inactive(`Mevcut 6 serisi: ${team?.sixStreaks?.[die.position]||0}/3.`);
-    default:
-      if(/maç başında|her maç başında/i.test(card.trigger))return active('Maç başlangıcı şartı sağlandı.');
-      if(/Kendi zarın/i.test(card.trigger))return llOwnTrigger(card,ownValue)?active('Kendi zar şartı sağlandı.'):inactive('Kendi zar şartı sağlanmadı.');
-      if(/Rakip zarı/i.test(card.trigger))return llOppTrigger(card,oppValue)?active('Rakip zar şartı sağlandı.'):inactive('Rakip zar şartı sağlanmadı.');
-      return uncertain('Tetikleyici maç çözümü sırasında kesinleşecek.');
-  }
-}
-function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
-  const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
-  return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
-}
-function llResolvedForecastStatus(card,rawStatus,resolution,sideKey,teamName){
-  if(!resolution)return rawStatus;
-  const outcome=resolution.cardOutcomes?.[sideKey]?.[card.id];
-  if(outcome){
-    const labels={active:'✓ KESİN TETİKLENDİ',prepared:'◷ ŞART SAĞLANDI · HAZIRLANDI',canceled:'⚠ ŞART SAĞLANDI · ETKİ UYGULANMADI',blocked:'⛔ BLOKLANDI',limited:'↕ SINIRLANDI',inactive:'Tetiklenmedi'};
-    return {state:outcome.state,label:labels[outcome.state]||labels.inactive,reason:outcome.reason||rawStatus.reason};
-  }
-  return {state:'inactive',label:'Tetiklenmedi',reason:rawStatus.reason};
-}const llForecastSideCardsRaw=llForecastSideCards;
-llForecastSideCards=function(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
-  const resolution=lexLeague.match?.projectedResolution;if(!resolution)return llForecastSideCardsRaw(dice,oppDice,label,teamName,isHome,disabled,resolvedDice);
-  const sideKey=teamName===lexLeague.match.player?'a':'b',finalDice=sideKey==='a'?resolution.aDice:resolution.bDice;
-  const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
-  const order=sideKey==='a'?`<div class="ll-notice" style="grid-column:1/-1;margin-bottom:2px"><b>Kart \u00E7\u00F6z\u00FCm s\u0131ras\u0131:</b> 1) temel zar kombinasyonlar\u0131 &middot; 2) zar art\u0131rma/azaltma &middot; 3) beraberlik ve VAR yeniden at\u0131\u015Flar\u0131 &middot; 4) d\u00FCello sonucu &middot; 5) son toplam, sanal gol ve koruma.</div>`:'';
-  const html=cards.length?cards.map(x=>{
-    const rawStatus=llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,finalDice);
-    const status=disabled.has(x.die.uid)?{state:'blocked',label:'\u26D4 BLOKLANDI',reason:'Sahay\u0131 Oku bu kart\u0131 etkisizle\u015Ftirdi.'}:llResolvedForecastStatus(x.card,rawStatus,resolution,sideKey,teamName);
-    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;
-  }).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`;
-  return `${order}<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} &middot; Kesin Zincirde Kart Durumu</div>${html}</div>`;
+
+const llV3RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){state=llV3RepairStateBase(state);llV3EnsurePremiumState(state);if(state?.seasonGoals?.evaluated)llV3GrantObjectivePack(state,state.seasonGoals);return state;};
+const llV3EvaluateSeasonGoalsBase=llV2EvaluateSeasonGoals;
+llV2EvaluateSeasonGoals=function(state,summary){const goals=llV3EvaluateSeasonGoalsBase(state,summary);llV3GrantObjectivePack(state,goals);return goals;};
+const llV3SeasonGoalsHtmlBase=llV2SeasonGoalsHtml;
+llV2SeasonGoalsHtml=function(final=false){const html=llV3SeasonGoalsHtmlBase(final),goals=lexLeague.state?.seasonGoals;if(!final||!goals?.premiumPackEarned)return html;return `${html}<div class="ll-notice" style="margin-top:12px"><b>🎁 Yönetim hedefi paketi:</b> Bir ücretsiz Elit Rol Paketi kazandın. Şimdi açabilir veya sonraki transfer dönemine saklayabilirsin.</div>`;};
+
+const llV3RenderShopOffersBase=llRenderShopOffers;
+llRenderShopOffers=function(){
+  const sh=lexLeague.shop;if(sh?.mode!=='premium'){llV3RenderShopOffersBase();return;}
+  const host=document.getElementById('ll-shop-offers');if(!host)return;
+  host.innerHTML=`<div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7)"><div class="ll-card-title">✨ ${LL_POSITION_ICONS[sh.position]} ${sh.position} Elit Rol Paketi</div><div class="ll-notice" style="margin-bottom:12px">İki teklif de en az Destansı seviyededir. Birini seçtiğinde diğer teklif kapanır; sayfayı yenilemek kartları değiştirmez.</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div><button class="ll-btn" style="width:100%;margin-top:12px" onclick="llDeferPremiumPack()">Sonra Seç · Paket Kayıtta Kalsın</button></div>`;
+  host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; EL&#304;T KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
+  const discardButton=host.querySelector('button[onclick="llDeferPremiumPack()"]');
+  if(discardButton){discardButton.classList.add('danger');discardButton.textContent='Paketi Atla · Kartları Alma ve Paketi Sil (İade Yok)';}
 };
-function llProjectedOutcomeHtml(m){
-  const r=m?.projectedResolution;if(!r)return '';
-  const verdict=r.scoreA>r.scoreB?'Kartlardan sonra sen öndesin':r.scoreB>r.scoreA?'Kartlardan sonra rakip önde':'Kartlardan sonra skor berabere';
-  return `<div class="ll-carded-outcome"><div class="ll-carded-outcome-head"><div><b>TETİKLENEN KARTLARA GÖRE SONUÇ</b><div style="margin-top:3px;font-size:11px">${verdict}. Reroll yaparsan bu skor yeni zarlarla birlikte yeniden hesaplanır.</div></div><div class="ll-carded-outcome-score">${r.scoreA} - ${r.scoreB}</div></div></div>`;
+const llV3ChooseShopCardBase=llChooseShopCard;
+llChooseShopCard=function(id){
+  const sh=lexLeague.shop;if(sh?.mode!=='premium'){llV3ChooseShopCardBase(id);return;}if(!sh.offers.includes(id))return;
+  const s=lexLeague.state,player=llTeamState(s.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
+  const history=[...s.premiumPackHistory].reverse().find(item=>item.status==='pending'&&item.offers?.includes(id));if(history){history.status='chosen';history.chosen=id;history.chosenAt=new Date().toISOString();}
+  s.pendingPremiumPack=null;lexLeague.shop=null;llSave();llRenderShop();
+};
+llRenderShop=function(){
+  const s=lexLeague.state,week=Number(s.week),seasonEnd=!!s.seasonEnded,earlySeason=week>=1&&week<=3;if(!llIsTransferWindow(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
+  llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack,regularPending=s.pendingRegularPack;if(pending)lexLeague.shop={mode:'premium',position:pending.position,offers:[...pending.offers],source:pending.source};else if(regularPending)lexLeague.shop={mode:'regular',position:regularPending.position,offers:[...regularPending.offers]};else lexLeague.shop={position:null,offers:[]};
+  const cost=llShopCost(),period=seasonEnd?`Sezon ${s.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`,paidUsed=llPaidPremiumPackUsed(s),packPending=!!(pending||regularPending);
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Normal kasa ${cost} AP · AP: ${s.ap}</div></div><button class="ll-btn" onclick="${seasonEnd?'llRenderSeasonEnd()':'llRenderDashboard()'}">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklifler:</b> Aynı transfer döneminde gördüğün kart ailesi yeniden çıkmaz. Elit paket de yalnızca kullanılabilir, daha önce keşfedilmemiş ve seçilen role ait kartlardan oluşur.</div>${packPending?`<div class="ll-notice" style="margin-top:12px;border-color:rgba(250,204,21,.42)"><b>📦 Açık kasa seçimi:</b> ${pending?'Elit':'Normal'} kasadaki iki karttan birini seçmeden yeni kasa açılamaz.</div>`:''}<div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(s.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(s.playerTeam).cards[pos],s.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" ${packPending?'disabled':''} onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7);background:linear-gradient(135deg,rgba(88,28,135,.22),rgba(161,98,7,.18))"><div class="ll-card-title">✨ Elit Rol Paketi · ${LL_PREMIUM_PACK_COST} AP</div><div class="ll-sub">Seçtiğin role ait iki farklı kart açar. Her kart için Destansı %65 · Efsanevi %35. Sezon başına yalnızca bir ücretli paket; ücretsiz hedef paketi bu sınırı tüketmez.</div><div class="ll-muted" style="margin:8px 0 12px">${pending?'Açılmış elit paketin seçimi bekliyor; ücretsiz veya ücretli olduğu paket kaydında korunuyor.':regularPending?'Önce açık normal kasadaki seçimini tamamla.':paidUsed?'Bu sezon ücretli 900 AP paketi kullanıldı.':`Ücretli 900 AP paketi kullanılabilir · Mevcut AP: ${s.ap}`}${s.sealedPremiumPacks?` · Geçen sezon yönetim hedefi ödülü: ${s.sealedPremiumPacks}`:''}</div><div class="ll-actions">${LL_POSITIONS.map(pos=>`<button class="ll-btn gold" ${packPending||paidUsed?'disabled':''} onclick="llOpenPremiumPack('${pos}','paid')">${LL_POSITION_ICONS[pos]} ${pos} · ${LL_PREMIUM_PACK_COST} AP</button>`).join('')}${s.sealedPremiumPacks&&!packPending?LL_POSITIONS.map(pos=>`<button class="ll-btn primary" onclick="llOpenPremiumPack('${pos}','voucher')">🎁 ${pos} · Hedef Ödülü</button>`).join(''):''}</div></div><div id="ll-shop-offers"></div></div></div>`;
+  if(packPending)llRenderShopOffers();
+};
+
+function llV3ValidQualifications(q){const all=['ucl','uel','uecl'].flatMap(type=>Array.isArray(q?.[type])?q[type]:[]);return ['ucl','uel','uecl'].every(type=>q?.[type]?.length===2)&&all.length===6&&new Set(all).size===6;}
+function llV3ResolveEuropeQualifications(state){
+  if(llV3ValidQualifications(state.europeQualifications))return state.europeQualifications;
+  const latest=[...(state.seasonHistory||[])].sort((a,b)=>b.season-a.season).find(item=>Number(item.season)===Number(state.season)-1&&llV3ValidQualifications(item.qualifications));
+  let q=latest?llDeep(latest.qualifications):null;
+  if(!q){const ordered=[...(state.leagues?.super||[])].sort((a,b)=>llV2TeamStarsInState(state,b)-llV2TeamStarsInState(state,a)||a.localeCompare(b,'tr'));q={ucl:ordered.slice(0,2),uel:ordered.slice(2,4),uecl:ordered.slice(4,6)};}
+  const legacyType=state.europe?.type;if(legacyType&&q[legacyType]&&!q[legacyType].includes(state.playerTeam)){
+    ['ucl','uel','uecl'].forEach(type=>q[type]=q[type].filter(name=>name!==state.playerTeam));q[legacyType].push(state.playerTeam);q[legacyType]=q[legacyType].slice(-2);
+    const used=new Set();['ucl','uel','uecl'].forEach(type=>{q[type]=q[type].filter(name=>!used.has(name));q[type].forEach(name=>used.add(name));for(const name of state.leagues.super||[]){if(q[type].length>=2)break;if(!used.has(name)){q[type].push(name);used.add(name);}}});
+  }
+  state.europeQualifications=q;return q;
 }
-function llRawScoreFromMatchDice(m){
-  let player=0,opponent=0;LL_POSITIONS.forEach(position=>{const a=llFindPosition(m.playerDice||[],position),b=llFindPosition(m.opponentDice||[],position);if(!a||!b)return;if(a.value>b.value)player++;else if(b.value>a.value)opponent++;});return {player,opponent};
+function llV3BuildEuropeFixtures(teams,roundCount){
+  let rotation=[...teams];const edges=[],byRound=Array.from({length:roundCount},()=>[]);
+  for(let round=0;round<roundCount;round++){for(let i=0;i<rotation.length/2;i++){const edge={id:edges.length,round,a:rotation[i],b:rotation[rotation.length-1-i],home:null,away:null,used:false};edges.push(edge);byRound[round].push(edge);}rotation=[rotation[0],rotation[rotation.length-1],...rotation.slice(1,-1)];}
+  const adjacency=Object.fromEntries(teams.map(team=>[team,[]]));edges.forEach(edge=>{adjacency[edge.a].push(edge.id);adjacency[edge.b].push(edge.id);});const cursor=Object.fromEntries(teams.map(team=>[team,0]));
+  const nextEdge=team=>{while(cursor[team]<adjacency[team].length&&edges[adjacency[team][cursor[team]]].used)cursor[team]++;return adjacency[team][cursor[team]];};
+  teams.forEach(root=>{if(nextEdge(root)==null)return;const stack=[root];while(stack.length){const team=stack[stack.length-1],edgeId=nextEdge(team);if(edgeId==null){stack.pop();continue;}const edge=edges[edgeId];edge.used=true;const other=edge.a===team?edge.b:edge.a;edge.home=team;edge.away=other;stack.push(other);}});
+  return byRound.map(round=>round.map(edge=>({home:edge.home,away:edge.away})));
 }
-function llCardEffectChainHtml(m,resolution=m?.projectedResolution,preview=true){
-  if(!m||!resolution)return '';
-  const raw=llRawScoreFromMatchDice(m),sourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),events=sourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text),last={a:raw.player,b:raw.opponent};
-  const eventSteps=events.map(item=>{const score=item.score,same=score&&score.scoreA===last.a&&score.scoreB===last.b,label=score?`${same?'Skor değişmedi':'Ara skor'} ${score.scoreA}-${score.scoreB}`:'';if(score){last.a=score.scoreA;last.b=score.scoreB;}return {text:item.text,cls:item.text.startsWith(`${m.player}:`)?'player':item.text.startsWith(`${m.opponent}:`)?'opponent':'',scoreLabel:label};});
-  const steps=[{text:`Ham zar düelloları ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:`Ham ${raw.player}-${raw.opponent}`},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
-  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zincir ve ara skorlar yeni zarlarla baştan hesaplanır. “Kart Etkilerini Uygula” dediğinde bu sıra kesinleşir.':'Maç sonucu aşağıdaki neden–sonuç sırasıyla oluştu.'}</div>${events.length?`<div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`}</div>`;
+function llV3EuropeTeamOrder(qualifiers,foreign,roundCount){
+  for(let position=1;position<36;position++){const list=[qualifiers[0],...foreign.slice(0,35)];list.splice(Math.min(position,list.length),0,qualifiers[1]);const teams=list.slice(0,36),fixtures=llV3BuildEuropeFixtures(teams,roundCount),same=fixtures.some(round=>round.some(f=>qualifiers.includes(f.home)&&qualifiers.includes(f.away)));if(!same)return {teams,fixtures};}
+  const teams=[...qualifiers,...foreign].slice(0,36);return {teams,fixtures:llV3BuildEuropeFixtures(teams,roundCount)};
 }
-function llTriggeredCardLogHtml(m){
-  return llCardEffectChainHtml(m,m?.projectedResolution,true);
+llV2CreateEuropeStandings=function(state){
+  const types=['ucl','uel','uecl'],q=llV3ResolveEuropeQualifications(state),domestic=new Set(LL_ALL_TEAMS.map(team=>team.name)),base=[...new Set(UCL_TEAMS.map(team=>team.name))].filter(name=>!domestic.has(name));
+  const standings={season:state.season,formatVersion:LL_EURO_FORMAT_VERSION,qualifications:llDeep(q)};
+  types.forEach((type,typeIndex)=>{const rounds=LL_EURO_LEAGUE_WEEKS[type].length,shift=(Number(state.season)*7+typeIndex*11)%Math.max(1,base.length),foreign=[...base.slice(shift),...base.slice(0,shift)].filter(name=>!q[type].includes(name));while(foreign.length<34)foreign.push(`${llV2EuroLabel(type)} Kulübü ${foreign.length+1}`);const draw=llV3EuropeTeamOrder(q[type],foreign,rounds),teams=draw.teams;standings[type]={formatVersion:LL_EURO_FORMAT_VERSION,teams,standings:llBlankStandings(teams),fixtures:draw.fixtures,playedRounds:0,leagueMatches:rounds};});
+  state.europeStandings=standings;
+  (state.results||[]).filter(result=>types.includes(result.competition)&&result.league==='euro-table'&&Number(result.season)===Number(state.season)).forEach(result=>{const table=standings[result.competition];if(table?.teams.includes(result.home)&&table.teams.includes(result.away))llV2ApplyEuropeStanding(state,result.competition,result.home,result.homeGoals,result.away,result.awayGoals);});
+  return standings;
+};
+llV2EnsureEuropeStandings=function(state){
+  const valid=state.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&state.europeStandings.formatVersion===LL_EURO_FORMAT_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],count=LL_EURO_LEAGUE_WEEKS[type].length;return table?.teams?.length===36&&table.fixtures?.length===count&&table.fixtures.every(round=>round.length===18);});
+  if(!valid)llV2CreateEuropeStandings(state);const q=llV3ResolveEuropeQualifications(state),type=['ucl','uel','uecl'].find(key=>q[key].includes(state.playerTeam));
+  if(type){const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===state.playerTeam||r.away===state.playerTeam)).length;if(!state.europe||state.europe.type!==type)state.europe={type,phase:'league',round:Math.min(count,userResults),alive:true,pending:null,winner:null,usedOpponents:[]};else if(!state.europe.phase){state.europe.phase='league';state.europe.round=Math.min(count,Math.max(Number(state.europe.round)||0,userResults));state.europe.alive=true;state.europe.usedOpponents=[];}}
+  else if(state.europe?.phase==='league')state.europe=null;
+  return state.europeStandings;
+};
+llV2SortEuropeTable=function(type){const table=llV2EnsureEuropeStandings(lexLeague.state)?.[type];return table?Object.values(table.standings).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.team.localeCompare(b.team,'tr')):[];};
+llV2SimulateEuropeTables=function(){
+  const s=lexLeague.state,tables=llV2EnsureEuropeStandings(s);['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(s.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(s.results||[]).some(r=>r.season===s.season&&r.competition===type&&r.league==='euro-table'&&r.home===fixture.home&&r.away===fixture.away);if(exists||fixture.home===s.playerTeam||fixture.away===s.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,weeks[roundIndex],false,type,'euro-table');});table.playedRounds++;}});llSave();
+};
+function llV3EuropeRank(type,team=lexLeague.state.playerTeam){return llV2SortEuropeTable(type).findIndex(row=>row.team===team)+1;}
+function llV3EnterEuropeKnockout(){
+  const s=lexLeague.state,e=s.europe;if(!e)return;const rank=llV3EuropeRank(e.type);e.leagueRank=rank;e.pending=null;e.usedOpponents=e.usedOpponents||[];
+  if(rank<1||rank>24){e.alive=false;e.phase='eliminated';e.status='Lig aşamasını ilk 24 dışında tamamladı';return;}
+  e.phase=rank<=8?'r16':'playoff';e.seedRank=rank;e.tie=null;e.nextMatchWeek=Number(s.week)+1;e.status=rank<=8?'İlk 8 · Doğrudan Son 16':`${rank}. sıra · Eleme turu play-off`;
 }
-function llMatchForecastHtml(m){
-  if(!m?.playerDice?.length||!m?.opponentDice?.length)return '';
-  const pDice=llOrderDiceByPosition(m.playerDice),oDice=llOrderDiceByPosition(m.opponentDice);
-  let playerGoals=0,opponentGoals=0,draws=0;
-  const rows=LL_POSITIONS.map(pos=>{
-    const p=llFindPosition(pDice,pos),o=llFindPosition(oDice,pos);if(!p||!o)return '';
-    let status='Berabere',cls='draw';
-    if(p.value>o.value){status='Sen öndesin';cls='player';playerGoals++;}
-    else if(o.value>p.value){status='Rakip önde';cls='opponent';opponentGoals++;}
-    else draws++;
-    return `<div class="ll-forecast-row"><b>${LL_POSITION_ICONS[pos]} ${llEscape(pos)}</b><span class="ll-forecast-value">${p.value}</span><span class="ll-forecast-status ${cls}">${status}</span><span class="ll-forecast-value">${o.value}</span></div>`;
-  }).join('');
-  const verdict=playerGoals>opponentGoals?'Ham zarlarda avantaj sende':opponentGoals>playerGoals?'Ham zarlarda rakip avantajlı':'Ham zar durumu dengede';
-  const activeCards=[...pDice,...oDice].filter(d=>llCard(d.cardId)).length;
-  const scoutingInfo=m.scouting?.events?.length?`<div class="ll-notice" style="margin-top:12px">${m.scouting.events.map(e=>llEscape(e)).join('<br>')}</div>`:'';
-  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a,m.projectedResolution?.aDice)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b,m.projectedResolution?.bDice)}</div>${llRealCardSynergyHtml(m.player,true)}${llRealCardSynergyHtml(m.opponent,true)}${llTriggeredCardLogHtml(m)}</div>`;
+function llV3KnockoutOpponent(stage){
+  const s=lexLeague.state,e=s.europe,rows=llV2SortEuropeTable(e.type),rank=e.seedRank||llV3EuropeRank(e.type),used=new Set([s.playerTeam,...(e.usedOpponents||[])]);let indexes=[];
+  if(stage==='playoff'){const pairs=rank<=16?{9:[23,24],10:[23,24],11:[21,22],12:[21,22],13:[19,20],14:[19,20],15:[17,18],16:[17,18]}:{17:[15,16],18:[15,16],19:[13,14],20:[13,14],21:[11,12],22:[11,12],23:[9,10],24:[9,10]};indexes=pairs[rank]||[];}
+  else if(stage==='r16')indexes=rank<=8?[9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]:[1,2,3,4,5,6,7,8];
+  else indexes=Array.from({length:24},(_,index)=>index+1);
+  const candidates=indexes.map(position=>rows[position-1]?.team).filter(name=>name&&!used.has(name)),fallback=rows.map(row=>row.team).filter(name=>!used.has(name));return (candidates.length?candidates:fallback)[Math.floor(Math.random()*Math.max(1,(candidates.length?candidates:fallback).length))];
 }
-function llRenderMatch(){
-  const m=lexLeague.match;if(!m)return;const pDef=llTeamDef(m.player),oDef=llTeamDef(m.opponent),r=m.resolution;
-  const pairs=r?.pairs||[null,null,null];const pDice=r?.aDice||m.playerDice,oDice=r?.bDice||m.opponentDice;
-  let controls='';
-  if(m.phase==='ready')controls=`<button class="ll-btn primary" onclick="llRollCurrentMatch()">3 Zarı At 🎲</button>`;
-  else if(m.phase==='rolling')controls=`<div class="ll-notice">Zarlar havada… Düştüklerinde sonuçlar ve kart tetikleyicileri açılacak.</div><button class="ll-btn" style="margin-top:12px" disabled>Zarlar Atılıyor 🎲</button>`;
-  else if(m.phase==='rerollRolling')controls=`<div class="ll-notice">Seçtiğin zar yeniden atılıyor… Rakibin zarları sabit kalır.</div><button class="ll-btn" style="margin-top:12px" disabled>Reroll Yapılıyor 🎲</button>`;
-  else if(m.phase==='reroll')controls=`<div class="ll-notice">${m.rerolls} reroll hakkın var. Yukarıdaki <b>Kartlı sonuç</b> skorunu inceleyip yeniden atmak istediğin zarı seç.</div><div style="display:flex;gap:9px;justify-content:center;margin-top:12px"><button class="ll-btn primary" ${m.selectedUid?'':'disabled'} onclick="llUseReroll()">Seçili Zarı Yeniden At</button><button class="ll-btn" onclick="llSkipRerolls()">Reroll Kullanma</button></div>`;
-  else if(m.phase==='preview')controls=`<div class="ll-notice">Ham skor ile tetiklenen kartlara göre hesaplanan skoru inceledin. Şimdi kart etkilerini kesin sonuca uygulayabilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kart Etkilerini Uygula</button>`;
-  else controls=`<button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button>`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel ${m.scoreFlash?`ll-goal-flash ${m.scoreFlash}`:''}"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
-  <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs ${m.scorePop?'ll-score-pop':''}">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
-  ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map((d,i)=>llDieRow(d,'a',m.phase==='reroll'&&llCanRerollDie(m,d.position),m.selectedUid===d.uid,m.phase==='rolling'||(m.phase==='rerollRolling'&&m.rollingUid===d.uid),m.justLandedAll||m.justLandedUid===d.uid,i)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map((d,i)=>llDieRow(d,'b',false,false,m.phase==='rolling',m.justLandedAll,i+3)).join('')}</div></div>`}
-  ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
-  <div style="text-align:center;margin-top:16px">${controls}</div>${r?llCardEffectChainHtml(m,r,false):''}</div></div>`;
+function llV3EnsureEuroOpponent(name){const s=lexLeague.state;if(!name||s.teams[name])return;const def=llTeamDef(name);s.teams[name]={name,stars:def?.stars||3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};}
+llV2EnsureEurope=function(){
+  const s=lexLeague.state;llV2SimulateEuropeTables();const e=s.europe;if(!e||!e.alive||e.pending)return;
+  if(e.phase==='league'){
+    const weeks=LL_EURO_LEAGUE_WEEKS[e.type],table=llV2EnsureEuropeStandings(s)[e.type];
+    while(e.round<weeks.length){const scheduled=table.fixtures[e.round]?.find(f=>f.home===s.playerTeam||f.away===s.playerTeam),already=scheduled&&(s.results||[]).some(r=>r.competition===e.type&&r.league==='euro-table'&&r.home===scheduled.home&&r.away===scheduled.away);if(already){e.round++;continue;}if(Number(s.week)<weeks[e.round])return;if(!scheduled){e.round++;continue;}const opponent=scheduled.home===s.playerTeam?scheduled.away:scheduled.home;llV3EnsureEuroOpponent(opponent);e.pending=opponent;s.pendingFixture={...scheduled,competition:e.type,league:'euro-table',roundLabel:`Lig Aşaması ${e.round+1}/${weeks.length}`};return;}
+    llV3EnterEuropeKnockout();return;
+  }
+  if(e.phase==='eliminated'||e.phase==='winner'||Number(s.week)<Number(e.nextMatchWeek||0))return;
+  if(!e.tie){const opponent=llV3KnockoutOpponent(e.phase);if(!opponent){e.alive=false;e.phase='eliminated';return;}e.tie={stage:e.phase,opponent,leg:1,playerGoals:0,opponentGoals:0};e.usedOpponents.push(opponent);}
+  const tie=e.tie,final=tie.stage==='final',playerHome=final||tie.leg===2,home=playerHome?s.playerTeam:tie.opponent,away=playerHome?tie.opponent:s.playerTeam;llV3EnsureEuroOpponent(tie.opponent);e.pending=tie.opponent;s.pendingFixture={home,away,competition:e.type,league:'euro-knockout',roundLabel:final?`${LL_EURO_KNOCKOUT_LABELS.final} · Tarafsız Saha`:`${LL_EURO_KNOCKOUT_LABELS[tie.stage]} · ${tie.leg===1?'1. Maç':'Rövanş'}`};
+};
+llV2FinishEuropeRound=function(winner){
+  const s=lexLeague.state,e=s.europe;if(!e)return;e.pending=null;
+  if(e.phase==='league'){e.round++;if(e.round>=LL_EURO_LEAGUE_WEEKS[e.type].length)llV3EnterEuropeKnockout();return;}
+  const tie=e.tie,last=[...(s.results||[])].reverse().find(r=>r.userMatch&&r.competition===e.type&&r.league==='euro-knockout'),playerGoals=last?(last.home===s.playerTeam?last.homeGoals:last.awayGoals):0,opponentGoals=last?(last.home===s.playerTeam?last.awayGoals:last.homeGoals):0;tie.playerGoals+=playerGoals;tie.opponentGoals+=opponentGoals;
+  if(tie.stage!=='final'&&tie.leg===1){tie.leg=2;e.nextMatchWeek=Number(s.week)+1;e.status=`${LL_EURO_KNOCKOUT_LABELS[tie.stage]} · İlk maç ${tie.playerGoals}-${tie.opponentGoals}`;return;}
+  const advanced=tie.playerGoals===tie.opponentGoals?Math.random()<.5:tie.playerGoals>tie.opponentGoals;if(!advanced){e.alive=false;e.phase='eliminated';e.status=`${LL_EURO_KNOCKOUT_LABELS[tie.stage]} aşamasında elendi · Toplam ${tie.playerGoals}-${tie.opponentGoals}`;return;}
+  if(tie.stage==='final'){e.winner=s.playerTeam;e.alive=false;e.phase='winner';e.status='Şampiyon';const trophy=e.type==='ucl'?'UEFA Şampiyonlar Ligi':e.type==='uel'?'UEFA Avrupa Ligi':'UEFA Konferans Ligi';if(!s.trophies.some(item=>item.season===s.season&&item.name===trophy))s.trophies.push({season:s.season,name:trophy});return;}
+  const stages=['playoff','r16','qf','sf','final'],next=stages[stages.indexOf(tie.stage)+1];e.phase=next;e.tie=null;e.nextMatchWeek=Number(s.week)+1;e.status=`${LL_EURO_KNOCKOUT_LABELS[tie.stage]} geçildi · Sıradaki ${LL_EURO_KNOCKOUT_LABELS[next]}`;
+};
+llV2EuropeTableHtml=function(type){
+  const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam,q=llV3ResolveEuropeQualifications(lexLeague.state),turkish=new Set(q[type]||[]);
+  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>`<tr class="${row.team===player?'player ':''}${index<8?'champion-zone ':index<24?'playoff-zone ':'relegation-zone '}"><td>${index+1}</td><td>${llTeamLogo(row.team,'table')}${llEscape(row.team)}${turkish.has(row.team)?' <span title="Türkiye temsilcisi">🇹🇷</span>':''}</td><td>${row.P}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td><td>${row.GF}</td><td>${row.GA}</td><td>${row.GD}</td><td><b>${row.Pts}</b></td></tr>`).join('')}</tbody></table></div><div class="ll-zone-legend"><span><i class="ll-zone-dot direct"></i>1–8: Doğrudan Son 16</span><span><i class="ll-zone-dot playoff"></i>9–24: Play-Off</span><span><i class="ll-zone-dot relegation"></i>25–36: Elenir</span></div>`;
+};
+llV2EuropeFixturesHtml=function(type){
+  const s=lexLeague.state,table=llV2EnsureEuropeStandings(s)[type],results=(s.results||[]).filter(result=>result.competition===type&&result.league==='euro-table'),resultMap=new Map(results.map(r=>[`${r.home}|${r.away}`,r]));
+  return table.fixtures.map((round,index)=>`<details ${index===Math.min(table.playedRounds,table.fixtures.length-1)?'open':''} style="margin:8px 0"><summary class="ll-btn" style="cursor:pointer">Lig Aşaması ${index+1}/${table.fixtures.length} · ${LL_EURO_LEAGUE_WEEKS[type][index]}. hafta</summary><div class="ll-cup-list">${round.map(f=>{const r=resultMap.get(`${f.home}|${f.away}`),score=r?`${r.homeGoals}-${r.awayGoals}`:'VS';return `<div class="ll-cup-row"><span>${llTeamLogo(f.home,'table')}${llEscape(f.home)}</span><b>${score}</b><span>${llTeamLogo(f.away,'table')}${llEscape(f.away)}</span></div>`;}).join('')}</div></details>`).join('');
+};
+const llV3RenderCompetitionCenterBase=llRenderCompetitionCenter;
+llRenderCompetitionCenter=function(tab='league',key=null){llV3RenderCompetitionCenterBase(tab,key);if(tab!=='europe')return;const s=lexLeague.state,type=['ucl','uel','uecl'].includes(key)?key:(s.europe?.type||'ucl'),table=llV2EnsureEuropeStandings(s)[type],metrics=llArea().querySelectorAll('.ll-cup-status .ll-metric strong');if(metrics[2])metrics[2].textContent=`${table.playedRounds}/${LL_EURO_LEAGUE_WEEKS[type].length}`;const notice=llArea().querySelector('.ll-notice');if(notice)notice.innerHTML=`<b>36 takımlı lig aşaması:</b> ${type==='uecl'?'6 farklı rakip · 3 iç saha / 3 deplasman':'8 farklı rakip · 4 iç saha / 4 deplasman'}. Galibiyet 3, beraberlik 1 puan. İlk 8 doğrudan Son 16'ya, 9–24 play-off'a gider; 25–36 elenir ve alt kupaya düşmez.${s.europe?.type===type?`<br><b>Senin durumun:</b> ${llEscape(s.europe.status||`Lig aşaması ${Math.min((s.europe.round||0)+1,LL_EURO_LEAGUE_WEEKS[type].length)}/${LL_EURO_LEAGUE_WEEKS[type].length}`)}`:''}`;};
+const llV3StartNextSeasonBase=llStartNextSeason;
+llStartNextSeason=function(){const q=llDeep(lexLeague.state.lastSeasonSummary?.qualifications||{ucl:[],uel:[],uecl:[]});llV3StartNextSeasonBase();const s=lexLeague.state;if(llV3ValidQualifications(q))s.europeQualifications=q;s.europeStandings=null;const type=['ucl','uel','uecl'].find(key=>s.europeQualifications?.[key]?.includes(s.playerTeam));s.europe=type?{type,phase:'league',round:0,alive:true,pending:null,winner:null,usedOpponents:[],status:'Lig aşaması başlamadı'}:null;llV2RepairState(s);llSave();llRenderDashboard();};
+const llV3CompleteSeasonBase=llCompleteSeason;
+llCompleteSeason=function(){const s=lexLeague.state,e=s.europe;if(e?.alive&&e.phase&&e.phase!=='league'){e.nextMatchWeek=Number(s.week);llV2EnsureEurope();if(s.pendingFixture){llRenderDashboard();return;}}llV3CompleteSeasonBase();};
+function llV2UpgradeCost(stars){return ({1:800,2:1400,3:2300,4:3500,5:5000})[stars]||0;}
+function llUpgradeStars(){const t=llTeamState(lexLeague.state.playerTeam),cost=llV2UpgradeCost(t.stars);if(!cost)return;if(lexLeague.state.lp<cost){alert(`Yetersiz LP. Gerekli: ${cost} LP`);return;}if(!confirm(`${cost} LP ile takımı ${t.stars+1} yıldıza yükseltmek istiyor musun?`))return;lexLeague.state.lp-=cost;t.stars++;llSave();llRenderDashboard();}
+function llStartCareer(teamName){if(localStorage.getItem(LL_V2_SAVE_KEY)&&!confirm('Mevcut iki ligli kariyerin üzerine yeni kariyer yazılsın mı?'))return;lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSave();llRenderStarterShop();}
+
+/* Card contracts, active-slot chemistry and full European AI squads. */
+const LL_CARD_CONTRACT_VERSION=1;
+const LL_CARD_CONTRACT_RULES={common:{matches:18,renewLp:40},rare:{matches:16,renewLp:60},epic:{matches:14,renewLp:90},legendary:{matches:12,renewLp:130}};
+const LL_AI_TRANSFER_WEEKS=[1,10,20,30];
+function llCardContractRule(cardOrId){const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId;return LL_CARD_CONTRACT_RULES[card?.rarity]||LL_CARD_CONTRACT_RULES.common;}
+function llEnsureTeamContracts(team){if(!team)return team;if(!team.cardContracts||typeof team.cardContracts!=='object')team.cardContracts={};if(!Number.isFinite(team.aiLp))team.aiLp=0;LL_POSITIONS.forEach(pos=>{const cardId=team.cards?.[pos]||null,current=team.cardContracts[pos];if(!cardId){delete team.cardContracts[pos];return;}const rule=llCardContractRule(cardId);if(!current||current.cardId!==cardId)team.cardContracts[pos]={cardId,remaining:rule.matches,total:rule.matches};else{current.total=rule.matches;current.remaining=Math.max(0,Math.min(rule.matches,Number.isFinite(Number(current.remaining))?Number(current.remaining):rule.matches));}});return team;}
+function llResetCardContract(team,pos,cardId=team?.cards?.[pos]){if(!team||!cardId)return null;if(!team.cardContracts||typeof team.cardContracts!=='object')team.cardContracts={};const rule=llCardContractRule(cardId);return team.cardContracts[pos]={cardId,remaining:rule.matches,total:rule.matches};}
+function llCardContractSlotActive(team,pos){if(!team?.cards?.[pos])return false;llEnsureTeamContracts(team);const contract=team.cardContracts[pos];return !!contract&&contract.cardId===team.cards[pos]&&contract.remaining>0;}
+function llActiveCardId(teamName,pos){const team=llTeamState(teamName);return llCardContractSlotActive(team,pos)?team.cards[pos]:null;}
+function llActiveCardCount(team){return LL_POSITIONS.filter(pos=>llCardContractSlotActive(team,pos)).length;}
+function llUseTeamCardContracts(team){if(!team)return;llEnsureTeamContracts(team);LL_POSITIONS.forEach(pos=>{const contract=team.cardContracts[pos];if(contract&&team.cards[pos]===contract.cardId&&contract.remaining>0)contract.remaining--;});}
+function llEnsureContractState(state){if(!state)return state;Object.values(state.teams||{}).forEach(llEnsureTeamContracts);if(!state.aiContractWindows||typeof state.aiContractWindows!=='object')state.aiContractWindows={};state.cardContractVersion=LL_CARD_CONTRACT_VERSION;return state;}
+function llV4CreateEuroTeam(state,name){if(!name)return null;if(!state.teams[name]){const def=llTeamDef(name);state.teams[name]={name,stars:def?.stars||3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:150,aiLp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};}return state.teams[name];}
+function llV4FreeCardForState(state,teamName,pos){const team=state.teams[teamName],used=new Set(team.usedCardFamilies||[]),pool=LL_CARD_POOL.filter(card=>!card.upgradeOnly&&!card.clubCard&&(card.position===pos||card.position==='Evrensel')&&!used.has(llCardFamilyName(card))&&llOwnTriggerCompatible(card,team.stars));if(!pool.length)return false;const card=llWeightedPick(pool)||pool[0],family=llCardFamilyName(card);team.cards[pos]=card.id;if(family&&!used.has(family)){team.usedCardFamilies.push(family);used.add(family);}llResetCardContract(team,pos,card.id);return true;}
+function llV4EnsureEuropeTeams(state,tables=state?.europeStandings){if(!state||!tables)return;const domestic=new Set(LL_ALL_TEAMS.map(team=>team.name));['ucl','uel','uecl'].forEach(type=>(tables[type]?.teams||[]).forEach(name=>{if(domestic.has(name))return;const team=llV4CreateEuroTeam(state,name);LL_POSITIONS.forEach(pos=>{if(!team.cards[pos])llV4FreeCardForState(state,name,pos);});llEnsureTeamContracts(team);}));}
+const llV4EnsureEuropeStandingsBase=llV2EnsureEuropeStandings;
+llV2EnsureEuropeStandings=function(state){const tables=llV4EnsureEuropeStandingsBase(state);llV4EnsureEuropeTeams(state,tables);return tables;};
+const llV4RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){state=llV4RepairStateBase(state);llV4EnsureEuropeTeams(state,state?.europeStandings);return llEnsureContractState(state);};
+const llV4EnsureEuroOpponentBase=llV3EnsureEuroOpponent;
+llV3EnsureEuroOpponent=function(name){llV4EnsureEuroOpponentBase(name);const team=llV4CreateEuroTeam(lexLeague.state,name);LL_POSITIONS.forEach(pos=>{if(!team.cards[pos])llV4FreeCardForState(lexLeague.state,name,pos);});llEnsureTeamContracts(team);};
+const llV4ChooseShopCardBase=llChooseShopCard;
+llChooseShopCard=function(id){const state=lexLeague.state,team=llTeamState(state.playerTeam),mode=lexLeague.shop?.mode,pos=lexLeague.shop?.position,before=pos?team.cards[pos]:null;llV4ChooseShopCardBase(id);if(pos&&team.cards[pos]&&team.cards[pos]!==before){llResetCardContract(team,pos,team.cards[pos]);llSave();if(mode==='starter')llRenderDashboard();else llRenderShop();}};
+const llV4AssignAiCardBase=llAssignAiCard;
+llAssignAiCard=function(teamName){const team=llTeamState(teamName),before=team?Object.fromEntries(LL_POSITIONS.map(pos=>[pos,team.cards[pos]])):{};const changed=llV4AssignAiCardBase(teamName);if(team)LL_POSITIONS.forEach(pos=>{if(team.cards[pos]&&team.cards[pos]!==before[pos])llResetCardContract(team,pos,team.cards[pos]);});return changed;};
+function llAiTargetPosition(teamName){const team=llTeamState(teamName);llEnsureTeamContracts(team);const inactive=llShuffle(LL_POSITIONS.filter(pos=>!llCardContractSlotActive(team,pos)));if(inactive.length)return inactive[0];return llShuffle(LL_POSITIONS).sort((a,b)=>llAiCardScore(llCard(team.cards[a]))-llAiCardScore(llCard(team.cards[b])))[0];}
+function llAiShopAttempt(teamName){const team=llTeamState(teamName);if(!team||team.aiAp<150)return {spent:false,upgraded:false};llEnsureTeamContracts(team);const position=llAiTargetPosition(teamName),pool=llEligibleCards(teamName,position),offers=llPickDistinctOfferPair(pool);if(offers.length<2)return {spent:false,upgraded:false};team.aiAp-=150;const current=llCardContractSlotActive(team,position)?llCard(team.cards[position]):null,best=[...offers].sort((a,b)=>llAiCardScore(b)-llAiCardScore(a))[0];if(!current||llAiCardScore(best)>llAiCardScore(current)){const oldId=team.cards[position]||null,family=llCardFamilyName(best);if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);team.cards[position]=best.id;llResetCardContract(team,position,best.id);return {spent:true,upgraded:true,position,oldId,newId:best.id};}return {spent:true,upgraded:false,position,oldId:current.id,newId:null};}
+function llV4RenewAiContracts(teamName){const team=llTeamState(teamName);if(!team)return;llEnsureTeamContracts(team);let attempts=0;while(team.aiAp>=150&&attempts<20){const result=llAiShopAttempt(teamName);if(!result.spent)break;attempts++;}LL_POSITIONS.forEach(pos=>{const card=llCard(team.cards[pos]),contract=team.cardContracts[pos];if(!card||!contract||contract.remaining>10)return;const rule=llCardContractRule(card);if(team.aiLp>=rule.renewLp){team.aiLp-=rule.renewLp;llResetCardContract(team,pos,card.id);}else if(contract.remaining<=0){team.cards[pos]=null;delete team.cardContracts[pos];}});}
+function llDevelopOpponents(completedWeek){const state=lexLeague.state;if(!state)return;llV2EnsureEuropeStandings(state);if(!state.aiContractWindows)state.aiContractWindows={};LL_AI_TRANSFER_WEEKS.filter(week=>Number(completedWeek)>=week&&!state.aiContractWindows[`${state.season}-${week}`]).forEach(week=>{Object.keys(state.teams).filter(name=>name!==state.playerTeam).forEach(llV4RenewAiContracts);state.aiContractWindows[`${state.season}-${week}`]=true;if(!state.aiTransferWindows)state.aiTransferWindows={};state.aiTransferWindows[`${state.season}-${week}`]=true;});}
+const llV4RecordMatchBase=llRecordMatch;
+llRecordMatch=function(home,away,hg,ag,week,userMatch=false,competition='league',league=null){const state=lexLeague.state;llV4CreateEuroTeam(state,home);llV4CreateEuroTeam(state,away);llEnsureTeamContracts(state.teams[home]);llEnsureTeamContracts(state.teams[away]);llV4RecordMatchBase(home,away,hg,ag,week,userMatch,competition,league);const reward=LL_COMP_REWARDS[competition]||LL_COMP_REWARDS.league;[[home,hg,ag],[away,ag,hg]].forEach(([name,gf,ga])=>{const team=state.teams[name];if(name!==state.playerTeam){team.aiLp=(team.aiLp||0)+(gf>ga?reward.win:gf===ga?reward.draw:reward.loss);if(competition!=='league')team.aiAp=(team.aiAp||0)+(gf>ga?20:gf===ga?12:6);}});};
+llV2SimulateEuropeTables=function(){const state=lexLeague.state,tables=llV2EnsureEuropeStandings(state);['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(state.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(state.results||[]).some(result=>result.season===state.season&&result.competition===type&&result.league==='euro-table'&&result.home===fixture.home&&result.away===fixture.away);if(exists||fixture.home===state.playerTeam||fixture.away===state.playerTeam)return;llV2SimFixture(fixture,type,'euro-table',weeks[roundIndex]);});table.playedRounds++;}});llSave();};
+function llRollValue(teamName,pos){const team=llTeamState(teamName),[min,max]=llRange(team.stars),locked=team.lockedDice?.[pos];let value;if(Number.isFinite(locked)){delete team.lockedDice[pos];value=locked;}else value=llRandomInt(min,max);const bonus=Number(team.nextMatchBonuses?.[pos]||0);if(bonus){delete team.nextMatchBonuses[pos];value+=bonus;}const card=llCard(llActiveCardId(teamName,pos));if(llBaseName(card)==='Yıldız Oyuncu'&&team.stars>=3)value=Math.max(4,value);return value;}
+function llMakeDice(teamName,plusPos=null){const team=llTeamState(teamName);llEnsureTeamContracts(team);return LL_POSITIONS.map(pos=>({uid:`${teamName}-${pos}-${Math.random()}`,position:pos,value:llRollValue(teamName,pos)+(pos===plusPos?1:0),cardId:llActiveCardId(teamName,pos),stars:team.stars}));}
+function llHasBase(teamName,base){return LL_POSITIONS.some(pos=>llBaseName(llCard(llActiveCardId(teamName,pos)))===base);}
+function llNadirKimyaActiveForTeam(teamName,slot){const team=llTeamState(teamName),others=LL_POSITIONS.filter(pos=>pos!==slot).map(pos=>llCard(llCardContractSlotActive(team,pos)?team.cards[pos]:null));return llCardContractSlotActive(team,slot)&&others.length===2&&others.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);}
+function llRealCardSynergies(teamName){const team=llTeamState(teamName);if(!team)return [];const slots=LL_POSITIONS.map(position=>({position,card:llCard(llCardContractSlotActive(team,position)?team.cards[position]:null)})),active=[];const full=slots.every(slot=>slot.card),chemistry=slots.find(slot=>llBaseName(slot.card)==='Takım Kimyası');if(chemistry&&full)active.push({name:'Takım Kimyası',reason:'Üç kart sözleşmesi de aktif; takımın en düşük zarı +1 kazanır.'});const rare=slots.find(slot=>llBaseName(slot.card)==='Nadir Kimya');if(rare){const others=slots.filter(slot=>slot.position!==rare.position).map(slot=>slot.card),ready=others.length===2&&others.every(card=>card&&(LL_CARD_RARITY_RANK[card.rarity]||0)>=LL_CARD_RARITY_RANK.rare);if(ready)active.push({name:'Nadir Kimya',reason:'Diğer iki aktif kart Nadir veya üstü; +1 ücretsiz reroll hazır.'});}return active;}
+function llExtraRerolls(teamName){let total=0;LL_POSITIONS.forEach(pos=>{const card=llCard(llActiveCardId(teamName,pos)),base=llBaseName(card);if(['Metronom','Reflex'].includes(base))total+=llEffectAmount(card,1);if(base==='Nadir Kimya'&&llNadirKimyaActiveForTeam(teamName,pos))total++;});return total;}
+function llApplyLocks(resolution,aName,bName){Object.assign(llTeamState(aName).lockedDice,resolution.nextLocks.a||{});Object.assign(llTeamState(bName).lockedDice,resolution.nextLocks.b||{});[[aName,resolution.aDice,resolution.scoreA,resolution.scoreB],[bName,resolution.bDice,resolution.scoreB,resolution.scoreA]].forEach(([name,dice,gf,ga])=>{const team=llTeamState(name);if(gf<ga&&llHasBase(name,'Yedek Kulübesi'))team.nextMatchRerolls=(team.nextMatchRerolls||0)+1;LL_POSITIONS.forEach(pos=>{if(llBaseName(llCard(llActiveCardId(name,pos)))!=='Form Tutmuyor')return;const die=llFindPosition(dice,pos);team.sixStreaks[pos]=die?.value===6?(team.sixStreaks[pos]||0)+1:0;if(team.sixStreaks[pos]>=3){team.nextMatchBonuses[pos]=(team.nextMatchBonuses[pos]||0)+1;team.sixStreaks[pos]=0;}});});llUseTeamCardContracts(llTeamState(aName));llUseTeamCardContracts(llTeamState(bName));}
+const llV4CardHtmlBase=llCardHtml;
+llCardHtml=function(cardId,teamName,emptyText='Kart yok'){let html=llV4CardHtmlBase(cardId,teamName,emptyText),team=llTeamState(teamName);if(!cardId||!team)return html;const pos=LL_POSITIONS.find(position=>team.cards?.[position]===cardId);if(!pos)return html;llEnsureTeamContracts(team);const contract=team.cardContracts[pos],expired=!llCardContractSlotActive(team,pos),text=expired?'⛔ Sözleşme bitti · Kart etkisiz':`⌛ ${contract.remaining}/${contract.total} maç hakkı`;if(expired)html=html.replace('class="ll-ability ','class="ll-ability ll-contract-expired ').replace('<button ','<button style="opacity:.58;filter:saturate(.45)" ');return html.replace('</button>',`<span style="display:block;margin-top:7px;font-size:11px;font-weight:800;color:${expired?'#fb7185':contract.remaining<=3?'#facc15':'#67e8f9'}">${text}</span></button>`);};
+function llContractPopupHtml(teamName,cardId){const team=llTeamState(teamName),pos=LL_POSITIONS.find(position=>team?.cards?.[position]===cardId);if(!team||!pos)return '';llEnsureTeamContracts(team);const contract=team.cardContracts[pos],rule=llCardContractRule(cardId),expired=contract.remaining<=0;return `<div class="ll-notice" style="margin-top:10px;border-color:${expired?'rgba(244,63,94,.6)':'rgba(34,211,238,.35)'}"><b>${expired?'⛔ Sözleşme bitti':'⌛ Kart sözleşmesi'}</b><br>${contract.remaining}/${contract.total} resmi maç hakkı kaldı · Yenileme ${rule.renewLp} LP${expired?'<br>Bu kart slotta görünür ancak zar ve kart etkilerinde yok sayılır.':''}</div>`;}
+function llShowCardPopup(cardId,teamName=''){const card=llCard(cardId);if(!card)return;const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;llShowModal(`<div class="ll-rarity">${llRarityLabel(card)}</div>${llCardUpgradeBadgeHtml(card)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(card.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(card.position)} · Min ${card.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(card.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(card))}<br><b>Efekt:</b> ${llEscape(card.effect)}</div>${llCardUpgradePreviewHtml(card)}${teamName?llContractPopupHtml(teamName,card.id):''}${showPerformance?llCardPerformanceHtml(card.id):''}`);}
+function llOpponentIcons(teamName){const team=llTeamState(teamName);llEnsureTeamContracts(team);return `<div class="ll-card-icons">${LL_POSITIONS.map(pos=>{const id=team.cards[pos],card=llCard(id),active=llCardContractSlotActive(team,pos),title=active?pos:`${pos} · Sözleşmesi bitti`;return `<button class="ll-icon-btn" title="${llEscape(title)}" style="${card&&!active?'opacity:.45;border-color:#fb7185':''}" onclick="${id?`llShowCardPopup('${id}','${llEscape(teamName)}')`:`llShowEmptyCard('${llEscape(teamName)}','${llEscape(pos)}')`}">${card?(active?LL_POSITION_ICONS[pos]:'⏳'):'·'}</button>`;}).join('')}</div>`;}
+function llRenewPlayerContract(pos){const state=lexLeague.state;if(!llIsTransferWindow(state.week)){alert('Kart sözleşmesi yalnızca transfer döneminde yenilenebilir.');return;}const team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);const card=llCard(team.cards[pos]),contract=team.cardContracts[pos];if(!card||!contract)return;if(contract.remaining>10){alert('Yenileme, son 10 maç hakkına girince açılır.');return;}const rule=llCardContractRule(card);if(state.lp<rule.renewLp){alert(`Yetersiz LP. Gerekli: ${rule.renewLp} LP`);return;}if(!confirm(`${card.name} sözleşmesi ${rule.renewLp} LP karşılığında ${rule.matches} maça yenilensin mi?`))return;state.lp-=rule.renewLp;llResetCardContract(team,pos,card.id);llSave();llRenderShop();}
+function llReleaseExpiredCard(pos){const state=lexLeague.state;if(!llIsTransferWindow(state.week))return;const team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);const contract=team.cardContracts[pos];if(!team.cards[pos]||!contract||contract.remaining>0)return;if(!confirm('Sözleşmesi biten kart slotundan çıkarılsın mı? Kart arşivinde kalmaya devam eder.'))return;team.cards[pos]=null;delete team.cardContracts[pos];llSave();llRenderShop();}
+function llContractShopHtml(){const state=lexLeague.state,team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);return `<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">📑 Kart Sözleşmeleri · LP: ${state.lp}</div><div class="ll-sub" style="margin-bottom:12px">Kart, takılı olduğu her resmi maçta 1 kullanım harcar; tetiklenmesi gerekmez. Süresi biten kart slotta görünür fakat etkisizdir ve takım 2/3 aktif kartlı sayılır.</div><div class="ll-shop-grid">${LL_POSITIONS.map(pos=>{const card=llCard(team.cards[pos]);if(!card)return `<div class="ll-card"><b>${LL_POSITION_ICONS[pos]} ${pos}</b><div class="ll-muted" style="margin-top:9px">Boş slot</div></div>`;const contract=team.cardContracts[pos],rule=llCardContractRule(card),expired=contract.remaining<=0,canRenew=contract.remaining<=10;return `<div class="ll-card" style="${expired?'border-color:rgba(244,63,94,.65)':''}"><b>${LL_POSITION_ICONS[pos]} ${llEscape(card.name)}</b>${llCardUpgradeBadgeHtml(card)}<div class="ll-muted" style="margin:7px 0">${llRarityLabel(card)} · ${contract.remaining}/${contract.total} maç</div><div class="ll-sub">${expired?'Sözleşme bitti; kart şu anda etkisiz.':canRenew?'Yenileme penceresi açık.':'10 maç hakkına girince yenilenebilir.'}</div><div class="ll-actions" style="margin-top:10px"><button class="ll-btn ${expired?'danger':''}" ${canRenew?'':'disabled'} onclick="llRenewPlayerContract('${pos}')">${rule.renewLp} LP ile Yenile</button>${expired?`<button class="ll-btn" onclick="llReleaseExpiredCard('${pos}')">Slottan Çıkar</button>`:''}</div></div>`;}).join('')}</div><div class="ll-muted" style="margin-top:10px">Süre / yenileme: Yaygın 18 maç / 40 LP · Nadir 16 / 60 · Destansı 14 / 90 · Efsanevi 12 / 130.</div></div>`;}
+const llV4RenderShopBase=llRenderShop;
+llRenderShop=function(){llV4RenderShopBase();const host=document.getElementById('ll-shop-offers');if(host&&!document.getElementById('ll-contract-shop'))host.insertAdjacentHTML('beforebegin',`<div id="ll-contract-shop">${llContractShopHtml()}</div>`);};
+/* TFF 1. Lig career-loss boundary and visible relegation zone. */
+const LL_FIRST_RELEGATION_COUNT=4;
+function llV5IsFirstLeagueRelegated(position,total=20){return Number(position)>Math.max(0,Number(total)-LL_FIRST_RELEGATION_COUNT);}
+function llV5DecorateFirstTableHtml(html,withLegend=true){
+  const template=document.createElement('template');template.innerHTML=html;
+  const rows=[...template.content.querySelectorAll('tbody tr')];rows.slice(-LL_FIRST_RELEGATION_COUNT).forEach(row=>row.classList.add('relegation-zone'));
+  const legend=template.content.querySelector('.ll-zone-legend');
+  if(withLegend&&legend&&!legend.querySelector('.ll-first-career-loss'))legend.insertAdjacentHTML('beforeend','<span class="ll-first-career-loss"><i class="ll-zone-dot relegation"></i>17\u201320: TFF 2. Lig\u2019e d\u00fc\u015fer; kariyer sona erer</span>');
+  return template.innerHTML;
 }
-function llSimulateMatch(home,away){
-  let hd=llMakeDice(home),ad=llMakeDice(away);const scouting=llPrepareScouting(home,away,hd,ad,{aHome:true});const hc=llRerollCreditsFromDice(hd,scouting.disabled.a),ac=llRerollCreditsFromDice(ad,scouting.disabled.b);hd=llAutoRerollWithCredits(home,hd,hc,llTakeCarriedRerolls(home));ad=llAutoRerollWithCredits(away,ad,ac,llTakeCarriedRerolls(away));
-  const r=llResolveBattle(home,away,hd,ad,{aHome:true,scouting});return {homeGoals:r.scoreA,awayGoals:r.scoreB,resolution:r};
+const llV5TableHtmlBase=llTableHtml;
+llTableHtml=function(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){const leagueKey=key==='super'?'super':'first',html=llV5TableHtmlBase(leagueKey);return leagueKey==='first'?llV5DecorateFirstTableHtml(html,true):html;};
+const llV5ArchivedTableHtmlBase=llV2ArchivedTableHtml;
+llV2ArchivedTableHtml=function(entry,key){const html=llV5ArchivedTableHtmlBase(entry,key);return key==='first'?llV5DecorateFirstTableHtml(html,false):html;};
+const llV5RenderSeasonArchiveBase=llRenderSeasonArchive;
+llRenderSeasonArchive=function(season=null,key='super'){
+  llV5RenderSeasonArchiveBase(season,key);
+  if(key!=='first')return;
+  const legends=[...llArea().querySelectorAll('.ll-zone-legend')],legend=legends[legends.length-1];
+  if(legend&&!legend.querySelector('.ll-first-career-loss'))legend.insertAdjacentHTML('beforeend','<span class="ll-first-career-loss"><i class="ll-zone-dot relegation"></i>17\u201320: Kariyer sona erer</span>');
+};
+const llV5MatchImportanceBase=llV2MatchImportance;
+llV2MatchImportance=function(f,key){
+  const current=llV5MatchImportanceBase(f,key);if(current)return current;
+  const s=lexLeague.state,comp=f.competition||'league';if(comp!=='league'||Number(s.week)<20||key!=='first')return '';
+  const rows=llSortTable('first'),positions=[f.home,f.away].map(name=>rows.findIndex(row=>row.team===name)+1);
+  return positions.some(position=>llV5IsFirstLeagueRelegated(position,rows.length))?'\u26a0\ufe0f K\u00dcME D\u00dc\u015eME HATTI MA\u00c7I':'';
+};
+const llV5RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){
+  state=llV5RepairStateBase(state);if(!state)return state;
+  if(typeof state.careerEnded!=='boolean'){const summary=state.lastSeasonSummary,total=summary?.firstRows?.length||20;state.careerEnded=!!(state.seasonEnded&&summary?.playerLeague==='first'&&llV5IsFirstLeagueRelegated(summary.playerPosition,total));}
+  if(state.careerEnded&&!state.careerEndReason)state.careerEndReason='TFF 1. Lig k\u00fcme d\u00fc\u015fme hatt\u0131nda sezonu tamamlama';
+  return state;
+};
+const llV5ArchiveSeasonBase=llV2ArchiveSeason;
+llV2ArchiveSeason=function(state,summary){const entry=llV5ArchiveSeasonBase(state,summary);if(entry)entry.careerEnded=!!state?.careerEnded;return entry;};
+const llV5FinalizeSeasonBase=llV2FinalizeSeason;
+llV2FinalizeSeason=function(playoffWinner){
+  const state=lexLeague.state,firstRows=llSortTable('first'),playerLeague=llTeamLeague(state.playerTeam),position=firstRows.findIndex(row=>row.team===state.playerTeam)+1;
+  const lost=playerLeague==='first'&&llV5IsFirstLeagueRelegated(position,firstRows.length);
+  state.careerEnded=lost;state.careerEndReason=lost?'TFF 1. Lig k\u00fcme d\u00fc\u015fme hatt\u0131nda sezonu tamamlama':null;state.careerEndSeason=lost?state.season:null;state.careerEndPosition=lost?position:null;
+  llV5FinalizeSeasonBase(playoffWinner);
+  if(state.lastSeasonSummary){state.lastSeasonSummary.careerEnded=lost;state.lastSeasonSummary.careerEndReason=state.careerEndReason;}
+  llSave();if(lost)llRenderSeasonEnd();
+};
+const llV5RenderSeasonEndBase=llRenderSeasonEnd;
+llRenderSeasonEnd=function(){
+  const state=lexLeague.state,summary=state?.lastSeasonSummary;if(!state?.careerEnded){llV5RenderSeasonEndBase();return;}if(!summary){llRenderDashboard();return;}
+  llSetWide(true);
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div style="text-align:center"><div style="font-size:64px">\u26d4</div><div class="quiz-start-title">Kariyer <em>Sona Erdi</em></div><div class="ll-sub">TFF 1. Lig\u2019i ${summary.playerPosition}. s\u0131rada tamamlad\u0131n ve k\u00fcme d\u00fc\u015fme hatt\u0131nda kald\u0131n. Bu kariyerde yeni sezona ge\u00e7ilemez.</div></div><div class="ll-metrics"><div class="ll-metric"><strong>${summary.season}</strong><span>Son Sezon</span></div><div class="ll-metric"><strong>${summary.playerPosition}.</strong><span>Lig S\u0131ras\u0131</span></div><div class="ll-metric"><strong>17\u201320</strong><span>Kariyer Kayb\u0131 B\u00f6lgesi</span></div><div class="ll-metric"><strong>\u26d4</strong><span>Durum</span></div></div><div class="ll-card" style="margin-top:14px;border-color:rgba(244,63,94,.65)"><div class="ll-card-title">Neden sona erdi?</div><div class="ll-sub">TFF 1. Lig\u2019de son 4 s\u0131ra alt lige d\u00fc\u015fme b\u00f6lgesidir. Oyunda TFF 2. Lig bulunmad\u0131\u011f\u0131 i\u00e7in bu sonu\u00e7 kariyer kayb\u0131 say\u0131l\u0131r. Kelime ve s\u00f6zl\u00fck istatistiklerin silinmez.</div></div><div style="margin-top:14px">${llV2SeasonGoalsHtml(true)}</div><div class="ll-card-title" style="margin:16px 0 9px">Son TFF 1. Lig Puan Durumu</div>${llTableHtml('first')}<div class="ll-actions" style="justify-content:center;margin-top:16px"><button class="ll-btn" onclick="llRenderSeasonArchive(${Number(summary.season)},'first')">Sezon Ar\u015fivi</button><button class="ll-btn primary" onclick="llRenderTeamSelect()">Yeni Kariyer Kur</button><button class="ll-btn" onclick="llGoMainMenu()">Ana Men\u00fc</button></div></div></div>`;
+};
+const llV5StartNextSeasonBase=llStartNextSeason;
+llStartNextSeason=function(){if(lexLeague.state?.careerEnded){llRenderSeasonEnd();return;}llV5StartNextSeasonBase();};
+const llV5RenderShopBase=llRenderShop;
+llRenderShop=function(){if(lexLeague.state?.careerEnded){alert('Bu kariyer sona erdi; transfer merkezi kullan\u0131lamaz.');llRenderSeasonEnd();return;}llV5RenderShopBase();};
+
+/* Six-star elite tier and one-time migration for existing European opponents. */
+const LL_SIX_STAR_SYSTEM_VERSION=1;
+function llV6EuroStars(name){
+  const team=UCL_TEAMS.find(item=>item.name===name);
+  return team?(team.pot===1?6:team.pot===2?5:team.pot===3?4:3):null;
 }
+function llV6EnsureStarSystem(state){
+  if(!state)return state;
+  Object.values(state.teams||{}).forEach(team=>{team.stars=Math.max(1,Math.min(6,Number(team.stars)||1));});
+  if(Number(state.sixStarSystemVersion)!==LL_SIX_STAR_SYSTEM_VERSION){
+    const domestic=new Set(LL_ALL_TEAMS.map(team=>team.name));
+    Object.entries(state.teams||{}).forEach(([name,team])=>{
+      if(domestic.has(name))return;
+      const stars=llV6EuroStars(name);if(stars!==null)team.stars=stars;
+    });
+    state.sixStarSystemVersion=LL_SIX_STAR_SYSTEM_VERSION;
+  }
+  return state;
+}
+const llV6RepairStateBase=llV2RepairState;
+
+/* Card families V7: club card, role rerolls and deterministic upgrades. */
+llV2RepairState=function(state){return llV6EnsureStarSystem(llV6RepairStateBase(state));};
+const LL_CARD_UPGRADE_SYSTEM_VERSION=1;
+const LL_CARD_UPGRADE_LIMIT=2;
+const LL_CARD_UPGRADE_COSTS={common:120,rare:220};
+const LL_CARD_UPGRADE_MAP=Object.fromEntries(LL_CARD_UPGRADE_DEFINITIONS.map(item=>[item.from,item.card.id]));
+function llRarityLabel(card){return llCardDisplayRarity(card);}
+function llEnsureUpgradeState(team,state=lexLeague.state){
+  if(!team)return team;if(Number(team.cardUpgradeSeason)!==Number(state?.season)){team.cardUpgradeSeason=Number(state?.season)||1;team.cardUpgradesUsed=0;}
+  team.cardUpgradesUsed=Math.max(0,Math.min(LL_CARD_UPGRADE_LIMIT,Number(team.cardUpgradesUsed)||0));return team;
+}
+function llUpgradeTarget(cardId){const id=LL_CARD_UPGRADE_MAP[cardId],card=llCard(id);return card||null;}
+function llUpgradeCost(card){return LL_CARD_UPGRADE_COSTS[card?.rarity]||0;}
+function llPrepareV7Team(team,state){
+  if(!team)return;if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];team.clubCards=team.clubCards&&typeof team.clubCards==='object'?team.clubCards:{market:null};if(!Array.isArray(team.reserveCards))team.reserveCards=[];
+  LL_POSITIONS.forEach(pos=>{if(team.cards?.[pos]==='RBU04'){team.cards[pos]=null;team.clubCards.market='RBU04';if(team.cardContracts)delete team.cardContracts[pos];}});
+  [['RBF10','Orta Saha'],['NCM06','Forvet']].forEach(([id,target])=>{const source=LL_POSITIONS.find(pos=>team.cards?.[pos]===id);if(!source||source===target)return;if(!team.cards[target]){team.cards[target]=id;team.cards[source]=null;if(team.cardContracts){team.cardContracts[target]=team.cardContracts[source];delete team.cardContracts[source];}}else{team.reserveCards.push(id);team.cards[source]=null;if(team.cardContracts)delete team.cardContracts[source];}});
+  team.reserveCards=[...new Set(team.reserveCards.filter(id=>llCard(id)))];const clubFamily=llCardFamilyName(llCard(team.clubCards.market));if(clubFamily&&!team.usedCardFamilies.includes(clubFamily))team.usedCardFamilies.push(clubFamily);if(!team.dieHistory||typeof team.dieHistory!=='object')team.dieHistory={};LL_POSITIONS.forEach(pos=>{if(!Array.isArray(team.dieHistory[pos]))team.dieHistory[pos]=[];});team.chanceMisses=Math.max(0,Number(team.chanceMisses)||0);llEnsureUpgradeState(team,state);
+}
+const llV7RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){
+  if(!state)return state;Object.values(state.teams||{}).forEach(team=>llPrepareV7Team(team,state));state=llV7RepairStateBase(state);Object.values(state.teams||{}).forEach(team=>llPrepareV7Team(team,state));
+  const player=state.teams?.[state.playerTeam],owned=[...Object.values(player?.clubCards||{}),...(player?.reserveCards||[])].filter(Boolean);if(!Array.isArray(state.discoveredCards))state.discoveredCards=[];state.discoveredCards=[...new Set([...state.discoveredCards,...owned].filter(id=>llCard(id)))];state.cardUpgradeSystemVersion=LL_CARD_UPGRADE_SYSTEM_VERSION;return state;
+};
+function llExtraRerolls(teamName){const dice=LL_POSITIONS.map(pos=>({uid:`preview-${pos}`,position:pos,cardId:llActiveCardId(teamName,pos)}));return llExtraRerollsFromDice(dice);}
+function llUpgradeCard(pos){
+  const state=lexLeague.state;if(!llIsTransferWindow(state.week)){alert('Kart yalnızca transfer döneminde geliştirilebilir.');return;}const team=llTeamState(state.playerTeam);llEnsureTeamContracts(team);llEnsureUpgradeState(team,state);
+  if(team.cardUpgradesUsed>=LL_CARD_UPGRADE_LIMIT){alert('Bu sezon iki kart geliştirme hakkını da kullandın.');return;}const current=llCard(team.cards[pos]),target=llUpgradeTarget(current?.id),cost=llUpgradeCost(current);if(!current||!target||!cost)return;if(!llCardContractSlotActive(team,pos)){alert('Sözleşmesi biten kart geliştirilemez.');return;}if(state.lp<cost){alert(`Yetersiz LP. Gerekli: ${cost} LP`);return;}
+  if(!confirm(`${current.name} kartı ${cost} LP ile geliştirilsin mi?\n\nÖNCE: ${current.trigger} → ${current.effect}\nSONRA: ${target.trigger} → ${target.effect}`))return;state.lp-=cost;const contract=team.cardContracts[pos];team.cards[pos]=target.id;if(contract)contract.cardId=target.id;team.cardUpgradesUsed++;llDiscoverCards([target.id]);llSave();llRenderShop();
+}
+function llUpgradeShopHtml(){
+  const state=lexLeague.state,team=llTeamState(state.playerTeam);llEnsureUpgradeState(team,state);const cards=LL_POSITIONS.map(pos=>({pos,current:llCard(team.cards[pos])})).map(item=>({...item,target:llUpgradeTarget(item.current?.id)})).filter(item=>item.target);
+  return `<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">⬆ Kart Geliştirme · ${team.cardUpgradesUsed}/${LL_CARD_UPGRADE_LIMIT} kullanıldı · LP: ${state.lp}</div><div class="ll-sub" style="margin-bottom:12px">Yalnızca işaretli Yaygın ve Nadir kartlar, transfer döneminde ve sezonda en fazla iki kez geliştirilir. Takım yıldızı 1–6★ olabilir; sonuç rastgele değildir.</div>${cards.length?`<div class="ll-shop-grid">${cards.map(({pos,current,target})=>{const cost=llUpgradeCost(current),active=llCardContractSlotActive(team,pos),disabled=team.cardUpgradesUsed>=LL_CARD_UPGRADE_LIMIT||!active||state.lp<cost;return `<div class="ll-card"><b>${LL_POSITION_ICONS[pos]} ${llEscape(current.name)}</b><div class="ll-muted">${llRarityLabel(current)} → ${llRarityLabel(target)} · ${cost} LP</div><div class="ll-sub" style="margin-top:8px"><b>Önce:</b> ${llEscape(current.trigger)} → ${llEscape(current.effect)}<br><b>Sonra:</b> ${llEscape(target.trigger)} → ${llEscape(target.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:10px" ${disabled?'disabled':''} onclick="llUpgradeCard('${pos}')">${cost} LP ile Geliştir</button></div>`;}).join('')}</div>`:'<div class="ll-notice">Aktif kadroda geliştirilebilir kart bulunmuyor.</div>'}</div>`;
+}
+function llClubCardShopHtml(){const team=llTeamState(lexLeague.state.playerTeam),card=llCard(team?.clubCards?.market);return `<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">🏢 Kulüp / Market Kartı</div>${card?`<div class="ll-notice"><b>${llEscape(card.name)}</b> · Kalıcı, sözleşmesiz<br>${llEscape(card.effect)}</div>`:'<div class="ll-muted">Henüz kulüp/market kartın yok. Taktik Tahtası aktif zar yuvalarını işgal etmez.</div>'}</div>`;}
+const llV7ChooseShopCardBase=llChooseShopCard;
+llChooseShopCard=function(id){const card=llCard(id),sh=lexLeague.shop;if(!card?.clubCard){llV7ChooseShopCardBase(id);return;}if(!sh||!sh.offers.includes(id))return;const team=llTeamState(lexLeague.state.playerTeam);llPrepareV7Team(team,lexLeague.state);team.clubCards.market=id;const family=llCardFamilyName(card);if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);llDiscoverCards([id]);if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}lexLeague.shop={position:null,offers:[]};llSave();llRenderShop();};
+const llV7RenderShopBase=llRenderShop;
+llRenderShop=function(){llV7RenderShopBase();const offers=document.getElementById('ll-shop-offers');if(offers&&!document.getElementById('ll-upgrade-shop'))offers.insertAdjacentHTML('beforebegin',`<div id="ll-club-card-shop">${llClubCardShopHtml()}</div><div id="ll-upgrade-shop">${llUpgradeShopHtml()}</div>`);};
+const llV7EnsureDiscoveredBase=llEnsureDiscoveredCards;
+llEnsureDiscoveredCards=function(){const known=llV7EnsureDiscoveredBase(),team=llTeamState(lexLeague.state.playerTeam);[...Object.values(team?.clubCards||{}),...(team?.reserveCards||[])].filter(Boolean).forEach(id=>{if(llCard(id)&&!known.includes(id))known.push(id);});lexLeague.state.discoveredCards=[...new Set(known)];return lexLeague.state.discoveredCards;};
+const llV7RenderArchiveBase=llRenderCardArchive;
+llRenderCardArchive=function(filter='discovered'){llV7RenderArchiveBase(filter);const team=llTeamState(lexLeague.state.playerTeam),special=[...Object.values(team?.clubCards||{}),...(team?.reserveCards||[])].map(llCard).filter(Boolean);if(!special.length)return;const tabs=llArea().querySelector('.ll-comp-tabs');if(tabs)tabs.insertAdjacentHTML('afterend',`<div class="ll-notice" style="margin:12px 0"><b>Kulüp / yedek kartlar:</b> ${special.map(card=>`${llEscape(card.name)} (${llRarityLabel(card)})`).join(' · ')}</div>`);};
+function llAiUpgradeCards(teamName){const state=lexLeague.state,team=llTeamState(teamName);if(!team)return;llEnsureTeamContracts(team);llEnsureUpgradeState(team,state);while(team.cardUpgradesUsed<LL_CARD_UPGRADE_LIMIT){const choices=LL_POSITIONS.map(pos=>({pos,current:llCard(team.cards[pos])})).map(item=>({...item,target:llUpgradeTarget(item.current?.id)})).filter(item=>item.target&&llCardContractSlotActive(team,item.pos)&&team.aiLp>=llUpgradeCost(item.current)).sort((a,b)=>(llAiCardScore(b.target)+35-llAiCardScore(b.current))-(llAiCardScore(a.target)+35-llAiCardScore(a.current)));const choice=choices[0];if(!choice)break;const cost=llUpgradeCost(choice.current),contract=team.cardContracts[choice.pos];team.aiLp-=cost;team.cards[choice.pos]=choice.target.id;if(contract)contract.cardId=choice.target.id;team.cardUpgradesUsed++;}}
+const llV7AiRenewBase=llV4RenewAiContracts;
+llV4RenewAiContracts=function(teamName){llV7AiRenewBase(teamName);llAiUpgradeCards(teamName);};
+function llAiShopAttempt(teamName){const team=llTeamState(teamName);if(!team||team.aiAp<150)return {spent:false,upgraded:false};llEnsureTeamContracts(team);llPrepareV7Team(team,lexLeague.state);const position=llAiTargetPosition(teamName),pool=llEligibleCards(teamName,position),offers=llPickDistinctOfferPair(pool);if(offers.length<2)return {spent:false,upgraded:false};team.aiAp-=150;const current=llCardContractSlotActive(team,position)?llCard(team.cards[position]):null,best=[...offers].sort((a,b)=>llAiCardScore(b)-llAiCardScore(a))[0];if(best.clubCard){if(!team.clubCards.market){team.clubCards.market=best.id;const family=llCardFamilyName(best);if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);return {spent:true,upgraded:true,position:'Kulüp/Market',oldId:null,newId:best.id};}return {spent:true,upgraded:false,position:'Kulüp/Market',oldId:team.clubCards.market,newId:null};}if(!current||llAiCardScore(best)>llAiCardScore(current)){const oldId=team.cards[position]||null,family=llCardFamilyName(best);if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);team.cards[position]=best.id;llResetCardContract(team,position,best.id);return {spent:true,upgraded:true,position,oldId,newId:best.id};}return {spent:true,upgraded:false,position,oldId:current.id,newId:null};}
 function llApplyLocks(resolution,aName,bName){
   Object.assign(llTeamState(aName).lockedDice,resolution.nextLocks.a||{});Object.assign(llTeamState(bName).lockedDice,resolution.nextLocks.b||{});
-  [[aName,resolution.aDice,resolution.scoreA,resolution.scoreB],[bName,resolution.bDice,resolution.scoreB,resolution.scoreA]].forEach(([name,dice,gf,ga])=>{
-    const team=llTeamState(name);
-    if(gf<ga&&llHasBase(name,'Yedek Kulübesi'))team.nextMatchRerolls=(team.nextMatchRerolls||0)+1;
-    LL_POSITIONS.forEach(pos=>{
-      if(llBaseName(llCard(team.cards[pos]))!=='Form Tutmuyor')return;
-      const die=llFindPosition(dice,pos);team.sixStreaks[pos]=die?.value===6?(team.sixStreaks[pos]||0)+1:0;
-      if(team.sixStreaks[pos]>=3){team.nextMatchBonuses[pos]=(team.nextMatchBonuses[pos]||0)+1;team.sixStreaks[pos]=0;}
-    });
-  });
+  [[aName,resolution.aDice,resolution.scoreA,resolution.scoreB,resolution.triggeredCardIds?.a||[]],[bName,resolution.bDice,resolution.scoreB,resolution.scoreA,resolution.triggeredCardIds?.b||[]]].forEach(([name,dice,gf,ga,triggered])=>{const team=llTeamState(name);llPrepareV7Team(team,lexLeague.state);const benchPos=LL_POSITIONS.find(pos=>llBaseName(llCard(llActiveCardId(name,pos)))==='Yedek Kulübesi'),bench=llCard(benchPos?llActiveCardId(name,benchPos):null);if(bench&&((bench.upgradeLevel&&gf<=ga)||(!bench.upgradeLevel&&gf<ga)))team.nextMatchRerolls=(team.nextMatchRerolls||0)+1;
+    LL_POSITIONS.forEach(pos=>{const card=llCard(llActiveCardId(name,pos));if(llBaseName(card)!=='Form Tutmuyor')return;const die=llFindPosition(dice,pos);if(card.upgradeRule==='form-burst'){team.dieHistory[pos]=[...team.dieHistory[pos],die?.value].slice(-3);if(team.dieHistory[pos].length===3&&team.dieHistory[pos].filter(value=>value===6).length>=2){team.nextMatchBonuses[pos]=(team.nextMatchBonuses[pos]||0)+1;team.dieHistory[pos]=[];}}else{team.sixStreaks[pos]=die?.value===6?(team.sixStreaks[pos]||0)+1:0;if(team.sixStreaks[pos]>=3){team.nextMatchBonuses[pos]=(team.nextMatchBonuses[pos]||0)+1;team.sixStreaks[pos]=0;}}});
+    const chancePos=LL_POSITIONS.find(pos=>llCard(llActiveCardId(name,pos))?.upgradeRule==='chance-pity'),chance=chancePos?llCard(llActiveCardId(name,chancePos)):null;if(chance)team.chanceMisses=triggered.includes(chance.id)?0:Math.min(4,team.chanceMisses+1);
+  });llUseTeamCardContracts(llTeamState(aName));llUseTeamCardContracts(llTeamState(bName));
 }
-function llRecordMatch(home,away,hg,ag,week,userMatch=false){
-  llUpdateStanding(home,hg,ag);llUpdateStanding(away,ag,hg);
-  [[home,hg,ag],[away,ag,hg]].forEach(([name,gf,ga])=>{
-    if(name===lexLeague.state.playerTeam)return;
-    const team=llTeamState(name);if(!Number.isFinite(team.aiAp))team.aiAp=0;
-    team.aiAp+=gf>ga?20:gf===ga?12:6;
-  });
-  lexLeague.state.results.push({season:lexLeague.state.season,week,home,away,homeGoals:hg,awayGoals:ag,userMatch});
+/* Card upgrades V8: consistent labels, safe downgrade and recoverable base cards. */
+const LL_CARD_UPGRADE_RELEASE_VERSION=1;
+function llPrepareUpgradeReleaseTeam(team){
+  if(!team)return team;
+  if(!Array.isArray(team.releasedBaseCards))team.releasedBaseCards=[];
+  team.releasedBaseCards=[...new Set(team.releasedBaseCards.filter(id=>{const card=llCard(id);return card&&!card.upgradeLevel&&!card.upgradeOnly;}))];
+  const owned=[...Object.values(team.cards||{}),...(team.reserveCards||[]),...Object.values(team.clubCards||{})].map(llCard).filter(Boolean),ownedFamilies=new Set(owned.map(llCardFamilyName));
+  team.releasedBaseCards=team.releasedBaseCards.filter(id=>!ownedFamilies.has(llCardFamilyName(llCard(id))));
+  const releasedFamilies=new Set(team.releasedBaseCards.map(id=>llCardFamilyName(llCard(id))).filter(Boolean));
+  if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];
+  team.usedCardFamilies=team.usedCardFamilies.filter(family=>!releasedFamilies.has(family)||ownedFamilies.has(family));
+  return team;
 }
-function llCommitCurrentMatch(){
-  const m=lexLeague.match;if(!m||m.committed||!m.resolution)return;m.committed=true;
-  const week=lexLeague.state.week,r=m.resolution;
-  const hg=m.playerHome?r.scoreA:r.scoreB,ag=m.playerHome?r.scoreB:r.scoreA;
-  llRecordMatch(m.fixture.home,m.fixture.away,hg,ag,week,true);llApplyLocks(r,m.player,m.opponent);
-  const playerGoals=r.scoreA,oppGoals=r.scoreB;let lpGain=playerGoals>oppGoals?50:playerGoals===oppGoals?20:5;lexLeague.state.lp+=lpGain;
-  llCurrentRound().filter(f=>f!==m.fixture).forEach(f=>{const sim=llSimulateMatch(f.home,f.away);llRecordMatch(f.home,f.away,sim.homeGoals,sim.awayGoals,week,false);llApplyLocks(sim.resolution,f.home,f.away);});
-  llDevelopOpponents(week);
-  lexLeague.state.week++;
-  if(week>=34){llCompleteSeason();}else llSave();
-  llRenderRoundSummary(week,lpGain,playerGoals,oppGoals);
+function llReleaseCardToMarket(team,cardOrId){
+  const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId,marketCard=card?.upgradeLevel&&card?.upgradeFrom?llCard(card.upgradeFrom):card;
+  if(!team||!marketCard||marketCard.clubCard||marketCard.upgradeOnly)return null;
+  llPrepareUpgradeReleaseTeam(team);
+  if(!team.releasedBaseCards.includes(marketCard.id))team.releasedBaseCards.push(marketCard.id);
+  const family=llCardFamilyName(marketCard),stillOwned=[...Object.values(team.cards||{}),...(team.reserveCards||[]),...Object.values(team.clubCards||{})].map(llCard).filter(Boolean).some(item=>llCardFamilyName(item)===family);
+  if(!stillOwned)team.usedCardFamilies=team.usedCardFamilies.filter(item=>item!==family);
+  return marketCard.id;
 }
-function llRenderRoundSummary(completedWeek,lpGain,pg,og){
-  const result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet';
-  const weekResults=lexLeague.state.results.filter(r=>r.season===lexLeague.state.season&&r.week===completedWeek);
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${result} <em>${pg}-${og}</em></div><div class="ll-muted">${completedWeek}. hafta tamamlandı · +${lpGain} LP</div></div></div><div class="ll-grid"><div>${llTableHtml()}</div><div class="ll-card"><div class="ll-card-title">Haftanın Sonuçları</div><div class="ll-result-list">${weekResults.map(x=>`<div class="ll-result-row"><span>${llEscape(x.home)}</span><b>${x.homeGoals}-${x.awayGoals}</b><span>${llEscape(x.away)}</span></div>`).join('')}</div></div></div><div style="display:flex;justify-content:center;margin-top:16px"><button class="ll-btn primary" onclick="${lexLeague.state.seasonEnded?'llRenderSeasonEnd()':'llRenderDashboard()'}">${lexLeague.state.seasonEnded?'Sezon Sonucuna Geç':'Dashboard’a Dön'}</button></div></div></div>`;
+function llReleaseUpgradedCardToMarket(team,cardOrId){
+  const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId;
+  return card?.upgradeLevel?llReleaseCardToMarket(team,card):null;
 }
-
-// ------------------------- KART HAVUZU / DÜKKÂN -------------------------
-function llOwnTriggerCompatible(card,stars){
-  if(card.minStar>stars)return false;if(llBaseName(card)==='Yıldız Oyuncu'&&stars<3)return false;
-  if(!/Kendi zarın\s+[1-6]/i.test(card.trigger))return true;
-  const nums=llTriggerNumbers(card.trigger),[min,max]=llRange(stars);return nums.some(n=>n>=min&&n<=max);
+function llConsumeReleasedBase(team,cardId){
+  if(!team||!Array.isArray(team.releasedBaseCards))return;
+  team.releasedBaseCards=team.releasedBaseCards.filter(id=>id!==cardId);
 }
-function llTeamCardFamilyHistory(teamName){
-  const t=llTeamState(teamName);if(!t)return new Set();if(!Array.isArray(t.usedCardFamilies))t.usedCardFamilies=[];LL_POSITIONS.forEach(position=>{const family=llCardFamilyName(llCard(t.cards[position]));if(family&&!t.usedCardFamilies.includes(family))t.usedCardFamilies.push(family);});return new Set(t.usedCardFamilies);
-}
-function llEligibleCards(teamName,pos){
-  const t=llTeamState(teamName),usedFamilies=llTeamCardFamilyHistory(teamName);
-  return LL_CARD_POOL.filter(c=>(c.position===pos||c.position==='Evrensel'||c.clubCard)&&!c.upgradeOnly&&!usedFamilies.has(llCardFamilyName(c))&&llOwnTriggerCompatible(c,t.stars));
-}
-function llWeightedPick(pool){
-  if(!pool.length)return null;const available=[...new Set(pool.map(c=>c.rarity))];let total=available.reduce((s,r)=>s+LL_RARITY_WEIGHT[r],0),roll=Math.random()*total,rarity=available[0];
-  for(const r of available){roll-=LL_RARITY_WEIGHT[r];if(roll<=0){rarity=r;break;}}
-  const subset=pool.filter(c=>c.rarity===rarity);return subset[Math.floor(Math.random()*subset.length)];
-}
-function llPickDistinctOfferPair(pool){
-  const first=llWeightedPick(pool);if(!first)return [];
-  const firstFamily=llCardFamilyName(first);
-  const secondPool=pool.filter(c=>llCardFamilyName(c)!==firstFamily);
-  const second=llWeightedPick(secondPool);return second?[first,second]:[first];
-}
-function llShopWindowKey(){
-  const s=lexLeague.state,n=Number(s?.week||0);if(!s)return 'none';if(s.seasonEnded)return `${s.season}-season-end`;if(n>=1&&n<=3)return `${s.season}-opening`;return `${s.season}-week-${n}`;
-}
-function llShopSeenFamilies(){
-  const s=lexLeague.state;if(!s)return new Set();if(!s.shopSeenByWindow||typeof s.shopSeenByWindow!=='object')s.shopSeenByWindow={};const key=llShopWindowKey();if(!Array.isArray(s.shopSeenByWindow[key]))s.shopSeenByWindow[key]=[];return new Set(s.shopSeenByWindow[key]);
-}
-function llMarkShopFamiliesSeen(cards=[]){
-  const s=lexLeague.state,seen=llShopSeenFamilies(),key=llShopWindowKey();cards.forEach(card=>seen.add(llCardFamilyName(card)));s.shopSeenByWindow[key]=[...seen].filter(Boolean);
-}
-function llShopCost(){const team=llTeamState(lexLeague.state.playerTeam);return team?.clubCards?.market==='RBU04'?100:150;}
-function llRenderShop(){
-  const week=Number(lexLeague.state.week),seasonEnd=!!lexLeague.state.seasonEnded,earlySeason=week>=1&&week<=3;if(!seasonEnd&&!earlySeason&&![10,20,30].includes(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
-  lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklif dönemi:</b> Bu dönemde gördüğün kart ailesi yeniden çıkmaz ve aynı pakette iki benzer kart bulunmaz. Bir kez seçip kullandığın kart ailesinin daha güçlü/zayıf benzeri kariyer boyunca tekrar teklif edilmez. Kaleci, Orta Saha ve Forvet kartları kendi kasalarına özeldir; “Evrensel” kartlar istisna olarak herhangi bir yuvaya takılabilir ama aile kilidi nedeniyle yalnız bir kez görünür.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
-}
-function llOpenShopPack(pos){
-  const s=lexLeague.state,cost=llShopCost();
-  if(s.pendingPremiumPack){alert('Önce açık Elit Paketteki iki karttan birini seç veya paketten vazgeç.');llRenderShop();return;}
-  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
-  if(s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
-  const seen=llShopSeenFamilies(),pool=llEligibleCards(s.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
-  const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  s.ap-=cost;const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost,offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers]};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost});
-}
-function llRevealOpenedPack(){
-  const host=document.getElementById('ll-shop-offers');if(!host)return;
-  host.setAttribute('role','status');host.setAttribute('aria-live','polite');host.classList.remove('ll-pack-opened');void host.offsetWidth;host.classList.add('ll-pack-opened');
-  const rect=host.getBoundingClientRect(),outside=rect.top<12||rect.bottom>window.innerHeight-12;
-  if(outside)requestAnimationFrame(()=>requestAnimationFrame(()=>host.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})));
-  if(typeof navigator.vibrate==='function')navigator.vibrate(35);
-}
-function llRenderShopOffers(){
-  const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
-  const starter=sh.mode==='starter';
-  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
-  host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
-}
-function llChooseShopCard(id){
-  const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
-  const player=llTeamState(lexLeague.state.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
-  if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
-  if(sh.mode==='regular')lexLeague.state.pendingRegularPack=null;
-  llSave();llRenderShop();
-}
-function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;if(lexLeague.shop?.mode==='regular')lexLeague.state.pendingRegularPack=null;lexLeague.shop={position:null,offers:[]};llSave();llRenderShop();}
-function llEnsureDiscoveredCards(){
-  const s=lexLeague.state;if(!s)return [];
-  if(!Array.isArray(s.discoveredCards))s.discoveredCards=[];
-  const owned=Object.values(s.teams?.[s.playerTeam]?.cards||{}).filter(Boolean),valid=[...s.discoveredCards,...owned].map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id).filter(id=>llCard(id));
-  s.discoveredCards=[...new Set(valid)];return s.discoveredCards;
-}
-function llDiscoverCards(ids=[]){
-  const s=lexLeague.state;if(!s)return;const known=new Set(llEnsureDiscoveredCards());ids.forEach(id=>{const migrated=LL_LEGACY_CARD_REPLACEMENTS[id]||id;if(llCard(migrated))known.add(migrated);});s.discoveredCards=[...known];
-}
-function llRenderCardArchive(filter='discovered'){
-  const s=lexLeague.state;if(!s)return;llSetWide(true);llEnsureDiscoveredCards();
-  const known=new Set(s.discoveredCards),ownedIds=Object.values(llTeamState(s.playerTeam)?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id),owned=new Set(ownedIds),source=filter==='owned'?[...owned]:[...known],cards=source.map(llCard).filter(Boolean).sort((a,b)=>LL_POSITIONS.concat('Evrensel').indexOf(a.position)-LL_POSITIONS.concat('Evrensel').indexOf(b.position)||(LL_CARD_RARITY_RANK[b.rarity]||0)-(LL_CARD_RARITY_RANK[a.rarity]||0)||a.name.localeCompare(b.name,'tr'));
-  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>`<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div>${llCardPerformanceHtml(c.id,true)}<button class="ll-btn ll-archive-detail-btn" type="button" onclick="llShowCardPopup('${c.id}','${llEscape(s.playerTeam)}')">Kart Detayı</button></div>`).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Kart <em>Arşivi</em></div><div class="ll-muted">Keşfedilen ${known.size}/${LL_CARD_POOL.length} · Şu anda sahip olunan ${owned.size}/3</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div><div class="ll-comp-tabs"><button class="ll-comp-tab ${filter==='discovered'?'active':''}" onclick="llRenderCardArchive('discovered')">Keşfedilen Kartlar (${known.size})</button><button class="ll-comp-tab ${filter==='owned'?'active':''}" onclick="llRenderCardArchive('owned')">Sahip Olunanlar (${owned.size})</button></div>${cardHtml}</div></div>`;
-}
-function llAssignAiCard(teamName){
-  const t=llTeamState(teamName);const positions=llShuffle(LL_POSITIONS);let chosenPos=positions.find(p=>!t.cards[p])||positions[0];const pool=llEligibleCards(teamName,chosenPos);if(!pool.length)return false;
-  const card=llWeightedPick(pool);if(!card)return false;
-  const old=llCard(t.cards[chosenPos]);const rank={common:1,rare:2,epic:3,legendary:4};if(old&&rank[card.rarity]<rank[old.rarity]&&Math.random()<.75)return false;
-  if(!Array.isArray(t.usedCardFamilies))t.usedCardFamilies=[];const family=llCardFamilyName(card);if(family&&!t.usedCardFamilies.includes(family))t.usedCardFamilies.push(family);t.cards[chosenPos]=card.id;return true;
-}
-function llAiCardScore(card){
-  if(!card)return -100000;
-  const rarity={common:100,rare:200,epic:300,legendary:400}[card.rarity]||0;
-  const amount=llEffectAmount(card,1);let score=rarity+(amount*5);
-  if(/otomatik.*(?:kazan|galibiyet)/i.test(card.effect))score+=35;
-  if(/sanal gol/i.test(card.effect))score+=25*amount;
-  if(/reroll|yeniden at|yeniden attır/i.test(card.effect))score+=18*amount;
-  if(/azalt|düşür|aktar|\+\d/i.test(card.effect))score+=10*amount;
-  if(/x[23]|çarpan/i.test(card.effect))score+=15*amount;
-  return score;
-}
-function llAiTargetPosition(teamName){
-  const team=llTeamState(teamName),empty=llShuffle(LL_POSITIONS.filter(pos=>!team.cards[pos]));
-  if(empty.length)return empty[0];
-  return llShuffle(LL_POSITIONS).sort((a,b)=>llAiCardScore(llCard(team.cards[a]))-llAiCardScore(llCard(team.cards[b])))[0];
-}
-function llAiShopAttempt(teamName){
-  const team=llTeamState(teamName);if(!team||team.aiAp<150)return {spent:false,upgraded:false};
-  const position=llAiTargetPosition(teamName),pool=llEligibleCards(teamName,position),offers=llPickDistinctOfferPair(pool);
-  if(offers.length<2)return {spent:false,upgraded:false};
-  team.aiAp-=150;
-  const current=llCard(team.cards[position]),best=[...offers].sort((a,b)=>llAiCardScore(b)-llAiCardScore(a))[0];
-  if(!current||llAiCardScore(best)>llAiCardScore(current)){
-    team.cards[position]=best.id;
-    return {spent:true,upgraded:true,position,oldId:current?.id||null,newId:best.id};
-  }
-  return {spent:true,upgraded:false,position,oldId:current.id,newId:null};
-}
-function llDevelopOpponents(completedWeek){
-  const state=lexLeague.state;if(completedWeek<10)return;
-  if(!state.aiTransferWindows)state.aiTransferWindows={};
-  const due=[10,20,30].filter(windowWeek=>completedWeek>=windowWeek&&!state.aiTransferWindows[`${state.season}-${windowWeek}`]);
-  due.forEach(windowWeek=>{
-    const transfers=[];
-    llSortTable().filter(row=>row.team!==state.playerTeam).forEach(row=>{
-      const team=llTeamState(row.team);if(!Number.isFinite(team.aiAp))team.aiAp=0;
-      let attempts=0,upgrades=0;
-      while(team.aiAp>=150&&attempts<20){
-        const result=llAiShopAttempt(row.team);if(!result.spent)break;
-        attempts++;if(result.upgraded)upgrades++;
-      }
-      if(attempts)transfers.push({team:row.team,attempts,upgrades});
-    });
-    state.aiTransferWindows[`${state.season}-${windowWeek}`]=true;
-    state.lastAiTransfers={season:state.season,week:windowWeek,teams:transfers};
-  });
-}
-
-// ------------------------- SEZON SONU -------------------------
-function llCompleteSeason(){
-  const rows=llSortTable(),pos=rows.findIndex(r=>r.team===lexLeague.state.playerTeam)+1;let ap=0,lp=0,penalty=0;
-  if(pos===1){lp=500;ap=200;}else if(pos<=3){lp=250;ap=100;}if(pos>=16)penalty=100;
-  lexLeague.state.ap+=ap;lexLeague.state.lp=Math.max(0,lexLeague.state.lp+lp-penalty);lexLeague.state.seasonEnded=true;
-  lexLeague.state.lastSeasonSummary={season:lexLeague.state.season,position:pos,ap,lp,penalty,champion:rows[0].team,table:rows};llSave();
-}
-function llRenderSeasonEnd(){
-  llSetWide(true);const sum=lexLeague.state.lastSeasonSummary;if(!sum){llRenderDashboard();return;}
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div style="text-align:center"><div style="font-size:58px">${sum.position===1?'🏆':sum.position<=3?'🥉':'🏁'}</div><div class="quiz-start-title">Sezon ${sum.season} <em>Tamamlandı</em></div><div class="ll-sub">Şampiyon: ${llEscape(sum.champion)} · Senin sıran: ${sum.position}.</div></div><div class="ll-metrics"><div class="ll-metric"><strong>${sum.position}.</strong><span>Sıra</span></div><div class="ll-metric"><strong>+${sum.ap}</strong><span>Ödül AP</span></div><div class="ll-metric"><strong>+${sum.lp}</strong><span>Ödül LP</span></div><div class="ll-metric"><strong>${sum.penalty?`-${sum.penalty}`:'0'}</strong><span>Ceza LP</span></div></div>${llTableHtml()}<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="ll-btn primary" onclick="llStartNextSeason()">Yeni Sezona Başla</button><button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div></div>`;
-}
-function llStartNextSeason(){
-  const s=lexLeague.state;s.season++;s.week=1;s.seasonEnded=false;s.results=[];s.schedule=llGenerateSchedule(llShuffle(LL_TEAMS.map(t=>t.name)));s.standings=Object.fromEntries(LL_TEAMS.map(t=>[t.name,llBlankStanding(t.name)]));s.transferWindowsVisited={};s.lastSeasonSummary=null;
-  Object.values(s.teams).forEach(t=>{t.lastResults=[];t.wins=0;t.lockedDice={};});llSave();llRenderDashboard();
-}
-
-
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-const LL_EXAMPLE_IRREGULAR_FORMS={
-  be:['am','is','are','was','were','been','being'],come:['came','comes','coming'],get:['got','gets','getting'],fall:['fell','falls','fallen','falling'],go:['went','goes','gone','going'],keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],swing:['swung','swings','swinging'],beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
+const llV8RepairStateBase=llV2RepairState;
+llV2RepairState=function(state){state=llV8RepairStateBase(state);Object.values(state?.teams||{}).forEach(llPrepareUpgradeReleaseTeam);if(state)state.cardUpgradeReleaseVersion=LL_CARD_UPGRADE_RELEASE_VERSION;return state;};
+const llV8EligibleCardsBase=llEligibleCards;
+llEligibleCards=function(teamName,pos){
+  const team=llTeamState(teamName);llPrepareUpgradeReleaseTeam(team);const released=(team?.releasedBaseCards||[]).map(llCard).filter(Boolean),releasedByFamily=new Map(released.map(card=>[llCardFamilyName(card),card.id]));
+  return llV8EligibleCardsBase(teamName,pos).filter(card=>{const required=releasedByFamily.get(llCardFamilyName(card));return !required||card.id===required;});
 };
-function llEnglishWordForms(word){
-  const base=String(word||'').toLowerCase(),forms=new Set([base]);if(!base)return [];
-  (LL_EXAMPLE_IRREGULAR_FORMS[base]||[]).forEach(form=>forms.add(form));
-  if(/[^aeiou]y$/.test(base)){forms.add(base.slice(0,-1)+'ies');forms.add(base.slice(0,-1)+'ied');forms.add(base.slice(0,-1)+'ying');}
-  else{
-    forms.add(base+(/(?:s|x|z|ch|sh|o)$/.test(base)?'es':'s'));
-    if(/e$/.test(base)){forms.add(base+'d');forms.add(base.slice(0,-1)+'ing');}
-    else{
-      const doubled=base.length<=5&&/[^aeiou][aeiou][^aeiouwxy]$/.test(base)?base+base.slice(-1):base;
-      forms.add(doubled+'ed');forms.add(doubled+'ing');
-    }
+const llV8ChooseShopCardBase=llChooseShopCard;
+llChooseShopCard=function(id){
+  const sh=lexLeague.shop,newCard=llCard(id),team=llTeamState(lexLeague.state?.playerTeam),pos=sh?.position,oldCard=pos?llCard(team?.cards?.[pos]):null;
+  if(oldCard?.upgradeLevel&&!newCard?.clubCard&&oldCard.id!==id&&!confirm('Bu kart ayrılırsa geliştirmesi kalıcı olarak kaybolacak. Temel sürümü daha sonra transfer kasalarında yeniden bulunabilir. Devam edilsin mi?'))return false;
+  llV8ChooseShopCardBase(id);
+  if(pos&&team?.cards?.[pos]===id){if(oldCard&&oldCard.id!==id)llReleaseCardToMarket(team,oldCard);llConsumeReleasedBase(team,id);llSave();}
+  return true;
+};
+const llV8ReleaseExpiredCardBase=llReleaseExpiredCard;
+llReleaseExpiredCard=function(pos){
+  const state=lexLeague.state,team=llTeamState(state?.playerTeam),card=llCard(team?.cards?.[pos]),contract=team?.cardContracts?.[pos];
+  if(!llIsTransferWindow(state.week)||!card||!contract||contract.remaining>0)return;
+  const message=card.upgradeLevel?'Bu kart ayrılırsa geliştirmesi kalıcı olarak kaybolacak. Temel sürümü daha sonra transfer kasalarında yeniden bulunabilir. Devam edilsin mi?':'Sözleşmesi biten kart slotundan çıkarılsın mı? Kart arşivinde kalır ve daha sonra transfer kasalarında yeniden bulunabilir.';
+  if(!confirm(message))return;
+  team.cards[pos]=null;delete team.cardContracts[pos];llReleaseCardToMarket(team,card);llSave();llRenderShop();
+};
+const llV8AiShopAttemptBase=llAiShopAttempt;
+llAiShopAttempt=function(teamName){
+  const team=llTeamState(teamName),before=Object.fromEntries(LL_POSITIONS.map(pos=>[pos,llCard(team?.cards?.[pos])]));
+  const result=llV8AiShopAttemptBase(teamName);
+  LL_POSITIONS.forEach(pos=>{const old=before[pos],current=llCard(team?.cards?.[pos]);if(old&&current?.id!==old.id&&current?.upgradeFrom!==old.id)llReleaseCardToMarket(team,old);});
+  if(result?.newId)llConsumeReleasedBase(team,result.newId);
+  return result;
+};
+const llV8RenewAiContractsBase=llV4RenewAiContracts;
+llV4RenewAiContracts=function(teamName){
+  const team=llTeamState(teamName),before=Object.fromEntries(LL_POSITIONS.map(pos=>[pos,llCard(team?.cards?.[pos])]));
+  llV8RenewAiContractsBase(teamName);
+  LL_POSITIONS.forEach(pos=>{const old=before[pos],current=llCard(team?.cards?.[pos]);if(old&&current?.id!==old.id&&current?.upgradeFrom!==old.id)llReleaseCardToMarket(team,old);});
+};
+
+
+/* Season opening presentation and dual competition rankings. */
+function llV9DomesticPosition(name){const key=llTeamLeague(name);if(!key)return null;const rows=llSortTable(key),position=rows.findIndex(row=>row.team===name)+1;return position>0?{label:llLeagueLabel(key),position,total:rows.length}:null;}
+function llV9EuropeanPosition(name,type){if(!['ucl','uel','uecl'].includes(type)||!lexLeague.state)return null;llV2EnsureEuropeStandings(lexLeague.state);const rows=llV2SortEuropeTable(type),position=rows.findIndex(row=>row.team===name)+1;return position>0?{label:llV2EuroLabel(type),position,total:rows.length}:null;}
+function llV9MatchRankHtml(name,competition){const domestic=llV9DomesticPosition(name),europe=llV9EuropeanPosition(name,competition),domesticText=domestic?`🏟 ${llEscape(domestic.label)} · ${domestic.position}. / ${domestic.total}`:'🏟 Yerel lig · oyunda takip edilmiyor';return `<div class="ll-team-ranks"><span>${domesticText}</span>${europe?`<span class="europe">🌍 ${llEscape(europe.label)} · ${europe.position}. / ${europe.total}</span>`:''}</div>`;}
+function llV9DecorateDashboard(){const state=lexLeague.state,fixture=llPlayerFixture(),match=llArea()?.querySelector('.ll-next-match');if(!state||!fixture||!match)return;const opponent=fixture.home===state.playerTeam?fixture.away:fixture.home,names=[state.playerTeam,opponent],clubs=[...match.querySelectorAll('.ll-club')];clubs.forEach((club,index)=>{club.querySelector('.ll-team-ranks')?.remove();club.querySelector('b')?.insertAdjacentHTML('afterend',llV9MatchRankHtml(names[index],fixture.competition||'league'));});const actions=llArea()?.querySelector('.ll-topbar .ll-actions');if(actions&&!actions.querySelector('[data-season-opening]'))actions.insertAdjacentHTML('afterbegin',`<button class="ll-btn" data-season-opening onclick="llRenderSeasonOpening()">${Number(state.week)===1?'Sezon Açılışı':'Sezon Bilgileri'}</button>`);}
+function llV9ArchiveStar(entry,name){const row=[...(entry?.superRows||[]),...(entry?.firstRows||[])].find(item=>item.team===name);return row?Number(row.stars||0):0;}
+function llV9SeasonStarChanges(state,latest){const older=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-2),changes=[];[...state.leagues.super,...state.leagues.first].forEach(name=>{const from=older?llV9ArchiveStar(older,name):llV9ArchiveStar(latest,name),to=older?llV9ArchiveStar(latest,name):Number(state.teams?.[name]?.stars||0);if(from&&to&&from!==to)changes.push({name,from,to});});return changes.sort((a,b)=>Math.abs(b.to-b.from)-Math.abs(a.to-a.from)||a.name.localeCompare(b.name,'tr'));}
+function llV9TeamRows(names,emptyText){if(!names?.length)return `<div class="ll-muted">${llEscape(emptyText)}</div>`;return `<div class="ll-season-team-list">${names.map(name=>`<div class="ll-season-team-row"><strong>${llTeamLogo(name,'table')}${llEscape(name)}</strong><span>${llStars(llV2TeamStarsInState(lexLeague.state,name))}</span></div>`).join('')}</div>`;}
+function llV9GoalReward(goal){const parts=[];if(Number(goal.reward?.ap||0))parts.push('+'+Number(goal.reward.ap)+' AP');if(Number(goal.reward?.lp||0))parts.push('+'+Number(goal.reward.lp)+' LP');return parts.join(' · ')||'Rozet';}
+function llRenderSeasonOpening(){const state=lexLeague.state;if(!state)return;lexLeague.active=true;llSetWide(true);llClearTransient();llSetEuropeMatchTheme(null);const league=llTeamLeague(state.playerTeam)||'first',leagueNames=state.leagues[league]||[],team=llTeamState(state.playerTeam),latest=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-1)||null,goals=llV2EnsureSeasonGoals(state),qualifications=llV3ResolveEuropeQualifications(state),changes=llV9SeasonStarChanges(state,latest),rivals=leagueNames.filter(name=>name!==state.playerTeam).sort((a,b)=>llV2TeamStarsInState(state,b)-llV2TeamStarsInState(state,a)||(llV2PreviousTeamContext(state,a)?.position||99)-(llV2PreviousTeamContext(state,b)?.position||99)||a.localeCompare(b,'tr')).slice(0,5),distribution=[6,5,4,3,2,1].map(star=>({star,count:leagueNames.filter(name=>llV2TeamStarsInState(state,name)===star).length})).filter(item=>item.count);const movement=latest?`<div class="ll-season-grid"><div class="ll-season-card"><div class="ll-card-title">Süper Lig'e Yükselenler</div>${llV9TeamRows(latest.promoted,'Yükselen takım kaydı yok.')}</div><div class="ll-season-card"><div class="ll-card-title">TFF 1. Lig'e Düşenler</div>${llV9TeamRows(latest.relegated,'Düşen takım kaydı yok.')}</div></div>`:`<div class="ll-notice" style="margin-top:14px">İlk sezon başlangıcı: yükselme ve düşme hareketleri sezon sonunda oluşacak.</div>`;const starHtml=changes.length?llV9TeamRows(changes.slice(0,8).map(item=>item.name),'')+`<div class="ll-muted" style="margin-top:8px">${changes.slice(0,8).map(item=>`${llEscape(item.name)}: ${item.from}★ → ${item.to}★`).join(' · ')}</div>`:`<div class="ll-muted">Kaydedilen sezonlar arasında yıldız değişimi yok.</div>`;llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-season-opening-hero"><div class="ll-season-opening-kicker">${Number(state.week)===1?'Yeni sezon · Yeni hikâye':`Sezon genel görünümü · ${state.week}. hafta`}</div><div class="ll-season-opening-title">Sezon ${state.season} <em>${Number(state.week)===1?'Açılışı':'Bilgileri'}</em></div><div class="ll-season-opening-sub">${llTeamLogo(state.playerTeam,'table')} <b>${llEscape(state.playerTeam)}</b> · ${llEscape(llLeagueLabel(league))} · ${leagueNames.length} takım · ${llStars(team.stars)}</div></div>${movement}<div class="ll-season-grid"><div class="ll-season-card"><div class="ll-card-title">Başlıca Lig Rakipleri</div>${llV9TeamRows(rivals,'Rakip bulunamadı.')}</div><div class="ll-season-card"><div class="ll-card-title">Yıldız Dengesi ve Değişimler</div><div class="ll-muted" style="margin-bottom:9px">${distribution.map(item=>`${item.star}★: ${item.count} takım`).join(' · ')}</div>${starHtml}</div></div><div class="ll-season-grid"><div class="ll-season-card"><div class="ll-card-title">Yönetim Hedefleri</div>${goals.items.map(goal=>`<div class="ll-season-goal"><span>${llEscape(goal.label)}</span><span>${llEscape(llV9GoalReward(goal))}</span></div>`).join('')}</div><div class="ll-season-card"><div class="ll-card-title">Türkiye'nin Avrupa Temsilcileri</div><div class="ll-season-europe-grid">${['ucl','uel','uecl'].map(type=>`<div class="ll-season-europe"><b>${llEscape(llV2EuroLabel(type))}</b>${(qualifications[type]||[]).map(name=>`<div class="ll-season-team-row"><strong>${llTeamLogo(name,'table')}${llEscape(name)}</strong><span>${name===state.playerTeam?'SEN':''}</span></div>`).join('')}</div>`).join('')}</div></div></div><div class="ll-actions" style="justify-content:center;margin-top:17px"><button class="ll-btn primary" onclick="llV9FinishSeasonOpening('dashboard')">${Number(state.week)===1&&Number(state.seasonOpeningViewed)!==Number(state.season)?'Sezona Başla':'Dashboarda Dön'}</button>${llIsTransferWindow(state.week)?`<button class="ll-btn gold" onclick="llV9FinishSeasonOpening('shop')">Transfer Merkezine Git</button>`:''}</div></div></div>`;}
+function llV9FinishSeasonOpening(destination='dashboard'){const state=lexLeague.state;if(!state)return;state.seasonOpeningViewed=Number(state.season);llSave();if(destination==='shop')llRenderShop();else{llV9RenderDashboardBase();llV9DecorateDashboard();}}
+const llV9RenderDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){const state=lexLeague.state;if(state&&!state.seasonEnded&&state.starterPackClaimed&&Number(state.week)===1&&Number(state.seasonOpeningViewed)!==Number(state.season)){llRenderSeasonOpening();return;}llV9RenderDashboardBase();llV9DecorateDashboard();};
+
+/* Normal and elite two-card pack presentation with reload-safe offers. */
+var llPackOpeningRuntime=null;
+function llPackCardPalette(rarity){return {common:['#475569','#94a3b8'],rare:['#1d4ed8','#60a5fa'],epic:['#7e22ce','#c084fc'],legendary:['#b45309','#facc15']}[rarity]||['#334155','#94a3b8'];}
+function llPackCardCinematicHtml(id,index,mode){const card=llCard(id),palette=llPackCardPalette(card?.rarity),icon=LL_POSITION_ICONS[card?.position]||'◆';if(!card)return '';return `<div class="ll-pack-card" data-pack-card="${index}" onclick="llRevealPackCard(${index})" style="--card-color:${palette[0]};--card-light:${palette[1]}"><div class="ll-pack-card-face ll-pack-card-back">${mode==='elite'?'ELİT ROL PAKETİ':'TRANSFER PAKETİ'}</div><div class="ll-pack-card-face ll-pack-card-front"><div class="ll-pack-rarity">${llEscape(LL_RARITY_LABELS[card.rarity]||card.rarity)}</div><div class="ll-pack-pos-icon">${icon}</div><div class="ll-pack-card-name">${llEscape(card.name)}</div><div class="ll-pack-card-meta">${llEscape(card.position)} · Min ${Number(card.minStar||1)}★</div><div class="ll-pack-card-effect"><b>Tetikleyici:</b> ${llEscape(card.trigger)}<br><b>Etki:</b> ${llEscape(card.effect)}</div><div class="ll-pack-card-actions"><button class="ll-btn ${mode==='elite'?'gold':'primary'}" type="button" onclick="event.stopPropagation();llSelectPackCard('${llEscape(card.id)}')">Bu Kartı Seç</button></div></div></div>`;}
+function llShowPackOpening(mode,offerIds,options={}){const offers=(offerIds||[]).map(llCard).filter(Boolean);if(offers.length!==2){llRevealOpenedPack();return;}llClosePackOpening();const elite=mode==='elite',cost=Number(options.cost||0),costText=options.source==='voucher'?'HEDEF ÖDÜLÜ':`${cost||LL_PREMIUM_PACK_COST} AP`;llPackOpeningRuntime={mode,offers:offers.map(card=>card.id),timers:[],revealed:new Set(),started:false};document.body.classList.add('ll-cinematic-open');document.body.insertAdjacentHTML('beforeend',`<div class="ll-pack-cinematic ${elite?'elite':'regular'}" id="ll-pack-cinematic" role="dialog" aria-modal="true" aria-label="${elite?'Elit':'Normal'} kart paketi açılışı"><div class="ll-pack-particles"></div><button class="ll-pack-skip" type="button" onclick="llSkipPackAnimation()">Animasyonu Geç</button><div class="ll-pack-stage"><div class="ll-pack-kicker">${elite?'Destansı veya Efsanevi':'İki farklı kart teklifi'}</div><div class="ll-pack-title">${elite?'Elit Rol':'Transfer'} <em>Paketi</em></div><button class="ll-pack-shell" type="button" onclick="llBeginPackCinematic()"><span class="ll-pack-crown">${elite?'👑':'◇'}</span><span class="ll-pack-brand">LEXICON LİG</span><span class="ll-pack-line"></span><span class="ll-pack-type">${elite?'ELİT KASA':'NORMAL KASA'}</span><span class="ll-pack-cost">${llEscape(costText)}</span><span class="ll-pack-tap">▲ DOKUN VE AÇ ▲</span></button><div class="ll-pack-cards">${offers.map((card,index)=>llPackCardCinematicHtml(card.id,index,mode)).join('')}</div><div class="ll-pack-controls"><button class="ll-btn danger" type="button" onclick="llDiscardOpenedPack()">İki Kartı da İstemiyorum · AP İadesi Yok</button></div></div></div>`);if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)llSkipPackAnimation();}
+function llPackSchedule(fn,delay){const id=setTimeout(fn,delay);if(llPackOpeningRuntime)llPackOpeningRuntime.timers.push(id);return id;}
+function llBeginPackCinematic(){const runtime=llPackOpeningRuntime,root=document.getElementById('ll-pack-cinematic');if(!runtime||!root||runtime.started)return;runtime.started=true;const shell=root.querySelector('.ll-pack-shell'),elite=runtime.mode==='elite';shell?.classList.add('charging');if(typeof navigator.vibrate==='function')navigator.vibrate(elite?[35,35,55]:30);llPackSchedule(()=>{shell?.classList.remove('charging');shell?.classList.add('launched');root.classList.add('blast');llSpawnCinematicParticles(root,elite?78:36,elite?['#fde68a','#facc15','#c084fc']:['#bfdbfe','#60a5fa','#94a3b8']);llPackSchedule(()=>{root.classList.add('cards-ready');if(runtime.mode==='regular')llPackSchedule(()=>{llRevealPackCard(0);llRevealPackCard(1);},90);},elite?520:330);},elite?850:610);}
+function llRevealPackCard(index){const runtime=llPackOpeningRuntime,root=document.getElementById('ll-pack-cinematic');if(!runtime||!root||!root.classList.contains('cards-ready')||runtime.revealed.has(index))return;runtime.revealed.add(index);root.querySelector(`[data-pack-card="${index}"]`)?.classList.add('revealed');if(typeof navigator.vibrate==='function')navigator.vibrate(22);if(runtime.revealed.size>=runtime.offers.length){root.classList.add('all-revealed');const skip=root.querySelector('.ll-pack-skip');if(skip)skip.hidden=true;}}
+function llSkipPackAnimation(){const runtime=llPackOpeningRuntime,root=document.getElementById('ll-pack-cinematic');if(!runtime||!root)return;runtime.timers.forEach(clearTimeout);runtime.timers=[];runtime.started=true;root.classList.add('cards-ready','all-revealed');runtime.offers.forEach((id,index)=>{runtime.revealed.add(index);root.querySelector(`[data-pack-card="${index}"]`)?.classList.add('revealed');});const skip=root.querySelector('.ll-pack-skip');if(skip)skip.hidden=true;}
+function llSpawnCinematicParticles(root,count,colors){const host=root?.querySelector('.ll-pack-particles');if(!host||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<count;i++){const particle=document.createElement('i'),angle=Math.random()*Math.PI*2,distance=90+Math.random()*(root.classList.contains('elite')?470:330);particle.className='ll-pack-particle';particle.style.setProperty('--dx',`${Math.cos(angle)*distance}px`);particle.style.setProperty('--dy',`${Math.sin(angle)*distance}px`);particle.style.setProperty('--duration',`${.75+Math.random()*1.15}s`);particle.style.setProperty('--delay',`${Math.random()*.18}s`);particle.style.setProperty('--particle',colors[Math.floor(Math.random()*colors.length)]);host.appendChild(particle);}}
+function llSelectPackCard(id){const result=llChooseShopCard(id);if(result!==false)llClosePackOpening();}
+function llDiscardOpenedPack(){const runtime=llPackOpeningRuntime;if(!runtime)return;if(!confirm('Bu iki kart alınmadan paket silinecek ve AP/paket hakkı iade edilmeyecek. Devam edilsin mi?'))return;const mode=runtime.mode;llClosePackOpening();if(mode==='elite')llDeferPremiumPack();else llSkipShopCards();}
+function llClosePackOpening(){const runtime=llPackOpeningRuntime;if(runtime?.timers)runtime.timers.forEach(clearTimeout);document.getElementById('ll-pack-cinematic')?.remove();document.body?.classList.remove('ll-cinematic-open');llPackOpeningRuntime=null;}
+/* Local career slots and portable JSON backups. Vocabulary remains shared between slots. */
+const LL_SAVE_SLOTS_KEY='lexicon_league_save_slots_v1';
+const LL_ACTIVE_SLOT_KEY='lexicon_league_active_slot_v1';
+const LL_SAVE_SLOT_COUNT=3;
+const LL_BACKUP_FORMAT_VERSION=1;
+let llSaveSlotPendingCareer=null;
+let llSaveSlotPendingImport=null;
+
+function llSlotNumber(value){const slot=Number(value);return Number.isInteger(slot)&&slot>=1&&slot<=LL_SAVE_SLOT_COUNT?slot:null;}
+function llSlotClone(value){return value==null?value:JSON.parse(JSON.stringify(value));}
+function llSlotCareerLooksValid(state){return !!(state&&typeof state==='object'&&Number(state.version)===2&&typeof state.playerTeam==='string'&&state.playerTeam&&Number.isFinite(Number(state.season))&&Number.isFinite(Number(state.week))&&state.teams&&typeof state.teams==='object'&&state.teams[state.playerTeam]&&state.leagues&&typeof state.leagues==='object'&&state.standings&&typeof state.standings==='object');}
+function llSlotEmptyStore(){return {version:1,activeSlot:1,slots:{'1':null,'2':null,'3':null}};}
+function llSlotNormalizeRecord(record){if(!record)return null;const state=record.state||record;if(!llSlotCareerLooksValid(state))return null;return {state:llSlotClone(state),updatedAt:typeof record.updatedAt==='string'?record.updatedAt:(state.updatedAt||state.createdAt||new Date().toISOString())};}
+function llSlotWriteStore(store){try{localStorage.setItem(LL_SAVE_SLOTS_KEY,JSON.stringify(store));localStorage.setItem(LL_ACTIVE_SLOT_KEY,String(store.activeSlot));return true;}catch(error){console.error('Kariyer yuvaları kaydedilemedi.',error);alert('Kayıt alanı dolu veya tarayıcı kayda izin vermiyor. Tam yedek alıp kullanılmayan bir kariyeri silmen gerekebilir.');return false;}}
+function llEnsureSaveSlots(){
+  let raw=null;try{raw=JSON.parse(localStorage.getItem(LL_SAVE_SLOTS_KEY)||'null');}catch{raw=null;}
+  const store=llSlotEmptyStore();
+  if(raw&&typeof raw==='object'){
+    for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++)store.slots[String(slot)]=llSlotNormalizeRecord(raw.slots?.[String(slot)]);
+    store.activeSlot=llSlotNumber(localStorage.getItem(LL_ACTIVE_SLOT_KEY))||llSlotNumber(raw.activeSlot)||1;
+  }else{
+    let legacy=null;try{legacy=JSON.parse(localStorage.getItem(LL_V2_SAVE_KEY)||'null');}catch{legacy=null;}
+    if(llSlotCareerLooksValid(legacy))store.slots['1']={state:llSlotClone(legacy),updatedAt:legacy.updatedAt||legacy.createdAt||new Date().toISOString()};
   }
-  return [...forms].filter(Boolean).sort((a,b)=>b.length-a.length);
-}
-function llExampleAnswerCandidates(answer){
-  return String(answer||'').split(/\s*\/\s*/).map(part=>part.replace(/\([^)]*\)/g,' ').replace(/\+\s*(?:verb|noun|adjective|adverb)\b/gi,' ').replace(/^to\s+/i,'').replace(/\b(?:someone|somebody|something)\b\s*$/i,'').replace(/\s+/g,' ').trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
-}
-function llExampleAnswerPattern(candidate){
-  const phrase=String(candidate||'').toLowerCase().trim();if(!phrase)return '';
-  if(phrase==='whether or')return '\\bwhether\\b[^.!?]{0,45}?\\bor\\b';
-  if(phrase==='neither nor')return '\\bneither\\b[^.!?]{0,45}?\\bnor\\b';
-  if(phrase==='odd job')return '\\bodd\\s+jobs?\\b';
-  const tokens=phrase.split(/\s+/).filter(Boolean);if(!tokens.length)return '';
-  const first=llEnglishWordForms(tokens.shift()).map(escapeRegExp).join('|'),rest=tokens.map(escapeRegExp).join('\\s+');
-  return '\\b(?:'+first+')'+(rest?'\\s+'+rest:'')+'\\b';
-}
-function llMaskAnswerInExample(example,answer){
-  let output=String(example||''),masked=false;
-  llExampleAnswerCandidates(answer).forEach(candidate=>{
-    const pattern=llExampleAnswerPattern(candidate);if(!pattern)return;
-    output=output.replace(new RegExp(pattern,'gi'),()=>{masked=true;return '_____';});
-  });
-  return masked?output:'';
-}
-
-let llExampleSerial = 0;
-function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
-  if (!shownExample) return '';
-  const translation = String(card?.exampleTr || '').trim();
-  const rawToken = token || `${card?.id || 'word'}-${llExampleSerial++}`;
-  const panelId = `example-tr-${String(rawToken).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-  const sentenceClass = compact ? 'word-ex' : 'quiz-example';
-  return `<div class="example-block"><div class="example-line"><div class="${sentenceClass}">“${llEscape(shownExample)}”</div>${translation?`<button class="example-translate-btn" type="button" aria-label="Türkçe çeviriyi göster" aria-expanded="false" aria-controls="${panelId}" title="Türkçe çeviriyi göster" onclick="toggleExampleTranslation(event,'${panelId}')"><span aria-hidden="true">文</span><span>TR</span></button>`:''}</div>${translation?`<div class="example-translation" id="${panelId}" hidden>${llEscape(translation)}</div>`:''}</div>`;
-}
-function toggleExampleTranslation(event, panelId) {
-  event?.preventDefault();
-  event?.stopPropagation();
-  const panel = document.getElementById(panelId);
-  if (!panel) return;
-  const opening = panel.hidden;
-  panel.hidden = !opening;
-  const button = event?.currentTarget;
-  button?.setAttribute('aria-expanded', String(opening));
-  button?.setAttribute('aria-label', opening ? 'Türkçe çeviriyi gizle' : 'Türkçe çeviriyi göster');
-  button?.setAttribute('title', opening ? 'Türkçe çeviriyi gizle' : 'Türkçe çeviriyi göster');
-  button?.classList.toggle('active', opening);
-}
-
-function initDatabase() {
-  try {
-    let existingWords = [];
-    try {
-      existingWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    } catch(e) { existingWords = []; }
-
-    existingWords.forEach(word => {
-      const spellingFixes = {ctirics:'critics', grandchlid:'grandchild', nauesous:'nauseous', upseting:'upsetting', temporarly:'temporarily'};
-      const normalizedEn = String(word.en || '').trim().toLowerCase();
-      if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
-      word.pos = llInferWordPos(word);
-    });
-
-    const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
-      const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
-      if (foundMatch) {
-        foundMatch.tr = w.tr; foundMatch.example = w.example; foundMatch.exampleTr = w.exampleTr || ''; foundMatch.pos = w.pos || llInferWordPos(w); return foundMatch;
-      } else {
-        const nextReviewDate = new Date();
-        if (w.state !== "due") nextReviewDate.setDate(nextReviewDate.getDate() + (w.interval || 1));
-        return {
-          id: "usr_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random()*1000),
-          en: w.en, tr: w.tr, example: w.example || "", exampleTr: w.exampleTr || "", pos: w.pos || llInferWordPos(w), category: "word", source: "user",
-          addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
-          nextReview: nextReviewDate.toISOString().split('T')[0], reviewCount: w.reviewCount, wrongCount: 0, isActiveMistake: false, type: ""
-        };
-      }
-    });
-    
-    existingWords.forEach(ex => {
-      const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
-      if (!existsInNative && ex.source === 'user') synchronizedPool.push(ex);
-    });
-
-    localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
-  } catch(e) { console.error(e); }
-}
-
-function loadUserWords() {
-  try {
-    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    return allWords.filter(w => w.source === 'user');
-  } catch (e) { return []; }
-}
-function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);}
-
-function saveWordsToStorage(updatedWords) {
-  try {
-    const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    const mergedWords = allWords.map(w => {
-      const updated = updatedWords.find(u => u.id === w.id);
-      return updated ? updated : w;
-    });
-    updatedWords.forEach(uw => { if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw); });
-    localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
-  } catch (e) {}
-}
-
-function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
-function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
-
-function sm2(card, quality) {
-  let { interval, repetitions, ef } = card;
-  if (!ef) ef = 2.5; if (!interval) interval = 0; if (!repetitions) repetitions = 0;
-
-  if (quality < 3) { repetitions = 0; interval = 1; } 
-  else {
-    if (repetitions === 0) interval = 1; else if (repetitions === 1) interval = 6; else interval = Math.round(interval * ef);
-    repetitions++;
-  }
-  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (ef < 1.3) ef = 1.3;
-
-  const nextDate = new Date(); nextDate.setDate(nextDate.getDate() + interval); nextDate.setHours(0,0,0,0);
-  return { interval, repetitions, ef, nextReview: nextDate.toISOString().split('T')[0] };
-}
-
-function todayStr() {
-  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().split('T')[0];
-}
-
-function renderPreStart() {
-  document.querySelector('.container')?.classList.remove('league-wide');
-  if (typeof lexLeague !== 'undefined') lexLeague.active = false;
-  wc.active = false;
-  diceCup.active = false;
-  diceUcl.active = false;
-  wc.usedWords = []; 
-  const userWords = loadUserWords();
-  const area = document.getElementById('flashcard-area');
-
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-start-title">Teste <em>Hazır</em> mısın?</div>
-      <div class="quiz-count-badge">${userWords.length} Özel Kelime Yüklü</div>
-
-      <div class="quiz-settings">
-        <div class="quiz-settings-title">KAÇ KART ÇALIŞMAK İSTERSİNİZ?</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <label><input type="radio" name="fc-limit" value="10"> 10 Kart</label>
-          <label><input type="radio" name="fc-limit" value="20"> 20 Kart</label>
-          <label><input type="radio" name="fc-limit" value="30" checked> 30 Kart</label>
-          <label><input type="radio" name="fc-limit" value="50"> 50 Kart</label>
-          <label><input type="radio" name="fc-limit" value="all"> Hepsi</label>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-bottom: 12px;">
-        <button class="btn btn-gold" onclick="startFlashcard(false)">🧠 Akıllı Sırala ve Başla</button>
-        <button class="btn btn-outline" onclick="startFlashcard(true)">↻ Yanlışları Çalış</button>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-wc" onclick="startWCTournament()">🏆 WC 2026 Turnuvası Başlat</button>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-dice" onclick="renderDiceCupTeamSelect()">🎲 Zar Kupası Modu · Rastgele Takım</button>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-ucl" onclick="renderDiceUclLanding()">⭐🎲 Zar Şampiyonlar Ligi · 36 Takım</button>
-      </div>
-
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-league" onclick="renderLexiconLeagueLanding()">⚽🎲 Lexicon League · Süper Lig Menajerlik RPG</button>
-      </div>
-      
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap; margin-top: 12px;">
-        <button class="btn btn-outline" style="border-color: var(--bg4); color: var(--text2); width: 100%; max-width: 320px;" onclick="renderWordList()">📖 Tüm Kelimeler & İstatistikler</button>
-      </div>
-    </div>`;
-}
-
-function renderWordList() {
-  const words = loadUserWords();
-  const area = document.getElementById('flashcard-area');
-  
-  let totalReviews = 0; let totalWrongHistory = 0; let activeMistakes = 0;
-
-  words.forEach(w => {
-    totalReviews += (w.reviewCount || 0); totalWrongHistory += (w.wrongCount || 0);
-    if (w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0)) activeMistakes++;
-  });
-
-  const totalCorrectHistory = totalReviews - totalWrongHistory;
-  const accuracy = totalReviews > 0 ? Math.round((totalCorrectHistory / totalReviews) * 100) : 0;
-
-  let listHTML = `<div class="word-list-container">`;
-  
-  words.sort((a,b) => a.en.localeCompare(b.en)).forEach(w => {
-    const wTotal = w.reviewCount || 0; const wWrong = w.wrongCount || 0; const wCorrect = wTotal - wWrong;
-    const wAcc = wTotal > 0 ? Math.round((wCorrect / wTotal) * 100) : 0;
-    
-    let accColor = "var(--text)";
-    if(wTotal > 0) {
-        if(wAcc >= 80) accColor = "var(--green)";
-        else if(wAcc < 50) accColor = "var(--red)";
-        else accColor = "var(--gold)";
-    }
-
-    listHTML += `
-      <div class="word-item">
-        <div class="word-info">
-          <div class="pronounce-line dictionary"><div class="word-en">${llEnglishWordHtml(w)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
-          ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
-        </div>
-        <div class="word-stats">
-          <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
-          <div class="w-stat"><span class="w-stat-val" style="color: var(--red)">${wWrong}</span><span class="w-stat-lbl">Yanlış</span></div>
-          <div class="w-stat"><span class="w-stat-val" style="color: ${accColor}">%${wAcc}</span><span class="w-stat-lbl">Başarı</span></div>
-        </div>
-      </div>`;
-  });
-  listHTML += `</div>`;
-
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding: 32px 24px;">
-      <div class="quiz-start-title">Sözlük & <em>İstatistikler</em></div>
-      <div class="stats-grid" style="margin-top: 24px;">
-        <div class="stat-box"><div class="stat-value">${words.length}</div><div class="stat-label">Toplam Kelime</div></div>
-        <div class="stat-box"><div class="stat-value">${totalReviews}</div><div class="stat-label">Yapılan Tekrar</div></div>
-        <div class="stat-box"><div class="stat-value" style="color:var(--red)">${activeMistakes}</div><div class="stat-label">Zorlanılan</div></div>
-        <div class="stat-box"><div class="stat-value" style="color:var(--green)">%${accuracy}</div><div class="stat-label">Genel Başarı</div></div>
-      </div>
-      ${listHTML}
-      <div style="display:flex;justify-content:center; margin-top: 16px;">
-        <button class="btn btn-gold" onclick="renderPreStart()">← Ana Menüye Dön</button>
-      </div>
-    </div>`;
-}
-
-
-// ----------------------------------------------------
-// ZAR KUPASI OYUN MANTIĞI
-// ----------------------------------------------------
-
-function resetDiceCupState() {
-  diceCup = {
-    active: true,
-    playerTeam: null,
-    stage: 'group',
-    matchIndex: 0,
-    groupTeams: [],
-    standings: {},
-    schedule: [],
-    opponent: null,
-    wordCount: 10,
-    preMatchCorrect: 0,
-    preMatchTotal: 0,
-    playerDice: [],
-    opponentDice: [],
-    playerScore: 0,
-    opponentScore: 0,
-    extraTimePlayer: 0,
-    extraTimeOpponent: 0,
-    rolled: false,
-    rolling: false,
-    rerollUsed: false,
-    rerollFailed: false,
-    rerollQueue: [],
-    rerollIndex: 0,
-    rerollRevealed: false,
-    selectedRerollIndex: -1,
-    usedWords: [],
-    rerolledValue: null,
-    rerolledIndex: -1,
-    eventNote: '',
-    knockoutOpponentsUsed: [],
-    resultCommitted: false
-  };
-}
-
-// Ana menüdeki buton bu ekrana gelir. Takım seçilmez; turnuva başlayınca kura çekilir.
-function renderDiceCupTeamSelect() {
-  wc.active = false;
-  diceUcl.active = false;
-  fcQueue = [];
-  resetDiceCupState();
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:52px;margin-bottom:10px">🎲🏆</div>
-      <div class="quiz-start-title">Zar <em>Kupası</em></div>
-      <p style="color:var(--text2);line-height:1.7;margin-bottom:18px">
-        Turnuva başladığında 48 Dünya Kupası takımından biri sana otomatik olarak atanır.
-      </p>
-      <div class="dice-rule-box">
-        Her maç önce Dünya Kupası modundaki kadar kelimeyle oynanır: grup maçları 10 kelime; sonraki turlar 15, 18, 20, 22 ve 25 kelime. Kelimeler tamamlanınca iki takımın üçer zarı atılır. Zarlarından birini seçip tek kullanımlık 5/5 sınavıyla yeniden atabilirsin.
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-dice" style="max-width:340px" onclick="startDiceCupTournament()">Rastgele Takımla Kupayı Başlat 🎲</button>
-        <button class="btn btn-outline" onclick="renderPreStart()">← Ana Menü</button>
-      </div>
-    </div>`;
-}
-
-function startDiceCupTournament() {
-  resetDiceCupState();
-  const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
-  diceCup.playerTeam = WC_TEAMS[randomTeamIndex];
-
-  const groupAll = WC_TEAMS.filter(t => t.group === diceCup.playerTeam.group);
-  diceCup.groupTeams = [diceCup.playerTeam, ...groupAll.filter(t => t.name !== diceCup.playerTeam.name)];
-  diceCup.groupTeams.forEach(t => {
-    diceCup.standings[t.name] = { team:t, P:0, W:0, D:0, L:0, GF:0, GA:0, GD:0 };
-  });
-  diceCup.schedule = [
-    { playerMatch:1, otherMatch:[2,3] },
-    { playerMatch:2, otherMatch:[1,3] },
-    { playerMatch:3, otherMatch:[1,2] }
-  ];
-  renderDiceCupIntro();
-}
-
-function renderDiceCupIntro() {
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:52px;margin-bottom:10px">🎲🏆</div>
-      <div class="quiz-start-title">Takımın <em>Belirlendi</em></div>
-      <p style="color:var(--text2);margin-bottom:20px">Kura sonucunda Zar Kupası takımın:</p>
-      <div class="wc-score-box" style="justify-content:center">
-        <div class="wc-team">
-          <div class="wc-flag">${diceCup.playerTeam.flag}</div>
-          <div class="wc-team-name">${diceCup.playerTeam.name}</div>
-          <div style="color:var(--gold);font-size:12px">Grup ${diceCup.playerTeam.group}</div>
-        </div>
-      </div>
-      <button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">İlk Maça Çık ➔</button>
-    </div>`;
-}
-
-function getDiceCupStageText() {
-  return diceCup.stage === 'group'
-    ? `Grup ${diceCup.playerTeam.group} · ${diceCup.matchIndex + 1}. Maç`
-    : DICE_STAGE_NAMES[diceCup.stage];
-}
-
-function pickDiceCupKnockoutOpponent() {
-  let pool = WC_TEAMS.filter(t =>
-    t.name !== diceCup.playerTeam.name &&
-    !diceCup.knockoutOpponentsUsed.includes(t.name)
-  );
-  if (!pool.length) {
-    diceCup.knockoutOpponentsUsed = [];
-    pool = WC_TEAMS.filter(t => t.name !== diceCup.playerTeam.name);
-  }
-  const opponent = pool[Math.floor(Math.random() * pool.length)];
-  diceCup.knockoutOpponentsUsed.push(opponent.name);
-  return opponent;
-}
-
-function prepareNextDiceCupMatch() {
-  diceCup.wordCount = STAGE_WORDS[diceCup.stage] || STAGE_WORDS.group;
-  diceCup.preMatchCorrect = 0;
-  diceCup.preMatchTotal = 0;
-  diceCup.rolled = false;
-  diceCup.rolling = false;
-  diceCup.rerollUsed = false;
-  diceCup.rerollFailed = false;
-  diceCup.rerollQueue = [];
-  diceCup.rerollIndex = 0;
-  diceCup.rerollRevealed = false;
-  diceCup.selectedRerollIndex = -1;
-  diceCup.rerolledValue = null;
-  diceCup.rerolledIndex = -1;
-  diceCup.eventNote = '';
-  diceCup.resultCommitted = false;
-  diceCup.playerDice = [];
-  diceCup.opponentDice = [];
-  diceCup.playerScore = 0;
-  diceCup.opponentScore = 0;
-  diceCup.extraTimePlayer = 0;
-  diceCup.extraTimeOpponent = 0;
-
-  if (diceCup.stage === 'group') {
-    diceCup.opponent = diceCup.groupTeams[diceCup.schedule[diceCup.matchIndex].playerMatch];
-  } else {
-    diceCup.opponent = pickDiceCupKnockoutOpponent();
-  }
-
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
-      <div class="quiz-start-title" style="font-size:32px">Sıradaki Rakip</div>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
-      </div>
-      <p style="color:var(--text2);font-size:13px;line-height:1.65;margin-bottom:20px">
-        Önce <b style="color:var(--gold)">${diceCup.wordCount} kelime</b> gelecek. Kelimeler tamamlanınca maç zarları atılacak.
-      </p>
-      <button class="btn btn-dice" onclick="startDiceCupMatchWords()">${diceCup.wordCount} Kelimelik Maça Başla 📚</button>
-    </div>`;
-}
-
-function startDiceCupMatchWords() {
-  const words = loadUserWords();
-  if (!words.length) {
-    alert('Zar Kupası için en az bir kelime gerekiyor.');
-    return;
-  }
-  const unusedCount = words.filter(w => !diceCup.usedWords.includes(w.id)).length;
-  if (unusedCount < Math.min(diceCup.wordCount, words.length)) diceCup.usedWords = [];
-  startFlashcard(false, diceCup.wordCount);
-}
-
-function showDiceCupWordSummary() {
-  diceCup.preMatchCorrect = fcCorrect;
-  diceCup.preMatchTotal = fcTotal;
-  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:48px;margin-bottom:10px">📚✓</div>
-      <div class="quiz-start-title">Kelimeler <em>Tamamlandı</em></div>
-      <p style="color:var(--text2);margin-bottom:18px">${fcTotal} kelimede ${fcCorrect} doğru · Başarı %${accuracy}</p>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
-      </div>
-      <button class="btn btn-dice" onclick="rollDiceCupMatch()">Şimdi Zarları At 🎲</button>
-    </div>`;
-}
-
-function randomDie() { return Math.floor(Math.random() * 6) + 1; }
-function rollThreeDice() { return [randomDie(), randomDie(), randomDie()].sort((a,b) => b-a); }
-
-function scoreDiceBattle(playerDice, opponentDice) {
-  let playerScore = 0;
-  let opponentScore = 0;
-  const pairs = playerDice.map((p, i) => {
-    const o = opponentDice[i];
-    let result = 'draw';
-    if (p > o) { playerScore++; result = 'player'; }
-    else if (p < o) { opponentScore++; result = 'opponent'; }
-    return { index:i, player:p, opponent:o, result };
-  });
-  return { playerScore, opponentScore, pairs };
-}
-
-function simulatePureDiceMatch() {
-  const p = rollThreeDice();
-  const o = rollThreeDice();
-  return scoreDiceBattle(p, o);
-}
-
-function rollDiceCupMatch() {
-  if (diceCup.rolling || diceCup.rolled) return;
-  diceCup.rolling = true;
-  renderDiceCupBattle(true);
-  setTimeout(() => {
-    diceCup.playerDice = rollThreeDice();
-    diceCup.opponentDice = rollThreeDice();
-    const scored = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
-    diceCup.playerScore = scored.playerScore;
-    diceCup.opponentScore = scored.opponentScore;
-    diceCup.rolling = false;
-    diceCup.rolled = true;
-    renderDiceCupBattle(false);
-  }, 1020);
-}
-
-function dieHtml(value, options = {}) {
-  const classes = ['die'];
-  if (options.rolling) classes.push('rolling');
-  if (options.rerolled) classes.push('rerolled');
-  if (options.selectable) classes.push('selectable');
-  if (options.selected) classes.push('selected');
-  const content = options.rolling ? DICE_FACES[(Number(options.index || 0) % 6) + 1] : DICE_FACES[value];
-  const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
-  if (options.selectable) {
-    return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceCupRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
-  }
-  return `<div class="${classes.join(' ')}" ${motionStyle}>${content}</div>`;
-}
-
-function selectDiceCupRerollDie(index) {
-  if (!diceCup.rolled || diceCup.rolling || diceCup.rerollUsed) return;
-  if (index < 0 || index >= diceCup.playerDice.length) return;
-  diceCup.selectedRerollIndex = index;
-  diceCup.eventNote = `${index + 1}. zar seçildi: ${DICE_FACES[diceCup.playerDice[index]]} (${diceCup.playerDice[index]}). Reroll için 5 kelimenin tamamını bilmelisin.`;
-  renderDiceCupBattle(false);
-}
-
-function renderDiceCupBattle(isRolling = false) {
-  const area = document.getElementById('flashcard-area');
-  const scored = isRolling
-    ? { playerScore:'–', opponentScore:'–', pairs:[0,1,2].map(i => ({index:i,result:'draw'})) }
-    : scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
-
-  if (!isRolling) {
-    diceCup.playerScore = scored.playerScore + (diceCup.extraTimePlayer || 0);
-    diceCup.opponentScore = scored.opponentScore + (diceCup.extraTimeOpponent || 0);
-  }
-
-  const pairLabels = isRolling ? ['', '', ''] : scored.pairs.map(pair => {
-    if (pair.result === 'player') return '<span>+1 Gol<br>Sen</span>';
-    if (pair.result === 'opponent') return '<span>+1 Gol<br>Rakip</span>';
-    return '<span>Eşit<br>Gol Yok</span>';
-  });
-
-  let controls = '';
-  if (isRolling) {
-    controls = `<div style="color:var(--text2);font-size:13px;margin-top:18px">Zarlar atılıyor...</div>`;
-  } else if (!diceCup.rerollUsed) {
-    const hasSelection = diceCup.selectedRerollIndex >= 0;
-    const selectedText = hasSelection
-      ? `Seçili zar: ${DICE_FACES[diceCup.playerDice[diceCup.selectedRerollIndex]]} (${diceCup.playerDice[diceCup.selectedRerollIndex]})`
-      : 'Yeniden atmak istediğin kendi zarına dokun.';
-    const secondaryAction = diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore
-      ? `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="resolveDiceCupExtraTime()">Reroll Kullanma · Uzatma Zarına Geç</button>`
-      : `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceCupMatch()">Reroll Kullanma · Maçı Bitir</button>`;
-    controls = `
-      <div class="dice-rescue-box">
-        <div style="font-weight:700;color:#c4b5fd;margin-bottom:6px">İsteğe Bağlı Reroll Hakkı</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">${selectedText} Beş kelimede 5/5 yaparsan seçtiğin zar yeniden atılır. Tek yanlışta bu maçtaki reroll hakkın yanar.</div>
-        <button class="btn btn-dice" ${hasSelection ? '' : 'disabled'} style="${hasSelection ? '' : 'opacity:.45;pointer-events:none'}" onclick="startDiceCupReroll()">🎯 Seçili Zarı Reroll Et · 5 Kelime</button>
-      </div>
-      ${secondaryAction}`;
-  } else if (diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore) {
-    controls = `<button class="btn btn-dice" onclick="resolveDiceCupExtraTime()">⚡ Uzatma Zarını At</button>`;
-  } else {
-    controls = `<button class="btn ${diceCup.playerScore > diceCup.opponentScore ? 'btn-dice' : 'btn-outline'}" style="width:100%" onclick="finishDiceCupMatch()">Maç Sonucunu Onayla ➔</button>`;
-  }
-
-  const canSelect = !isRolling && !diceCup.rerollUsed;
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:30px 22px">
-      <div class="quiz-settings-title" style="text-align:center">${getDiceCupStageText()}</div>
-      <div class="dice-score-line">
-        <div><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
-        <div class="dice-score-number">${isRolling ? '–' : diceCup.playerScore} - ${isRolling ? '–' : diceCup.opponentScore}</div>
-        <div><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
-      </div>
-      <div class="dice-arena">
-        <div class="dice-columns">
-          <div class="dice-side">
-            ${[0,1,2].map(i => dieHtml(diceCup.playerDice[i], {
-              rolling:isRolling,
-              rerolled:!isRolling && diceCup.rerolledIndex === i,
-              selectable:canSelect,
-              selected:canSelect && diceCup.selectedRerollIndex === i,
-              index:i
-            })).join('')}
-          </div>
-          <div class="dice-side">
-            ${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}
-          </div>
-          <div class="dice-side">
-            ${[0,1,2].map(i => dieHtml(diceCup.opponentDice[i], {rolling:isRolling,index:i+3})).join('')}
-          </div>
-        </div>
-      </div>
-      ${diceCup.eventNote ? `<div class="dice-event-note">${diceCup.eventNote}</div>` : ''}
-      <div style="margin-top:18px">${controls}</div>
-    </div>`;
-}
-
-function getUnusedDiceCupWords(count) {
-  let pool = loadUserWords().filter(w => !diceCup.usedWords.includes(w.id));
-  if (pool.length < count) {
-    diceCup.usedWords = [];
-    pool = loadUserWords();
-  }
-  pool.sort(() => Math.random() - 0.5);
-  const chosen = pool.slice(0, Math.min(count, pool.length));
-  chosen.forEach(w => { if (!diceCup.usedWords.includes(w.id)) diceCup.usedWords.push(w.id); });
-  return chosen;
-}
-
-function startDiceCupReroll() {
-  if (diceCup.rerollUsed || diceCup.selectedRerollIndex < 0) return;
-  diceCup.rerollUsed = true;
-  diceCup.rerollFailed = false;
-  diceCup.rerollQueue = getUnusedDiceCupWords(5);
-  diceCup.rerollIndex = 0;
-  diceCup.rerollRevealed = false;
-  if (diceCup.rerollQueue.length < 5) {
-    alert('Reroll sınavı için en az 5 kelime gerekiyor.');
-    diceCup.rerollUsed = false;
-    renderDiceCupBattle(false);
-    return;
-  }
-  showNextDiceCupRerollWord();
-}
-
-// Eski buton adını kullanan kayıtlı bir ekran varsa uyumluluk için bırakıldı.
-function startDiceCupRescue() { startDiceCupReroll(); }
-
-function showNextDiceCupRerollWord() {
-  if (diceCup.rerollIndex >= 5) {
-    completeDiceCupReroll();
-    return;
-  }
-  const area = document.getElementById('flashcard-area');
-  const card = diceCup.rerollQueue[diceCup.rerollIndex];
-  diceCup.rerollRevealed = false;
-  const askTrToEn = Math.random() > 0.5;
-  const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
-  const answer = askTrToEn ? card.en : card.tr;
-  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
-  let example = '';
-  if (card.example) {
-    if (askTrToEn) {
-      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
-      example=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`cup-reroll-${diceCup.rerollIndex}-${card.id}`):'';
-    } else {
-      example = llExampleSentenceHtml(card,card.example,`cup-reroll-${diceCup.rerollIndex}-${card.id}`);
-    }
-  }
-  const selectedValue = diceCup.playerDice[diceCup.selectedRerollIndex];
-  area.innerHTML = `
-    <div class="dice-rescue-progress">
-      ${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceCup.rerollIndex ? 'done' : i === diceCup.rerollIndex ? 'current' : ''}"></div>`).join('')}
-    </div>
-    <div style="text-align:center;color:#c4b5fd;font-size:12px;margin-bottom:12px">Hedef zar: ${DICE_FACES[selectedValue]} (${selectedValue})</div>
-    <div class="flashcard-wrap" id="dice-reroll-card" onclick="revealDiceCupRerollWord()">
-      <div class="flashcard" id="dice-reroll-inner">
-        <div class="quiz-mode-label">REROLL ${diceCup.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-        <div class="quiz-word">${questionHtml}</div>
-        ${example}
-        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
-        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
-      </div>
-    </div>
-    <div class="flashcard-actions" id="dice-reroll-actions" style="grid-template-columns:1fr 1fr">
-      <button class="fc-btn fc-idk" onclick="answerDiceCupReroll(false)">✗ Yanlış Bildim</button>
-      <button class="fc-btn fc-easy" onclick="answerDiceCupReroll(true)">✓ Doğru Bildim</button>
-    </div>
-    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, bu maçtaki reroll hakkını tamamen bitirir.</div>`;
-}
-
-function revealDiceCupRerollWord() {
-  if (diceCup.rerollRevealed) return;
-  diceCup.rerollRevealed = true;
-  const inner = document.getElementById('dice-reroll-inner');
-  const back = document.getElementById('dice-reroll-back');
-  const actions = document.getElementById('dice-reroll-actions');
-  if (inner) inner.classList.add('revealed');
-  if (back) back.style.display = 'block';
-  if (actions) actions.classList.add('visible');
-  const card = document.getElementById('dice-reroll-card');
-  if (card) card.onclick = null;
-}
-
-function recordDiceCupWordResult(cardId, quality) {
-  const userWords = loadUserWords();
-  const card = userWords.find(w => w.id === cardId);
-  if (!card) return;
-  const updated = sm2(card, quality);
-  card.interval = updated.interval;
-  card.repetitions = updated.repetitions;
-  card.ef = updated.ef;
-  card.nextReview = updated.nextReview;
-  card.lastReviewed = todayStr();
-  card.reviewCount = (card.reviewCount || 0) + 1;
-  if (quality < 3) {
-    card.wrongCount = (card.wrongCount || 0) + 1;
-    card.isActiveMistake = true;
-  } else if (quality >= 4) {
-    card.isActiveMistake = false;
-  }
-  saveWordsToStorage(userWords);
-  const meta = loadMeta();
-  if (!meta.activity) meta.activity = {};
-  const t = todayStr();
-  if (!meta.activity[t]) meta.activity[t] = { reviews:0, correct:0 };
-  meta.activity[t].reviews++;
-  if (quality >= 4) meta.activity[t].correct++;
-  saveMeta(meta);
-}
-
-function answerDiceCupReroll(isCorrect) {
-  if (!diceCup.rerollRevealed) return;
-  const card = diceCup.rerollQueue[diceCup.rerollIndex];
-  recordDiceCupWordResult(card.id, isCorrect ? 5 : 1);
-  if (!isCorrect) {
-    diceCup.rerollFailed = true;
-    diceCup.eventNote = `Reroll sınavı ${diceCup.rerollIndex + 1}. kelimede başarısız oldu. Zarlar değişmedi.`;
-    renderDiceCupRerollFailed();
-    return;
-  }
-  diceCup.rerollIndex++;
-  showNextDiceCupRerollWord();
-}
-
-function renderDiceCupRerollFailed() {
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:52px;margin-bottom:12px">💥</div>
-      <div class="quiz-start-title">Reroll Hakkı <em>Yandı</em></div>
-      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için seçtiğin zar yeniden atılmadı. Mevcut maç skoru korunuyor.</p>
-      <button class="btn btn-outline" style="width:100%" onclick="renderDiceCupBattle(false)">Zarlara ve Maç Sonucuna Dön ➔</button>
-    </div>`;
-}
-
-function completeDiceCupReroll() {
-  const targetIndex = diceCup.selectedRerollIndex;
-  if (targetIndex < 0 || targetIndex >= diceCup.playerDice.length) {
-    diceCup.eventNote = 'Reroll uygulanamadı: seçili zar bulunamadı.';
-    renderDiceCupBattle(false);
-    return;
-  }
-  const beforeDice = [...diceCup.playerDice];
-  const oldValue = diceCup.playerDice[targetIndex];
-  const newValue = randomDie();
-  diceCup.playerDice[targetIndex] = newValue;
-  diceCup.playerDice.sort((a,b) => b-a);
-  diceCup.rerolledValue = newValue;
-  diceCup.rerolledIndex = diceCup.playerDice.findIndex(v => v === newValue);
-  diceCup.selectedRerollIndex = -1;
-  const after = scoreDiceBattle(diceCup.playerDice, diceCup.opponentDice);
-  diceCup.playerScore = after.playerScore;
-  diceCup.opponentScore = after.opponentScore;
-  diceCup.eventNote = `5/5 doğru! Seçtiğin ${DICE_FACES[oldValue]} (${oldValue}) zarı yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. Zarların yeniden sıralandı: ${beforeDice.join(' · ')} → ${diceCup.playerDice.join(' · ')}.`;
-  renderDiceCupBattle(false);
-}
-
-// Eski fonksiyon adlarıyla geriye dönük uyumluluk.
-function showNextDiceCupRescueWord() { showNextDiceCupRerollWord(); }
-function revealDiceCupRescueWord() { revealDiceCupRerollWord(); }
-function answerDiceCupRescue(isCorrect) { answerDiceCupReroll(isCorrect); }
-function renderDiceCupRescueFailed() { renderDiceCupRerollFailed(); }
-function completeDiceCupRescue() { completeDiceCupReroll(); }
-
-function resolveDiceCupExtraTime() {
-  let player = randomDie();
-  let opponent = randomDie();
-  let attempts = 1;
-  while (player === opponent && attempts < 30) {
-    player = randomDie();
-    opponent = randomDie();
-    attempts++;
-  }
-  if (player > opponent) diceCup.extraTimePlayer = 1;
-  else diceCup.extraTimeOpponent = 1;
-  diceCup.eventNote = `Uzatma zarı: Sen ${DICE_FACES[player]} (${player}), rakip ${DICE_FACES[opponent]} (${opponent}) attı${attempts > 1 ? `; eşitlikler nedeniyle ${attempts} kez denendi` : ''}.`;
-  renderDiceCupBattle(false);
-}
-
-function updateDiceCupStandings(t1, t2, g1, g2) {
-  const s1 = diceCup.standings[t1.name];
-  const s2 = diceCup.standings[t2.name];
-  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
-  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
-  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
-  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
-  else { s1.D++; s1.P++; s2.D++; s2.P++; }
-}
-
-function sortedDiceCupStandings() {
-  return Object.values(diceCup.standings).sort((a,b) =>
-    b.P - a.P || b.GD - a.GD || b.GF - a.GF || a.team.name.localeCompare(b.team.name)
-  );
-}
-
-function diceCupStandingsHtml(rows) {
-  return `
-    <table class="wc-table">
-      <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
-      ${rows.map((row, idx) => `
-        <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === diceCup.playerTeam.name ? 'player' : ''}">
-          <td>${row.team.flag} ${row.team.name}</td>
-          <td>${row.W + row.D + row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
-          <td>${row.GD > 0 ? '+' + row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
-        </tr>`).join('')}
-    </table>`;
-}
-
-function finishDiceCupMatch() {
-  if (diceCup.resultCommitted) return;
-  if (diceCup.stage !== 'group' && diceCup.playerScore === diceCup.opponentScore) {
-    resolveDiceCupExtraTime();
-    return;
-  }
-  diceCup.resultCommitted = true;
-  const playerWon = diceCup.playerScore > diceCup.opponentScore;
-  const playerLost = diceCup.playerScore < diceCup.opponentScore;
-  let table = '';
-  let action = '';
-  let title = playerWon ? 'Zar Düellosunu Kazandın! 🎉' : playerLost ? 'Maçı Kaybettin 💔' : 'Maç Berabere 🤝';
-
-  if (diceCup.stage === 'group') {
-    const fix = diceCup.schedule[diceCup.matchIndex];
-    const otherTeam1 = diceCup.groupTeams[fix.otherMatch[0]];
-    const otherTeam2 = diceCup.groupTeams[fix.otherMatch[1]];
-    const otherResult = simulatePureDiceMatch();
-    updateDiceCupStandings(diceCup.playerTeam, diceCup.opponent, diceCup.playerScore, diceCup.opponentScore);
-    updateDiceCupStandings(otherTeam1, otherTeam2, otherResult.playerScore, otherResult.opponentScore);
-    const rows = sortedDiceCupStandings();
-    table = diceCupStandingsHtml(rows);
-
-    if (diceCup.matchIndex < 2) {
-      diceCup.matchIndex++;
-      action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Sonraki Grup Maçı ➔</button>`;
-    } else {
-      const position = rows.findIndex(r => r.team.name === diceCup.playerTeam.name);
-      if (position < 2) {
-        diceCup.stage = 'ro32';
-        action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Son 32 Turuna Geç 🎉</button>`;
-      } else {
-        action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Grup Aşamasında Elendin · Ana Menü</button>`;
-      }
-    }
-  } else if (playerWon) {
-    if (diceCup.stage === 'ro32') { diceCup.stage = 'ro16'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Son 16 Turuna Geç ➔</button>`; }
-    else if (diceCup.stage === 'ro16') { diceCup.stage = 'qf'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Çeyrek Finale Geç ➔</button>`; }
-    else if (diceCup.stage === 'qf') { diceCup.stage = 'sf'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Yarı Finale Geç ➔</button>`; }
-    else if (diceCup.stage === 'sf') { diceCup.stage = 'final'; action = `<button class="btn btn-dice" onclick="prepareNextDiceCupMatch()">Büyük Finale Geç ➔</button>`; }
-    else if (diceCup.stage === 'final') {
-      diceCup.stage = 'won';
-      title = 'ZAR KUPASI ŞAMPİYONUSUN! 🏆🎲';
-      action = `<button class="btn btn-gold" style="width:100%;font-size:16px" onclick="renderPreStart()">Kupayı Kaldır · Ana Menü</button>`;
-    }
-  } else {
-    action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Turnuvaya Veda Et · Ana Menü</button>`;
-  }
-
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:32px 24px">
-      <div class="quiz-start-title ${playerWon ? 'dice-result-win' : playerLost ? 'dice-result-loss' : 'dice-result-draw'}" style="font-size:29px">${title}</div>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceCup.playerTeam.flag}</div><div class="wc-team-name">${diceCup.playerTeam.name}</div></div>
-        <div class="wc-score">${diceCup.playerScore} - ${diceCup.opponentScore}</div>
-        <div class="wc-team"><div class="wc-flag">${diceCup.opponent.flag}</div><div class="wc-team-name">${diceCup.opponent.name}</div></div>
-      </div>
-      <div style="color:var(--text3);font-size:12px;margin-bottom:12px">Maç öncesi kelimeler: ${diceCup.preMatchCorrect}/${diceCup.preMatchTotal}</div>
-      ${diceCup.eventNote ? `<div class="dice-event-note">${diceCup.eventNote}</div>` : ''}
-      ${table}
-      <div style="margin-top:24px">${action}</div>
-    </div>`;
-}
-
-
-// ----------------------------------------------------
-// ZAR ŞAMPİYONLAR LİGİ OYUN MANTIĞI
-// ----------------------------------------------------
-
-function shuffleArray(items) {
-  const arr = [...items];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function resetDiceUclState() {
-  diceUcl = {
-    active:true, playerTeam:null, stage:'league', leagueMatchIndex:0, standings:{}, schedule:[], leagueRounds:[],
-    opponent:null, home:true, wordCount:10, preMatchCorrect:0, preMatchTotal:0,
-    playerDice:[], opponentDice:[], playerScore:0, opponentScore:0,
-    extraTimePlayer:0, extraTimeOpponent:0, rolled:false, rolling:false,
-    rerollUsed:false, rerollFailed:false, rerollQueue:[], rerollIndex:0,
-    rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
-    rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
-    finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-    knockoutField:[], currentRoundPairings:[]
-  };
-}
-
-function renderDiceUclLanding() {
-  wc.active = false;
-  diceCup.active = false;
-  fcQueue = [];
-  resetDiceUclState();
-  const pots = [1,2,3,4].map(pot => {
-    const teams = UCL_TEAMS.filter(t => t.pot === pot);
-    return `<div class="ucl-pot-card"><div class="ucl-pot-title">${pot}. Torba</div>${teams.map(t => `<div class="ucl-team-line">${t.flag} ${t.short}</div>`).join('')}</div>`;
-  }).join('');
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:34px 24px">
-      <div style="font-size:54px;margin-bottom:10px">🎲⭐🏆</div>
-      <div class="quiz-start-title">Zar <em>Şampiyonlar Ligi</em></div>
-      <p style="color:var(--text2);line-height:1.7;margin:12px 0 16px">
-        36 kulüpten biri rastgele atanır. Lig aşamasında her torbadan iki farklı rakiple, toplam sekiz maç oynarsın.
-      </p>
-      <div class="dice-rule-box">
-        Her lig maçı 10 kelimeyle başlar. Ardından üçer zar atılır ve istediğin tek zarı 5/5 kelime sınavıyla bir kez reroll edebilirsin. İlk 8 direkt Son 16'ya, 9–24 play-off'a yükselir; 25–36 elenir.
-      </div>
-      <div class="ucl-pot-grid">${pots}</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-ucl" style="max-width:370px" onclick="startDiceUclTournament()">Rastgele Kulüple Başlat 🎲</button>
-        <button class="btn btn-outline" onclick="renderPreStart()">← Ana Menü</button>
-      </div>
-    </div>`;
-}
-
-function buildDiceUclDrawRounds() {
-  const template = UCL_DRAW_TEMPLATES[Math.floor(Math.random() * UCL_DRAW_TEMPLATES.length)];
-  const reverseAll = Math.random() < .5;
-  const rounds = template.map(round => round.map(([homeName,awayName]) => {
-    const home = UCL_TEAMS.find(t => t.name === homeName);
-    const away = UCL_TEAMS.find(t => t.name === awayName);
-    return reverseAll ? [away,home] : [home,away];
-  }));
-  return shuffleArray(rounds);
-}
-
-function buildDiceUclPlayerSchedule(player) {
-  return diceUcl.leagueRounds.map(round => {
-    const match = round.find(([home,away]) => home.name === player.name || away.name === player.name);
-    const home = match[0].name === player.name;
-    const opponent = home ? match[1] : match[0];
-    return {opponent, home, pot:opponent.pot};
-  });
-}
-
-function startDiceUclTournament() {
-  resetDiceUclState();
-  wc.active = false;
-  diceCup.active = false;
-  diceUcl.playerTeam = UCL_TEAMS[Math.floor(Math.random() * UCL_TEAMS.length)];
-  diceUcl.leagueRounds = buildDiceUclDrawRounds();
-  diceUcl.schedule = buildDiceUclPlayerSchedule(diceUcl.playerTeam);
-  UCL_TEAMS.forEach(team => {
-    diceUcl.standings[team.name] = {team, P:0, W:0, D:0, L:0, GF:0, GA:0, GD:0};
-  });
-  renderDiceUclIntro();
-}
-
-function renderDiceUclIntro() {
-  const fixtures = diceUcl.schedule.map((f,i) => `
-    <div class="ucl-fixture"><span style="color:var(--text3)">${i+1}. maç · ${f.pot}. torba</span><br><b>${f.home ? '🏠' : '✈️'} ${f.opponent.flag} ${f.opponent.short}</b></div>`).join('');
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:34px 24px">
-      <div style="font-size:54px;margin-bottom:10px">⭐🎲</div>
-      <div class="quiz-start-title">Kulübün <em>Belirlendi</em></div>
-      <div class="wc-score-box" style="justify-content:center">
-        <div class="wc-team">
-          <div class="wc-flag">${diceUcl.playerTeam.flag}</div>
-          <div class="wc-team-name">${diceUcl.playerTeam.name}</div>
-          <div class="ucl-badge">${diceUcl.playerTeam.pot}. TORBA · ${diceUcl.playerTeam.country}</div>
-        </div>
-      </div>
-      <div class="quiz-settings-title" style="text-align:center;margin-top:18px">8 MAÇLIK LİG FİKSTÜRÜN</div>
-      <div class="ucl-fixtures">${fixtures}</div>
-      <button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">1. Lig Maçına Çık ➔</button>
-    </div>`;
-}
-
-function getDiceUclStageText() {
-  if (diceUcl.stage === 'league') {
-    const fixture = diceUcl.schedule[diceUcl.leagueMatchIndex];
-    return `Lig Aşaması · ${diceUcl.leagueMatchIndex + 1}/8 · ${fixture && fixture.home ? 'İç Saha' : 'Deplasman'}`;
-  }
-  return UCL_STAGE_NAMES[diceUcl.stage] || diceUcl.stage;
-}
-
-function resetDiceUclMatchState() {
-  diceUcl.wordCount = UCL_STAGE_WORDS[diceUcl.stage] || 10;
-  diceUcl.preMatchCorrect = 0;
-  diceUcl.preMatchTotal = 0;
-  diceUcl.playerDice = [];
-  diceUcl.opponentDice = [];
-  diceUcl.playerScore = 0;
-  diceUcl.opponentScore = 0;
-  diceUcl.extraTimePlayer = 0;
-  diceUcl.extraTimeOpponent = 0;
-  diceUcl.rolled = false;
-  diceUcl.rolling = false;
-  diceUcl.rerollUsed = false;
-  diceUcl.rerollFailed = false;
-  diceUcl.rerollQueue = [];
-  diceUcl.rerollIndex = 0;
-  diceUcl.rerollRevealed = false;
-  diceUcl.selectedRerollIndex = -1;
-  diceUcl.rerolledValue = null;
-  diceUcl.rerolledIndex = -1;
-  diceUcl.eventNote = '';
-  diceUcl.resultCommitted = false;
-}
-
-function prepareNextDiceUclMatch() {
-  resetDiceUclMatchState();
-  if (diceUcl.stage === 'league') {
-    const fixture = diceUcl.schedule[diceUcl.leagueMatchIndex];
-    diceUcl.opponent = fixture.opponent;
-    diceUcl.home = fixture.home;
-  }
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-settings-title" style="text-align:center">${getDiceUclStageText()}</div>
-      <div class="quiz-start-title" style="font-size:32px">Sıradaki Rakip</div>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
-      </div>
-      ${diceUcl.stage === 'league' ? `<div class="ucl-badge" style="margin-bottom:14px">${diceUcl.home ? '🏠 İÇ SAHA' : '✈️ DEPLASMAN'} · RAKİP ${diceUcl.opponent.pot}. TORBA</div>` : ''}
-      <p style="color:var(--text2);font-size:13px;line-height:1.65;margin-bottom:20px">
-        Önce <b style="color:var(--gold)">${diceUcl.wordCount} kelime</b> gelecek. Tüm kelimeler tamamlanınca maç zarları açılacak.
-      </p>
-      <button class="btn btn-ucl" onclick="startDiceUclMatchWords()">${diceUcl.wordCount} Kelimelik Maça Başla 📚</button>
-    </div>`;
-}
-
-function startDiceUclMatchWords() {
-  const words = loadUserWords();
-  if (!words.length) {
-    alert('Zar Şampiyonlar Ligi için en az bir kelime gerekiyor.');
-    return;
-  }
-  const unusedCount = words.filter(w => !diceUcl.usedWords.includes(w.id)).length;
-  if (unusedCount < Math.min(diceUcl.wordCount, words.length)) diceUcl.usedWords = [];
-  startFlashcard(false, diceUcl.wordCount);
-}
-
-function showDiceUclWordSummary() {
-  diceUcl.preMatchCorrect = fcCorrect;
-  diceUcl.preMatchTotal = fcTotal;
-  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:48px;margin-bottom:10px">📚✓</div>
-      <div class="quiz-start-title">Kelimeler <em>Tamamlandı</em></div>
-      <p style="color:var(--text2);margin-bottom:18px">${fcTotal} kelimede ${fcCorrect} doğru · Başarı %${accuracy}</p>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
-      </div>
-      <button class="btn btn-ucl" onclick="rollDiceUclMatch()">Şimdi Zarları At 🎲</button>
-    </div>`;
-}
-
-function rollDiceUclMatch() {
-  if (diceUcl.rolling || diceUcl.rolled) return;
-  diceUcl.rolling = true;
-  renderDiceUclBattle(true);
-  setTimeout(() => {
-    diceUcl.playerDice = rollThreeDice();
-    diceUcl.opponentDice = rollThreeDice();
-    const scored = scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
-    diceUcl.playerScore = scored.playerScore;
-    diceUcl.opponentScore = scored.opponentScore;
-    diceUcl.rolling = false;
-    diceUcl.rolled = true;
-    renderDiceUclBattle(false);
-  }, 1020);
-}
-
-function uclDieHtml(value, options = {}) {
-  const classes = ['die'];
-  if (options.rolling) classes.push('rolling');
-  if (options.rerolled) classes.push('rerolled');
-  if (options.selectable) classes.push('selectable');
-  if (options.selected) classes.push('selected');
-  const content = options.rolling ? DICE_FACES[(Number(options.index || 0) % 6) + 1] : DICE_FACES[value];
-  const motionStyle = `style="--dice-delay:${Number(options.index || 0) * 38}ms"`;
-  if (options.selectable) {
-    return `<button type="button" class="${classes.join(' ')}" ${motionStyle} onclick="selectDiceUclRerollDie(${options.index})" aria-label="${value} değerli zarı seç">${content}</button>`;
-  }
-  return `<div class="${classes.join(' ')}" ${motionStyle}>${content}</div>`;
-}
-
-function selectDiceUclRerollDie(index) {
-  if (!diceUcl.rolled || diceUcl.rolling || diceUcl.rerollUsed) return;
-  if (index < 0 || index >= diceUcl.playerDice.length) return;
-  diceUcl.selectedRerollIndex = index;
-  diceUcl.eventNote = `${index + 1}. zar seçildi: ${DICE_FACES[diceUcl.playerDice[index]]} (${diceUcl.playerDice[index]}). Reroll için 5 kelimenin tamamını bilmelisin.`;
-  renderDiceUclBattle(false);
-}
-
-function renderDiceUclBattle(isRolling = false) {
-  const area = document.getElementById('flashcard-area');
-  const scored = isRolling
-    ? {playerScore:'–', opponentScore:'–', pairs:[0,1,2].map(i => ({index:i,result:'draw'}))}
-    : scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
-  if (!isRolling) {
-    diceUcl.playerScore = scored.playerScore + (diceUcl.extraTimePlayer || 0);
-    diceUcl.opponentScore = scored.opponentScore + (diceUcl.extraTimeOpponent || 0);
-  }
-  const pairLabels = isRolling ? ['', '', ''] : scored.pairs.map(pair => {
-    if (pair.result === 'player') return '<span>+1 Gol<br>Sen</span>';
-    if (pair.result === 'opponent') return '<span>+1 Gol<br>Rakip</span>';
-    return '<span>Eşit<br>Gol Yok</span>';
-  });
-  let controls = '';
-  if (isRolling) {
-    controls = `<div style="color:var(--text2);font-size:13px;margin-top:18px">Zarlar atılıyor...</div>`;
-  } else if (!diceUcl.rerollUsed) {
-    const hasSelection = diceUcl.selectedRerollIndex >= 0;
-    const selectedText = hasSelection
-      ? `Seçili zar: ${DICE_FACES[diceUcl.playerDice[diceUcl.selectedRerollIndex]]} (${diceUcl.playerDice[diceUcl.selectedRerollIndex]})`
-      : 'Yeniden atmak istediğin kendi zarına dokun.';
-    const secondaryAction = diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore
-      ? `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="resolveDiceUclExtraTime()">Reroll Kullanma · Uzatma Zarına Geç</button>`
-      : `<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="finishDiceUclMatch()">Reroll Kullanma · Maçı Bitir</button>`;
-    controls = `
-      <div class="dice-rescue-box">
-        <div style="font-weight:700;color:#c4b5fd;margin-bottom:6px">İsteğe Bağlı Reroll Hakkı</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">${selectedText} Beş kelimede 5/5 yaparsan seçtiğin zar yeniden atılır. Tek yanlışta bu maçtaki hakkın yanar.</div>
-        <button class="btn btn-ucl" ${hasSelection ? '' : 'disabled'} style="${hasSelection ? '' : 'opacity:.45;pointer-events:none'}" onclick="startDiceUclReroll()">🎯 Seçili Zarı Reroll Et · 5 Kelime</button>
-      </div>${secondaryAction}`;
-  } else if (diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore) {
-    controls = `<button class="btn btn-ucl" onclick="resolveDiceUclExtraTime()">⚡ Uzatma Zarını At</button>`;
-  } else {
-    controls = `<button class="btn ${diceUcl.playerScore > diceUcl.opponentScore ? 'btn-ucl' : 'btn-outline'}" style="width:100%" onclick="finishDiceUclMatch()">Maç Sonucunu Onayla ➔</button>`;
-  }
-  const canSelect = !isRolling && !diceUcl.rerollUsed;
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:30px 22px">
-      <div class="quiz-settings-title" style="text-align:center">${getDiceUclStageText()}</div>
-      <div class="dice-score-line">
-        <div><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
-        <div class="dice-score-number">${isRolling ? '–' : diceUcl.playerScore} - ${isRolling ? '–' : diceUcl.opponentScore}</div>
-        <div><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
-      </div>
-      <div class="dice-arena"><div class="dice-columns">
-        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.playerDice[i], {rolling:isRolling, rerolled:!isRolling && diceUcl.rerolledIndex === i, selectable:canSelect, selected:canSelect && diceUcl.selectedRerollIndex === i, index:i})).join('')}</div>
-        <div class="dice-side">${[0,1,2].map(i => `<div class="dice-pair-status ${isRolling ? '' : scored.pairs[i].result === 'player' ? 'player-win' : scored.pairs[i].result === 'opponent' ? 'opp-win' : 'draw'}">${pairLabels[i]}</div>`).join('')}</div>
-        <div class="dice-side">${[0,1,2].map(i => uclDieHtml(diceUcl.opponentDice[i], {rolling:isRolling,index:i+3})).join('')}</div>
-      </div></div>
-      ${diceUcl.eventNote ? `<div class="dice-event-note">${diceUcl.eventNote}</div>` : ''}
-      <div style="margin-top:18px">${controls}</div>
-    </div>`;
-}
-
-function getUnusedDiceUclWords(count) {
-  let pool = loadUserWords().filter(w => !diceUcl.usedWords.includes(w.id));
-  if (pool.length < count) {
-    diceUcl.usedWords = [];
-    pool = loadUserWords();
-  }
-  pool = shuffleArray(pool);
-  const chosen = pool.slice(0, Math.min(count, pool.length));
-  chosen.forEach(w => { if (!diceUcl.usedWords.includes(w.id)) diceUcl.usedWords.push(w.id); });
-  return chosen;
-}
-
-function startDiceUclReroll() {
-  if (diceUcl.rerollUsed || diceUcl.selectedRerollIndex < 0) return;
-  diceUcl.rerollUsed = true;
-  diceUcl.rerollFailed = false;
-  diceUcl.rerollQueue = getUnusedDiceUclWords(5);
-  diceUcl.rerollIndex = 0;
-  diceUcl.rerollRevealed = false;
-  if (diceUcl.rerollQueue.length < 5) {
-    alert('Reroll sınavı için en az 5 kelime gerekiyor.');
-    diceUcl.rerollUsed = false;
-    renderDiceUclBattle(false);
-    return;
-  }
-  showNextDiceUclRerollWord();
-}
-
-function showNextDiceUclRerollWord() {
-  if (diceUcl.rerollIndex >= 5) {
-    completeDiceUclReroll();
-    return;
-  }
-  const area = document.getElementById('flashcard-area');
-  const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
-  diceUcl.rerollRevealed = false;
-  const askTrToEn = Math.random() > .5;
-  const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
-  const answer = askTrToEn ? card.en : card.tr;
-  const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
-  let example = '';
-  if (card.example) {
-    if (askTrToEn) {
-      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
-      example=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`):'';
-    } else example = llExampleSentenceHtml(card,card.example,`ucl-reroll-${diceUcl.rerollIndex}-${card.id}`);
-  }
-  const selectedValue = diceUcl.playerDice[diceUcl.selectedRerollIndex];
-  area.innerHTML = `
-    <div class="dice-rescue-progress">${[0,1,2,3,4].map(i => `<div class="dice-rescue-dot ${i < diceUcl.rerollIndex ? 'done' : i === diceUcl.rerollIndex ? 'current' : ''}"></div>`).join('')}</div>
-    <div style="text-align:center;color:#c4b5fd;font-size:12px;margin-bottom:12px">Hedef zar: ${DICE_FACES[selectedValue]} (${selectedValue})</div>
-    <div class="flashcard-wrap" id="ucl-reroll-card" onclick="revealDiceUclRerollWord()">
-      <div class="flashcard" id="ucl-reroll-inner">
-        <div class="quiz-mode-label">UCL REROLL ${diceUcl.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-        <div class="quiz-word">${questionHtml}</div>${example}
-        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
-        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
-      </div>
-    </div>
-    <div class="flashcard-actions" id="ucl-reroll-actions" style="grid-template-columns:1fr 1fr">
-      <button class="fc-btn fc-idk" onclick="answerDiceUclReroll(false)">✗ Yanlış Bildim</button>
-      <button class="fc-btn fc-easy" onclick="answerDiceUclReroll(true)">✓ Doğru Bildim</button>
-    </div>
-    <div style="text-align:center;color:var(--red);font-size:12px">Bir yanlış, bu maçtaki reroll hakkını tamamen bitirir.</div>`;
-}
-
-function revealDiceUclRerollWord() {
-  if (diceUcl.rerollRevealed) return;
-  diceUcl.rerollRevealed = true;
-  const inner = document.getElementById('ucl-reroll-inner');
-  const back = document.getElementById('ucl-reroll-back');
-  const actions = document.getElementById('ucl-reroll-actions');
-  if (inner) inner.classList.add('revealed');
-  if (back) back.style.display = 'block';
-  if (actions) actions.classList.add('visible');
-  const card = document.getElementById('ucl-reroll-card');
-  if (card) card.onclick = null;
-}
-
-function answerDiceUclReroll(isCorrect) {
-  if (!diceUcl.rerollRevealed) return;
-  const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
-  recordDiceCupWordResult(card.id, isCorrect ? 5 : 1);
-  if (!isCorrect) {
-    diceUcl.rerollFailed = true;
-    diceUcl.eventNote = `Reroll sınavı ${diceUcl.rerollIndex + 1}. kelimede başarısız oldu. Zarlar değişmedi.`;
-    renderDiceUclRerollFailed();
-    return;
-  }
-  diceUcl.rerollIndex++;
-  showNextDiceUclRerollWord();
-}
-
-function renderDiceUclRerollFailed() {
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:52px;margin-bottom:12px">💥</div>
-      <div class="quiz-start-title">Reroll Hakkı <em>Yandı</em></div>
-      <p style="color:var(--text2);line-height:1.7;margin-bottom:22px">Bir kelime yanlış olduğu için seçtiğin zar yeniden atılmadı. Mevcut skor korunuyor.</p>
-      <button class="btn btn-outline" style="width:100%" onclick="renderDiceUclBattle(false)">Zarlara ve Maç Sonucuna Dön ➔</button>
-    </div>`;
-}
-
-function completeDiceUclReroll() {
-  const targetIndex = diceUcl.selectedRerollIndex;
-  if (targetIndex < 0 || targetIndex >= diceUcl.playerDice.length) {
-    diceUcl.eventNote = 'Reroll uygulanamadı: seçili zar bulunamadı.';
-    renderDiceUclBattle(false);
-    return;
-  }
-  const before = [...diceUcl.playerDice];
-  const oldValue = diceUcl.playerDice[targetIndex];
-  const newValue = randomDie();
-  diceUcl.playerDice[targetIndex] = newValue;
-  diceUcl.playerDice.sort((a,b) => b-a);
-  diceUcl.rerolledValue = newValue;
-  diceUcl.rerolledIndex = diceUcl.playerDice.findIndex(v => v === newValue);
-  diceUcl.selectedRerollIndex = -1;
-  const after = scoreDiceBattle(diceUcl.playerDice, diceUcl.opponentDice);
-  diceUcl.playerScore = after.playerScore;
-  diceUcl.opponentScore = after.opponentScore;
-  diceUcl.eventNote = `5/5 doğru! ${DICE_FACES[oldValue]} (${oldValue}) yeniden atıldı ve ${DICE_FACES[newValue]} (${newValue}) geldi. ${before.join(' · ')} → ${diceUcl.playerDice.join(' · ')}`;
-  renderDiceUclBattle(false);
-}
-
-function resolveDiceUclExtraTime() {
-  let player = randomDie();
-  let opponent = randomDie();
-  let attempts = 1;
-  while (player === opponent && attempts < 30) {
-    player = randomDie(); opponent = randomDie(); attempts++;
-  }
-  if (player > opponent) diceUcl.extraTimePlayer = 1;
-  else diceUcl.extraTimeOpponent = 1;
-  diceUcl.eventNote = `Uzatma zarı: Sen ${DICE_FACES[player]} (${player}), rakip ${DICE_FACES[opponent]} (${opponent}) attı${attempts > 1 ? `; ${attempts} deneme gerekti` : ''}.`;
-  renderDiceUclBattle(false);
-}
-
-function updateDiceUclStandings(t1, t2, g1, g2) {
-  const s1 = diceUcl.standings[t1.name];
-  const s2 = diceUcl.standings[t2.name];
-  if (!s1 || !s2) return;
-  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
-  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
-  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
-  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
-  else { s1.D++; s1.P++; s2.D++; s2.P++; }
-}
-
-function sortedDiceUclStandings() {
-  return Object.values(diceUcl.standings).sort((a,b) =>
-    b.P - a.P || b.GD - a.GD || b.GF - a.GF || a.team.name.localeCompare(b.team.name)
-  );
-}
-
-function diceUclStandingsHtml(rows) {
-  return `
-    <div class="ucl-table-wrap"><table class="wc-table">
-      <tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
-      ${rows.map((row,idx) => `
-        <tr class="${idx < 8 ? 'ucl-direct' : idx < 24 ? 'ucl-playoff' : 'ucl-out'} ${row.team.name === diceUcl.playerTeam.name ? 'player' : ''}">
-          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}</td>
-          <td>${row.W+row.D+row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
-          <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
-        </tr>`).join('')}
-    </table></div>
-    <div class="ucl-legend"><span style="color:var(--green)">1–8: Direkt Son 16</span><span style="color:var(--gold)">9–24: Play-off</span><span style="color:var(--red)">25–36: Elenir</span></div>`;
-}
-
-function pairKey(a,b) { return [a.name,b.name].sort().join('|||'); }
-
-function buildDiceUclOtherRoundPairings(roundOpponent) {
-  const teams = UCL_TEAMS.filter(t => t.name !== diceUcl.playerTeam.name && t.name !== roundOpponent.name);
-  let best = null;
-  let bestScore = Infinity;
-  for (let attempt=0; attempt<700; attempt++) {
-    const shuffled = shuffleArray(teams);
-    const pairs = [];
-    let score = 0;
-    for (let i=0; i<shuffled.length; i+=2) {
-      const a = shuffled[i], b = shuffled[i+1];
-      const key = pairKey(a,b);
-      if (diceUcl.playedPairs[key]) score += 100;
-      if (a.country === b.country) score += 14;
-      pairs.push([a,b]);
-    }
-    if (score < bestScore) { bestScore = score; best = pairs; }
-    if (score === 0) break;
-  }
-  return best || [];
-}
-
-function simulateDiceUclLeagueRound(playerGoals, opponentGoals) {
-  const round = diceUcl.leagueRounds[diceUcl.leagueMatchIndex] || [];
-  round.forEach(([home,away]) => {
-    const playerIsHome = home.name === diceUcl.playerTeam.name;
-    const playerIsAway = away.name === diceUcl.playerTeam.name;
-    if (playerIsHome) {
-      updateDiceUclStandings(home,away,playerGoals,opponentGoals);
-    } else if (playerIsAway) {
-      updateDiceUclStandings(home,away,opponentGoals,playerGoals);
-    } else {
-      const result = simulatePureDiceMatch();
-      updateDiceUclStandings(home,away,result.playerScore,result.opponentScore);
-    }
-  });
-}
-
-function simulateUclKnockoutWinner(a,b) {
-  let result = simulatePureDiceMatch();
-  let attempts = 0;
-  while (result.playerScore === result.opponentScore && attempts < 40) {
-    const da = randomDie(), db = randomDie();
-    if (da > db) result.playerScore++;
-    else if (db > da) result.opponentScore++;
-    attempts++;
-  }
-  return result.playerScore >= result.opponentScore ? a : b;
-}
-
-function buildUclPlayoffPairings(rows) {
-  const seeded = shuffleArray(rows.slice(8,16).map(r => r.team));
-  const unseeded = shuffleArray(rows.slice(16,24).map(r => r.team));
-  return seeded.map((team,i) => [team,unseeded[i]]);
-}
-
-function setupUclRoundPairings(stage, field) {
-  diceUcl.stage = stage;
-  diceUcl.knockoutField = [...field];
-  let pairings = [];
-  if (stage === 'ro16') {
-    const directs = shuffleArray(diceUcl.directQualifiers.filter(t => field.some(f => f.name === t.name)));
-    const winners = shuffleArray(diceUcl.playoffWinners.filter(t => field.some(f => f.name === t.name)));
-    pairings = directs.map((team,i) => [team,winners[i]]);
-  } else {
-    const shuffled = shuffleArray(field);
-    for (let i=0;i<shuffled.length;i+=2) pairings.push([shuffled[i],shuffled[i+1]]);
-  }
-  diceUcl.currentRoundPairings = pairings;
-  const playerPair = pairings.find(pair => pair.some(t => t.name === diceUcl.playerTeam.name));
-  diceUcl.opponent = playerPair ? playerPair.find(t => t.name !== diceUcl.playerTeam.name) : null;
-}
-
-function prepareDiceUclAfterLeague(rows, position) {
-  diceUcl.finalPosition = position + 1;
-  diceUcl.directQualifiers = rows.slice(0,8).map(r => r.team);
-  diceUcl.playoffPairings = buildUclPlayoffPairings(rows);
-  if (position < 8) {
-    diceUcl.playoffWinners = diceUcl.playoffPairings.map(pair => simulateUclKnockoutWinner(pair[0],pair[1]));
-    setupUclRoundPairings('ro16',[...diceUcl.directQualifiers,...diceUcl.playoffWinners]);
-    return 'direct';
-  }
-  if (position < 24) {
-    diceUcl.stage = 'playoff';
-    diceUcl.currentRoundPairings = diceUcl.playoffPairings;
-    const playerPair = diceUcl.playoffPairings.find(pair => pair.some(t => t.name === diceUcl.playerTeam.name));
-    diceUcl.opponent = playerPair.find(t => t.name !== diceUcl.playerTeam.name);
-    return 'playoff';
-  }
-  return 'out';
-}
-
-function advanceDiceUclKnockout() {
-  const currentStage = diceUcl.stage;
-  const otherWinners = diceUcl.currentRoundPairings
-    .filter(pair => !pair.some(t => t.name === diceUcl.playerTeam.name))
-    .map(pair => simulateUclKnockoutWinner(pair[0],pair[1]));
-  const winners = [diceUcl.playerTeam,...otherWinners];
-
-  if (currentStage === 'playoff') {
-    diceUcl.playoffWinners = winners;
-    setupUclRoundPairings('ro16',[...diceUcl.directQualifiers,...diceUcl.playoffWinners]);
-    return;
-  }
-  if (currentStage === 'ro16') setupUclRoundPairings('qf',winners);
-  else if (currentStage === 'qf') setupUclRoundPairings('sf',winners);
-  else if (currentStage === 'sf') setupUclRoundPairings('final',winners);
-  else if (currentStage === 'final') diceUcl.stage = 'won';
-}
-
-function finishDiceUclMatch() {
-  if (diceUcl.resultCommitted) return;
-  if (diceUcl.stage !== 'league' && diceUcl.playerScore === diceUcl.opponentScore) {
-    resolveDiceUclExtraTime();
-    return;
-  }
-  diceUcl.resultCommitted = true;
-  const playerWon = diceUcl.playerScore > diceUcl.opponentScore;
-  const playerLost = diceUcl.playerScore < diceUcl.opponentScore;
-  let title = playerWon ? 'Maçı Kazandın! 🎉' : playerLost ? 'Maçı Kaybettin 💔' : 'Maç Berabere 🤝';
-  let table = '';
-  let action = '';
-  let note = '';
-
-  if (diceUcl.stage === 'league') {
-    simulateDiceUclLeagueRound(diceUcl.playerScore,diceUcl.opponentScore);
-    const rows = sortedDiceUclStandings();
-    table = diceUclStandingsHtml(rows);
-    if (diceUcl.leagueMatchIndex < 7) {
-      diceUcl.leagueMatchIndex++;
-      action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">${diceUcl.leagueMatchIndex + 1}. Lig Maçına Geç ➔</button>`;
-    } else {
-      const position = rows.findIndex(r => r.team.name === diceUcl.playerTeam.name);
-      const outcome = prepareDiceUclAfterLeague(rows,position);
-      if (outcome === 'direct') {
-        title = `Ligi ${position+1}. Bitirdin · Direkt Son 16! ⭐`;
-        note = 'Play-off turunu atladın. Rakibin play-off kazananlarından biri oldu.';
-        action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">Son 16 Turuna Geç ➔</button>`;
-      } else if (outcome === 'playoff') {
-        title = `Ligi ${position+1}. Bitirdin · Play-off! ⚔️`;
-        note = '9–24 aralığında tamamladığın için Son 16 öncesinde tek maçlık zar play-off’una çıkacaksın.';
-        action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">Play-off Maçına Geç ➔</button>`;
-      } else {
-        title = `Ligi ${position+1}. Bitirdin · Elendin`;
-        note = 'İlk 24 dışında kaldığın için Şampiyonlar Ligi maceran sona erdi.';
-        action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Ana Menüye Dön</button>`;
-      }
-    }
-  } else if (playerWon) {
-    const completedStage = diceUcl.stage;
-    advanceDiceUclKnockout();
-    if (diceUcl.stage === 'won') {
-      title = 'ZAR ŞAMPİYONLAR LİGİ ŞAMPİYONUSUN! 🏆⭐🎲';
-      action = `<button class="btn btn-gold" style="width:100%;font-size:16px" onclick="renderPreStart()">Kupayı Kaldır · Ana Menü</button>`;
-    } else {
-      const nextName = UCL_STAGE_NAMES[diceUcl.stage];
-      note = `${UCL_STAGE_NAMES[completedStage]} tamamlandı. Kalan eşleşmeler simüle edildi.`;
-      action = `<button class="btn btn-ucl" onclick="prepareNextDiceUclMatch()">${nextName} Aşamasına Geç ➔</button>`;
-    }
-  } else {
-    action = `<button class="btn btn-outline" style="width:100%" onclick="renderPreStart()">Turnuvaya Veda Et · Ana Menü</button>`;
-  }
-
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding:32px 20px">
-      <div class="quiz-start-title ${playerWon ? 'dice-result-win' : playerLost ? 'dice-result-loss' : 'dice-result-draw'}" style="font-size:29px">${title}</div>
-      <div class="wc-score-box">
-        <div class="wc-team"><div class="wc-flag">${diceUcl.playerTeam.flag}</div><div class="wc-team-name">${diceUcl.playerTeam.short}</div></div>
-        <div class="wc-score">${diceUcl.playerScore} - ${diceUcl.opponentScore}</div>
-        <div class="wc-team"><div class="wc-flag">${diceUcl.opponent.flag}</div><div class="wc-team-name">${diceUcl.opponent.short}</div></div>
-      </div>
-      <div style="color:var(--text3);font-size:12px;margin-bottom:12px">Maç öncesi kelimeler: ${diceUcl.preMatchCorrect}/${diceUcl.preMatchTotal}</div>
-      ${diceUcl.eventNote ? `<div class="dice-event-note">${diceUcl.eventNote}</div>` : ''}
-      ${note ? `<div class="info-box" style="margin-top:14px">${note}</div>` : ''}
-      ${table}
-      <div style="margin-top:24px">${action}</div>
-    </div>`;
-}
-
-// ----------------------------------------------------
-// WC 2026 OYUN MANTIĞI
-// ----------------------------------------------------
-
-function startWCTournament() {
-  diceCup.active = false;
-  diceUcl.active = false;
-  wc.active = true;
-  wc.stage = 'group';
-  wc.matchIndex = 0;
-  wc.usedWords = []; 
-  
-  const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
-  wc.playerTeam = WC_TEAMS[randomTeamIndex];
-  
-  let groupAll = WC_TEAMS.filter(t => t.group === wc.playerTeam.group);
-  wc.groupTeams = [wc.playerTeam, ...groupAll.filter(t => t.name !== wc.playerTeam.name)];
-  
-  wc.standings = {};
-  wc.groupTeams.forEach(t => {
-    wc.standings[t.name] = { team: t, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0 };
-  });
-
-  wc.schedule = [
-    { playerMatch: 1, otherMatch: [2, 3] },
-    { playerMatch: 2, otherMatch: [1, 3] },
-    { playerMatch: 3, otherMatch: [1, 2] }
-  ];
-
-  renderWCIntro();
-}
-
-function renderWCIntro() {
-  const area = document.getElementById('flashcard-area');
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size: 48px; margin-bottom:12px;">🏆</div>
-      <div class="quiz-start-title">WC 2026 <em>Başlıyor</em></div>
-      <p style="color:var(--text2); margin-bottom:24px;">Takımın kura ile belirlendi!</p>
-      
-      <div class="wc-score-box" style="justify-content:center;">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-          <div style="color:var(--gold); font-size:12px;">Grup ${wc.playerTeam.group}</div>
-          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.playerTeam.stars)}</div>
-        </div>
-      </div>
-      
-      <button class="btn btn-wc" onclick="prepareNextWCMatch()">İlk Maça Çık ➔</button>
-    </div>
-  `;
-}
-
-function prepareNextWCMatch() {
-  wc.inPenalties = false;
-  wc.basePlayerScore = 0;
-  wc.baseOppScore = 0;
-
-  if (wc.stage === 'group') {
-    wc.wordCount = STAGE_WORDS['group']; 
-    const nextFix = wc.schedule[wc.matchIndex];
-    wc.opponent = wc.groupTeams[nextFix.playerMatch];
-  } else {
-    wc.wordCount = STAGE_WORDS[wc.stage];
-    let possibleOpponents = WC_TEAMS.filter(t => t.name !== wc.playerTeam.name);
-    wc.opponent = possibleOpponents[Math.floor(Math.random() * possibleOpponents.length)];
-  }
-
-  const area = document.getElementById('flashcard-area');
-  let stageText = wc.stage === 'group' ? `Grup Aşaması - ${wc.matchIndex + 1}. Maç` : 
-                  wc.stage === 'ro32' ? 'Son 32 Turu' :
-                  wc.stage === 'ro16' ? 'Son 16 Turu' :
-                  wc.stage === 'qf' ? 'Çeyrek Final' :
-                  wc.stage === 'sf' ? 'Yarı Final' : 'Büyük Final';
-
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div class="quiz-settings-title" style="text-align:center;">${stageText}</div>
-      <div class="quiz-start-title" style="font-size:32px;">Sıradaki Rakip</div>
-      
-      <div class="wc-score-box">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-        </div>
-        <div class="wc-score">VS</div>
-        <div class="wc-team">
-          <div class="wc-flag">${wc.opponent.flag}</div>
-          <div class="wc-team-name">${wc.opponent.name}</div>
-          <div style="color:var(--text3); font-size:11px;">Güç: ${'★'.repeat(wc.opponent.stars)}</div>
-        </div>
-      </div>
-      
-      <p style="color:var(--text2); font-size:12px; margin-bottom:20px;">Bu maç ${wc.wordCount} kelime üzerinden oynanacak.</p>
-      
-      <button class="btn btn-wc" onclick="startFlashcard(false, ${wc.wordCount})">Maça Başla ⚽</button>
-    </div>
-  `;
-}
-
-function getSimulatedGoals(totalWords, stars) {
-  const minRatio = 0.5 + (stars - 1) * 0.1;
-  const rangeRatio = 0.3; 
-  let minGoals = Math.floor(totalWords * minRatio);
-  let randomExtra = Math.floor(Math.random() * (totalWords * rangeRatio + 1));
-  let goals = minGoals + randomExtra;
-  if (goals > totalWords) goals = totalWords;
-  return goals;
-}
-
-function updateStandings(t1, t2, g1, g2) {
-  let s1 = wc.standings[t1.name];
-  let s2 = wc.standings[t2.name];
-  s1.GF += g1; s1.GA += g2; s1.GD = s1.GF - s1.GA;
-  s2.GF += g2; s2.GA += g1; s2.GD = s2.GF - s2.GA;
-  if (g1 > g2) { s1.W++; s1.P += 3; s2.L++; }
-  else if (g1 < g2) { s2.W++; s2.P += 3; s1.L++; }
-  else { s1.D++; s1.P += 1; s2.D++; s2.P += 1; }
-}
-
-function startWCPenalty() {
-  wc.inPenalties = true;
-  wc.wordCount = 5; 
-  startFlashcard(false, 5); 
-}
-
-function showWCSummary() {
-  const area = document.getElementById('flashcard-area');
-  
-  let oppGoals = 0;
-  let playerGoals = fcCorrect;
-
-  if (wc.inPenalties) {
-    let pPen = fcCorrect;
-    let oPenBase = wc.opponent.stars === 3 ? 3 : wc.opponent.stars === 2 ? 2 : 1;
-    let oPen = oPenBase + Math.floor(Math.random() * (5 - oPenBase + 1));
-    if (oPen > 5) oPen = 5;
-    if (pPen === oPen) pPen += 1; 
-
-    wc.penaltyStr = ` (P: ${pPen} - ${oPen})`;
-    playerGoals = wc.basePlayerScore + (pPen > oPen ? 1 : 0); 
-    oppGoals = wc.baseOppScore + (oPen > pPen ? 1 : 0);
-  } else {
-    oppGoals = getSimulatedGoals(wc.wordCount, wc.opponent.stars);
-    wc.basePlayerScore = playerGoals;
-    wc.baseOppScore = oppGoals;
-    wc.penaltyStr = "";
-  }
-
-  if (wc.stage !== 'group' && playerGoals === oppGoals && !wc.inPenalties) {
-    area.innerHTML = `
-      <div class="quiz-start-card">
-        <div style="font-size:48px; margin-bottom:12px;">⚖️</div>
-        <div class="quiz-start-title">Maç <em>Berabere!</em></div>
-        <p style="color:var(--text2); margin-bottom:20px;">Normal süre <b>${playerGoals} - ${oppGoals}</b> bitti. Turu geçmek için penaltı atışlarına (5 kelime) geçiyoruz.</p>
-        <button class="btn btn-wc" onclick="startWCPenalty()">Penaltılara Geç ➔</button>
-      </div>`;
-    return;
-  }
-
-  let tableHTML = "";
-  let actionButton = "";
-
-  if (wc.stage === 'group') {
-    const nextFix = wc.schedule[wc.matchIndex];
-    let otherTeam1 = wc.groupTeams[nextFix.otherMatch[0]];
-    let otherTeam2 = wc.groupTeams[nextFix.otherMatch[1]];
-    let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
-    let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
-    
-    updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
-    updateStandings(otherTeam1, otherTeam2, og1, og2);
-    
-    let sortedStandings = Object.values(wc.standings).sort((a, b) => {
-      if (b.P !== a.P) return b.P - a.P;
-      if (b.GD !== a.GD) return b.GD - a.GD;
-      return b.GF - a.GF;
-    });
-
-    tableHTML = `
-      <table class="wc-table">
-        <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
-        ${sortedStandings.map((row, idx) => `
-          <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === wc.playerTeam.name ? 'player' : ''}">
-            <td>${row.team.flag} ${row.team.name}</td>
-            <td>${row.W + row.D + row.L}</td>
-            <td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
-            <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td>
-            <td style="font-weight:bold; color:var(--text);">${row.P}</td>
-          </tr>
-        `).join('')}
-      </table>
-    `;
-
-    if (wc.matchIndex < 2) {
-      wc.matchIndex++;
-      actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">Sonraki Maç</button>`;
-    } else {
-      let isAdvanced = sortedStandings.findIndex(r => r.team.name === wc.playerTeam.name) < 2;
-      if (isAdvanced) {
-        wc.stage = 'ro32';
-        actionButton = `<button class="btn btn-green" style="background:var(--green); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="prepareNextWCMatch()">Son 32 Turuna Geç 🎉</button>`;
-      } else {
-        actionButton = `<button class="btn btn-red" style="background:var(--red); color:#fff; width:100%; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="renderPreStart()">Elendin. Ana Menüye Dön</button>`;
-      }
-    }
-  } else {
-    if (playerGoals > oppGoals) {
-      let nextStageText = "";
-      if (wc.stage === 'ro32') { wc.stage = 'ro16'; nextStageText = "Son 16 Turuna Geç"; }
-      else if (wc.stage === 'ro16') { wc.stage = 'qf'; nextStageText = "Çeyrek Finale Geç"; }
-      else if (wc.stage === 'qf') { wc.stage = 'sf'; nextStageText = "Yarı Finale Geç"; }
-      else if (wc.stage === 'sf') { wc.stage = 'final'; nextStageText = "BÜYÜK FİNALE GEÇ"; }
-      else if (wc.stage === 'final') { wc.stage = 'won'; nextStageText = "KUPAYI KALDIR 🏆"; }
-      
-      if (wc.stage === 'won') {
-        actionButton = `<button class="btn btn-gold" style="width:100%; font-size:16px; padding:14px;" onclick="renderPreStart()">Ana Menüye Dön</button>`;
-      } else {
-        actionButton = `<button class="btn btn-wc" onclick="prepareNextWCMatch()">${nextStageText} ➔</button>`;
-      }
-    } else {
-      actionButton = `<button class="btn btn-outline" style="width:100%;" onclick="renderPreStart()">Turnuvaya Veda Ettin. (Ana Menü)</button>`;
-    }
-  }
-
-  let titleMsg = playerGoals > oppGoals ? "Harika Bir Galibiyet! 🎉" : playerGoals < oppGoals ? "Maalesef Kaybettik... 💔" : "Maç Berabere! 🤝";
-  if (wc.stage === 'won') titleMsg = "DÜNYA ŞAMPİYONUSUN! 🏆🌍";
-
-  area.innerHTML = `
-    <div class="quiz-start-card" style="padding: 32px 24px;">
-      <div class="quiz-start-title" style="font-size:28px;">${titleMsg}</div>
-      
-      <div class="wc-score-box">
-        <div class="wc-team">
-          <div class="wc-flag">${wc.playerTeam.flag}</div>
-          <div class="wc-team-name">${wc.playerTeam.name}</div>
-        </div>
-        <div style="text-align:center;">
-          <div class="wc-score">${playerGoals} - ${oppGoals}</div>
-          <div style="font-size:12px; color:var(--text3);">${wc.penaltyStr}</div>
-        </div>
-        <div class="wc-team">
-          <div class="wc-flag">${wc.opponent.flag}</div>
-          <div class="wc-team-name">${wc.opponent.name}</div>
-        </div>
-      </div>
-
-      ${tableHTML}
-      <div style="margin-top:24px;">${actionButton}</div>
-    </div>
-  `;
-}
-
-// ----------------------------------------------------
-// CORE KELİME MOTORU ENTEGRASYONU
-// ----------------------------------------------------
-
-function startFlashcard(onlyMistakes = false, limitOverride = null) {
-  let pool = loadUserWords();
-
-  if (wc.active) {
-    let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
-    if (unusedPool.length === 0) {
-      wc.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  } else if (diceCup.active) {
-    let unusedPool = pool.filter(w => !diceCup.usedWords.includes(w.id));
-    const requested = limitOverride || 0;
-    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
-      diceCup.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  } else if (diceUcl.active) {
-    let unusedPool = pool.filter(w => !diceUcl.usedWords.includes(w.id));
-    const requested = limitOverride || 0;
-    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
-      diceUcl.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  }
-  
-  if (onlyMistakes) {
-    pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
-    if (pool.length === 0) {
-      alert("Harika! 🎉 Şu an tekrar etmen gereken güncel bir yanlışın bulunmuyor.");
-      return;
-    }
-  }
-
-  // --- SORUNUN ÇÖZÜLDÜĞÜ YER: Tamamen rastgele karıştırma ---
-  pool.sort(() => Math.random() - 0.5); 
-
-  let numLimit = limitOverride;
-  if (!limitOverride) {
-    // Normal modda menüden seçili sayıyı alıyoruz
-    const selectedLimit = document.querySelector('input[name="fc-limit"]:checked').value;
-    numLimit = selectedLimit === 'all' ? pool.length : parseInt(selectedLimit);
-  }
-  
-  if (pool.length < numLimit) numLimit = pool.length;
-
-  fcQueue = pool.slice(0, numLimit);
-  
-  if (wc.active) {
-    fcQueue.forEach(card => {
-      if (!wc.usedWords.includes(card.id)) wc.usedWords.push(card.id);
-    });
-  } else if (diceCup.active) {
-    fcQueue.forEach(card => {
-      if (!diceCup.usedWords.includes(card.id)) diceCup.usedWords.push(card.id);
-    });
-  } else if (diceUcl.active) {
-    fcQueue.forEach(card => {
-      if (!diceUcl.usedWords.includes(card.id)) diceUcl.usedWords.push(card.id);
-    });
-  }
-
-  fcIndex = 0;
-  fcCorrect = 0;
-  fcTotal = fcQueue.length;
-  showNextFlashcard();
-}
-
-function endQuizEarly() {
-  if (diceCup.active || diceUcl.active) {
-    alert('Zarlı turnuva maçında zarların açılması için bu turun kelimelerini tamamlamalısın.');
-    return;
-  }
-  if (fcIndex === 0) { renderPreStart(); return; }
-  fcTotal = fcIndex;
-  if (wc.active) showWCSummary(); else showFlashcardSummary();
-}
-
-function showNextFlashcard() {
-  const area = document.getElementById('flashcard-area');
-  if (fcIndex >= fcQueue.length) {
-    if (wc.active) showWCSummary();
-    else if (diceCup.active) showDiceCupWordSummary();
-    else if (diceUcl.active) showDiceUclWordSummary();
-    else showFlashcardSummary();
-    return;
-  }
-
-  const card = fcQueue[fcIndex];
-  fcRevealed = false;
-  const progress = (fcIndex / fcTotal * 100).toFixed(1);
-
-  const askTurkishToEnglish = Math.random() > 0.5;
-  let questionText, answerText;
-  let exampleDisplay = "";
-  
-  if (card.example) {
-    if (askTurkishToEnglish) {
-      const hiddenExample=llMaskAnswerInExample(card.example,card.en);
-      exampleDisplay=hiddenExample?llExampleSentenceHtml(card,hiddenExample,`flashcard-${fcIndex}-${card.id}`):'';
-    } else {
-      exampleDisplay = llExampleSentenceHtml(card,card.example,`flashcard-${fcIndex}-${card.id}`);
-    }
-  }
-
-  if (askTurkishToEnglish) { questionText = card.tr.split(',')[0].trim(); answerText = card.en; } 
-  else { questionText = card.en; answerText = card.tr; }
-  const questionHtml = askTurkishToEnglish ? llEscape(questionText) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,questionText)}</span>${llPronounceButton(card.en)}</div>`;
-  const answerHtml = askTurkishToEnglish ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answerText)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answerText);
-
-  area.innerHTML = `
-    <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-      <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${progress}%"></div></div>
-      <div class="progress-text">${fcIndex + 1} / ${fcTotal}</div>
-      ${(diceCup.active || diceUcl.active) ? '' : '<button onclick="endQuizEarly()" class="btn-end-early">⏹ Bitir</button>'}
-    </div>
-
-    <div class="flashcard-wrap" onclick="revealFlashcard()" id="fc-card">
-      <div class="flashcard" id="fc-inner">
-        <div class="flashcard-front">
-          <div class="quiz-mode-label">${askTurkishToEnglish ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
-          <div class="quiz-word">${questionHtml}</div>
-          ${exampleDisplay}
-        </div>
-        <div class="flashcard-back" id="fc-back" style="display:none">
-          <div class="flashcard-answer">${answerHtml}</div>
-        </div>
-        <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
-      </div>
-    </div>
-
-    <div class="flashcard-actions" id="fc-actions">
-      <button class="fc-btn fc-idk" onclick="rateFlashcard('${card.id}', 1)">✗ Bilmiyorum</button>
-      <button class="fc-btn fc-hard" onclick="rateFlashcard('${card.id}', 3)">~ Zorlandım</button>
-      <button class="fc-btn fc-easy" onclick="rateFlashcard('${card.id}', 5)">✓ Bildim</button>
-    </div>
-  `;
-  markNewWordFrame(card,document.getElementById('fc-inner'));
-}
-
-function revealFlashcard() {
-  if (fcRevealed) return;
-  fcRevealed = true;
-  document.getElementById('fc-inner').classList.add('revealed');
-  document.getElementById('fc-back').style.display = 'block';
-  document.getElementById('fc-actions').classList.add('visible');
-  document.getElementById('fc-card').onclick = null;
-}
-
-function rateFlashcard(cardId, quality) {
-  const userWords = loadUserWords();
-  const card = userWords.find(w => w.id === cardId);
-  
-  if (card) {
-    const updated = sm2(card, quality);
-    card.interval = updated.interval;
-    card.repetitions = updated.repetitions;
-    card.ef = updated.ef;
-    card.nextReview = updated.nextReview;
-    card.lastReviewed = todayStr();
-    card.reviewCount = (card.reviewCount || 0) + 1;
-    
-    if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
-    else if (quality >= 4) { card.isActiveMistake = false; }
-    
-    if (quality >= 4) fcCorrect++;
-
-    saveWordsToStorage(userWords);
-
-    const meta = loadMeta();
-    if (!meta.activity) meta.activity = {};
-    const t = todayStr();
-    if (!meta.activity[t]) meta.activity[t] = { reviews: 0, correct: 0 };
-    meta.activity[t].reviews++;
-    if (quality >= 4) meta.activity[t].correct++;
-    saveMeta(meta);
-  }
-  
-  fcIndex++;
-  showNextFlashcard();
-}
-
-function showFlashcardSummary() {
-  const accuracy = fcTotal > 0 ? Math.round((fcCorrect / fcTotal) * 100) : 0;
-  const area = document.getElementById('flashcard-area');
-
-  area.innerHTML = `
-    <div class="quiz-start-card">
-      <div style="font-size:48px;margin-bottom:16px">${accuracy >= 75 ? '🏆' : '📚'}</div>
-      <div class="quiz-start-title">Oturum <em>Tamamlandı</em></div>
-      <div style="display:flex;gap:24px;justify-content:center;margin:20px 0">
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--green)">${fcCorrect}</div>
-          <div style="color:var(--text3);font-size:12px">Bildim</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--red)">${fcTotal - fcCorrect}</div>
-          <div style="color:var(--text3);font-size:12px">Bilmedim</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--gold)">${accuracy}%</div>
-          <div style="color:var(--text3);font-size:12px">Başarı Oranı</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn btn-gold" onclick="renderPreStart()">▶ Ana Menüye Dön</button>
-      </div>
-    </div>`;
-}
-
-document.addEventListener('keydown', e => {
-  if (fcQueue.length === 0 || fcIndex >= fcQueue.length) return;
-  if (e.key === ' ' && !fcRevealed) { e.preventDefault(); revealFlashcard(); }
-  if (fcRevealed) {
-    const card = fcQueue[fcIndex];
-    if (!card) return;
-    if (e.key === '1') rateFlashcard(card.id, 1);
-    if (e.key === '2') rateFlashcard(card.id, 3);
-    if (e.key === '3') rateFlashcard(card.id, 5);
-  }
-});
-
-initDatabase();
-renderPreStart();
-</script>
-<script src="league-v2.js?v=20260721-4"></script>
-<script src="save-backup-hardening.js?v=20260721-2"></script>
-<script src="manager-market.js?v=20260719-1"></script>
-</body>
-</html>
+  llSlotWriteStore(store);return store;
+}
+function llGetActiveSaveSlot(){const store=llEnsureSaveSlots();return llSlotNumber(localStorage.getItem(LL_ACTIVE_SLOT_KEY))||store.activeSlot||1;}
+function llMirrorActiveCareer(store){const record=store.slots[String(store.activeSlot)];if(record?.state)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(record.state));else localStorage.removeItem(LL_V2_SAVE_KEY);}
+function llSetActiveSaveSlot(slot){const selected=llSlotNumber(slot);if(!selected)return false;const store=llEnsureSaveSlots();store.activeSlot=selected;llSlotWriteStore(store);llMirrorActiveCareer(store);return true;}
+function llRepairPortableCareer(raw){if(!llSlotCareerLooksValid(raw))throw new Error('Kariyer verisinin yapısı geçerli değil.');const state=llV2RepairState(llSlotClone(raw));if(!llSlotCareerLooksValid(state))throw new Error('Kariyer verisi onarılamadı.');return state;}
+
+llSave=function(){
+  if(!lexLeague.state)return false;
+  const store=llEnsureSaveSlots(),slot=llSlotNumber(store.activeSlot)||1,now=new Date().toISOString();
+  lexLeague.state.updatedAt=now;store.activeSlot=slot;store.slots[String(slot)]={state:llSlotClone(lexLeague.state),updatedAt:now};
+  const saved=llSlotWriteStore(store);if(saved)localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(lexLeague.state));return saved;
+};
+llLoad=function(slot=null){
+  const store=llEnsureSaveSlots(),selected=llSlotNumber(slot)||llSlotNumber(store.activeSlot)||1,record=store.slots[String(selected)];if(!record)return null;
+  try{const state=llRepairPortableCareer(record.state);store.activeSlot=selected;store.slots[String(selected)]={state:llSlotClone(state),updatedAt:record.updatedAt||new Date().toISOString()};llSlotWriteStore(store);localStorage.setItem(LL_V2_SAVE_KEY,JSON.stringify(state));return state;}catch(error){console.error('Kariyer yüklenemedi.',error);return null;}
+};
+llContinueGame=function(slot=null){const selected=llSlotNumber(slot)||llGetActiveSaveSlot(),state=llLoad(selected);if(!state){llCreateCareerInSlot(selected);return;}lexLeague.state=state;lexLeague.active=true;llSetWide(true);llSave();if(!state.starterPackClaimed)llRenderStarterShop();else if(state.seasonEnded)llRenderSeasonEnd();else llRenderDashboard();};
+llResetGame=function(slot=null){const selected=llSlotNumber(slot)||llGetActiveSaveSlot(),store=llEnsureSaveSlots(),record=store.slots[String(selected)];if(!record)return;if(!confirm(`${selected}. kariyer yuvasındaki ${record.state.playerTeam} kaydı kalıcı olarak silinsin mi?\n\nKelime ve sözlük ilerlemen silinmez.`))return;store.slots[String(selected)]=null;const next=Object.keys(store.slots).find(key=>store.slots[key]);store.activeSlot=next?Number(next):1;llSlotWriteStore(store);llMirrorActiveCareer(store);lexLeague.state=null;llClearTransient();renderLexiconLeagueLanding();};
+const llSlotTeamSelectBase=llRenderTeamSelect;
+llRenderTeamSelect=function(slot=null){
+  const store=llEnsureSaveSlots();llSaveSlotPendingCareer=llSlotNumber(slot)||llSaveSlotPendingCareer||Number(Object.keys(store.slots).find(key=>!store.slots[key]))||store.activeSlot||1;
+  llSlotTeamSelectBase();const muted=llArea()?.querySelector('.ll-topbar .ll-muted');if(muted)muted.innerHTML=`${llSaveSlotPendingCareer}. kariyer yuvası · 20 kulüp · 6 yıldızlı güç sistemi · Kelime ilerlemesi tüm kariyerlerde ortaktır.`;
+};
+function llCreateCareerInSlot(slot){const selected=llSlotNumber(slot);if(!selected)return;const store=llEnsureSaveSlots(),record=store.slots[String(selected)];if(record&&!confirm(`${selected}. yuvadaki ${record.state.playerTeam} kariyerinin üzerine yeni kariyer yazılsın mı?`))return;llSaveSlotPendingCareer=selected;llRenderTeamSelect(selected);}
+llStartCareer=function(teamName){
+  const store=llEnsureSaveSlots(),slot=llSlotNumber(llSaveSlotPendingCareer)||Number(Object.keys(store.slots).find(key=>!store.slots[key]))||store.activeSlot||1,record=store.slots[String(slot)];
+  if(record&&!confirm(`${slot}. yuvadaki ${record.state.playerTeam} kariyerinin üzerine yeni kariyer yazılsın mı?`))return;
+  store.activeSlot=slot;store.slots[String(slot)]=null;llSlotWriteStore(store);llMirrorActiveCareer(store);lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSaveSlotPendingCareer=null;llSave();llRenderStarterShop();
+};
+
+function llSlotStateLeague(state){if(state?.leagues?.super?.includes(state.playerTeam))return 'super';if(state?.leagues?.first?.includes(state.playerTeam))return 'first';return null;}
+function llSlotPosition(state,key){const rows=Object.values(state?.standings?.[key]||{}).sort((a,b)=>(Number(b.Pts)||0)-(Number(a.Pts)||0)||(Number(b.GD)||0)-(Number(a.GD)||0)||(Number(b.GF)||0)-(Number(a.GF)||0));const index=rows.findIndex(row=>row.team===state.playerTeam);return index>=0?index+1:null;}
+function llSlotDate(value){try{return new Intl.DateTimeFormat('tr-TR',{dateStyle:'short',timeStyle:'short'}).format(new Date(value));}catch{return 'Tarih yok';}}
+function llSlotCardHtml(slot,record,activeSlot){
+  if(!record)return `<div class="ll-save-card empty"><div class="ll-save-slot-label"><span>${slot}. Kariyer Yuvası</span><i>BOŞ</i></div><div class="ll-title" style="font-size:25px;margin-top:18px">Yeni bir <em>hikâye</em> başlat</div><div class="ll-muted" style="margin:9px 0 17px">Bu yuva diğer kariyerlerden bağımsızdır. Kelime ilerlemen ortak kalır.</div><button class="ll-btn gold" onclick="llCreateCareerInSlot(${slot})">Yeni Kariyer Başlat</button></div>`;
+  const state=record.state,key=llSlotStateLeague(state),team=state.teams?.[state.playerTeam]||{},position=key?llSlotPosition(state,key):null,status=state.careerEnded?'Kariyer sona erdi':state.seasonEnded?'Sezon tamamlandı':`${Number(state.week)||1}. hafta`;
+  return `<div class="ll-save-card ${slot===activeSlot?'active':''}"><div class="ll-save-slot-label"><span>${slot}. Kariyer Yuvası</span>${slot===activeSlot?'<i>AKTİF</i>':''}</div><div class="ll-save-team">${llTeamLogo(state.playerTeam,'compact')}<span>${llEscape(state.playerTeam)}</span></div><div class="ll-stars" style="margin-top:8px">${llStars(Math.max(1,Math.min(6,Number(team.stars)||1)))}</div><div class="ll-save-meta"><span>Sezon ${Number(state.season)||1} · ${llEscape(status)}</span><span>${llEscape(key?llLeagueLabel(key):'Lig yok')}${position?` · ${position}. sıra`:''}</span><span>AP ${Math.floor(Number(state.ap)||0)}</span><span>LP ${Math.floor(Number(state.lp)||0)}</span></div><div class="ll-save-updated">Son kayıt: ${llEscape(llSlotDate(record.updatedAt))}</div><div class="ll-save-actions"><button class="ll-btn primary" onclick="llContinueGame(${slot})">Kariyere Devam Et</button><button class="ll-btn" onclick="llExportCareerSlot(${slot})">Bu Kariyeri Dışa Aktar</button><button class="ll-btn danger" onclick="llResetGame(${slot})">Sil</button></div></div>`;
+}
+
+renderLexiconLeagueLanding=function(){
+  lexLeague.active=true;llSetWide(true);llClearTransient();if(typeof llSetEuropeMatchTheme==='function')llSetEuropeMatchTheme(null);const store=llEnsureSaveSlots(),occupied=Object.values(store.slots).filter(Boolean).length;
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">🎲⚽</div><div><div class="ll-title">Lexicon <em>League</em></div><div class="ll-muted">3 bağımsız kariyer · Ortak kelime ilerlemesi · Bulutsuz taşınabilir yedek</div></div></div><button class="ll-btn" onclick="llGoMainMenu()">← Ana Menü</button></div><div class="ll-notice"><b>Kariyerler ayrıdır:</b> takım, sezon, AP, LP, kartlar ve kupalar yalnızca kendi yuvasında saklanır. <b>Kelimeler ortaktır:</b> bilme oranı, tekrar geçmişi ve sözlük ilerlemesi üç kariyerde de aynıdır.</div><div class="ll-save-grid">${[1,2,3].map(slot=>llSlotCardHtml(slot,store.slots[String(slot)],store.activeSlot)).join('')}</div><div class="ll-backup-panel"><div class="ll-backup-head"><div><div class="ll-card-title" style="margin-bottom:5px">Yedekleme ve Cihazlar Arası Taşıma</div><div class="ll-sub">Bu cihazda ${occupied}/3 kariyer yuvası dolu. Yedekler cihazına JSON dosyası olarak indirilir; bulut bağlantısı kullanılmaz.</div></div><div class="ll-backup-actions"><button class="ll-btn primary" onclick="llExportFullBackup()">Tam Yedek İndir (Her Şey)</button><button class="ll-btn" onclick="document.getElementById('ll-backup-file').click()">JSON Yedeğini İçe Aktar</button><input id="ll-backup-file" type="file" accept="application/json,.json" hidden onchange="llHandleBackupFile(this)"></div></div><div class="ll-backup-guide"><div class="ll-backup-guide-item"><b>1 · Bu Kariyeri Dışa Aktar</b><span>Yalnızca ilgili yuvadaki takım, sezon, AP/LP, kart, kupa ve lig verisini indirir. Kelimeler dahil değildir. İçe aktarırken hedef yuvayı sen seçersin.</span></div><div class="ll-backup-guide-item"><b>2 · Tam Yedek İndir (Her Şey)</b><span>Üç kariyer yuvasının tamamını; kelimeleri, bilme/tekrar geçmişini ve çalışma istatistiklerini tek JSON dosyasına koyar.</span></div><div class="ll-backup-guide-item"><b>3 · JSON Yedeğini İçe Aktar</b><span>Tek kariyer dosyasında yalnızca seçtiğin yuva değişir. Tam yedekte cihazdaki üç yuva ve ortak kelime ilerlemesi yedekteki hâlle değiştirilir.</span></div></div><div class="ll-notice" style="margin-top:10px"><b>Önemli:</b> Tam yedeği içe aktarmak mevcut tüm kariyer ve kelime verilerini değiştirir. Onay verdiğinde işlem öncesindeki mevcut durum ayrıca otomatik güvenlik yedeği olarak indirilir.</div><div class="ll-muted" style="margin-top:9px">Telefon → PC örneği: telefonda uygun JSON yedeğini indir → dosyayı PC'ye gönder → PC'de “JSON Yedeğini İçe Aktar” seçeneğini kullan.</div></div></div></div>`;
+};
+function llBackupFileStamp(){const date=new Date(),pad=n=>String(n).padStart(2,'0');return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}`;}
+function llDownloadJson(filename,payload){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=filename;document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function llBuildFullBackup(){if(lexLeague.state)llSave();const store=llEnsureSaveSlots();let words=[],meta={};try{words=JSON.parse(localStorage.getItem(DB_KEY)||'[]');}catch{words=[];}try{meta=JSON.parse(localStorage.getItem(META_KEY)||'{}');}catch{meta={};}return {app:'lexicon-league',type:'full',formatVersion:LL_BACKUP_FORMAT_VERSION,exportedAt:new Date().toISOString(),activeSlot:store.activeSlot,careerSlots:llSlotClone(store.slots),vocabulary:{words:Array.isArray(words)?words:[],meta:meta&&typeof meta==='object'?meta:{}}};}
+function llExportFullBackup(){llDownloadJson(`lexicon-league-tam-yedek_${llBackupFileStamp()}.json`,llBuildFullBackup());}
+function llExportCareerSlot(slot){const selected=llSlotNumber(slot),record=llEnsureSaveSlots().slots[String(selected)];if(!record)return;llDownloadJson(`lexicon-league-${record.state.playerTeam.replace(/[^a-z0-9çğıöşü_-]+/gi,'-')}-yuva-${selected}_${llBackupFileStamp()}.json`,{app:'lexicon-league',type:'career',formatVersion:LL_BACKUP_FORMAT_VERSION,exportedAt:new Date().toISOString(),career:llSlotClone(record)});}
+function llValidateBackup(payload){
+  if(!payload||typeof payload!=='object'||payload.app!=='lexicon-league'||Number(payload.formatVersion)!==LL_BACKUP_FORMAT_VERSION)throw new Error('Bu dosya geçerli bir Lexicon League yedeği değil.');
+  if(payload.type==='career'){const record=llSlotNormalizeRecord(payload.career);if(!record)throw new Error('Dosyada geçerli kariyer bulunamadı.');return {type:'career',record};}
+  if(payload.type!=='full'||!payload.careerSlots||typeof payload.careerSlots!=='object')throw new Error('Yedek türü desteklenmiyor.');
+  const slots={};for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++){const raw=payload.careerSlots[String(slot)],record=raw?llSlotNormalizeRecord(raw):null;if(raw&&!record)throw new Error(`${slot}. kariyer yuvası bozuk.`);slots[String(slot)]=record;}
+  const words=payload.vocabulary?.words,meta=payload.vocabulary?.meta;if(!Array.isArray(words)||!meta||typeof meta!=='object'||Array.isArray(meta))throw new Error('Kelime veya çalışma istatistiği verisi geçerli değil.');
+  return {type:'full',activeSlot:llSlotNumber(payload.activeSlot)||1,slots,words:llSlotClone(words),meta:llSlotClone(meta),exportedAt:payload.exportedAt||null};
+}
+async function llHandleBackupFile(input){
+  const file=input?.files?.[0];if(!file)return;input.value='';if(file.size>12*1024*1024){alert('Yedek dosyası 12 MB sınırını aşıyor.');return;}
+  try{const validated=llValidateBackup(JSON.parse(await file.text()));if(validated.type==='career'){llSaveSlotPendingImport=validated.record;const store=llEnsureSaveSlots();llShowModal(`<div class="ll-card-title">Kariyeri Hangi Yuvaya Aktaralım?</div><div class="ll-sub" style="margin-bottom:12px"><b>${llEscape(validated.record.state.playerTeam)}</b> · Sezon ${Number(validated.record.state.season)||1}. Dolu bir yuva seçilirse yalnızca o kariyerin üzerine yazılır; kelime ilerlemesi değişmez.</div><div class="ll-save-grid">${[1,2,3].map(slot=>`<button class="ll-team-option" onclick="llApplyCareerImport(${slot})"><b>${slot}. Yuva</b><div class="ll-range">${store.slots[String(slot)]?llEscape(store.slots[String(slot)].state.playerTeam):'Boş'}</div></button>`).join('')}</div>`);return;}llApplyFullBackup(validated);}catch(error){console.error(error);alert(`Yedek içe aktarılamadı: ${error.message||'Geçersiz dosya'}`);}
+}
+function llApplyCareerImport(slot){
+  const selected=llSlotNumber(slot),record=llSaveSlotPendingImport;if(!selected||!record)return;const store=llEnsureSaveSlots(),existing=store.slots[String(selected)];if(existing&&!confirm(`${selected}. yuvadaki ${existing.state.playerTeam} kariyerinin üzerine yazılsın mı?`))return;
+  try{const state=llRepairPortableCareer(record.state);llDownloadJson(`lexicon-league-aktarim-oncesi_${llBackupFileStamp()}.json`,llBuildFullBackup());store.slots[String(selected)]={state:llSlotClone(state),updatedAt:record.updatedAt||new Date().toISOString()};store.activeSlot=selected;if(!llSlotWriteStore(store))return;llMirrorActiveCareer(store);lexLeague.state=null;llSaveSlotPendingImport=null;llCloseModal();renderLexiconLeagueLanding();alert('Kariyer başarıyla içe aktarıldı. Kelime ilerlemesi değiştirilmedi.');}catch(error){alert(`Kariyer içe aktarılamadı: ${error.message}`);}
+}
+function llApplyFullBackup(validated){
+  const careerCount=Object.values(validated.slots).filter(Boolean).length,wordCount=validated.words.length;if(!confirm(`Yedekte ${careerCount} kariyer ve ${wordCount} kelime kaydı var.\n\nMevcut üç kariyer yuvası ve ortak kelime ilerlemesi bu yedekle değiştirilecek. Devam edilsin mi?`))return;
+  try{const repaired={};for(let slot=1;slot<=LL_SAVE_SLOT_COUNT;slot++){const record=validated.slots[String(slot)];repaired[String(slot)]=record?{state:llRepairPortableCareer(record.state),updatedAt:record.updatedAt||new Date().toISOString()}:null;}llDownloadJson(`lexicon-league-aktarim-oncesi_${llBackupFileStamp()}.json`,llBuildFullBackup());const store={version:1,activeSlot:validated.activeSlot,slots:repaired};if(!store.slots[String(store.activeSlot)]){const first=Object.keys(store.slots).find(key=>store.slots[key]);store.activeSlot=first?Number(first):1;}if(!llSlotWriteStore(store))return;localStorage.setItem(DB_KEY,JSON.stringify(validated.words));localStorage.setItem(META_KEY,JSON.stringify(validated.meta));llMirrorActiveCareer(store);lexLeague.state=null;alert('Tam yedek başarıyla içe aktarıldı. Sayfa yeni kariyerleri ve kelime ilerlemesini yüklemek için yenilenecek.');location.reload();}catch(error){console.error(error);alert(`Tam yedek içe aktarılamadı: ${error.message}`);}
+}
+
+const llSaveSlotDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){llSaveSlotDashboardBase();const actions=llArea()?.querySelector('.ll-topbar .ll-actions');if(actions&&!actions.querySelector('[data-save-manager]'))actions.insertAdjacentHTML('beforeend','<button class="ll-btn" data-save-manager onclick="renderLexiconLeagueLanding()">Kariyerler / Yedek</button>');};
+
+/* Initialization is performed by save-backup-hardening.js. */
