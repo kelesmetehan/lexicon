@@ -67,7 +67,7 @@ function loadGameRuntime() {
     timeout: 15000
   });
   vm.runInContext(
-    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llBaseName,llCard,lexLeague,llEnsureTeamContracts};',
+    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llResolvedForecastStatus,llBaseName,llCard,lexLeague,llEnsureTeamContracts};',
     context
   );
   return context.__matrixApi;
@@ -424,6 +424,23 @@ resolve({Kaleci:'UPU07'},blankCards(),[3,4,5],[6,6,4],{
 resolve({Kaleci:'UPU03'},blankCards(),[6,3,4],[2,3,5],{
   dieHistoryA:{Kaleci:[6,2],'Orta Saha':[],Forvet:[]},label:'special:UPU03 form-burst'
 });
+// Regression: a prepared score multiplier must not be shown as applied when an automatic opponent win overrides it.
+const capAndMultiplierConflict=resolve(
+  {Kaleci:'NCL01',Forvet:'RBF02'},
+  {Kaleci:'RBK05','Orta Saha':'RBS02',Forvet:'RBF14'},
+  [7,4,5],[3,5,3],{label:'regression:cap-auto-win-multiplier'}
+);
+if(capAndMultiplierConflict.scoreA!==1||capAndMultiplierConflict.scoreB!==2)throw new Error(`Conflict regression score mismatch: ${capAndMultiplierConflict.scoreA}-${capAndMultiplierConflict.scoreB}`);
+if(!capAndMultiplierConflict.events.some(event=>/Kalenin Efendisi.*4 tavanı yeniden uygulandı.*→4/.test(event)))throw new Error('Re-applied keeper cap is missing from the event log.');
+if(!capAndMultiplierConflict.events.some(event=>/Golcü İçgüdüsü.*otomatik düello galibiyeti.*x3 uygulanmadı/i.test(event)))throw new Error('Canceled Golcü İçgüdüsü multiplier is missing from the event log.');
+const canceledMultiplierStatus=api.llResolvedForecastStatus(api.llCard('RBF02'),{state:'active',reason:'Ham şart sağlandı.'},capAndMultiplierConflict,'a','A');
+if(canceledMultiplierStatus.state!=='canceled'||!/ETKİ UYGULANMADI/.test(canceledMultiplierStatus.label))throw new Error(`Canceled multiplier status is misleading: ${canceledMultiplierStatus.label}`);
+
+const appliedMultiplier=resolve({Forvet:'RBF02'},blankCards(),[3,3,5],[2,2,3],{label:'regression:applied-multiplier'});
+if(!appliedMultiplier.events.some(event=>/Golcü İçgüdüsü.*SKOR ÇARPANI x3 uygulandı.*\+3 gol/i.test(event)))throw new Error('Applied Golcü İçgüdüsü multiplier lacks a final result log.');
+
+const canceledLastShot=resolve({Forvet:'RBF03'},{Forvet:'RBF14'},[5,3,4],[3,5,3],{label:'regression:last-shot-auto-win'});
+if(!canceledLastShot.events.some(event=>/Son Vuruş.*otomatik düello galibiyeti.*x2 uygulanmadı/i.test(event)))throw new Error('Canceled Son Vuruş multiplier is missing from the event log.');
 const battleExemptFamilies = new Set(['Taktik Tahtası']);
 const uncoveredFamilies = families.filter(name => !triggeredFamilies.has(name) && !battleExemptFamilies.has(name));
 const uncoveredCards = cards
