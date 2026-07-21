@@ -1,4 +1,5 @@
 /* Lexicon League save/backup hardening. Loaded after league-v2.js. */
+if(typeof globalThis.llOpenModal!=='function'&&typeof llShowModal==='function')globalThis.llOpenModal=llShowModal;
 const LL_BACKUP_MAX_FILE_BYTES=12*1024*1024;
 const LL_BACKUP_MAX_TREE_DEPTH=48;
 const LL_BACKUP_MAX_ARRAY_ITEMS=100000;
