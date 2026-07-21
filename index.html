@@ -878,7 +878,11 @@
   .ll-backup-panel{margin-top:16px;padding:16px;border:1px solid rgba(96,165,250,.2);border-radius:13px;background:linear-gradient(135deg,rgba(30,64,175,.10),rgba(15,118,110,.08))}
   .ll-backup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
   .ll-backup-actions{display:flex;gap:8px;flex-wrap:wrap}
-  @media(max-width:900px){.ll-save-grid{grid-template-columns:1fr 1fr}.ll-save-card:last-child{grid-column:1/-1}}
+  .ll-backup-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}
+  .ll-backup-guide-item{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,7,18,.25)}
+  .ll-backup-guide-item b{display:block;margin-bottom:5px;color:#fef3c7;font-size:10px}
+  .ll-backup-guide-item span{display:block;color:var(--text2);font-size:10px;line-height:1.55}
+  @media(max-width:700px){.ll-backup-guide{grid-template-columns:1fr}}  @media(max-width:900px){.ll-save-grid{grid-template-columns:1fr 1fr}.ll-save-card:last-child{grid-column:1/-1}}
   @media(max-width:600px){.ll-save-grid{grid-template-columns:1fr}.ll-save-card:last-child{grid-column:auto}.ll-save-card{min-height:0}.ll-backup-actions{width:100%}.ll-backup-actions .ll-btn{flex:1;min-width:145px}}
   @media (prefers-reduced-motion:reduce){
     .die.rolling,.die.landed,.ll-die.rolling,.ll-die.landed,.ll-score-pop,.ll-pack-opened{animation-duration:.01ms!important;animation-delay:0ms!important}
@@ -5221,7 +5225,8 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260720-3"></script>
+<script src="league-v2.js?v=20260721-3"></script>
+<script src="save-backup-hardening.js?v=20260721-1"></script>
 <script src="manager-market.js?v=20260719-1"></script>
 </body>
 </html>
