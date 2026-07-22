@@ -174,12 +174,13 @@ function llV2RepairState(state){
   const repairedPerformance={};
   Object.entries(state.cardPerformance||{}).forEach(([rawId,raw])=>{
     const id=LL_LEGACY_CARD_REPLACEMENTS[rawId]||rawId;if(!llCard(id)||!raw||typeof raw!=='object')return;
-    const target=repairedPerformance[id]||{wins:0,draws:0,losses:0,matches:0,triggers:0,triggeredWins:0,triggeredDraws:0,triggeredLosses:0,goalsFor:0,goalsAgainst:0,firstSeason:null,lastSeason:null,byCompetition:{}};
-    target.wins+=Math.max(0,Number(raw.wins)||0);target.draws+=Math.max(0,Number(raw.draws)||0);target.losses+=Math.max(0,Number(raw.losses)||0);target.matches=target.wins+target.draws+target.losses;
+    const target=repairedPerformance[id]||{wins:0,draws:0,losses:0,matches:0,triggers:0,triggeredWins:0,triggeredDraws:0,triggeredLosses:0,applications:0,appliedWins:0,appliedDraws:0,appliedLosses:0,goalsFor:0,goalsAgainst:0,firstSeason:null,lastSeason:null,byCompetition:{}};
+    target.wins+=Math.max(0,Number(raw.wins)||0);target.draws+=Math.max(0,Number(raw.draws)||0);target.losses+=Math.max(0,Number(raw.losses)||0);target.matches+=Math.max(0,Number(raw.matches)||0);target.matches=Math.max(target.matches,target.wins+target.draws+target.losses);
     target.triggers+=Math.max(0,Number(raw.triggers)||0);target.triggeredWins+=Math.max(0,Number(raw.triggeredWins)||0);target.triggeredDraws+=Math.max(0,Number(raw.triggeredDraws)||0);target.triggeredLosses+=Math.max(0,Number(raw.triggeredLosses)||0);target.triggers=Math.max(target.triggers,target.triggeredWins+target.triggeredDraws+target.triggeredLosses);
+    target.applications+=Math.max(0,Number(raw.applications)||0);target.appliedWins+=Math.max(0,Number(raw.appliedWins)||0);target.appliedDraws+=Math.max(0,Number(raw.appliedDraws)||0);target.appliedLosses+=Math.max(0,Number(raw.appliedLosses)||0);target.applications=Math.max(target.applications,target.appliedWins+target.appliedDraws+target.appliedLosses);
     target.goalsFor+=Math.max(0,Number(raw.goalsFor)||0);target.goalsAgainst+=Math.max(0,Number(raw.goalsAgainst)||0);
     const first=Number(raw.firstSeason),last=Number(raw.lastSeason);if(Number.isFinite(first)&&first>0)target.firstSeason=target.firstSeason==null?first:Math.min(target.firstSeason,first);if(Number.isFinite(last)&&last>0)target.lastSeason=target.lastSeason==null?last:Math.max(target.lastSeason,last);
-    Object.entries(raw.byCompetition||{}).forEach(([competition,comp])=>{if(!comp||typeof comp!=='object')return;const entry=target.byCompetition[competition]||{wins:0,draws:0,losses:0,matches:0,triggers:0};entry.wins+=Math.max(0,Number(comp.wins)||0);entry.draws+=Math.max(0,Number(comp.draws)||0);entry.losses+=Math.max(0,Number(comp.losses)||0);entry.triggers+=Math.max(0,Number(comp.triggers)||0);entry.matches=entry.wins+entry.draws+entry.losses;target.byCompetition[competition]=entry;});
+    Object.entries(raw.byCompetition||{}).forEach(([competition,comp])=>{if(!comp||typeof comp!=='object')return;const entry=target.byCompetition[competition]||{wins:0,draws:0,losses:0,matches:0,triggers:0,applications:0};entry.wins+=Math.max(0,Number(comp.wins)||0);entry.draws+=Math.max(0,Number(comp.draws)||0);entry.losses+=Math.max(0,Number(comp.losses)||0);entry.matches+=Math.max(0,Number(comp.matches)||0);entry.triggers+=Math.max(0,Number(comp.triggers)||0);entry.applications+=Math.max(0,Number(comp.applications)||0);entry.matches=Math.max(entry.matches,entry.wins+entry.draws+entry.losses);target.byCompetition[competition]=entry;});
     repairedPerformance[id]=target;
   });
   state.cardPerformance=repairedPerformance;
@@ -389,7 +390,7 @@ function llV2PlayLeagueWeek(key,skipFixture){const round=lexLeague.state.schedul
 function llCommitCurrentMatch(){
   const m=lexLeague.match;if(!m||m.committed||!m.resolution)return;m.committed=true;const s=lexLeague.state,f=m.fixture,comp=f.competition||'league',r=m.resolution,hg=m.playerHome?r.scoreA:r.scoreB,ag=m.playerHome?r.scoreB:r.scoreA,pg=r.scoreA,og=r.scoreB,reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league;
   const lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;s.lp+=lp;
-  const usedCardIds=(m.playerDice||[]).map(die=>die.cardId).filter(Boolean),conditionMetCardIds=llTriggeredPlayerCardIds(m),appliedCardIds=llAppliedPlayerCardIds(m);llRecordPlayerCardPerformance(usedCardIds,pg>og?'win':pg===og?'draw':'loss',comp,pg,og,conditionMetCardIds,appliedCardIds);
+  const rolledCardIds=(m.playerDice||[]).map(die=>die.cardId).filter(Boolean),usedCardIds=rolledCardIds.length?rolledCardIds:LL_POSITIONS.map(pos=>llTeamState(m.player)?.cards?.[pos]).filter(Boolean),conditionMetCardIds=llTriggeredPlayerCardIds(m),appliedCardIds=llAppliedPlayerCardIds(m);llRecordPlayerCardPerformance(usedCardIds,pg>og?'win':pg===og?'draw':'loss',comp,pg,og,conditionMetCardIds,appliedCardIds);
   llRecordMatch(f.home,f.away,hg,ag,s.week,true,comp,f.league||null);llApplyLocks(r,m.player,m.opponent);
   let winner=pg===og?(Math.random()<.5?m.player:m.opponent):pg>og?m.player:m.opponent;
   if(comp!=='league'){const recorded=s.results[s.results.length-1];if(recorded?.userMatch)recorded.knockoutWinner=winner;}
