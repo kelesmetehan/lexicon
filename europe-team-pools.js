@@ -107,7 +107,7 @@ function llV14RebuildEuropeStandings(state,preserveCurrent=true){
   });
   state.europeStandings=standings;
   types.forEach(type=>llV14CurrentEuropeResults(state,type,true).forEach(result=>{if(standings[type].teams.includes(result.home)&&standings[type].teams.includes(result.away))llV2ApplyEuropeStanding(state,type,result.home,result.homeGoals,result.away,result.awayGoals);}));
-  types.forEach(type=>{const table=standings[type],weeks=LL_EURO_LEAGUE_WEEKS[type];for(let roundIndex=0;roundIndex<table.playedRounds;roundIndex++)(table.fixtures[roundIndex]||[]).forEach(fixture=>{if(fixture.home===state.playerTeam||fixture.away===state.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,weeks[roundIndex],false,type,'euro-table');});});
+  types.forEach(type=>{const table=standings[type],weeks=LL_EURO_LEAGUE_WEEKS[type];for(let roundIndex=0;roundIndex<table.playedRounds;roundIndex++)(table.fixtures[roundIndex]||[]).forEach(fixture=>{if(fixture.home===state.playerTeam||fixture.away===state.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llV2ApplyEuropeStanding(state,type,fixture.home,score.homeGoals,fixture.away,score.awayGoals);state.results.push({season:state.season,week:weeks[roundIndex],home:fixture.home,away:fixture.away,homeGoals:score.homeGoals,awayGoals:score.awayGoals,userMatch:false,competition:type,league:'euro-table',cupRound:null,euroRound:roundIndex});});});
   state.europePoolVersion=LL_V14_EURO_POOL_VERSION;if(Number(state.europeKnockouts?.season)===Number(state.season))state.europeKnockouts=null;
   if(typeof llV4EnsureEuropeTeams==='function')llV4EnsureEuropeTeams(state,standings);return standings;
 }
