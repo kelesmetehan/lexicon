@@ -77,7 +77,9 @@ function llV13EuropeanFinalWinner(state,season,type){
 function llV13SimulatedEuropeanChampion(state,season,type,used=new Set()){
   const archive=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(season));
   const qualified=archive?.qualifications?.[type]||[];
-  const foreign=(typeof UCL_TEAMS!=='undefined'?UCL_TEAMS:[]).map(team=>team?.name).filter(Boolean);
+  const foreign=typeof llV14EuroPool==='function'
+    ?llV14EuroPool(type)
+    :(typeof UCL_TEAMS!=='undefined'?UCL_TEAMS:[]).map(team=>team?.name).filter(Boolean);
   const pool=[...new Set([...qualified,...foreign])].filter(team=>!used.has(team));
   if(!pool.length)return null;
   return [...pool].sort((a,b)=>{
