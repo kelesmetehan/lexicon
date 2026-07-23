@@ -80,7 +80,8 @@ function loadRuntime() {
       lexLeague,llCard,llCardFamilyName,llCardDisplayRarity,llCardUpgradeBadgeHtml,llCardUpgradePreviewHtml,llShowCardPopup,
       llUpgradeTarget,llUpgradeCost,llUpgradeCard,llEnsureUpgradeState,llAiUpgradeCards,llV4RenewAiContracts,
       llEnsureTeamContracts,llChooseShopCard,llEligibleCards,llReleaseExpiredCard,
-      llPrepareUpgradeReleaseTeam,llReleaseUpgradedCardToMarket
+      llPrepareUpgradeReleaseTeam,llReleaseUpgradedCardToMarket,llRecordPlayerCardPerformance,llCardPerformance,
+      llV2RepairState,llNewState,LL_FIRST_TEAMS
     };
   `, context);
   return { context, api: context.__upgradeApi };
@@ -146,6 +147,30 @@ function setState(player, opponents = [], overrides = {}) {
   context.__alerts.length = 0;
   return api.lexLeague.state;
 }
+
+check('card performance survives state repair and continues counting', () => {
+  const tracked = api.LL_CARD_POOL.find(card => !card.clubCard && !card.upgradeOnly);
+  const state = api.llNewState(api.LL_FIRST_TEAMS[0].name);
+  state.cardPerformance[tracked.id] = {
+    wins: 2, draws: 1, losses: 1, matches: 4,
+    triggers: 3, triggeredWins: 2, triggeredDraws: 1, triggeredLosses: 0,
+    applications: 2, appliedWins: 1, appliedDraws: 1, appliedLosses: 0,
+    goalsFor: 7, goalsAgainst: 4, firstSeason: 1, lastSeason: 2,
+    byCompetition: { league: { wins: 2, draws: 1, losses: 1, matches: 4, triggers: 3, applications: 2 } }
+  };
+  api.lexLeague.state = api.llV2RepairState(state);
+  let stat = api.llCardPerformance(tracked.id);
+  assert.strictEqual(stat.matches, 4);
+  assert.strictEqual(stat.applications, 2);
+  assert.strictEqual(stat.appliedWins, 1);
+  assert.strictEqual(stat.byCompetition.league.applications, 2);
+  api.llRecordPlayerCardPerformance([tracked.id], 'win', 'cup', 2, 0, [tracked.id], [tracked.id]);
+  stat = api.llCardPerformance(tracked.id);
+  assert.strictEqual(stat.matches, 5);
+  assert.strictEqual(stat.triggers, 4);
+  assert.strictEqual(stat.applications, 3);
+  assert.strictEqual(stat.byCompetition.cup.applications, 1);
+});
 
 check('player upgrade spends the correct LP and stops at two upgrades per season', () => {
   const player = makeTeam('Test FK', { Kaleci: 'RBK02', 'Orta Saha': 'RBM05', Forvet: 'RBF05' });

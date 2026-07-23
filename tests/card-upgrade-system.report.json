@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-07-21T06:57:47.973Z",
-  "passed": 11,
+  "generatedAt": "2026-07-22T14:40:00.453Z",
+  "passed": 12,
   "failed": 0,
   "checks": [
+    "card performance survives state repair and continues counting",
     "player upgrade spends the correct LP and stops at two upgrades per season",
     "upgrades are blocked outside the transfer window",
     "epic and legendary cards never have an upgrade target",

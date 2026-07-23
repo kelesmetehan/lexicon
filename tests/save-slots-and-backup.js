@@ -90,5 +90,6 @@ assert.deepStrictEqual(JSON.parse(localStorage.getItem('lexicon_words')), [{id: 
   const html = fs.readFileSync('outputs/lexicon-fixed.html', 'utf8');
   assert.ok(html.includes('save-backup-hardening.js'), 'hardening layer must be loaded');
   assert.ok(html.includes('function llShowModal(content)'), 'application modal function must exist');
-  console.log('save slots and backup: 16 checks passed');
+  assert.ok(html.includes('globalThis.llOpenModal=llShowModal'), 'older cached scripts must use the modal compatibility bridge');
+  console.log('save slots and backup: 17 checks passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

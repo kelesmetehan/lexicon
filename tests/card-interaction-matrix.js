@@ -67,7 +67,7 @@ function loadGameRuntime() {
     timeout: 15000
   });
   vm.runInContext(
-    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llResolvedForecastStatus,llBaseName,llCard,lexLeague,llEnsureTeamContracts};',
+    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llResolvedForecastStatus,llBaseName,llCard,lexLeague,llEnsureTeamContracts,llRecordPlayerCardPerformance,llCardPerformance};',
     context
   );
   return context.__matrixApi;
@@ -77,6 +77,23 @@ const api = loadGameRuntime();
 const cards = [...api.LL_CARD_POOL];
 const family = card => api.llBaseName(card);
 const cardById = new Map(cards.map(card => [card.id, card]));
+
+function auditCardPerformanceTracking() {
+  const tracked = cards.find(card => !card.clubCard && !card.upgradeOnly);
+  const previousState = api.lexLeague.state;
+  api.lexLeague.state = { season: 4, cardPerformance: {} };
+  api.llRecordPlayerCardPerformance([tracked.id], 'win', 'league', 3, 1, [tracked.id], [tracked.id]);
+  let stat = api.llCardPerformance(tracked.id);
+  if (!stat || stat.matches !== 1 || stat.wins !== 1 || stat.triggers !== 1 || stat.applications !== 1 || stat.appliedWins !== 1) {
+    throw new Error('Card performance was not recorded after a triggered/applied win.');
+  }
+  api.lexLeague.state.cardPerformance[tracked.id].matches = 5;
+  api.lexLeague.state.cardPerformance[tracked.id].wins = 0;
+  stat = api.llCardPerformance(tracked.id);
+  if (stat.matches !== 5) throw new Error('Stored card match count was discarded while reading performance.');
+  api.lexLeague.state = previousState;
+}
+auditCardPerformanceTracking();
 const families = [...new Set(cards.map(family))].sort((a, b) => a.localeCompare(b, 'tr'));
 const variants = cards.flatMap(card =>
   (card.clubCard ? [] : card.position === 'Evrensel' ? POSITIONS : [card.position]).map(slot => ({ card, slot }))
