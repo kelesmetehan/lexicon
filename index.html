@@ -1298,7 +1298,13 @@ const NATIVE_USER_DATA = [
   {en:"proven", tr:"kanıtlanmış / etkisi gösterilmiş", example:"Use a proven mosquito repellent such as DEET.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"appropriate", tr:"uygun / yerinde", example:"Wear appropriate clothing for the weather.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"recurring", tr:"tekrarlayan / tekrar eden", example:"She has a recurring problem with her computer.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"conclusion", tr:"sonuç / varılan yargı", example:"We reached the same conclusion after reviewing the evidence.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"conclusion", tr:"sonuç / varılan yargı", example:"We reached the same conclusion after reviewing the evidence.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"notice", tr:"fark etmek / dikkatini çekmek", example:"I noticed a small stain on your jacket.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"slightly", tr:"biraz / hafifçe", example:"Could you open the window slightly?", pos:"adv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"visual", tr:"görsel / görmeye ilişkin", example:"This chart provides a visual summary of the data.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"itchy", tr:"kaşıntılı / kaşındıran", example:"The mosquito bite made my arm itchy.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"bump", tr:"şişlik / küçük çıkıntı", example:"The insect bite left a small bump on her skin.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"though", tr:"gerçi / -mesine rağmen", example:"We kept walking, though we were tired.", pos:"conj", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -1681,9 +1687,16 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "DEET gibi etkisi kanıtlanmış bir sivrisinek kovucu kullanın.",
   "Hava durumuna uygun kıyafetler giy.",
   "Bilgisayarında tekrar eden bir sorun var.",
-  "Kanıtları inceledikten sonra aynı sonuca vardık."
+  "Kanıtları inceledikten sonra aynı sonuca vardık.",
+  "Ceketindeki küçük lekeyi fark ettim.",
+  "Pencereyi biraz açabilir misin?",
+  "Bu tablo, verilerin görsel bir özetini sunuyor.",
+  "Sivrisinek ısırığı kolumu kaşındırdı.",
+  "Böcek ısırığı cildinde küçük bir şişlik bıraktı.",
+  "Yorgun olmamıza rağmen yürümeye devam ettik."
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
+  "notice":"v","slightly":"adv","visual":"adj","itchy":"adj","bump":"n","though":"conj",
   "across":"prep","alongside":"prep","unlike":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","rather":"adv","temporarily":"adv","fewer":"det","likely":"adj","unlikely":"adj",
   "anonymity":"n","anxiety":"n","charity":"n","currency":"n","disability":"n","disapproval":"n","encounter":"n","epidemic":"n","eternity":"n","fabric":"n","facility":"n","identity":"n","individual":"n","longevity":"n","luxury":"n","municipality":"n","naivety":"n","quote":"n","skeptic":"n","snooze":"n","substitute":"n","survey":"n",
   "confident":"adj","constant":"adj","determined":"adj","extensive":"adj","infected":"adj","intense":"adj","mundane":"adj","profound":"adj","smallish":"adj","spoiled":"adj","strange":"adj","unkind":"adj","vascular":"adj",
