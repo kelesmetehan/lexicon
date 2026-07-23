@@ -1296,7 +1296,8 @@ const NATIVE_USER_DATA = [
   {en:"minimal", tr:"asgari / çok az", example:"Some people show only a minimal response to bites.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"proven", tr:"kanıtlanmış / etkisi gösterilmiş", example:"Use a proven mosquito repellent such as DEET.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"appropriate", tr:"uygun / yerinde", example:"Wear appropriate clothing for the weather.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"recurring", tr:"tekrarlayan / tekrar eden", example:"She has a recurring problem with her computer.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"recurring", tr:"tekrarlayan / tekrar eden", example:"She has a recurring problem with her computer.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"conclusion", tr:"sonuç / varılan yargı", example:"We reached the same conclusion after reviewing the evidence.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -1678,7 +1679,8 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Bazı insanlar ısırıklara yalnızca çok az tepki gösterir.",
   "DEET gibi etkisi kanıtlanmış bir sivrisinek kovucu kullanın.",
   "Hava durumuna uygun kıyafetler giy.",
-  "Bilgisayarında tekrar eden bir sorun var."
+  "Bilgisayarında tekrar eden bir sorun var.",
+  "Kanıtları inceledikten sonra aynı sonuca vardık."
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "across":"prep","alongside":"prep","unlike":"prep","apparently":"adv","beforehand":"adv","basically":"adv","bitterly":"adv","chronically":"adv","literally":"adv","meanwhile":"adv","occasionally":"adv","outside":"adv","rather":"adv","temporarily":"adv","fewer":"det","likely":"adj","unlikely":"adj",
@@ -2653,9 +2655,14 @@ function llLowestDie(dice){return dice.reduce((a,b)=>a.value<=b.value?a:b);}
 function llHighestDie(dice){return dice.reduce((a,b)=>a.value>=b.value?a:b);}
 function llFindPosition(dice,pos){return dice.find(d=>d.position===pos);}
 function llSum(dice){return dice.reduce((s,d)=>s+d.value,0);}
+function llOfficialTeamResults(teamName,limit=null){
+  const season=Number(lexLeague.state?.season)||1,official=['league','cup','playoff','ucl','uel','uecl'];
+  const results=(lexLeague.state?.results||[]).filter(result=>Number(result.season)===season&&(result.home===teamName||result.away===teamName)&&(!result.competition||official.includes(result.competition)));
+  return Number.isInteger(limit)&&limit>0?results.slice(-limit):results;
+}
 function llHatTrickForm(teamName,card){
   const match=card?.trigger?.match(/Son\s+(\d+).*en az\s+(\d+)/i),windowSize=Math.max(1,Number(match?.[1])||5),need=Math.max(1,Number(match?.[2])||3),season=Number(lexLeague.state?.season)||1;
-  const recent=(lexLeague.state?.results||[]).filter(result=>Number(result.season)===season&&(result.home===teamName||result.away===teamName)).slice(-windowSize);
+  const recent=llOfficialTeamResults(teamName,windowSize);
   const wins=recent.filter(result=>(result.home===teamName&&result.homeGoals>result.awayGoals)||(result.away===teamName&&result.awayGoals>result.homeGoals)).length;
   return {windowSize,need,played:recent.length,wins,active:recent.length>=windowSize&&wins>=need};
 }
@@ -5265,7 +5272,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260721-4"></script>
+<script src="league-v2.js?v=20260723-1"></script>
 <script src="save-backup-hardening.js?v=20260721-2"></script>
 <script src="manager-market.js?v=20260719-1"></script>
 </body>
