@@ -327,7 +327,7 @@ function llHeldCardIds(){const ids=new Set();Object.values(lexLeague.state.teams
 
 function llSortTable(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){return Object.values(lexLeague.state.standings[key]).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr'));}
 function llUpdateStanding(team,gf,ga){const key=llTeamLeague(team),r=lexLeague.state.standings[key][team];r.P++;r.GF+=gf;r.GA+=ga;r.GD=r.GF-r.GA;if(gf>ga){r.W++;r.Pts+=3;}else if(gf===ga){r.D++;r.Pts++;}else r.L++;const ts=llTeamState(team);ts.lastResults.push(gf>ga?'W':gf===ga?'D':'L');ts.lastResults=ts.lastResults.slice(-5);if(gf>ga)ts.wins++;}
-function llPlayerFixture(){const s=lexLeague.state;if(s.pendingFixture)return s.pendingFixture;const key=llTeamLeague(s.playerTeam),round=s.schedules[key][s.week-1]||[];const f=round.find(x=>x.home===s.playerTeam||x.away===s.playerTeam);return f?{...f,competition:'league',league:key,roundLabel:`${s.week}. Hafta`}:null;}
+function llPlayerFixture(){const s=lexLeague.state;if(!s)return null;if(s.pendingFixture)return s.pendingFixture;const key=llTeamLeague(s.playerTeam),round=s.schedules[key][s.week-1]||[];const f=round.find(x=>x.home===s.playerTeam||x.away===s.playerTeam);return f?{...f,competition:'league',league:key,roundLabel:`${s.week}. Hafta`}:null;}
 function llCurrentRound(key=llTeamLeague(lexLeague.state.playerTeam)){return lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];}
 function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
   const rows=llSortTable(key),qualifications=key==='super'?llV2Qualifications(rows,lexLeague.state.cup?.winner):null;
