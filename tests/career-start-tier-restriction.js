@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('assert');
+const vm=require('vm');
+const {loadRuntime,reportRunner}=require('./multi-league-test-helpers');
+const {context,api,area}=loadRuntime();const run=reportRunner('career-start-tier-restriction');
+for(const country of api.LL_COUNTRY_CODES)run.check(`${country} selection exposes only tier2 clubs`,()=>{api.llRenderTeamSelect(country);const html=area.innerHTML,tier2=api.LL_TIER2_POOLS[country],tier1=api.LL_TIER1_POOLS[country];assert(tier2.every(team=>html.includes(team.name)));assert(tier1.every(team=>!html.includes(`>${team.name}<`)));assert(html.includes(api.LL_LEAGUE_META[country].tier2.label));});
+run.check('country screen contains all seven countries',()=>{api.llRenderTeamSelect();for(const country of api.LL_COUNTRY_CODES)assert(area.innerHTML.includes(api.LL_COUNTRY_META[country].country));});
+for(const country of api.LL_COUNTRY_CODES)run.check(`${country} tier2 club can start a career`,()=>{api.lexLeague.state=null;const team=api.LL_TIER2_POOLS[country].find(item=>item.name==='Blackburn Rovers')||api.LL_TIER2_POOLS[country][0];context.__careerCountry=country;context.__careerTeam=team.name;vm.runInContext(`globalThis.llPendingCareerCountry=globalThis.__careerCountry;llStartCareer(globalThis.__careerTeam);`,context);assert(api.lexLeague.state,team.name);assert.strictEqual(api.lexLeague.state.playerTeam,team.name);assert.strictEqual(api.lexLeague.state.playerCountry,country);});
+run.check('direct tier1 career start is rejected',()=>{api.lexLeague.state=null;vm.runInContext(`globalThis.llPendingCareerCountry='ENG';llStartCareer(LL_TIER1_POOLS.ENG[0].name);`,context);assert.strictEqual(api.lexLeague.state,null);});
+run.finish({countries:api.LL_COUNTRY_CODES.length});
