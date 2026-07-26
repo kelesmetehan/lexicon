@@ -1,4 +1,4 @@
-/* UEFA knockout center v11: keep league-phase and knockout records separate. */
+/* UEFA knockout center v12: keep league-phase and knockout records separate. */
 const LL_V11_EURO_STAGES=['playoff','r16','qf','sf','final'];
 
 function llV11EuroStageLabel(stage){
@@ -75,15 +75,24 @@ function llV11StageOpponent(type,stage){
   const state=lexLeague.state,e=state.europe;
   const result=llV11PlayerKnockoutResults(type,stage)[0];
   if(e?.type===type&&e?.tie?.stage===stage&&e.tie.opponent)return e.tie.opponent;
+  const pending=state.pendingFixture;
+  if(e?.type===type&&e?.phase===stage&&pending?.competition===type&&pending?.league==='euro-knockout'){
+    return pending.home===state.playerTeam?pending.away:pending.home;
+  }
   if(result)return result.home===state.playerTeam?result.away:result.home;
   return null;
 }
 
 function llV11EnsureKnockoutStage(type,stage){
   const state=lexLeague.state,competition=llV11CompetitionKnockout(state,type);
-  if(competition.stages[stage])return competition.stages[stage];
   const e=state.europe,playerResults=llV11PlayerKnockoutResults(type,stage);
   const current=e?.type===type&&e?.phase===stage,opponent=llV11StageOpponent(type,stage);
+  const existing=competition.stages[stage],existingPair=llV11PlayerPair(existing);
+  const existingOpponent=existingPair?(existingPair.a===state.playerTeam?existingPair.b:existingPair.a):null;
+  const stalePlayerPair=!!existingPair&&((opponent&&existingOpponent!==opponent)||(!opponent&&!playerResults.length));
+  const missingPlayerPair=!!opponent&&!existingPair;
+  if(existing&&!stalePlayerPair&&!missingPlayerPair)return existing;
+  if(existing&&(stalePlayerPair||missingPlayerPair))delete competition.stages[stage];
   if(!current&&!playerResults.length)return null;
   let pool=llV11StagePool(type,stage,competition),pairs=[];
   if(opponent){
@@ -91,7 +100,7 @@ function llV11EnsureKnockoutStage(type,stage){
     pairs.push({id:`${stage}-player`,stage,a,b,legs:[],winner:null});
     pool=pool.filter(team=>team!==state.playerTeam&&team!==opponent);
   }
-  pool=llV11UniqueTeams(pool);
+  pool=llV11UniqueTeams(pool).filter(team=>team!==state.playerTeam&&team!==opponent);
   while(pool.length>1){
     const a=pool.shift(),b=pool.pop();
     pairs.push({id:`${stage}-${pairs.length+1}`,stage,a,b,legs:[],winner:null});
