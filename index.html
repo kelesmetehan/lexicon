@@ -2462,7 +2462,7 @@ function llMarkQuizWordUsed(ref){
 function llStartMatchPreparation(){
   fcQueue=[];
   const queue=llPickQuizWords(10);
-  if(queue.length<10){alert('Lig maçı için en az 10 kelime gerekiyor. Kelime veritabanında yeterli kart yok.');return;}
+  if(queue.length<10){alert(`Lig ma\u00e7\u0131 i\u00e7in en az 10 kelime gerekiyor. Kullan\u0131labilir kelime: ${queue.length}. Ana men\u00fcden \u201cHata Kayd\u0131n\u0131 \u0130ndir\u201d dosyas\u0131n\u0131 g\u00f6nder.`);return;}
   lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2};
   llRenderLeagueQuiz();
 }
@@ -3370,6 +3370,17 @@ function toggleExampleTranslation(event, panelId) {
   button?.classList.toggle('active', opening);
 }
 
+let LL_RUNTIME_WORD_FALLBACK = [];
+function llBuildRuntimeNativePool() {
+  return NATIVE_USER_DATA.map((w, idx) => ({
+    id: "usr_builtin_" + idx,
+    en: w.en, tr: w.tr, example: w.example || "", exampleTr: w.exampleTr || "",
+    pos: w.pos || llInferWordPos(w), category: "word", source: "user",
+    addedAt: todayStr(), repetitions: w.repetitions, interval: w.interval, ef: 2.5,
+    nextReview: todayStr(), reviewCount: w.reviewCount, wrongCount: 0,
+    isActiveMistake: false, type: ""
+  }));
+}
 function initDatabase() {
   try {
     let existingWords = [];
@@ -3405,17 +3416,30 @@ function initDatabase() {
       if (!existsInNative && ex.source === 'user') synchronizedPool.push(ex);
     });
 
+    LL_RUNTIME_WORD_FALLBACK = synchronizedPool;
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error(e);
+    if (LL_RUNTIME_WORD_FALLBACK.length < 10) LL_RUNTIME_WORD_FALLBACK = llBuildRuntimeNativePool();
+  }
 }
 
 function loadUserWords() {
   try {
     const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    return allWords.filter(w => w.source === 'user');
-  } catch (e) { return []; }
-}
-function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);}
+    const userWords = allWords.filter(w => w && w.source === 'user');
+    if (userWords.length >= 10) return userWords;
+  } catch (e) { console.error(e); }
+  if (LL_RUNTIME_WORD_FALLBACK.length < 10) {
+    initDatabase();
+    try {
+      const repairedWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(w => w && w.source === 'user');
+      if (repairedWords.length >= 10) return repairedWords;
+    } catch (e) { console.error(e); }
+  }
+  if (LL_RUNTIME_WORD_FALLBACK.length < 10) LL_RUNTIME_WORD_FALLBACK = llBuildRuntimeNativePool();
+  return LL_RUNTIME_WORD_FALLBACK;
+}function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);}
 
 function saveWordsToStorage(updatedWords) {
   try {
