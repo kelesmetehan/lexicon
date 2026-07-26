@@ -11,13 +11,19 @@ function llDiagnosticShuffle(items){
   if(typeof llShuffle==='function')return llShuffle(items);
   const result=[...items];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}return result;
 }
+function llDiagnosticLeagueContext(){
+  try{
+    if(typeof lexLeague!=='undefined')return lexLeague;
+  }catch(error){}
+  return globalThis.lexLeague||null;
+}
 function llOrderQuizCandidates(pool,recentIds){
   const recent=recentIds instanceof Set?recentIds:new Set(recentIds||[]),shuffled=llDiagnosticShuffle(pool);
   return [...shuffled.filter(word=>!recent.has(word.id)),...shuffled.filter(word=>recent.has(word.id))];
 }
 globalThis.llPickQuizWords=function(count=10){
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
-  const state=globalThis.lexLeague?.state;if(!state)return [];
+  const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];
   if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   const target=Math.min(Math.max(0,Number(count)||0),words.length),used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT));
@@ -30,7 +36,7 @@ globalThis.llPickQuizWords=function(count=10){
   return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
-  const state=globalThis.lexLeague?.state,q=globalThis.lexLeague?.quiz;if(!state||!q||!ref)return;
+  const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
   if(!Array.isArray(q.shownWordIds))q.shownWordIds=[];
   if(q.shownWordIds.includes(ref.id))return;
   q.shownWordIds.push(ref.id);
@@ -56,7 +62,7 @@ function llDiagnosticStorageSummary(){
   const rows={};try{for(let index=0;index<localStorage.length;index++){const key=localStorage.key(index);if(!key)continue;rows[key]={characters:(localStorage.getItem(key)||'').length};}}catch(error){rows.error=String(error?.message||error);}return rows;
 }
 function llBuildDiagnosticReport(){
-  const state=globalThis.lexLeague?.state||null,q=globalThis.lexLeague?.quiz||null,map=llDiagnosticWordMap(),recent=Array.isArray(state?.recentQuizWords)?state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT):[],used=Array.isArray(state?.usedWords)?state.usedWords:[],queue=Array.isArray(q?.queue)?q.queue:[];
+  const league=llDiagnosticLeagueContext(),state=league?.state||null,q=league?.quiz||null,map=llDiagnosticWordMap(),recent=Array.isArray(state?.recentQuizWords)?state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT):[],used=Array.isArray(state?.usedWords)?state.usedWords:[],queue=Array.isArray(q?.queue)?q.queue:[];
   const scripts=typeof document==='undefined'?[]:[...document.scripts].map(script=>script.getAttribute('src')).filter(Boolean);
   return {app:'lexicon-league',type:'diagnostic',formatVersion:LL_DIAGNOSTIC_LOG_VERSION,exportedAt:new Date().toISOString(),page:{origin:typeof location==='undefined'?null:location.origin,path:typeof location==='undefined'?null:location.pathname,scripts},device:{userAgent:typeof navigator==='undefined'?null:navigator.userAgent,language:typeof navigator==='undefined'?null:navigator.language,online:typeof navigator==='undefined'?null:navigator.onLine,viewport:typeof window==='undefined'?null:{width:window.innerWidth,height:window.innerHeight,pixelRatio:window.devicePixelRatio}},activeSlot:typeof llGetActiveSaveSlot==='function'?llGetActiveSaveSlot():null,career:llDiagnosticCareerSummary(state),wordCycle:{totalWords:map.size,usedInCurrentCycle:used.length,usedIds:used.slice(-100),recentLimit:LL_RECENT_QUIZ_WORD_LIMIT,recentShown:recent.map(id=>llDiagnosticWordRef(id,map)),recentRepeats:llDiagnosticRepeatDistances(recent),currentQuiz:q?{index:q.index,correct:q.correct,revealed:!!q.revealed,skipped:!!q.skipped,shownWordIds:(q.shownWordIds||[]).map(id=>llDiagnosticWordRef(id,map)),queue:queue.map(ref=>({...llDiagnosticWordRef(ref.id,map),cycleStart:!!ref.cycleStart,askTrToEn:!!ref.askTrToEn}))}:null},recentOfficialResults:(state?.results||[]).slice(-30).map(llDiagnosticResult),runtimeEvents:[...LL_DIAGNOSTIC_EVENTS],storage:llDiagnosticStorageSummary()};
 }
