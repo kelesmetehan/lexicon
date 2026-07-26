@@ -2,6 +2,14 @@
 const LL_V13_COMPETITIONS=['super','first','cup','ucl','uel','uecl'];
 const LL_V13_EURO_TYPES=['ucl','uel','uecl'];
 
+function llV13DomesticCompetition(country,tier){
+  return `domestic:${String(country||'TUR').toUpperCase()}:${tier}`;
+}
+function llV13ValidCompetition(key){
+  return LL_V13_COMPETITIONS.includes(key)||/^domestic:[A-Z]{3}:(tier1|tier2|cup)$/.test(String(key||''));
+}
+function llV13DomesticParts(key){const match=/^domestic:([A-Z]{3}):(tier1|tier2|cup)$/.exec(String(key||''));return match?{country:match[1],tier:match[2]}:null;}
+
 function llV13Hash(value){
   let hash=2166136261;
   for(const character of String(value||'')){
@@ -12,6 +20,13 @@ function llV13Hash(value){
 }
 
 function llV13CompetitionLabel(key){
+  const domestic=llV13DomesticParts(key);
+  if(domestic){
+    if(domestic.tier==='cup')return typeof LL_DOMESTIC_CUP_NAMES==='object'?(LL_DOMESTIC_CUP_NAMES[domestic.country]||'Yerel Kupa'):'Yerel Kupa';
+    if(typeof llMLLeagueLabel==='function')return llMLLeagueLabel(domestic.country,domestic.tier);
+    const meta=typeof LL_COUNTRY_META==='object'?LL_COUNTRY_META[domestic.country]:null;
+    return domestic.tier==='tier1'?(meta?.tier1Label||'1. Lig'):(meta?.tier2Label||'2. Lig');
+  }
   return key==='super'?'Süper Lig':
     key==='first'?'TFF 1. Lig':
     key==='cup'?'Ziraat Türkiye Kupası':
@@ -38,7 +53,7 @@ function llV13ChampionStore(state){
   if(!Array.isArray(state.competitionChampions))state.competitionChampions=[];
   state.competitionChampions=state.competitionChampions.filter(item=>
     item&&
-    LL_V13_COMPETITIONS.includes(item.competition)&&
+    llV13ValidCompetition(item.competition)&&
     Number(item.season)>0&&
     typeof item.team==='string'&&
     item.team.trim()
@@ -48,7 +63,7 @@ function llV13ChampionStore(state){
 
 function llV13RecordChampion(state,season,competition,team,source='season'){
   const value=String(team||'').trim(),number=Number(season);
-  if(!state||!LL_V13_COMPETITIONS.includes(competition)||!value||!Number.isFinite(number)||number<1)return null;
+  if(!state||!llV13ValidCompetition(competition)||!value||!Number.isFinite(number)||number<1)return null;
   const store=llV13ChampionStore(state);
   const existing=store.find(item=>Number(item.season)===number&&item.competition===competition);
   const record={season:number,competition,team:value,source};
@@ -121,6 +136,14 @@ function llV13CaptureSeasonChampions(state,summary){
   llV13RecordChampion(state,season,'first',summary.firstRows?.[0]?.team,'table');
   llV13RecordChampion(state,season,'cup',summary.cupWinner,'cup');
   llV13CaptureEuropeanChampions(state,season,summary);
+  if(summary.countrySummaries&&typeof summary.countrySummaries==='object'){
+    Object.entries(summary.countrySummaries).forEach(([country,info])=>{
+      llV13RecordChampion(state,season,llV13DomesticCompetition(country,'tier1'),info?.tier1Rows?.[0]?.team,'table');
+      llV13RecordChampion(state,season,llV13DomesticCompetition(country,'tier2'),info?.tier2Rows?.[0]?.team,'table');
+      llV13RecordChampion(state,season,llV13DomesticCompetition(country,'cup'),info?.cupWinner,'cup');
+    });
+  }
+
   summary.champions=Object.fromEntries(LL_V13_COMPETITIONS.map(type=>[
     type,
     llV13ChampionStore(state).find(item=>Number(item.season)===season&&item.competition===type)?.team||null
@@ -149,6 +172,11 @@ function llV13LastChampion(state,competition){
     .filter(item=>item.competition===competition&&Number(item.season)<=Number(state.season))
     .sort((a,b)=>Number(b.season)-Number(a.season))[0]||null;
 }
+function llV13LastDomesticChampion(state,country,tier){
+  const dynamic=llV13LastChampion(state,llV13DomesticCompetition(country,tier));
+  if(dynamic)return dynamic;
+  return llV13LastChampion(state,tier==='tier1'?'super':tier==='tier2'?'first':'cup');
+}
 
 function llV13ChampionBadge(record){
   if(!record)return '<span class="ll-last-champion empty">Son şampiyon: Henüz belirlenmedi</span>';
@@ -171,10 +199,11 @@ function llV13InjectChampionStyle(){
 
 function llV13AddChampionToCenter(tab,key){
   const state=lexLeague.state;
+  const country=state?.playerCountry||'TUR';
   const competition=tab==='league'
-    ?(key==='super'?'super':'first')
+    ?llV13DomesticCompetition(country,key==='super'?'tier1':'tier2')
     :tab==='cup'
-      ?'cup'
+      ?llV13DomesticCompetition(country,'cup')
       :(['ucl','uel','uecl'].includes(key)?key:(state.europe?.type||'ucl'));
   const titles=[...llArea().querySelectorAll('.ll-card-title')];
   const target=tab==='league'
@@ -184,7 +213,7 @@ function llV13AddChampionToCenter(tab,key){
       :titles.find(node=>/Puan Durumu/i.test(node.textContent));
   if(!target)return;
   target.classList.add('ll-with-last-champion');
-  target.insertAdjacentHTML('beforeend',llV13ChampionBadge(llV13LastChampion(state,competition)));
+  target.insertAdjacentHTML('beforeend',llV13ChampionBadge(tab==='europe'?llV13LastChampion(state,competition):llV13LastDomesticChampion(state,country,tab==='league'?(key==='super'?'tier1':'tier2'):'cup')));
 }
 
 const llV13RepairStateBase=llV2RepairState;
@@ -237,10 +266,8 @@ llV2FinishEuropeRound=function(winner){
 
 const llV13RenderCompetitionCenterBase=llRenderCompetitionCenter;
 llRenderCompetitionCenter=function(tab='league',key=null){
-  llV13EnsureChampionHistory(lexLeague.state);
   llV13RenderCompetitionCenterBase(tab,key);
   llV13InjectChampionStyle();
   llV13AddChampionToCenter(tab,key);
-  llSave();
 };
 
