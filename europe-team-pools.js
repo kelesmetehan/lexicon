@@ -1,5 +1,5 @@
 /* European team pools v14: separate 2025/26 club fields for UCL, UEL and UECL. */
-const LL_V14_EURO_POOL_VERSION=2;
+const LL_V14_EURO_POOL_VERSION=3;
 const LL_V14_COUNTRY_FLAGS={
   ENG:'🇬🇧',GER:'🇩🇪',ESP:'🇪🇸',ITA:'🇮🇹',FRA:'🇫🇷',POR:'🇵🇹',BEL:'🇧🇪',GRE:'🇬🇷',
   AZE:'🇦🇿',NOR:'🇳🇴',DEN:'🇩🇰',NED:'🇳🇱',CZE:'🇨🇿',CYP:'🇨🇾',KAZ:'🇰🇿',TUR:'🇹🇷',
@@ -117,8 +117,19 @@ function llV14PinnedTeams(state,type){
   return [...new Set(teams.filter(Boolean))];
 }
 function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
-  const domestic=new Set((typeof LL_ALL_DOMESTIC_TEAMS!=='undefined'?LL_ALL_DOMESTIC_TEAMS:LL_ALL_TEAMS).map(team=>team.name));
   const canonical=name=>typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name;
+  const playerTeam=canonical(state?.playerTeam);
+  const registryCountry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[playerTeam]?.country:null;
+  const playerCountry=state?.playerCountry||registryCountry||'TUR';
+  const activeCountryLeagues=state?.leagues?.[playerCountry];
+  const domesticNames=activeCountryLeagues
+    ?[...(activeCountryLeagues.tier1||[]),...(activeCountryLeagues.tier2||[])]
+    :Array.isArray(state?.leagues?.super)||Array.isArray(state?.leagues?.first)
+      ?[...(state.leagues.super||[]),...(state.leagues.first||[])]
+      :(typeof LL_ALL_DOMESTIC_TEAMS!=='undefined'
+        ?LL_ALL_DOMESTIC_TEAMS.filter(team=>team.country===playerCountry).map(team=>team.name)
+        :(typeof LL_ALL_TEAMS!=='undefined'?LL_ALL_TEAMS.map(team=>team.name):[]));
+  const domestic=new Set(domesticNames.map(canonical));
   const blocked=new Set([...qualifiers.map(canonical),...reserved]),pinned=[];
   for(const name of llV14PinnedTeams(state,type)){
     const key=canonical(name);if(blocked.has(key)||domestic.has(key))continue;
