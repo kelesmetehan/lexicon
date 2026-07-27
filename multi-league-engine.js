@@ -192,9 +192,9 @@ function llMLRelabelRenderedScreen(root,country=lexLeague.state?.playerCountry||
   if(!root)return;
   const meta=llMLCountryMeta(country),cup=LL_DOMESTIC_CUP_NAMES[country]||meta.cupName;
   const replacements=[
-    [/T?rkiye'nin Avrupa Temsilcileri/g,`${meta.country} Avrupa Temsilcileri`],
-    [/Ziraat T?rkiye Kupas?/g,cup],[/T?rkiye Kupas?/g,cup],
-    [/S?per Lig/g,llMLLeagueLabel(country,'tier1')],[/TFF 1\. Lig/g,llMLLeagueLabel(country,'tier2')]
+    [/Türkiye'nin Avrupa Temsilcileri/g,`${meta.country} Avrupa Temsilcileri`],
+    [/Ziraat Türkiye Kupası/g,cup],[/Türkiye Kupası/g,cup],
+    [/Süper Lig/g,llMLLeagueLabel(country,'tier1')],[/TFF 1\. Lig/g,llMLLeagueLabel(country,'tier2')]
   ];
   const replace=value=>replacements.reduce((text,[pattern,next])=>String(text||'').replace(pattern,next),String(value||''));
   const visit=node=>{
@@ -204,7 +204,7 @@ function llMLRelabelRenderedScreen(root,country=lexLeague.state?.playerCountry||
   };
   visit(root);
   root.querySelectorAll?.('button').forEach(button=>{
-    if(button.textContent.trim()==='Di?er Lig')button.textContent=`${meta.flag} Di?er Lig`;
+    if(button.textContent.trim()==='Diğer Lig')button.textContent=`${meta.flag} Diğer Lig`;
   });
 }
 
