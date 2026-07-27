@@ -58,13 +58,43 @@ const LL_V14_EURO_POOLS={
 const LL_V14_EURO_META=Object.fromEntries(Object.values(LL_V14_EURO_POOLS).flat().map(team=>[team.name,team]));
 const LL_V14_SUPPLEMENTAL_TEAMS=[
   llV14Club('RSC Anderlecht','BEL',4,58),
-  llV14Club('Standard Li?ge','BEL',3,3057),
+  llV14Club('Standard Liège','BEL',3,3057),
   llV14Club('Heart of Midlothian','SCO',3,43),
   llV14Club('Hibernian FC','SCO',3,903),
   llV14Club('Molde FK','NOR',3,687),
   llV14Club('Rosenborg BK','NOR',3,1957),
   llV14Club('FK Partizan Belgrade','SRB',3,669),
-  llV14Club('Grasshopper Club Z?rich','SUI',3,504)
+  llV14Club('Grasshopper Club Zürich','SUI',3,504),
+  llV14Club('FC Porto','POR',6,720),
+  llV14Club('Sporting CP','POR',5,336),
+  llV14Club('SL Benfica','POR',5,294),
+  llV14Club('SC Braga','POR',3,2425),
+  llV14Club('Club Brugge KV','BEL',5,2282),
+  llV14Club('Royal Antwerp FC','BEL',3,1747),
+  llV14Club('Union Saint-Gilloise','BEL',4,201),
+  llV14Club('Celtic FC','SCO',5,371),
+  llV14Club('Rangers FC','SCO',4,3120),
+  llV14Club('Shakhtar Donetsk','UKR',4,660),
+  llV14Club('Dynamo Kyiv','UKR',3,3446),
+  llV14Club('Red Bull Salzburg','AUT',5,409),
+  llV14Club('Sturm Graz','AUT',3,564),
+  llV14Club('FC Basel','SUI',4,146),
+  llV14Club('Young Boys','SUI',4,565),
+  llV14Club('Slavia Prague','CZE',4,1230),
+  llV14Club('Sparta Prague','CZE',3,1234),
+  llV14Club('Red Star Belgrade','SRB',4,236),
+  llV14Club('Dinamo Zagreb','CRO',4,2288),
+  llV14Club('Hajduk Split','CRO',3,2287),
+  llV14Club('Olympiacos FC','GRE',4,2159),
+  llV14Club('Panathinaikos FC','GRE',3,2181),
+  llV14Club('AEK Athens FC','GRE',3,2158),
+  llV14Club('FC Copenhagen','DEN',4,1966),
+  llV14Club('Bodo/Glimt','NOR',4,1859),
+  llV14Club('Malmo FF','SWE',3,1873),
+  llV14Club('Legia Warsaw','POL',3,1035),
+  llV14Club('Maccabi Tel Aviv','ISR',3,3644),
+  llV14Club('Ludogorets Razgrad','BUL',3,31059),
+  llV14Club('Qarabag FK','AZE',3,7395)
 ];
 LL_V14_SUPPLEMENTAL_TEAMS.forEach(team=>{LL_V14_EURO_META[team.name]=team;});
 Object.values(LL_V14_EURO_META).forEach(team=>{if(team.logoId)LL_EURO_LOGO_IDS[team.name]=team.logoId;});
@@ -102,7 +132,9 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   }
   const shift=(Number(state.season)*7+({ucl:0,uel:11,uecl:23}[type]||0))%Math.max(1,pool.length);
   const rotated=[...pool.slice(shift),...pool.slice(0,shift)];
-  return [...pinned,...rotated].slice(0,Math.max(0,36-qualifiers.length));
+  const needed=Math.max(0,36-qualifiers.length),combined=[...pinned,...rotated];
+  while(combined.length<needed)combined.push(`${llV2EuroLabel(type)} Yedek Kulüp ${combined.length+1}`);
+  return combined.slice(0,needed);
 }
 function llV14PinPlayerFixtures(state,type,fixtures){
   const player=state.playerTeam,pins=[...llV14CurrentEuropeResults(state,type,true)];
