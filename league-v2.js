@@ -585,19 +585,20 @@ function llV3ResolveEuropeQualifications(state){
   state.europeQualifications=q;return q;
 }
 function llV3BuildEuropeFixtures(teams,roundCount){
+  if(teams.length%2!==0){console.warn(`llV3BuildEuropeFixtures: tek sayıda takım (${teams.length}) alındı, bye eklendi.`);teams=[...teams,'__BYE__'];}
   let rotation=[...teams];const edges=[],byRound=Array.from({length:roundCount},()=>[]);
   for(let round=0;round<roundCount;round++){for(let i=0;i<rotation.length/2;i++){const edge={id:edges.length,round,a:rotation[i],b:rotation[rotation.length-1-i],home:null,away:null,used:false};edges.push(edge);byRound[round].push(edge);}rotation=[rotation[0],rotation[rotation.length-1],...rotation.slice(1,-1)];}
   const adjacency=Object.fromEntries(teams.map(team=>[team,[]]));edges.forEach(edge=>{adjacency[edge.a].push(edge.id);adjacency[edge.b].push(edge.id);});const cursor=Object.fromEntries(teams.map(team=>[team,0]));
   const nextEdge=team=>{while(cursor[team]<adjacency[team].length&&edges[adjacency[team][cursor[team]]].used)cursor[team]++;return adjacency[team][cursor[team]];};
   teams.forEach(root=>{if(nextEdge(root)==null)return;const stack=[root];while(stack.length){const team=stack[stack.length-1],edgeId=nextEdge(team);if(edgeId==null){stack.pop();continue;}const edge=edges[edgeId];edge.used=true;const other=edge.a===team?edge.b:edge.a;edge.home=team;edge.away=other;stack.push(other);}});
-  return byRound.map(round=>round.map(edge=>({home:edge.home,away:edge.away})));
+  return byRound.map(round=>round.filter(edge=>edge.home!=='__BYE__'&&edge.away!=='__BYE__'&&edge.home!==edge.away).map(edge=>({home:edge.home,away:edge.away})));
 }
 function llV3EuropeTeamOrder(qualifiers,foreign,roundCount){
   for(let position=1;position<36;position++){const list=[qualifiers[0],...foreign.slice(0,35)];list.splice(Math.min(position,list.length),0,qualifiers[1]);const teams=list.slice(0,36),fixtures=llV3BuildEuropeFixtures(teams,roundCount),same=fixtures.some(round=>round.some(f=>qualifiers.includes(f.home)&&qualifiers.includes(f.away)));if(!same)return {teams,fixtures};}
   const teams=[...qualifiers,...foreign].slice(0,36);return {teams,fixtures:llV3BuildEuropeFixtures(teams,roundCount)};
 }
 llV2CreateEuropeStandings=function(state){
-  const types=['ucl','uel','uecl'],q=llV3ResolveEuropeQualifications(state),domestic=new Set(LL_ALL_TEAMS.map(team=>team.name)),base=[...new Set(UCL_TEAMS.map(team=>team.name))].filter(name=>!domestic.has(name));
+  const types=['ucl','uel','uecl'],q=llV3ResolveEuropeQualifications(state),domestic=new Set((typeof LL_ALL_DOMESTIC_TEAMS!=='undefined'?LL_ALL_DOMESTIC_TEAMS:LL_ALL_TEAMS).map(team=>team.name)),base=[...new Set(UCL_TEAMS.map(team=>team.name))].filter(name=>!domestic.has(name));
   const standings={season:state.season,formatVersion:LL_EURO_FORMAT_VERSION,qualifications:llDeep(q)};
   types.forEach((type,typeIndex)=>{const rounds=LL_EURO_LEAGUE_WEEKS[type].length,shift=(Number(state.season)*7+typeIndex*11)%Math.max(1,base.length),foreign=[...base.slice(shift),...base.slice(0,shift)].filter(name=>!q[type].includes(name));while(foreign.length<34)foreign.push(`${llV2EuroLabel(type)} Kulübü ${foreign.length+1}`);const draw=llV3EuropeTeamOrder(q[type],foreign,rounds),teams=draw.teams;standings[type]={formatVersion:LL_EURO_FORMAT_VERSION,teams,standings:llBlankStandings(teams),fixtures:draw.fixtures,playedRounds:0,leagueMatches:rounds};});
   state.europeStandings=standings;
@@ -681,7 +682,7 @@ function llUseTeamCardContracts(team){if(!team)return;llEnsureTeamContracts(team
 function llEnsureContractState(state){if(!state)return state;Object.values(state.teams||{}).forEach(llEnsureTeamContracts);if(!state.aiContractWindows||typeof state.aiContractWindows!=='object')state.aiContractWindows={};state.cardContractVersion=LL_CARD_CONTRACT_VERSION;return state;}
 function llV4CreateEuroTeam(state,name){if(!name)return null;if(!state.teams[name]){const def=llTeamDef(name);state.teams[name]={name,stars:def?.stars||3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:150,aiLp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};}return state.teams[name];}
 function llV4FreeCardForState(state,teamName,pos){const team=state.teams[teamName],used=new Set(team.usedCardFamilies||[]),pool=LL_CARD_POOL.filter(card=>!card.upgradeOnly&&!card.clubCard&&(card.position===pos||card.position==='Evrensel')&&!used.has(llCardFamilyName(card))&&llOwnTriggerCompatible(card,team.stars));if(!pool.length)return false;const card=llWeightedPick(pool)||pool[0],family=llCardFamilyName(card);team.cards[pos]=card.id;if(family&&!used.has(family)){team.usedCardFamilies.push(family);used.add(family);}llResetCardContract(team,pos,card.id);return true;}
-function llV4EnsureEuropeTeams(state,tables=state?.europeStandings){if(!state||!tables)return;const domestic=new Set(LL_ALL_TEAMS.map(team=>team.name));['ucl','uel','uecl'].forEach(type=>(tables[type]?.teams||[]).forEach(name=>{if(domestic.has(name))return;const team=llV4CreateEuroTeam(state,name);LL_POSITIONS.forEach(pos=>{if(!team.cards[pos])llV4FreeCardForState(state,name,pos);});llEnsureTeamContracts(team);}));}
+function llV4EnsureEuropeTeams(state,tables=state?.europeStandings){if(!state||!tables)return;const domestic=new Set((typeof LL_ALL_DOMESTIC_TEAMS!=='undefined'?LL_ALL_DOMESTIC_TEAMS:LL_ALL_TEAMS).map(team=>team.name));['ucl','uel','uecl'].forEach(type=>(tables[type]?.teams||[]).forEach(name=>{if(domestic.has(name))return;const team=llV4CreateEuroTeam(state,name);LL_POSITIONS.forEach(pos=>{if(!team.cards[pos])llV4FreeCardForState(state,name,pos);});llEnsureTeamContracts(team);}));}
 const llV4EnsureEuropeStandingsBase=llV2EnsureEuropeStandings;
 llV2EnsureEuropeStandings=function(state){const tables=llV4EnsureEuropeStandingsBase(state);llV4EnsureEuropeTeams(state,tables);return tables;};
 const llV4RepairStateBase=llV2RepairState;
@@ -783,7 +784,7 @@ function llV6EnsureStarSystem(state){
   if(!state)return state;
   Object.values(state.teams||{}).forEach(team=>{team.stars=Math.max(1,Math.min(6,Number(team.stars)||1));});
   if(Number(state.sixStarSystemVersion)!==LL_SIX_STAR_SYSTEM_VERSION){
-    const domestic=new Set(LL_ALL_TEAMS.map(team=>team.name));
+    const domestic=new Set((typeof LL_ALL_DOMESTIC_TEAMS!=='undefined'?LL_ALL_DOMESTIC_TEAMS:LL_ALL_TEAMS).map(team=>team.name));
     Object.entries(state.teams||{}).forEach(([name,team])=>{
       if(domestic.has(name))return;
       const stars=llV6EuroStars(name);if(stars!==null)team.stars=stars;
