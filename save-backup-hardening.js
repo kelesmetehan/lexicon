@@ -63,7 +63,15 @@ llEnsureSaveSlots=function(){
   try{llPersistStoreAndMirror(store);}catch(error){llStorageFailure(error,'Eski kariyer yeni yuva sistemine taşınamadı');}return store;
 };
 llGetActiveSaveSlot=function(){const store=llEnsureSaveSlots();return llSlotNumber(localStorage.getItem(LL_ACTIVE_SLOT_KEY))||store.activeSlot||1;};
-llMirrorActiveCareer=function(store){try{const prepared=llStoreValues(store),values={},removals=[];if(prepared.values[LL_V2_SAVE_KEY]!=null)values[LL_V2_SAVE_KEY]=prepared.values[LL_V2_SAVE_KEY];else removals.push(LL_V2_SAVE_KEY);llAtomicStorageUpdate(values,removals);return true;}catch(error){llStorageFailure(error,'Uyumluluk kaydı güncellenemedi');return false;}};
+llMirrorActiveCareer = function(){
+  try {
+    localStorage.removeItem(LL_V2_SAVE_KEY);
+    return true;
+  } catch(error) {
+    llStorageFailure(error, 'Eski uyumluluk kaydı temizlenemedi');
+    return false;
+  }
+};
 llSetActiveSaveSlot=function(slot){const selected=llSlotNumber(slot);if(!selected)return false;const store=llEnsureSaveSlots();if(llSaveStoreReadError)return false;store.activeSlot=selected;try{llPersistStoreAndMirror(store);return true;}catch(error){llStorageFailure(error,'Aktif kariyer değiştirilemedi');return false;}};
 llSave=function(){if(!lexLeague.state)return false;const store=llEnsureSaveSlots();if(llSaveStoreReadError){alert('Kariyer deposu güvenli biçimde okunamadığı için üzerine yazılmadı. Önce mevcut JSON yedeğini kontrol et.');return false;}const slot=llSlotNumber(store.activeSlot)||1,now=new Date().toISOString(),state=llSlotClone(lexLeague.state);state.updatedAt=now;store.activeSlot=slot;store.slots[String(slot)]={state,updatedAt:now};try{llPersistStoreAndMirror(store);lexLeague.state.updatedAt=now;return true;}catch(error){llStorageFailure(error,'Kariyer kaydedilemedi');return false;}};
 llLoad=function(slot=null){globalThis.llLastCareerLoadError=null;const store=llEnsureSaveSlots(),selected=llSlotNumber(slot)||llSlotNumber(store.activeSlot)||1,record=store.slots[String(selected)];if(!record)return null;let state;try{state=llRepairPortableCareer(record.state);}catch(error){globalThis.llLastCareerLoadError=error;console.error('Kariyer yüklenemedi.',error);return null;}store.activeSlot=selected;store.slots[String(selected)]={state:llSlotClone(state),updatedAt:record.updatedAt||new Date().toISOString()};try{llPersistStoreAndMirror(store);}catch(error){llStorageFailure(error,'Kariyer açıldı fakat depolama aynası güncellenemedi');}return state;};
