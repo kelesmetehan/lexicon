@@ -900,18 +900,23 @@
 
   /* Kupa ve lig yükselme sinematiği */
   .ll-trophy-cinematic{position:fixed;inset:0;z-index:13500;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(250,204,21,.22),rgba(2,6,23,.96) 62%,#000);overflow:hidden;isolation:isolate;animation:llTrophyFadeIn .35s ease}
+  .ll-trophy-cinematic.loss{background:radial-gradient(circle at 50% 40%,rgba(248,113,113,.20),rgba(2,6,23,.96) 62%,#000)}
   .ll-trophy-stage{position:relative;text-align:center;width:min(460px,100%);padding:28px 36px}
   .ll-trophy-icon{font-size:88px;line-height:1;display:inline-block;filter:drop-shadow(0 0 22px rgba(250,204,21,.65));animation:llTrophyPop .7s cubic-bezier(.2,.8,.2,1)}
+  .ll-trophy-cinematic.loss .ll-trophy-icon{filter:drop-shadow(0 0 22px rgba(248,113,113,.55))}
   .ll-trophy-title{margin-top:16px;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;opacity:0;transform:translateY(8px);animation:llSigningText .5s .5s ease forwards}
   .ll-trophy-name{margin-top:4px;font-size:clamp(24px,7vw,32px);line-height:1.15;font-weight:700;color:#facc15;overflow-wrap:anywhere;opacity:0;transform:translateY(8px);animation:llSigningText .5s .65s ease forwards}
+  .ll-trophy-cinematic.loss .ll-trophy-name{color:#fca5a5}
   .ll-trophy-sub{margin:8px auto 0;max-width:390px;font-size:15px;line-height:1.55;color:#e2e8f0;opacity:0;transform:translateY(8px);animation:llSigningText .5s .82s ease forwards}
+  .ll-trophy-detail{margin:10px auto 0;max-width:390px;padding:9px 12px;border-radius:12px;background:rgba(15,23,42,.56);border:1px solid rgba(148,163,184,.18);font-size:14px;line-height:1.5;color:#f8fafc;opacity:0;transform:translateY(8px);animation:llSigningText .5s .92s ease forwards}
+  .ll-trophy-cinematic.loss .ll-trophy-detail{background:rgba(127,29,29,.26);border-color:rgba(248,113,113,.28);color:#fee2e2}
   .ll-trophy-continue{margin-top:24px;opacity:0;transform:translateY(8px);animation:llSigningText .5s 1s ease forwards}
   .ll-trophy-cinematic .ll-pack-particles{overflow:visible}
   .ll-trophy-cinematic .ll-pack-particle{width:7px;height:7px;box-shadow:0 0 9px var(--particle,#facc15)}
   @keyframes llTrophyFadeIn{from{opacity:0}to{opacity:1}}
   @keyframes llTrophyPop{0%{opacity:0;transform:scale(.3) rotate(-16deg)}60%{opacity:1;transform:scale(1.16) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
-  @media(max-width:520px){.ll-trophy-stage{padding:24px 14px}.ll-trophy-icon{font-size:76px}.ll-trophy-sub{font-size:13px}}
-  @media(prefers-reduced-motion:reduce){.ll-trophy-cinematic,.ll-trophy-icon,.ll-trophy-title,.ll-trophy-name,.ll-trophy-sub,.ll-trophy-continue{animation-duration:.01ms!important;animation-delay:0ms!important}}
+  @media(max-width:520px){.ll-trophy-stage{padding:24px 14px}.ll-trophy-icon{font-size:76px}.ll-trophy-sub{font-size:13px}.ll-trophy-detail{font-size:12px}}
+  @media(prefers-reduced-motion:reduce){.ll-trophy-cinematic,.ll-trophy-icon,.ll-trophy-title,.ll-trophy-name,.ll-trophy-sub,.ll-trophy-detail,.ll-trophy-continue{animation-duration:.01ms!important;animation-delay:0ms!important}}
 
 </style>
 </head>
@@ -5414,6 +5419,6 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260728-5"></script>
 <script src="country-browser.js?v=20260727-1"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
-<script src="trophy-cinematic.js?v=20260729-1"></script>
+<script src="trophy-cinematic.js?v=20260729-2"></script>
 </body>
 </html>
