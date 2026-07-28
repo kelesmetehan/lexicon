@@ -528,6 +528,7 @@ function llDevelopOpponents(completedWeek){const s=lexLeague.state;if(completedW
 
 /* Premium card packs and UEFA 2026/27 league-phase compatibility layer. */
 const LL_PREMIUM_PACK_COST=900;
+const LL_REGULAR_REWARD_PACK_VALUE=150;
 const LL_PREMIUM_EPIC_CHANCE=.65;
 const LL_EURO_FORMAT_VERSION=3;
 const LL_EURO_LEAGUE_WEEKS={ucl:[4,7,10,13,16,19,22,25],uel:[4,7,10,13,16,19,22,25],uecl:[4,7,10,13,16,19]};
@@ -536,21 +537,56 @@ const LL_EURO_KNOCKOUT_LABELS={playoff:'Eleme Turu Play-Off',r16:'Son 16',qf:'Ç
 function llV3EnsurePremiumState(state){
   if(!state)return state;
   state.premiumPackPaidSeason=Math.max(0,Number(state.premiumPackPaidSeason)||0);
-  state.sealedPremiumPacks=Math.max(0,Number(state.sealedPremiumPacks)||0);
   if(!Array.isArray(state.premiumPackHistory))state.premiumPackHistory=[];
   if(!state.objectivePremiumGranted||typeof state.objectivePremiumGranted!=='object')state.objectivePremiumGranted={};
-  const pending=state.pendingPremiumPack;
+  if(!state.achievementRegularGranted||typeof state.achievementRegularGranted!=='object')state.achievementRegularGranted={};
+  if(!Array.isArray(state.regularRewardHistory))state.regularRewardHistory=[];
+  state.sealedRegularPacks=Math.max(0,Number(state.sealedRegularPacks)||0);
+  // Eski hedef ödülü Elit paketleri artık kullanılmaz. Yeni sistem yalnızca sportif başarıya normal paket verir.
+  state.sealedPremiumPacks=0;
+  let pending=state.pendingPremiumPack;
+  if(pending?.source==='voucher'){
+    const history=[...state.premiumPackHistory].reverse().find(item=>item.status==='pending'&&item.source==='voucher');
+    if(history){history.status='retired';history.retiredAt=new Date().toISOString();}
+    state.pendingPremiumPack=null;pending=null;
+  }
   if(pending&&(!LL_POSITIONS.includes(pending.position)||!Array.isArray(pending.offers)||pending.offers.length!==2||pending.offers.some(id=>!llCard(id))))state.pendingPremiumPack=null;
   const regular=state.pendingRegularPack;
   if(regular&&(!LL_POSITIONS.includes(regular.position)||!Array.isArray(regular.offers)||regular.offers.length!==2||regular.offers.some(id=>!llCard(id))))state.pendingRegularPack=null;
   return state;
 }
 function llPaidPremiumPackUsed(state){return !!state&&(state.premiumPackHistory||[]).some(item=>Number(item?.season)===Number(state.season)&&item?.source==='paid');}
-function llV3GrantObjectivePack(state,goals){
-  llV3EnsurePremiumState(state);if(!goals?.evaluated)return false;
-  const primary=(goals.results||[]).find(goal=>goal.id==='club_primary');
-  const key=String(goals.season||state.season);if(!primary?.achieved||state.objectivePremiumGranted[key])return false;
-  state.objectivePremiumGranted[key]=true;state.sealedPremiumPacks++;goals.premiumPackEarned=true;return true;
+function llV3SeasonAchievement(state,summary=state?.lastSeasonSummary){
+  if(!state||!summary)return {eligible:false,season:Number(state?.season)||0,team:state?.playerTeam||'',reasons:[]};
+  const season=Number(summary.season||state.season)||0,team=summary.playerTeam||state.playerTeam,reasons=[];
+  let position=Number(summary.playerPosition)||0;
+  if(!position){
+    const rows=summary.playerLeague==='super'?(summary.superRows||summary.tier1Rows||[]):(summary.firstRows||summary.tier2Rows||[]);
+    position=rows.findIndex(row=>row.team===team)+1;
+  }
+  if(position===1)reasons.push('Lig şampiyonluğu');
+  if(summary.cupWinner===team)reasons.push('Yerel kupa şampiyonluğu');
+  if(Array.isArray(summary.promoted)&&summary.promoted.includes(team))reasons.push('Üst lige yükselme');
+  const europeanTrophy=(state.trophies||[]).find(item=>Number(item?.season)===season&&/(UEFA|Şampiyonlar Ligi|Avrupa Ligi|Konferans Ligi)/i.test(String(item?.name||'')));
+  if(europeanTrophy||state.europe?.winner===team)reasons.push(europeanTrophy?.name||'Avrupa kupası şampiyonluğu');
+  return {eligible:reasons.length>0,season,team,reasons:[...new Set(reasons)]};
+}
+function llV3AchievementRewardRecord(state,season=state?.lastSeasonSummary?.season||state?.season){
+  const key=String(Number(season)||0),record=state?.achievementRegularGranted?.[key];
+  return record&&typeof record==='object'?record:null;
+}
+function llV3GrantAchievementPack(state,summary=state?.lastSeasonSummary){
+  llV3EnsurePremiumState(state);const achievement=llV3SeasonAchievement(state,summary),key=String(achievement.season);
+  if(!achievement.eligible||state.achievementRegularGranted[key])return false;
+  const record={season:achievement.season,team:achievement.team,reasons:[...achievement.reasons],packType:'regular',valueAp:LL_REGULAR_REWARD_PACK_VALUE,grantedAt:new Date().toISOString()};
+  state.achievementRegularGranted[key]=record;state.sealedRegularPacks++;
+  state.regularRewardHistory.push({...record,status:'sealed'});
+  if(state.seasonGoals&&Number(state.seasonGoals.season)===achievement.season){
+    delete state.seasonGoals.premiumPackEarned;
+    state.seasonGoals.achievementPackEarned=true;
+    state.seasonGoals.achievementPackReasons=[...achievement.reasons];
+  }
+  return true;
 }
 function llV3PremiumPool(position){
   const s=lexLeague.state,team=llTeamState(s.playerTeam),seen=new Set(llEnsureDiscoveredCards()),used=llTeamCardFamilyHistory(s.playerTeam);
@@ -562,19 +598,19 @@ function llV3PickPremiumPair(pool){
 }
 function llOpenPremiumPack(position,source='paid'){
   const s=lexLeague.state;llV3EnsurePremiumState(s);
+  if(source!=='paid'){alert('Ücretsiz Elit Rol Paketi kaldırıldı. Elit paket yalnızca AP ile açılır.');return;}
   if(!llIsTransferWindow(s.week)){alert('Elit rol paketi yalnızca transfer döneminde açılabilir.');return;}
   if(s.pendingPremiumPack){lexLeague.shop={mode:'premium',position:s.pendingPremiumPack.position,offers:[...s.pendingPremiumPack.offers],source:s.pendingPremiumPack.source};llRenderShopOffers();return;}
-  if(s.pendingRegularPack){alert('Önce açık normal kasadaki iki karttan birini seç veya kasadan vazgeç.');lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
+  if(s.pendingRegularPack){alert('Önce açık normal kasadaki iki karttan birini seç veya kasadan vazgeç.');lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers],source:s.pendingRegularPack.source};llRenderShopOffers();return;}
   if(!LL_POSITIONS.includes(position))return;
-  if(source==='voucher'&&s.sealedPremiumPacks<1){alert('Kapalı ücretsiz elit paketin yok.');return;}
-  if(source==='paid'&&llPaidPremiumPackUsed(s)){alert('Bu sezon ücretli elit paket hakkını kullandın. Hedef ödülü paketi bu sınırı tüketmez.');return;}
-  if(source==='paid'&&s.ap<LL_PREMIUM_PACK_COST){alert(`Yetersiz AP. Gerekli: ${LL_PREMIUM_PACK_COST} AP`);return;}
-  const pool=llV3PremiumPool(position);if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu rol ve takım yıldızı için iki farklı, kullanılabilir ve yeni Destansı/Efsanevi kart bulunmuyor. AP veya paket hakkı harcanmadı.');return;}
+  if(llPaidPremiumPackUsed(s)){alert('Bu sezon ücretli elit paket hakkını kullandın.');return;}
+  if(s.ap<LL_PREMIUM_PACK_COST){alert(`Yetersiz AP. Gerekli: ${LL_PREMIUM_PACK_COST} AP`);return;}
+  const pool=llV3PremiumPool(position);if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu rol ve takım yıldızı için iki farklı, kullanılabilir ve yeni Destansı/Efsanevi kart bulunmuyor. AP harcanmadı.');return;}
   const offers=llV3PickPremiumPair(pool);if(offers.length<2)return;
-  if(source==='paid'){s.ap-=LL_PREMIUM_PACK_COST;s.premiumPackPaidSeason=s.season;}else s.sealedPremiumPacks--;
-  const pending={season:s.season,source,position,offers:offers.map(card=>card.id),openedAt:new Date().toISOString()};s.pendingPremiumPack=pending;
-  s.premiumPackHistory.push({...pending,status:'pending'});lexLeague.shop={mode:'premium',position,offers:[...pending.offers],source};llDiscoverCards(pending.offers);llSave();llRenderShop();
-  llShowPackOpening('elite',pending.offers,{cost:source==='paid'?LL_PREMIUM_PACK_COST:0,source});
+  s.ap-=LL_PREMIUM_PACK_COST;s.premiumPackPaidSeason=s.season;
+  const pending={season:s.season,source:'paid',position,offers:offers.map(card=>card.id),openedAt:new Date().toISOString()};s.pendingPremiumPack=pending;
+  s.premiumPackHistory.push({...pending,status:'pending'});lexLeague.shop={mode:'premium',position,offers:[...pending.offers],source:'paid'};llDiscoverCards(pending.offers);llSave();llRenderShop();
+  llShowPackOpening('elite',pending.offers,{cost:LL_PREMIUM_PACK_COST,source:'paid'});
 }
 function llDeferPremiumPack(){
   const s=lexLeague.state;llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack;
@@ -586,11 +622,22 @@ function llDeferPremiumPack(){
 }
 
 const llV3RepairStateBase=llV2RepairState;
-llV2RepairState=function(state){state=llV3RepairStateBase(state);llV3EnsurePremiumState(state);if(state?.seasonGoals?.evaluated)llV3GrantObjectivePack(state,state.seasonGoals);return state;};
+llV2RepairState=function(state){
+  state=llV3RepairStateBase(state);llV3EnsurePremiumState(state);
+  if(state?.seasonEnded&&state.lastSeasonSummary)llV3GrantAchievementPack(state,state.lastSeasonSummary);
+  return state;
+};
 const llV3EvaluateSeasonGoalsBase=llV2EvaluateSeasonGoals;
-llV2EvaluateSeasonGoals=function(state,summary){const goals=llV3EvaluateSeasonGoalsBase(state,summary);llV3GrantObjectivePack(state,goals);return goals;};
+llV2EvaluateSeasonGoals=function(state,summary){
+  const goals=llV3EvaluateSeasonGoalsBase(state,summary);llV3GrantAchievementPack(state,summary);return goals;
+};
 const llV3SeasonGoalsHtmlBase=llV2SeasonGoalsHtml;
-llV2SeasonGoalsHtml=function(final=false){const html=llV3SeasonGoalsHtmlBase(final),goals=lexLeague.state?.seasonGoals;if(!final||!goals?.premiumPackEarned)return html;return `${html}<div class="ll-notice" style="margin-top:12px"><b>🎁 Yönetim hedefi paketi:</b> Bir ücretsiz Elit Rol Paketi kazandın. Şimdi açabilir veya sonraki transfer dönemine saklayabilirsin.</div>`;};
+llV2SeasonGoalsHtml=function(final=false){
+  const html=llV3SeasonGoalsHtmlBase(final),state=lexLeague.state,record=llV3AchievementRewardRecord(state,state?.lastSeasonSummary?.season||state?.season);
+  if(!final||!record)return html;
+  const reasons=(record.reasons||[]).map(llEscape).join(' · ');
+  return `${html}<div class="ll-notice" style="margin-top:12px;border-color:rgba(96,165,250,.42)"><b>🎁 Sezon başarı paketi:</b> ${reasons} nedeniyle ${LL_REGULAR_REWARD_PACK_VALUE} AP değerinde 1 ücretsiz Normal Rol Paketi kazandın. Yönetim hedeflerini tamamlamak tek başına paket vermez.</div>`;
+};
 
 const llV3RenderShopOffersBase=llRenderShopOffers;
 llRenderShopOffers=function(){
@@ -609,12 +656,18 @@ llChooseShopCard=function(id){
   s.pendingPremiumPack=null;lexLeague.shop=null;llSave();llRenderShop();
 };
 llRenderShop=function(){
-  const s=lexLeague.state,week=Number(s.week),seasonEnd=!!s.seasonEnded,earlySeason=week>=1&&week<=3;if(!llIsTransferWindow(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
-  llV3EnsurePremiumState(s);const pending=s.pendingPremiumPack,regularPending=s.pendingRegularPack;if(pending)lexLeague.shop={mode:'premium',position:pending.position,offers:[...pending.offers],source:pending.source};else if(regularPending)lexLeague.shop={mode:'regular',position:regularPending.position,offers:[...regularPending.offers]};else lexLeague.shop={position:null,offers:[]};
-  const cost=llShopCost(),period=seasonEnd?`Sezon ${s.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`,paidUsed=llPaidPremiumPackUsed(s),packPending=!!(pending||regularPending);
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Normal kasa ${cost} AP · AP: ${s.ap}</div></div><button class="ll-btn" onclick="${seasonEnd?'llRenderSeasonEnd()':'llRenderDashboard()'}">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklifler:</b> Aynı transfer döneminde gördüğün kart ailesi yeniden çıkmaz. Elit paket de yalnızca kullanılabilir, daha önce keşfedilmemiş ve seçilen role ait kartlardan oluşur.</div>${packPending?`<div class="ll-notice" style="margin-top:12px;border-color:rgba(250,204,21,.42)"><b>📦 Açık kasa seçimi:</b> ${pending?'Elit':'Normal'} kasadaki iki karttan birini seçmeden yeni kasa açılamaz.</div>`:''}<div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(s.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(s.playerTeam).cards[pos],s.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" ${packPending?'disabled':''} onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7);background:linear-gradient(135deg,rgba(88,28,135,.22),rgba(161,98,7,.18))"><div class="ll-card-title">✨ Elit Rol Paketi · ${LL_PREMIUM_PACK_COST} AP</div><div class="ll-sub">Seçtiğin role ait iki farklı kart açar. Her kart için Destansı %65 · Efsanevi %35. Sezon başına yalnızca bir ücretli paket; ücretsiz hedef paketi bu sınırı tüketmez.</div><div class="ll-muted" style="margin:8px 0 12px">${pending?'Açılmış elit paketin seçimi bekliyor; ücretsiz veya ücretli olduğu paket kaydında korunuyor.':regularPending?'Önce açık normal kasadaki seçimini tamamla.':paidUsed?'Bu sezon ücretli 900 AP paketi kullanıldı.':`Ücretli 900 AP paketi kullanılabilir · Mevcut AP: ${s.ap}`}${s.sealedPremiumPacks?` · Geçen sezon yönetim hedefi ödülü: ${s.sealedPremiumPacks}`:''}</div><div class="ll-actions">${LL_POSITIONS.map(pos=>`<button class="ll-btn gold" ${packPending||paidUsed?'disabled':''} onclick="llOpenPremiumPack('${pos}','paid')">${LL_POSITION_ICONS[pos]} ${pos} · ${LL_PREMIUM_PACK_COST} AP</button>`).join('')}${s.sealedPremiumPacks&&!packPending?LL_POSITIONS.map(pos=>`<button class="ll-btn primary" onclick="llOpenPremiumPack('${pos}','voucher')">🎁 ${pos} · Hedef Ödülü</button>`).join(''):''}</div></div><div id="ll-shop-offers"></div></div></div>`;
+  const s=lexLeague.state,week=Number(s.week),seasonEnd=!!s.seasonEnded,earlySeason=week>=1&&week<=3;
+  if(!llIsTransferWindow(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
+  llV3EnsurePremiumState(s);
+  const pending=s.pendingPremiumPack,regularPending=s.pendingRegularPack;
+  if(pending)lexLeague.shop={mode:'premium',position:pending.position,offers:[...pending.offers],source:pending.source};
+  else if(regularPending)lexLeague.shop={mode:'regular',position:regularPending.position,offers:[...regularPending.offers],source:regularPending.source||'paid'};
+  else lexLeague.shop={position:null,offers:[]};
+  const cost=llShopCost(),period=seasonEnd?`Sezon ${s.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`,paidUsed=llPaidPremiumPackUsed(s),packPending=!!(pending||regularPending),rewardCount=Math.max(0,Number(s.sealedRegularPacks)||0);
+  const achievementPack=rewardCount?`<div class="ll-card" style="margin-top:16px;border-color:rgba(96,165,250,.58);background:linear-gradient(135deg,rgba(30,64,175,.20),rgba(14,116,144,.14))"><div class="ll-card-title">🎁 Sezon Başarı Paketi · Ücretsiz Normal Kasa</div><div class="ll-sub">Lig şampiyonluğu, yerel/Avrupa kupası şampiyonluğu veya üst lige yükselme karşılığında verilir. Hedef başarısı tek başına paket kazandırmaz. Paket, normal ${LL_REGULAR_REWARD_PACK_VALUE} AP kasasıyla aynı kart havuzunu kullanır.</div><div class="ll-muted" style="margin:8px 0 12px">Kullanılabilir paket: ${rewardCount}</div><div class="ll-actions">${LL_POSITIONS.map(pos=>`<button class="ll-btn primary" ${packPending?'disabled':''} onclick="llOpenShopPack('${pos}','achievement')">🎁 ${LL_POSITION_ICONS[pos]} ${pos} · Ücretsiz</button>`).join('')}</div></div>`:'';
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Normal kasa ${cost} AP · AP: ${s.ap}</div></div><button class="ll-btn" onclick="${seasonEnd?'llRenderSeasonEnd()':'llRenderDashboard()'}">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklifler:</b> Aynı transfer döneminde gördüğün kart ailesi yeniden çıkmaz. Elit paket yalnızca kullanılabilir, daha önce keşfedilmemiş ve seçilen role ait kartlardan oluşur.</div>${packPending?`<div class="ll-notice" style="margin-top:12px;border-color:rgba(250,204,21,.42)"><b>📦 Açık kasa seçimi:</b> ${pending?'Elit':regularPending?.source==='achievement'?'Ücretsiz başarı':'Normal'} kasadaki iki karttan birini seçmeden yeni kasa açılamaz.</div>`:''}<div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(s.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(s.playerTeam).cards[pos],s.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" ${packPending?'disabled':''} onclick="llOpenShopPack('${pos}','paid')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div>${achievementPack}<div class="ll-card" style="margin-top:16px;border-color:rgba(234,179,8,.7);background:linear-gradient(135deg,rgba(88,28,135,.22),rgba(161,98,7,.18))"><div class="ll-card-title">✨ Elit Rol Paketi · ${LL_PREMIUM_PACK_COST} AP</div><div class="ll-sub">Seçtiğin role ait iki farklı kart açar. Her kart için Destansı %65 · Efsanevi %35. Sezon başına yalnızca bir ücretli paket vardır.</div><div class="ll-muted" style="margin:8px 0 12px">${pending?'Açılmış elit paketin seçimi bekliyor.':regularPending?'Önce açık normal kasadaki seçimini tamamla.':paidUsed?'Bu sezon ücretli 900 AP paketi kullanıldı.':`Ücretli 900 AP paketi kullanılabilir · Mevcut AP: ${s.ap}`}</div><div class="ll-actions">${LL_POSITIONS.map(pos=>`<button class="ll-btn gold" ${packPending||paidUsed?'disabled':''} onclick="llOpenPremiumPack('${pos}','paid')">${LL_POSITION_ICONS[pos]} ${pos} · ${LL_PREMIUM_PACK_COST} AP</button>`).join('')}</div></div><div id="ll-shop-offers"></div></div></div>`;
   if(packPending)llRenderShopOffers();
-};
+};;
 
 function llV3ValidQualifications(q){const all=['ucl','uel','uecl'].flatMap(type=>Array.isArray(q?.[type])?q[type]:[]);return ['ucl','uel','uecl'].every(type=>q?.[type]?.length===2)&&all.length===6&&new Set(all).size===6;}
 function llV3ResolveEuropeQualifications(state){
@@ -999,7 +1052,7 @@ llRenderDashboard=function(){const state=lexLeague.state;if(state&&!state.season
 var llPackOpeningRuntime=null;
 function llPackCardPalette(rarity){return {common:['#475569','#94a3b8'],rare:['#1d4ed8','#60a5fa'],epic:['#7e22ce','#c084fc'],legendary:['#b45309','#facc15']}[rarity]||['#334155','#94a3b8'];}
 function llPackCardCinematicHtml(id,index,mode){const card=llCard(id),palette=llPackCardPalette(card?.rarity),icon=LL_POSITION_ICONS[card?.position]||'◆';if(!card)return '';return `<div class="ll-pack-card" data-pack-card="${index}" onclick="llRevealPackCard(${index})" style="--card-color:${palette[0]};--card-light:${palette[1]}"><div class="ll-pack-card-face ll-pack-card-back">${mode==='elite'?'ELİT ROL PAKETİ':'TRANSFER PAKETİ'}</div><div class="ll-pack-card-face ll-pack-card-front"><div class="ll-pack-rarity">${llEscape(LL_RARITY_LABELS[card.rarity]||card.rarity)}</div><div class="ll-pack-pos-icon">${icon}</div><div class="ll-pack-card-name">${llEscape(card.name)}</div><div class="ll-pack-card-meta">${llEscape(card.position)} · Min ${Number(card.minStar||1)}★</div><div class="ll-pack-card-effect"><b>Tetikleyici:</b> ${llEscape(card.trigger)}<br><b>Etki:</b> ${llEscape(card.effect)}</div><div class="ll-pack-card-actions"><button class="ll-btn ${mode==='elite'?'gold':'primary'}" type="button" onclick="event.stopPropagation();llSelectPackCard('${llEscape(card.id)}')">Bu Kartı Seç</button></div></div></div>`;}
-function llShowPackOpening(mode,offerIds,options={}){const offers=(offerIds||[]).map(llCard).filter(Boolean);if(offers.length!==2){llRevealOpenedPack();return;}llClosePackOpening();const elite=mode==='elite',cost=Number(options.cost||0),costText=options.source==='voucher'?'HEDEF ÖDÜLÜ':`${cost||LL_PREMIUM_PACK_COST} AP`;llPackOpeningRuntime={mode,offers:offers.map(card=>card.id),timers:[],revealed:new Set(),started:false};document.body.classList.add('ll-cinematic-open');document.body.insertAdjacentHTML('beforeend',`<div class="ll-pack-cinematic ${elite?'elite':'regular'}" id="ll-pack-cinematic" role="dialog" aria-modal="true" aria-label="${elite?'Elit':'Normal'} kart paketi açılışı"><div class="ll-pack-particles"></div><button class="ll-pack-skip" type="button" onclick="llSkipPackAnimation()">Animasyonu Geç</button><div class="ll-pack-stage"><div class="ll-pack-kicker">${elite?'Destansı veya Efsanevi':'İki farklı kart teklifi'}</div><div class="ll-pack-title">${elite?'Elit Rol':'Transfer'} <em>Paketi</em></div><button class="ll-pack-shell" type="button" onclick="llBeginPackCinematic()"><span class="ll-pack-crown">${elite?'👑':'◇'}</span><span class="ll-pack-brand">LEXICON LİG</span><span class="ll-pack-line"></span><span class="ll-pack-type">${elite?'ELİT KASA':'NORMAL KASA'}</span><span class="ll-pack-cost">${llEscape(costText)}</span><span class="ll-pack-tap">▲ DOKUN VE AÇ ▲</span></button><div class="ll-pack-cards">${offers.map((card,index)=>llPackCardCinematicHtml(card.id,index,mode)).join('')}</div><div class="ll-pack-controls"><button class="ll-btn danger" type="button" onclick="llDiscardOpenedPack()">İki Kartı da İstemiyorum · AP İadesi Yok</button></div></div></div>`);if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)llSkipPackAnimation();}
+function llShowPackOpening(mode,offerIds,options={}){const offers=(offerIds||[]).map(llCard).filter(Boolean);if(offers.length!==2){llRevealOpenedPack();return;}llClosePackOpening();const elite=mode==='elite',cost=Number(options.cost||0),costText=options.source==='achievement'?'BAŞARI ÖDÜLÜ':options.source==='voucher'?'ÜCRETSİZ PAKET':`${cost||(elite?LL_PREMIUM_PACK_COST:LL_REGULAR_REWARD_PACK_VALUE)} AP`;llPackOpeningRuntime={mode,offers:offers.map(card=>card.id),timers:[],revealed:new Set(),started:false};document.body.classList.add('ll-cinematic-open');document.body.insertAdjacentHTML('beforeend',`<div class="ll-pack-cinematic ${elite?'elite':'regular'}" id="ll-pack-cinematic" role="dialog" aria-modal="true" aria-label="${elite?'Elit':'Normal'} kart paketi açılışı"><div class="ll-pack-particles"></div><button class="ll-pack-skip" type="button" onclick="llSkipPackAnimation()">Animasyonu Geç</button><div class="ll-pack-stage"><div class="ll-pack-kicker">${elite?'Destansı veya Efsanevi':'İki farklı kart teklifi'}</div><div class="ll-pack-title">${elite?'Elit Rol':'Transfer'} <em>Paketi</em></div><button class="ll-pack-shell" type="button" onclick="llBeginPackCinematic()"><span class="ll-pack-crown">${elite?'👑':'◇'}</span><span class="ll-pack-brand">LEXICON LİG</span><span class="ll-pack-line"></span><span class="ll-pack-type">${elite?'ELİT KASA':'NORMAL KASA'}</span><span class="ll-pack-cost">${llEscape(costText)}</span><span class="ll-pack-tap">▲ DOKUN VE AÇ ▲</span></button><div class="ll-pack-cards">${offers.map((card,index)=>llPackCardCinematicHtml(card.id,index,mode)).join('')}</div><div class="ll-pack-controls"><button class="ll-btn danger" type="button" onclick="llDiscardOpenedPack()">İki Kartı da İstemiyorum · İade Yok</button></div></div></div>`);if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)llSkipPackAnimation();}
 function llPackSchedule(fn,delay){const id=setTimeout(fn,delay);if(llPackOpeningRuntime)llPackOpeningRuntime.timers.push(id);return id;}
 function llBeginPackCinematic(){const runtime=llPackOpeningRuntime,root=document.getElementById('ll-pack-cinematic');if(!runtime||!root||runtime.started)return;runtime.started=true;const shell=root.querySelector('.ll-pack-shell'),elite=runtime.mode==='elite';shell?.classList.add('charging');if(typeof navigator.vibrate==='function')navigator.vibrate(elite?[35,35,55]:30);llPackSchedule(()=>{shell?.classList.remove('charging');shell?.classList.add('launched');root.classList.add('blast');llSpawnCinematicParticles(root,elite?78:36,elite?['#fde68a','#facc15','#c084fc']:['#bfdbfe','#60a5fa','#94a3b8']);llPackSchedule(()=>{root.classList.add('cards-ready');if(runtime.mode==='regular')llPackSchedule(()=>{llRevealPackCard(0);llRevealPackCard(1);},90);},elite?520:330);},elite?850:610);}
 function llRevealPackCard(index){const runtime=llPackOpeningRuntime,root=document.getElementById('ll-pack-cinematic');if(!runtime||!root||!root.classList.contains('cards-ready')||runtime.revealed.has(index))return;runtime.revealed.add(index);root.querySelector(`[data-pack-card="${index}"]`)?.classList.add('revealed');if(typeof navigator.vibrate==='function')navigator.vibrate(22);if(runtime.revealed.size>=runtime.offers.length){root.classList.add('all-revealed');const skip=root.querySelector('.ll-pack-skip');if(skip)skip.hidden=true;}}
