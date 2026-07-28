@@ -38,7 +38,17 @@ function llValidateImportedVocabulary(words,meta){
 function llStorageSnapshot(keys){const snapshot={};keys.forEach(key=>snapshot[key]=localStorage.getItem(key));return snapshot;}
 function llRestoreStorageSnapshot(snapshot){Object.entries(snapshot).forEach(([key,value])=>{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);});}
 function llAtomicStorageUpdate(values,removals=[]){const keys=[...new Set([...Object.keys(values),...removals])],snapshot=llStorageSnapshot(keys);try{Object.entries(values).forEach(([key,value])=>localStorage.setItem(key,String(value)));removals.forEach(key=>{if(!Object.prototype.hasOwnProperty.call(values,key))localStorage.removeItem(key);});return true;}catch(error){try{llRestoreStorageSnapshot(snapshot);}catch(rollbackError){error.rollbackError=rollbackError;}throw error;}}
-function llStoreValues(store){const values={[LL_SAVE_SLOTS_KEY]:JSON.stringify(store),[LL_ACTIVE_SLOT_KEY]:String(store.activeSlot)},removals=[],record=store.slots[String(store.activeSlot)];if(record?.state)values[LL_V2_SAVE_KEY]=JSON.stringify(record.state);else removals.push(LL_V2_SAVE_KEY);return {values,removals};}
+function llStoreValues(store){
+  return {
+    values: {
+      [LL_SAVE_SLOTS_KEY]: JSON.stringify(store),
+      [LL_ACTIVE_SLOT_KEY]: String(store.activeSlot)
+    },
+
+    // Eski ve büyük mükerrer kariyer kaydını kaldır.
+    removals: [LL_V2_SAVE_KEY]
+  };
+}
 function llPersistStoreAndMirror(store){const prepared=llStoreValues(store);return llAtomicStorageUpdate(prepared.values,prepared.removals);}
 function llStorageFailure(error,prefix='Kayıt yapılamadı'){console.error(prefix,error);const note=error?.rollbackError?' Geri alma işlemi de tamamlanamadı; otomatik indirilen son yedeği sakla.':' Mevcut veriler geri yüklendi.';alert(prefix+'. Tarayıcı depolama alanı dolu veya yazmaya kapalı olabilir.'+note+' Tam yedek indirmen önerilir.');}
 llSlotWriteStore=function(store){if(llSaveStoreReadError)return false;try{llPersistStoreAndMirror(store);return true;}catch(error){llStorageFailure(error,'Kariyer yuvaları kaydedilemedi');return false;}};
