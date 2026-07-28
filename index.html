@@ -3250,14 +3250,18 @@ function llRenderShop(){
   lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklif dönemi:</b> Bu dönemde gördüğün kart ailesi yeniden çıkmaz ve aynı pakette iki benzer kart bulunmaz. Bir kez seçip kullandığın kart ailesinin daha güçlü/zayıf benzeri kariyer boyunca tekrar teklif edilmez. Kaleci, Orta Saha ve Forvet kartları kendi kasalarına özeldir; “Evrensel” kartlar istisna olarak herhangi bir yuvaya takılabilir ama aile kilidi nedeniyle yalnız bir kez görünür.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
 }
-function llOpenShopPack(pos){
-  const s=lexLeague.state,cost=llShopCost();
+function llOpenShopPack(pos,source='paid'){
+  const s=lexLeague.state,cost=llShopCost(),achievement=source==='achievement';
   if(s.pendingPremiumPack){alert('Önce açık Elit Paketteki iki karttan birini seç veya paketten vazgeç.');llRenderShop();return;}
-  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
-  if(s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
-  const seen=llShopSeenFamilies(),pool=llEligibleCards(s.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
+  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers],source:s.pendingRegularPack.source||'paid'};llRenderShopOffers();return;}
+  if(achievement&&Math.max(0,Number(s.sealedRegularPacks)||0)<1){alert('Kullanılabilir ücretsiz sezon başarı paketin yok.');return;}
+  if(!achievement&&s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
+  const seen=llShopSeenFamilies(),pool=llEligibleCards(s.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. Paket/AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
   const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  s.ap-=cost;const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost,offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers]};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost});
+  if(achievement)s.sealedRegularPacks--;else s.ap-=cost;
+  const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost:achievement?0:cost,valueAp:achievement?150:cost,source:achievement?'achievement':'paid',offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};
+  if(achievement){const history=[...(s.regularRewardHistory||[])].reverse().find(item=>item.status==='sealed');if(history){history.status='pending';history.position=pos;history.offers=[...pending.offers];history.openedAt=pending.openedAt;pending.rewardSeason=history.season;}}
+  s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers],source:pending.source};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost:pending.cost,source:pending.source});
 }
 function llRevealOpenedPack(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;
@@ -3268,18 +3272,30 @@ function llRevealOpenedPack(){
 }
 function llRenderShopOffers(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
-  const starter=sh.mode==='starter';
-  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
-  host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
+  const starter=sh.mode==='starter',achievement=sh.mode==='regular'&&sh.source==='achievement',title=starter?'Ücretsiz Başlangıç':achievement?'Ücretsiz Başarı Paketi':'Teklifleri';
+  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${title}</div>${achievement?'<div class="ll-notice" style="margin-bottom:12px">Bu paket sportif başarı ödülüdür ve normal 150 AP kasasıyla aynı kart havuzunu kullanır.</div>':''}<div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':`<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">${achievement?'Paketi Atla · Ödül Geri Gelmez':'Skip · AP İadesi Yok'}</button>`}</div>`;
+  host.insertAdjacentHTML('afterbegin',`<div class="ll-pack-opened-banner">&#10024; ${achievement?'BAŞARI PAKETİ':'KASA'} A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>`);
 }
 function llChooseShopCard(id){
   const sh=lexLeague.shop;if(!sh||!sh.offers.includes(id))return;
-  const player=llTeamState(lexLeague.state.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
-  if(sh.mode==='starter'){lexLeague.state.starterPackClaimed=true;lexLeague.state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
-  if(sh.mode==='regular')lexLeague.state.pendingRegularPack=null;
+  const state=lexLeague.state,player=llTeamState(state.playerTeam),family=llCardFamilyName(llCard(id));if(!Array.isArray(player.usedCardFamilies))player.usedCardFamilies=[];if(family&&!player.usedCardFamilies.includes(family))player.usedCardFamilies.push(family);player.cards[sh.position]=id;llDiscoverCards([id]);
+  if(sh.mode==='starter'){state.starterPackClaimed=true;state.starterOffers={};lexLeague.shop=null;llSave();llRenderDashboard();return;}
+  if(sh.mode==='regular'){
+    const pending=state.pendingRegularPack;
+    if(pending?.source==='achievement'){const history=[...(state.regularRewardHistory||[])].reverse().find(item=>item.status==='pending'&&(!pending.rewardSeason||Number(item.season)===Number(pending.rewardSeason)));if(history){history.status='chosen';history.chosen=id;history.chosenAt=new Date().toISOString();}}
+    state.pendingRegularPack=null;
+  }
   llSave();llRenderShop();
 }
-function llSkipShopCards(){if(lexLeague.shop?.mode==='starter')return;if(lexLeague.shop?.mode==='regular')lexLeague.state.pendingRegularPack=null;lexLeague.shop={position:null,offers:[]};llSave();llRenderShop();}
+function llSkipShopCards(){
+  if(lexLeague.shop?.mode==='starter')return;
+  if(lexLeague.shop?.mode==='regular'){
+    const state=lexLeague.state,pending=state.pendingRegularPack;
+    if(pending?.source==='achievement'){const history=[...(state.regularRewardHistory||[])].reverse().find(item=>item.status==='pending'&&(!pending.rewardSeason||Number(item.season)===Number(pending.rewardSeason)));if(history){history.status='skipped';history.skippedAt=new Date().toISOString();}}
+    state.pendingRegularPack=null;
+  }
+  lexLeague.shop={position:null,offers:[]};llSave();llRenderShop();
+}
 function llEnsureDiscoveredCards(){
   const s=lexLeague.state;if(!s)return [];
   if(!Array.isArray(s.discoveredCards))s.discoveredCards=[];
@@ -5384,7 +5400,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260728-1"></script>
+<script src="league-v2.js?v=20260728-2"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
