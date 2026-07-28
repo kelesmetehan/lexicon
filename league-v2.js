@@ -32,7 +32,7 @@ const LL_EURO_ROUNDS=['Son 32','Son 16','Çeyrek Final','Yarı Final','Final'];
 const LL_EURO_LOGO_IDS={
   'Paris Saint-Germain':583,'Real Madrid':418,'Manchester City':281,'Bayern München':27,Liverpool:31,Inter:46,Chelsea:631,'Borussia Dortmund':16,Barcelona:131,Arsenal:11,'Bayer Leverkusen':15,'Atlético Madrid':13,Benfica:294,Atalanta:800,Villarreal:1050,Juventus:506,'Eintracht Frankfurt':24,'Club Brugge':2282,'Tottenham Hotspur':148,'PSV Eindhoven':383,Ajax:610,Napoli:6195,'Sporting CP':336,Olympiacos:683,Marseille:244,Copenhagen:190,Monaco:162,Galatasaray:141,'Union Saint-Gilloise':3948,'Qarabağ':10625,'Athletic Club':621,'Newcastle United':762,'Bodø/Glimt':2619,'Slavia Praha':62,Pafos:20401,'Kairat Almaty':10470
 };
-const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=6,LL_TEAM_TARGET_VERSION=4,LL_SEASON_HISTORY_VERSION=1;
+const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=7,LL_TEAM_TARGET_VERSION=4,LL_SEASON_HISTORY_VERSION=1;
 function llV2PlayerLeagueInState(state){return state?.leagues?.super?.includes(state.playerTeam)?'super':'first';}
 function llV2TeamStarsInState(state,name){return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||LL_ALL_TEAMS.find(t=>t.name===name)?.stars||1)));}
 function llV2TeamTargetOptions(league,stars){
@@ -147,13 +147,28 @@ function llV2CupGoalForTeam(state,name,league,stars){
     [{type:'cup_ro16',label:'Türkiye Kupası’nda son 16’ya kal',reward:{ap:100,lp:60}},{type:'cup_win_one',label:'Türkiye Kupası’nda en az 1 maç kazan',reward:{ap:80,lp:50}}];
   return {...pool[variant%pool.length],id:'cup_expectation'};
 }
+const LL_EUROPE_GOAL_STAGE_ORDER={league:0,playoff:1,r16:2,qf:3,sf:4,final:5,winner:6};
+const LL_EUROPE_GOAL_STAGE_LABELS={league:'Lig Aşaması',playoff:'Play-Off',r16:'Son 16',qf:'Çeyrek Final',sf:'Yarı Final',final:'Final',winner:'Şampiyonluk'};
+function llV2EuropeGoalForTeam(state,stars){
+  const competition=state?.europe?.type;if(!['ucl','uel','uecl'].includes(competition))return null;
+  const level=Math.max(1,Math.min(6,Number(stars)||1)),competitionLabel=llV2EuroLabel(competition),configs={
+    1:{type:'europe_win_one',value:1,label:`${competitionLabel}'nde en az 1 maç kazan`,reward:{ap:100,lp:80}},
+    2:{type:'europe_stage',value:'playoff',label:`${competitionLabel}'nde lig aşamasını geç`,reward:{ap:120,lp:100}},
+    3:{type:'europe_stage',value:'r16',label:`${competitionLabel}'nde Son 16 turuna ulaş`,reward:{ap:140,lp:120}},
+    4:{type:'europe_stage',value:'qf',label:`${competitionLabel}'nde çeyrek finale ulaş`,reward:{ap:160,lp:150}},
+    5:{type:'europe_stage',value:'sf',label:`${competitionLabel}'nde yarı finale ulaş`,reward:{ap:180,lp:180}},
+    6:{type:'europe_stage',value:'final',label:`${competitionLabel}'nde finale ulaş`,reward:{ap:220,lp:220}}
+  };
+  return {...configs[level],id:'europe_expectation',competition,starLevel:level};
+}
 function llV2CreateSeasonGoals(state){
   const league=llV2PlayerLeagueInState(state),team=state.playerTeam,stars=llV2TeamStarsInState(state,team),primary={...llV2TeamTarget(team,state),id:'club_primary'},wins=(league==='first'?[0,10,13,17,20,22,24]:[0,8,10,13,16,19,22])[stars],goalsFor=(league==='first'?[0,32,42,52,60,68,74]:[0,28,36,45,54,62,68])[stars],items=[
     primary,
     llV2CupGoalForTeam(state,team,league,stars),
     {id:'league_wins',type:'wins',value:wins,label:`En az ${wins} lig maçı kazan`,reward:{ap:0,lp:stars>=4?160:stars===3?140:120}},
     {id:'league_goals',type:'goals_for',value:goalsFor,label:`Ligde en az ${goalsFor} gol at`,reward:{ap:stars>=4?150:stars===3?130:110,lp:0}}
-  ];
+  ],europeGoal=llV2EuropeGoalForTeam(state,stars);
+  if(europeGoal)items.splice(2,0,europeGoal);
   return {version:LL_SEASON_GOAL_VERSION,season:state.season,league,stars,items,evaluated:false,results:[],earnedAp:0,earnedLp:0,promotionSupportAp:0,badge:null};
 }
 const LL_V2_CARD_REPAIR_VERSION=1;
@@ -211,6 +226,7 @@ function llV2RepairState(state){
   llV2EnsureEuropeStandings(state);
   llV2EnsureTeamSeasonTargets(state);
   if(!state.seasonGoals||state.seasonGoals.season!==state.season||(!state.seasonGoals.evaluated&&state.seasonGoals.version!==LL_SEASON_GOAL_VERSION))state.seasonGoals=llV2CreateSeasonGoals(state);
+  llV2EnsureStarUpgradeInvestments(state);
   return state;
 }
 function llV2CupMaxRoundReached(state,team=state.playerTeam){
@@ -220,6 +236,33 @@ function llV2CupMaxRoundReached(state,team=state.playerTeam){
   if(state.cup?.winner===team)max=Math.max(max,LL_CUP_ROUNDS.length-1);return max;
 }
 function llV2CupMatchWon(state,team=state.playerTeam){return (state.results||[]).some(r=>r.competition==='cup'&&(r.home===team||r.away===team)&&((r.home===team&&r.homeGoals>r.awayGoals)||(r.away===team&&r.awayGoals>r.homeGoals)));}
+function llV2EuropeGoalStageReached(state,competition,team=state.playerTeam){
+  let reached=0;const europe=team===state.playerTeam&&state?.europe?.type===competition?state.europe:null;
+  if(europe?.winner===team||europe?.phase==='winner')return LL_EUROPE_GOAL_STAGE_ORDER.winner;
+  if(europe?.phase in LL_EUROPE_GOAL_STAGE_ORDER)reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER[europe.phase]);
+  if(europe?.tie?.stage in LL_EUROPE_GOAL_STAGE_ORDER)reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER[europe.tie.stage]);
+  for(const result of state?.results||[]){
+    if(Number(result.season)!==Number(state.season)||result.competition!==competition||(result.home!==team&&result.away!==team))continue;
+    const round=String(result.roundLabel||'');
+    if(/yarı|semi/i.test(round))reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.sf);
+    else if(/çeyrek|quarter/i.test(round))reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.qf);
+    else if(/son\s*16|round of 16|r16/i.test(round))reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.r16);
+    else if(/play[- ]?off/i.test(round))reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.playoff);
+    else if(/final/i.test(round))reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.final);
+  }
+  const table=state?.europeStandings?.[competition],complete=table&&Number(table.playedRounds)>=Number(table.fixtures?.length||0);
+  if(complete){const rows=Object.values(table.standings||{}).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||String(a.team).localeCompare(String(b.team),'tr')),position=rows.findIndex(row=>row.team===team)+1;if(position>0&&position<=8)reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.r16);else if(position>0&&position<=24)reached=Math.max(reached,LL_EUROPE_GOAL_STAGE_ORDER.playoff);}
+  return reached;
+}
+function llV2EuropeGoalProgress(state,goal,team=state.playerTeam){
+  const competition=goal.competition||state?.europe?.type,type=goal.type||goal.id,results=(state?.results||[]).filter(result=>Number(result.season)===Number(state.season)&&result.competition===competition&&(result.home===team||result.away===team));
+  if(type==='europe_win_one'){
+    const wins=results.filter(result=>(result.home===team&&result.homeGoals>result.awayGoals)||(result.away===team&&result.awayGoals>result.homeGoals)).length,needed=Math.max(1,Number(goal.value)||1);
+    return {achieved:wins>=needed,progress:`${wins}/${needed} Avrupa galibiyeti`};
+  }
+  const targetStage=String(goal.value||'playoff'),targetScore=LL_EUROPE_GOAL_STAGE_ORDER[targetStage]??1,reachedScore=llV2EuropeGoalStageReached(state,competition,team),reachedStage=Object.keys(LL_EUROPE_GOAL_STAGE_ORDER).sort((a,b)=>LL_EUROPE_GOAL_STAGE_ORDER[b]-LL_EUROPE_GOAL_STAGE_ORDER[a]).find(stage=>reachedScore>=LL_EUROPE_GOAL_STAGE_ORDER[stage])||'league';
+  return {achieved:reachedScore>=targetScore,progress:`Ulaşılan: ${LL_EUROPE_GOAL_STAGE_LABELS[reachedStage]} / hedef ${LL_EUROPE_GOAL_STAGE_LABELS[targetStage]||targetStage}`};
+}
 function llV2TargetStatus(state,goal,team=state.playerTeam,summary=null){
   const league=goal.league||summary?.playerLeague||((state.leagues?.super||[]).includes(team)?'super':'first'),rows=summary?(league==='super'?summary.superRows:summary.firstRows):Object.values(state.standings?.[league]||{}).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr')),row=rows.find(r=>r.team===team),position=rows.findIndex(r=>r.team===team)+1,wins=Number(row?.W||0),goalsFor=Number(row?.GF||0),type=goal.type||goal.id;
   if(type==='league_position')return {achieved:position>0&&position<=goal.value,progress:`${position||'—'}. sıra / hedef ilk ${goal.value}`};
@@ -228,6 +271,7 @@ function llV2TargetStatus(state,goal,team=state.playerTeam,summary=null){
   if(type==='playoff')return {achieved:position>0&&position<=7,progress:`${position||'—'}. sıra / Play-Off sınırı ilk 7`};
   if(type==='survive'||type==='first_survive'){const safeLimit=Math.max(1,rows.length-(league==='super'?3:4));return {achieved:position>0&&position<=safeLimit,progress:`${position||'—'}. sıra / güvenli bölge ilk ${safeLimit}`};}
   if(type==='promote'){const achieved=summary?!!summary.promoted?.includes(team):position>0&&position<=2;return {achieved,progress:summary?(achieved?'Süper Lig’e yükseldi':'Yükselemedi'):`${position||'—'}. sıra · ilk 2 veya Play-Off`};}
+  if(type==='europe_win_one'||type==='europe_stage')return llV2EuropeGoalProgress(state,goal,team);
   if(type==='europe'||type==='ucl'){const q=summary?.qualifications||(league==='super'?llV2Qualifications(rows,state.cup?.winner):{ucl:[],uel:[],uecl:[]}),clubs=type==='ucl'?q.ucl:[...q.ucl,...q.uel,...q.uecl],achieved=clubs.includes(team);return {achieved,progress:achieved?(type==='ucl'?'Şampiyonlar Ligi bileti alındı':'Avrupa bileti alındı'):`${position||'—'}. sıra · Avrupa hattı takip ediliyor`};}
   if(type==='wins')return {achieved:wins>=goal.value,progress:`${wins}/${goal.value} lig galibiyeti`};
   if(type==='goals_for')return {achieved:goalsFor>=goal.value,progress:`${goalsFor}/${goal.value} lig golü`};
@@ -664,8 +708,26 @@ const llV3StartNextSeasonBase=llStartNextSeason;
 llStartNextSeason=function(){const q=llDeep(lexLeague.state.lastSeasonSummary?.qualifications||{ucl:[],uel:[],uecl:[]});llV3StartNextSeasonBase();const s=lexLeague.state;if(llV3ValidQualifications(q))s.europeQualifications=q;s.europeStandings=null;const type=['ucl','uel','uecl'].find(key=>s.europeQualifications?.[key]?.includes(s.playerTeam));s.europe=type?{type,phase:'league',round:0,alive:true,pending:null,winner:null,usedOpponents:[],status:'Lig aşaması başlamadı'}:null;llV2RepairState(s);llSave();llRenderDashboard();};
 const llV3CompleteSeasonBase=llCompleteSeason;
 llCompleteSeason=function(){const s=lexLeague.state,e=s.europe;if(e?.alive&&e.phase&&e.phase!=='league'){e.nextMatchWeek=Number(s.week);llV2EnsureEurope();if(s.pendingFixture){llRenderDashboard();return;}}llV3CompleteSeasonBase();};
+const LL_STAR_UPGRADE_INVESTMENT_VERSION=1;
 function llV2UpgradeCost(stars){return ({1:800,2:1400,3:2300,4:3500,5:5000})[stars]||0;}
-function llUpgradeStars(){const t=llTeamState(lexLeague.state.playerTeam),cost=llV2UpgradeCost(t.stars);if(!cost)return;if(lexLeague.state.lp<cost){alert(`Yetersiz LP. Gerekli: ${cost} LP`);return;}if(!confirm(`${cost} LP ile takımı ${t.stars+1} yıldıza yükseltmek istiyor musun?`))return;lexLeague.state.lp-=cost;t.stars++;llSave();llRenderDashboard();}
+function llV2BaseTeamStars(teamName){
+  const registry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY?.[teamName]:null,domestic=(typeof LL_ALL_TEAMS!=='undefined'?LL_ALL_TEAMS:[]).find(team=>team.name===teamName),base=Number(registry?.stars??domestic?.stars);
+  return Number.isFinite(base)?Math.max(1,Math.min(6,Math.round(base))):null;
+}
+function llV2UpgradeCostBetween(fromStars,toStars){let total=0;for(let stars=Math.max(1,Number(fromStars)||1);stars<Math.min(6,Number(toStars)||1);stars++)total+=llV2UpgradeCost(stars);return total;}
+function llV2EnsureStarUpgradeInvestments(state=lexLeague.state){
+  if(!state)return null;if(!state.starUpgradeInvestments||typeof state.starUpgradeInvestments!=='object')state.starUpgradeInvestments={version:LL_STAR_UPGRADE_INVESTMENT_VERSION,clubs:{},history:[]};
+  const ledger=state.starUpgradeInvestments;ledger.version=LL_STAR_UPGRADE_INVESTMENT_VERSION;if(!ledger.clubs||typeof ledger.clubs!=='object')ledger.clubs={};if(!Array.isArray(ledger.history))ledger.history=[];
+  for(const [teamName,raw] of Object.entries(ledger.clubs)){const entry=raw&&typeof raw==='object'?raw:{};entry.spentLp=Math.max(0,Math.floor(Number(entry.spentLp)||0));entry.settledLp=Math.max(0,Math.min(entry.spentLp,Math.floor(Number(entry.settledLp)||0)));entry.refundedLp=Math.max(0,Math.floor(Number(entry.refundedLp)||0));if(!Array.isArray(entry.upgrades))entry.upgrades=[];if(!Array.isArray(entry.settlements))entry.settlements=[];ledger.clubs[teamName]=entry;}
+  const teamName=state.playerTeam,currentStars=Number(state.teams?.[teamName]?.stars),baseStars=llV2BaseTeamStars(teamName);
+  if(teamName&&Number.isFinite(currentStars)&&Number.isFinite(baseStars)){const entry=ledger.clubs[teamName]||{spentLp:0,settledLp:0,refundedLp:0,upgrades:[],settlements:[]},inferred=llV2UpgradeCostBetween(baseStars,currentStars);entry.spentLp=Math.max(Number(entry.spentLp)||0,inferred);entry.settledLp=Math.max(0,Math.min(entry.spentLp,Number(entry.settledLp)||0));entry.refundedLp=Math.max(0,Number(entry.refundedLp)||0);if(!Array.isArray(entry.upgrades))entry.upgrades=[];if(!Array.isArray(entry.settlements))entry.settlements=[];entry.migratedBaseStars=baseStars;entry.migratedCurrentStars=currentStars;ledger.clubs[teamName]=entry;}
+  return ledger;
+}
+function llV2StarUpgradeInvestmentEntry(state,teamName){const ledger=llV2EnsureStarUpgradeInvestments(state);if(!ledger||!teamName)return null;if(!ledger.clubs[teamName])ledger.clubs[teamName]={spentLp:0,settledLp:0,refundedLp:0,upgrades:[],settlements:[]};return ledger.clubs[teamName];}
+function llV2RecordStarUpgradeInvestment(state,teamName,cost,fromStars,toStars){const entry=llV2StarUpgradeInvestmentEntry(state,teamName),amount=Math.max(0,Math.floor(Number(cost)||0));if(!entry||!amount)return entry;entry.spentLp+=amount;entry.upgrades.push({season:Number(state.season)||1,team:teamName,fromStars:Number(fromStars)||0,toStars:Number(toStars)||0,costLp:amount,at:new Date().toISOString()});state.starUpgradeInvestments.history.push({type:'upgrade',season:Number(state.season)||1,team:teamName,fromStars:Number(fromStars)||0,toStars:Number(toStars)||0,costLp:amount,at:new Date().toISOString()});return entry;}
+function llV2StarUpgradeRefundPreview(state,teamName){const entry=llV2StarUpgradeInvestmentEntry(state,teamName),refundableSpentLp=Math.max(0,Math.floor(Number(entry?.spentLp||0)-Number(entry?.settledLp||0))),refundLp=Math.floor(refundableSpentLp/2);return {team:teamName,refundableSpentLp,refundLp,totalSpentLp:Number(entry?.spentLp)||0,totalRefundedLp:Number(entry?.refundedLp)||0};}
+function llV2SettleStarUpgradeRefund(state,teamName,toTeam){const preview=llV2StarUpgradeRefundPreview(state,teamName);if(!preview.refundableSpentLp||teamName===toTeam)return {...preview,settled:false};const entry=llV2StarUpgradeInvestmentEntry(state,teamName),record={season:Number(state.season)||1,fromTeam:teamName,toTeam,refundableSpentLp:preview.refundableSpentLp,refundLp:preview.refundLp,at:new Date().toISOString()};entry.settledLp+=preview.refundableSpentLp;entry.refundedLp+=preview.refundLp;entry.settlements.push(record);state.starUpgradeInvestments.history.push({type:'refund',...record});state.lp=(Number(state.lp)||0)+preview.refundLp;return {...preview,settled:true};}
+function llUpgradeStars(){const state=lexLeague.state,t=llTeamState(state.playerTeam),fromStars=t.stars,cost=llV2UpgradeCost(fromStars);if(!cost)return;if(state.lp<cost){alert(`Yetersiz LP. Gerekli: ${cost} LP`);return;}if(!confirm(`${cost} LP ile takımı ${fromStars+1} yıldıza yükseltmek istiyor musun? Takımdan ayrılırsan bu yatırımın yarısı iade edilir.`))return;state.lp-=cost;llV2RecordStarUpgradeInvestment(state,state.playerTeam,cost,fromStars,fromStars+1);t.stars++;llSave();llRenderDashboard();}
 function llStartCareer(teamName){if(localStorage.getItem(LL_V2_SAVE_KEY)&&!confirm('Mevcut iki ligli kariyerin üzerine yeni kariyer yazılsın mı?'))return;lexLeague.state=llNewState(teamName);llAssignStarterCardsToAi();llSave();llRenderStarterShop();}
 
 /* Card contracts, active-slot chemistry and full European AI squads. */
