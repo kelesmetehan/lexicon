@@ -918,7 +918,29 @@
   @media(max-width:520px){.ll-trophy-stage{padding:24px 14px}.ll-trophy-icon{font-size:76px}.ll-trophy-sub{font-size:13px}.ll-trophy-detail{font-size:12px}}
   @media(prefers-reduced-motion:reduce){.ll-trophy-cinematic,.ll-trophy-icon,.ll-trophy-title,.ll-trophy-name,.ll-trophy-sub,.ll-trophy-detail,.ll-trophy-continue{animation-duration:.01ms!important;animation-delay:0ms!important}}
 
-</style>
+  /* Küme düşme sinematiği: kupadan elenmeden ayrı, kırmızı ve kısa. */
+  .ll-relegation-cinematic{position:fixed;inset:0;z-index:13500;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(220,38,38,.20),rgba(2,6,23,.96) 62%,#000);overflow:hidden;isolation:isolate;animation:llTrophyFadeIn .35s ease}
+  .ll-relegation-stage{position:relative;text-align:center;width:min(420px,100%);padding:28px 36px}
+  .ll-relegation-icon{font-size:76px;line-height:1;display:inline-block;filter:drop-shadow(0 0 18px rgba(220,38,38,.55));animation:llRelegationShake .55s cubic-bezier(.36,.07,.19,.97)}
+  .ll-relegation-title{margin-top:16px;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;opacity:0;transform:translateY(8px);animation:llSigningText .5s .45s ease forwards}
+  .ll-relegation-name{margin-top:4px;font-size:clamp(24px,7vw,32px);line-height:1.15;font-weight:700;color:#f87171;overflow-wrap:anywhere;opacity:0;transform:translateY(8px);animation:llSigningText .5s .6s ease forwards}
+  .ll-relegation-sub{margin:8px auto 0;max-width:390px;font-size:15px;line-height:1.55;color:#e2e8f0;opacity:0;transform:translateY(8px);animation:llSigningText .5s .77s ease forwards}
+  .ll-relegation-detail{margin:10px auto 0;max-width:390px;padding:9px 12px;border-radius:12px;background:rgba(127,29,29,.26);border:1px solid rgba(248,113,113,.28);font-size:14px;line-height:1.5;color:#fee2e2;opacity:0;transform:translateY(8px);animation:llSigningText .5s .86s ease forwards}
+  .ll-relegation-continue{margin-top:24px;opacity:0;transform:translateY(8px);animation:llSigningText .5s .95s ease forwards}
+  @keyframes llRelegationShake{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1.05) translateX(-10px)}45%{transform:scale(1) translateX(9px)}60%{transform:translateX(-6px)}75%{transform:translateX(4px)}90%{transform:translateX(-2px)}100%{transform:translateX(0)}}
+  @media(max-width:520px){.ll-relegation-stage{padding:24px 14px}.ll-relegation-icon{font-size:68px}.ll-relegation-sub{font-size:13px}.ll-relegation-detail{font-size:12px}}
+  @media(prefers-reduced-motion:reduce){.ll-relegation-cinematic,.ll-relegation-icon,.ll-relegation-title,.ll-relegation-name,.ll-relegation-sub,.ll-relegation-detail,.ll-relegation-continue{animation-duration:.01ms!important;animation-delay:0ms!important}}  /* Elenme ekranı: arka maç sonucunu tamamen perdeleyen tek odaklı kart. */
+  .ll-trophy-cinematic.loss{background:rgba(2,6,23,.985);backdrop-filter:blur(12px)}
+  .ll-trophy-cinematic.loss .ll-trophy-stage{width:min(520px,calc(100vw - 36px));padding:34px 38px 32px;border:1px solid rgba(248,113,113,.38);border-radius:22px;background:linear-gradient(145deg,rgba(69,10,10,.96),rgba(15,23,42,.985) 58%);box-shadow:0 28px 90px rgba(0,0,0,.72),0 0 48px rgba(239,68,68,.15)}
+  .ll-trophy-cinematic.loss .ll-trophy-icon{display:block;margin:0 auto 14px;font-size:62px;filter:drop-shadow(0 0 18px rgba(248,113,113,.5));animation:llEliminationDrop .48s cubic-bezier(.2,.9,.25,1)}
+  .ll-trophy-cinematic.loss .ll-trophy-title{margin-top:0;color:#fda4af;animation-delay:.35s}
+  .ll-trophy-cinematic.loss .ll-trophy-name{margin-top:8px;color:#fff1f2;animation-delay:.48s}
+  .ll-trophy-cinematic.loss .ll-trophy-sub{margin-top:13px;color:#e2e8f0;animation-delay:.61s}
+  .ll-trophy-cinematic.loss .ll-trophy-detail{margin-top:14px;background:rgba(127,29,29,.38);border-color:rgba(252,165,165,.32);color:#ffe4e6;animation-delay:.72s}
+  .ll-trophy-cinematic.loss .ll-trophy-continue{min-width:126px;background:#334155!important;border-color:#64748b!important;color:#f8fafc!important;animation-delay:.84s}
+  .ll-trophy-cinematic.loss .ll-pack-particles{display:none}
+  @keyframes llEliminationDrop{0%{opacity:0;transform:translateY(-18px) scale(.76)}65%{opacity:1;transform:translateY(4px) scale(1.08)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  @media(max-width:520px){.ll-trophy-cinematic.loss .ll-trophy-stage{padding:28px 20px}.ll-trophy-cinematic.loss .ll-trophy-icon{font-size:56px}}</style>
 </head>
 <body>
 
@@ -5406,7 +5428,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260728-1"></script>
+<script src="league-v2.js?v=20260731-5"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -5414,12 +5436,13 @@ renderPreStart();
 <script src="europe-team-pools.js?v=20260723-2"></script>
 <script src="european-leagues-pools.js?v=20260726-1"></script>
 <script src="last-champions.js?v=20260723-2"></script>
-<script src="penalty-shootout-animation.js?v=20260723-1"></script>
+<script src="penalty-shootout-animation.js?v=20260731-2"></script>
 <script src="ai-opponent-strategy.js?v=20260726-1"></script>
 <script src="multi-league-engine.js?v=20260728-5"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260727-1"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
-<script src="trophy-cinematic.js?v=20260729-2"></script>
+<script src="trophy-cinematic.js?v=20260731-5"></script>
+<script src="competition-consistency.js?v=20260731-1"></script>
 </body>
 </html>
