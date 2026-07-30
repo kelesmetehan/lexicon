@@ -1,15 +1,15 @@
 /* European team pools v15: cross-competition participant integrity and separate club fields. */
 const LL_V14_EURO_POOL_VERSION=5;
 const LL_V14_COUNTRY_FLAGS={
-  ENG:'🇬🇧',GER:'🇩🇪',ESP:'🇪🇸',ITA:'🇮🇹',FRA:'🇫🇷',POR:'🇵🇹',BEL:'🇧🇪',GRE:'🇬🇷',
-  AZE:'🇦🇿',NOR:'🇳🇴',DEN:'🇩🇰',NED:'🇳🇱',CZE:'🇨🇿',CYP:'🇨🇾',KAZ:'🇰🇿',TUR:'🇹🇷',
-  HUN:'🇭🇺',SRB:'🇷🇸',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',BUL:'🇧🇬',CRO:'🇭🇷',SUI:'🇨🇭',AUT:'🇦🇹',
-  ROU:'🇷🇴',SWE:'🇸🇪',ISR:'🇮🇱',POL:'🇵🇱',UKR:'🇺🇦',SVN:'🇸🇮',ARM:'🇦🇲',
-  KOS:'🇽🇰',FIN:'🇫🇮',MKD:'🇲🇰',BIH:'🇧🇦',GIB:'🇬🇮',SVK:'🇸🇰',ISL:'🇮🇸',
-  IRL:'🇮🇪',MLT:'🇲🇹'
+  ENG:'ğŸ‡¬ğŸ‡§',GER:'ğŸ‡©ğŸ‡ª',ESP:'ğŸ‡ªğŸ‡¸',ITA:'ğŸ‡®ğŸ‡¹',FRA:'ğŸ‡«ğŸ‡·',POR:'ğŸ‡µğŸ‡¹',BEL:'ğŸ‡§ğŸ‡ª',GRE:'ğŸ‡¬ğŸ‡·',
+  AZE:'ğŸ‡¦ğŸ‡¿',NOR:'ğŸ‡³ğŸ‡´',DEN:'ğŸ‡©ğŸ‡°',NED:'ğŸ‡³ğŸ‡±',CZE:'ğŸ‡¨ğŸ‡¿',CYP:'ğŸ‡¨ğŸ‡¾',KAZ:'ğŸ‡°ğŸ‡¿',TUR:'ğŸ‡¹ğŸ‡·',
+  HUN:'ğŸ‡­ğŸ‡º',SRB:'ğŸ‡·ğŸ‡¸',SCO:'ğŸ´ó §ó ¢ó ³ó £ó ´ó ¿',BUL:'ğŸ‡§ğŸ‡¬',CRO:'ğŸ‡­ğŸ‡·',SUI:'ğŸ‡¨ğŸ‡­',AUT:'ğŸ‡¦ğŸ‡¹',
+  ROU:'ğŸ‡·ğŸ‡´',SWE:'ğŸ‡¸ğŸ‡ª',ISR:'ğŸ‡®ğŸ‡±',POL:'ğŸ‡µğŸ‡±',UKR:'ğŸ‡ºğŸ‡¦',SVN:'ğŸ‡¸ğŸ‡®',ARM:'ğŸ‡¦ğŸ‡²',
+  KOS:'ğŸ‡½ğŸ‡°',FIN:'ğŸ‡«ğŸ‡®',MKD:'ğŸ‡²ğŸ‡°',BIH:'ğŸ‡§ğŸ‡¦',GIB:'ğŸ‡¬ğŸ‡®',SVK:'ğŸ‡¸ğŸ‡°',ISL:'ğŸ‡®ğŸ‡¸',
+  IRL:'ğŸ‡®ğŸ‡ª',MLT:'ğŸ‡²ğŸ‡¹'
 };
 function llV14Club(name,country,stars,logoId=null,short=null){
-  return {name,short:short||name,country,stars,pot:stars>=6?1:stars===5?2:stars===4?3:4,flag:LL_V14_COUNTRY_FLAGS[country]||'🌍',logoId};
+  return {name,short:short||name,country,stars,pot:stars>=6?1:stars===5?2:stars===4?3:4,flag:LL_V14_COUNTRY_FLAGS[country]||'ğŸŒ',logoId};
 }
 const LL_V14_EURO_POOLS={
   ucl:[
@@ -19,11 +19,11 @@ const LL_V14_EURO_POOLS={
     llV14Club("Arsenal","ENG",6,11),
     llV14Club("Chelsea FC","ENG",6,631),
     llV14Club("FC Barcelona","ESP",6,131),
-    llV14Club("FC Bayern Münih","GER",6,27),
+    llV14Club("FC Bayern MÃ¼nih","GER",6,27),
     llV14Club("Liverpool FC","ENG",6,31),
     llV14Club("Tottenham Hotspur","ENG",5,148),
     llV14Club("Inter Milan","ITA",6,46),
-    llV14Club("Atlético Madrid","ESP",5,13),
+    llV14Club("AtlÃ©tico Madrid","ESP",5,13),
     llV14Club("Newcastle United","ENG",5,762),
     llV14Club("Juventus","ITA",5,506),
     llV14Club("Bayer 04 Leverkusen","GER",5,15),
@@ -44,10 +44,10 @@ const LL_V14_EURO_POOLS={
     llV14Club("Olympiakos","GRE",4,683),
     llV14Club("Union Saint-Gilloise","BEL",3,3948),
     llV14Club("SK Slavia Prag","CZE",3,62),
-    llV14Club("FK Bodø/Glimt","NOR",4,2619),
+    llV14Club("FK BodÃ¸/Glimt","NOR",4,2619),
     llV14Club("FC Kopenhag","DEN",4,190),
     llV14Club("Pafos FC","CYP",3,20401),
-    llV14Club("Qarabağ FK","AZE",3,10625),
+    llV14Club("QarabaÄŸ FK","AZE",3,10625),
     llV14Club("Kairat Almaty","KAZ",2,10470)
   ],
   uel:[
@@ -62,14 +62,14 @@ const LL_V14_EURO_POOLS={
     llV14Club("Genk","BEL",4,1184),
     llV14Club("Bologna","ITA",4,1025),
     llV14Club("Stuttgart","GER",4,79),
-    llV14Club("Ferencváros","HUN",3,279),
+    llV14Club("FerencvÃ¡ros","HUN",3,279),
     llV14Club("Nottingham Forest","ENG",4,703),
-    llV14Club("Viktoria Plzeň","CZE",3,941),
+    llV14Club("Viktoria PlzeÅˆ","CZE",3,941),
     llV14Club("Crvena zvezda","SRB",4,159),
     llV14Club("Celta Vigo","ESP",4,940),
     llV14Club("PAOK","GRE",4,1091),
     llV14Club("Lille","FRA",4,1082),
-    llV14Club("Fenerbahçe","TUR",5,36),
+    llV14Club("FenerbahÃ§e","TUR",5,36),
     llV14Club("Panathinaikos","GRE",4,265),
     llV14Club("Celtic","SCO",4,371),
     llV14Club("Ludogorets","BUL",3,31614),
@@ -85,7 +85,7 @@ const LL_V14_EURO_POOLS={
     llV14Club("Rangers","SCO",4,124),
     llV14Club("Nice","FRA",4,417),
     llV14Club("Utrecht","NED",3,200),
-    llV14Club("Malmö","SWE",3,496),
+    llV14Club("MalmÃ¶","SWE",3,496),
     llV14Club("Maccabi Tel Aviv","ISR",3,119)
   ],
   uecl:[
@@ -105,14 +105,14 @@ const LL_V14_EURO_POOLS={
     llV14Club("CS Universitatea Craiova","ROU",3,40812),
     llV14Club("HNK Rijeka","CRO",3,144),
     llV14Club("Slovan Bratislava","SVK",3,540),
-    llV14Club("Raków Częstochowa","POL",3,38594),
+    llV14Club("RakÃ³w CzÄ™stochowa","POL",3,38594),
     llV14Club("SK Sigma Olomouc","CZE",3,518),
     llV14Club("Jagiellonia Bialystok","POL",3,1288),
     llV14Club("FC Lausanne-Sport","SUI",3,527),
-    llV14Club("Legia Varşova","POL",4,255),
-    llV14Club("BK Häcken","SWE",3,1093),
+    llV14Club("Legia VarÅŸova","POL",4,255),
+    llV14Club("BK HÃ¤cken","SWE",3,1093),
     llV14Club("Aberdeen FC","SCO",3,370),
-    llV14Club("Omonia Lefkoşa","CYP",3,766),
+    llV14Club("Omonia LefkoÅŸa","CYP",3,766),
     llV14Club("AEK Larnaca","CYP",3,28095),
     llV14Club("NK Celje","SVN",3,379),
     llV14Club("FC Noah Erivan","ARM",2,26730),
@@ -123,20 +123,20 @@ const LL_V14_EURO_POOLS={
     llV14Club("Kuopion Palloseura","FIN",2,2728),
     llV14Club("Hamrun Spartans","MLT",2,4669),
     llV14Club("Shelbourne FC","IRL",2,3700),
-    llV14Club("Breidablik Kópavogur","ISL",2,1899),
+    llV14Club("Breidablik KÃ³pavogur","ISL",2,1899),
     llV14Club("Lincoln Red Imps FC","GIB",2,12430)
   ]
 };
 const LL_V14_EURO_META=Object.fromEntries(Object.values(LL_V14_EURO_POOLS).flat().map(team=>[team.name,team]));
 const LL_V14_SUPPLEMENTAL_TEAMS=[
   llV14Club('RSC Anderlecht','BEL',4,58),
-  llV14Club('Standard Liège','BEL',3,3057),
+  llV14Club('Standard LiÃ¨ge','BEL',3,3057),
   llV14Club('Heart of Midlothian','SCO',3,43),
   llV14Club('Hibernian FC','SCO',3,903),
   llV14Club('Molde FK','NOR',3,687),
   llV14Club('Rosenborg BK','NOR',3,1957),
   llV14Club('FK Partizan Belgrade','SRB',3,669),
-  llV14Club('Grasshopper Club Zürich','SUI',3,504),
+  llV14Club('Grasshopper Club ZÃ¼rich','SUI',3,504),
   llV14Club('FC Porto','POR',6,720),
   llV14Club('Sporting CP','POR',5,336),
   llV14Club('SL Benfica','POR',5,294),
@@ -169,8 +169,8 @@ const LL_V14_SUPPLEMENTAL_TEAMS=[
   llV14Club('Qarabag FK','AZE',3,7395)
 ];
 const LL_V14_RECONCILIATION_RESERVES=[
-  'RSC Anderlecht','Standard Liège','Heart of Midlothian','Hibernian FC',
-  'Molde FK','Rosenborg BK','FK Partizan Belgrade','Grasshopper Club Zürich'
+  'RSC Anderlecht','Standard LiÃ¨ge','Heart of Midlothian','Hibernian FC',
+  'Molde FK','Rosenborg BK','FK Partizan Belgrade','Grasshopper Club ZÃ¼rich'
 ];
 LL_V14_SUPPLEMENTAL_TEAMS.forEach(team=>{LL_V14_EURO_META[team.name]=team;});
 Object.values(LL_V14_EURO_META).forEach(team=>{if(team.logoId)LL_EURO_LOGO_IDS[team.name]=team.logoId;});
@@ -199,7 +199,9 @@ function llV14TeamCountry(name){
 function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   const canonical=name=>typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name;
   const player=canonical(state?.playerTeam),registryCountry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[player]?.country:null;
-  const activeCountry=state?.playerCountry||registryCountry||'TUR',blocked=new Set([...qualifiers.map(canonical),...reserved]);
+  // Oynanabilir ligi olan ülkelerin temsilcileri yalnızca kendi sezon sonu
+  // kontenjanından gelir. Sabit havuz, oyunda ligi olmayan ülkeler içindir.
+  const activeCountry=state?.playerCountry||registryCountry||'TUR',dynamicCountries=new Set(Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:[]),blocked=new Set([...qualifiers.map(canonical),...reserved]);
   const pinned=[];
   for(const name of llV14PinnedTeams(state,type)){
     const key=canonical(name);if(!name||blocked.has(key))continue;
@@ -207,16 +209,16 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   }
   const fixed=[];
   for(const name of llV14EuroPool(type)){
-    const key=canonical(name);if(llV14TeamCountry(name)===activeCountry||blocked.has(key))continue;
+    const key=canonical(name);if(dynamicCountries.has(llV14TeamCountry(name))||blocked.has(key))continue;
     blocked.add(key);fixed.push(name);
   }
   const needed=Math.max(0,36-qualifiers.length),combined=[...pinned,...fixed];
   for(const name of [...LL_V14_RECONCILIATION_RESERVES,...LL_V14_SUPPLEMENTAL_TEAMS.map(team=>team.name)]){
     if(combined.length>=needed)break;
-    const key=canonical(name);if(!name||blocked.has(key)||llV14TeamCountry(name)===activeCountry)continue;
+    const key=canonical(name);if(!name||blocked.has(key)||dynamicCountries.has(llV14TeamCountry(name)))continue;
     blocked.add(key);combined.push(name);
   }
-  if(combined.length<needed)console.warn(`${llV2EuroLabel(type)} sabit havuzu ${needed-combined.length} gerçek kulüp eksik kaldı.`);
+  if(combined.length<needed)console.warn(`${llV2EuroLabel(type)} sabit havuzu ${needed-combined.length} gerÃ§ek kulÃ¼p eksik kaldÄ±.`);
   return combined.slice(0,needed);
 }
 function llV14PinPlayerFixtures(state,type,fixtures){
@@ -250,7 +252,7 @@ function llV14ParticipantOrder(qualifiers,foreign,roundCount){
       if(next<=score||random()<.002){score=next;if(score<bestScore){best=[...ordered];bestScore=score;if(!score)break;}}else [ordered[first],ordered[second]]=[ordered[second],ordered[first]];
     }
   }
-  const fixtures=llV3BuildEuropeFixtures(best,roundCount);if(bestScore)console.warn(`Avrupa kura motoru ${bestScore} aynı ülke eşleşmesini önleyemedi.`);return {teams:best,fixtures};
+  const fixtures=llV3BuildEuropeFixtures(best,roundCount);if(bestScore)console.warn(`Avrupa kura motoru ${bestScore} aynÄ± Ã¼lke eÅŸleÅŸmesini Ã¶nleyemedi.`);return {teams:best,fixtures};
 }
 function llV14RebuildEuropeStandings(state,preserveCurrent=true){
   const types=['ucl','uel','uecl'],qualifications=typeof llMLResolveEuropeParticipants==='function'?llMLResolveEuropeParticipants(state):llV3ResolveEuropeQualifications(state),previous=state.europeStandings;
