@@ -1,5 +1,5 @@
-/* European team pools v14: separate 2025/26 club fields for UCL, UEL and UECL. */
-const LL_V14_EURO_POOL_VERSION=4;
+/* European team pools v15: cross-competition participant integrity and separate club fields. */
+const LL_V14_EURO_POOL_VERSION=5;
 const LL_V14_COUNTRY_FLAGS={
   ENG:'🇬🇧',GER:'🇩🇪',ESP:'🇪🇸',ITA:'🇮🇹',FRA:'🇫🇷',POR:'🇵🇹',BEL:'🇧🇪',GRE:'🇬🇷',
   AZE:'🇦🇿',NOR:'🇳🇴',DEN:'🇩🇰',NED:'🇳🇱',CZE:'🇨🇿',CYP:'🇨🇾',KAZ:'🇰🇿',TUR:'🇹🇷',
@@ -272,7 +272,7 @@ function llV14RebuildEuropeStandings(state,preserveCurrent=true){
 llV2CreateEuropeStandings=function(state){return llV14RebuildEuropeStandings(state,false);};
 const llV14EnsureEuropeStandingsBase=llV2EnsureEuropeStandings;
 llV2EnsureEuropeStandings=function(state){
-  const valid=state?.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&Number(state.europeStandings.poolVersion)===LL_V14_EURO_POOL_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],rounds=LL_EURO_LEAGUE_WEEKS[type].length;return Number(table?.poolVersion)===LL_V14_EURO_POOL_VERSION&&table?.teams?.length===36&&table.fixtures?.length===rounds&&table.fixtures.every(round=>round.length===18);});
+  const allTypes=['ucl','uel','uecl'],canonical=name=>typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name,allTeams=allTypes.flatMap(type=>state?.europeStandings?.[type]?.teams||[]).map(canonical),valid=state?.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&Number(state.europeStandings.poolVersion)===LL_V14_EURO_POOL_VERSION&&new Set(allTeams).size===allTeams.length&&allTypes.every(type=>{const table=state.europeStandings[type],rounds=LL_EURO_LEAGUE_WEEKS[type].length;return Number(table?.poolVersion)===LL_V14_EURO_POOL_VERSION&&table?.teams?.length===36&&table.fixtures?.length===rounds&&table.fixtures.every(round=>round.length===18);});
   if(!valid)llV14RebuildEuropeStandings(state,true);const tables=llV14EnsureEuropeStandingsBase(state);tables.poolVersion=LL_V14_EURO_POOL_VERSION;
   Object.values(tables).filter(value=>value&&typeof value==='object'&&Array.isArray(value.teams)).forEach(table=>table.poolVersion=LL_V14_EURO_POOL_VERSION);state.europePoolVersion=LL_V14_EURO_POOL_VERSION;return tables;
 };

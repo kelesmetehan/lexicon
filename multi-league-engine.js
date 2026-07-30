@@ -91,6 +91,15 @@ llNewState=function(teamName){const state=llMLNewStateBase(teamName);state.playe
 var llMLTeamDefBase=llTeamDef;
 llTeamDef=function(name){const canonical=typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name,def=LL_TEAM_REGISTRY?.[canonical];return def?{name:def.name,short:def.short,stars:def.stars,icon:def.icon,logo:def.logo,country:def.country,tier:def.tier,source:def.source}:llMLTeamDefBase(name);};
 llV2TeamStarsInState=function(state,name){return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||LL_TEAM_REGISTRY?.[name]?.stars||1)));};
+/* Yeni sezonun tüm değerleri sıfırken, ülkenin kaynak başlangıç dizilimi alfabetik sıranın önüne geçer.
+   Puan/averaj oluştuğunda normal lig sıralama kuralları aynen uygulanır. */
+function llMLPoolSeed(state,country,tier,name){const names=state?.leagues?.[country]?.[tier]||[],index=names.indexOf(name);return index>=0?index:Number.MAX_SAFE_INTEGER;}
+const llMLSortTableBase=llSortTable;
+llSortTable=function(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
+  const state=lexLeague.state,country=state?.playerCountry,tier=key==='super'?'tier1':key==='first'?'tier2':key,rows=state?.standings?.[country]?.[tier];
+  if(!rows)return llMLSortTableBase(key);
+  return Object.values(rows).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||llMLPoolSeed(state,country,tier,a.team)-llMLPoolSeed(state,country,tier,b.team)||a.team.localeCompare(b.team,'tr'));
+};
 llAiDomesticNames=function(){return new Set(LL_ALL_DOMESTIC_TEAMS.map(team=>team.name));};
 /* Domestic identity checks must include every simulated country, not only Turkey. */
 llV4EnsureEuropeTeams=function(state,tables=state?.europeStandings){if(!state||!tables)return;const domestic=new Set(LL_ALL_DOMESTIC_TEAMS.map(team=>team.name));['ucl','uel','uecl'].forEach(type=>(tables[type]?.teams||[]).forEach(name=>{if(domestic.has(name))return;const team=llV4CreateEuroTeam(state,name);LL_POSITIONS.forEach(position=>{if(!team.cards[position])llV4FreeCardForState(state,name,position);});llEnsureTeamContracts(team);}));};
@@ -159,7 +168,7 @@ function llMLSimulateBackgroundWeek(state,week){const start=typeof performance!=
 var llMLCommitBase=llCommitCurrentMatch;
 llCommitCurrentMatch=function(){const state=lexLeague.state,match=lexLeague.match,week=Number(state?.week)||0,competition=match?.fixture?.competition||'league',already=!!match?.committed;llMLCommitBase();if(!already&&competition==='league'&&state&&Number(state.week)>week){llMLSimulateBackgroundWeek(state,week);llSave();}};
 
-function llMLSortRows(state,country,tier){return Object.values(state.standings[country]?.[tier]||{}).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr'));}
+function llMLSortRows(state,country,tier){return Object.values(state.standings[country]?.[tier]||{}).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||llMLPoolSeed(state,country,tier,a.team)-llMLPoolSeed(state,country,tier,b.team)||a.team.localeCompare(b.team,'tr'));}
 function llMLFinishCountryLeagues(state,country){for(const tier of ['tier1','tier2'])for(let w=0;w<(state.schedules[country]?.[tier]?.length||0);w++)for(const fixture of state.schedules[country][tier][w])if(!llMLHasFixtureResult(state,country,tier,fixture,w+1))llMLSimulateFixture(state,country,tier,fixture,w+1);}
 function llMLKnockoutWinner(state,names){let field=[...names];while(field.length>1){const next=[];for(let i=0;i<field.length;i+=2){const a=field[i],b=field[i+1];if(!b){next.push(a);continue;}const as=llV2TeamStarsInState(state,a),bs=llV2TeamStarsInState(state,b),chance=.5+(as-bs)*.07;next.push(Math.random()<Math.max(.18,Math.min(.82,chance))?a:b);}field=next;}return field[0];}
 function llMLCountrySeasonSummary(state,country){const tier1=llMLSortRows(state,country,'tier1'),tier2=llMLSortRows(state,country,'tier2'),topMeta=llMLLeagueMeta(country,'tier1'),lowerMeta=llMLLeagueMeta(country,'tier2'),relegateCount=Math.max(0,Number(topMeta.relegate)||0),directCount=Math.max(0,Number(lowerMeta.promoteDirect)||0),playoffCount=Math.max(0,Number(lowerMeta.promotePlayoff)||0),playoffFrom=Math.max(directCount+1,Number(lowerMeta.playoffFrom)||directCount+1),playoffTo=Math.max(playoffFrom,Number(lowerMeta.playoffTo)||playoffFrom+4),relegated=relegateCount?tier1.slice(-relegateCount).map(row=>row.team):[],direct=tier2.slice(0,directCount).map(row=>row.team),playoffWinner=playoffCount?llMLKnockoutWinner(state,tier2.slice(playoffFrom-1,playoffTo).map(row=>row.team)):null,promoted=[...direct,...(playoffWinner?[playoffWinner]:[])],cupWinner=state.cups[country]?.winner||null;return {country,tier1Rows:llV2SnapshotRows(tier1,state),tier2Rows:llV2SnapshotRows(tier2,state),relegated,promoted,playoffWinner,cupWinner,qualifications:llV2Qualifications(tier1,cupWinner),rules:{relegateCount,directCount,playoffCount,playoffFrom,playoffTo}};}
