@@ -153,7 +153,7 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   llV15StopPenaltyAnimation();
   llV15PenaltyRuntime=null;
   llV15RenderRoundSummaryBase(completedWeek,lp,pg,og,comp,advanced);
-  if(!['ucl','uel','uecl'].includes(comp))return;
+  if(!['cup','playoff','ucl','uel','uecl'].includes(comp))return;
 
   const state=lexLeague.state;
   const result=[...(state.results||[])].reverse().find(item=>item.userMatch&&item.competition===comp);
@@ -166,11 +166,18 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   const actions=buttons.length?buttons[buttons.length-1].parentElement:null;
   if(!notice||!actions)return;
 
-  const stage=llV11EuroStageLabel(result.euroStage);
-  const progress=state.europe?.status||`${stage} tamamlandı.`;
+  const isEurope=['ucl','uel','uecl'].includes(comp);
+  const cupName=state.cup?.name||LL_DOMESTIC_CUP_NAMES?.[state.playerCountry]||'Yerel Kupa';
+  const stage=isEurope?llV11EuroStageLabel(result.euroStage):comp==='cup'?(result.roundLabel||LL_CUP_ROUNDS?.[Number(result.cupRound)||0]||cupName):'Yükselme Play-Off';
+  const competitionName=isEurope?llV2EuroLabel(comp):comp==='cup'?cupName:'Play-Off';
+  const won=shootout.winner===state.playerTeam;
+  const progress=isEurope
+    ?(state.europe?.status||`${stage} tamamlandı.`)
+    :`${stage} · Penaltılarda ${shootout.player}-${shootout.opponent} ${won?'tur atladın':'elendin'}.`;
   const aggregate=llV15PenaltyAggregate(shootout,progress);
-  const finalNotice=`+${lp} LP<br><b>${llEscape(stage)}:</b> ${llEscape(progress)}`;
-  notice.innerHTML=`+${lp} LP<br><b>${llEscape(stage)}:</b> İki maçın toplamı ${aggregate}. Eşitlik bozulmadı; penaltılara gidiliyor.`;
+  const scoreCaption=isEurope?'Toplam skor':'Maç skoru';
+  const finalNotice=`+${lp} LP<br><b>${llEscape(competitionName)} · ${llEscape(stage)}:</b> ${llEscape(progress)}`;
+  notice.innerHTML=`+${lp} LP<br><b>${llEscape(competitionName)} · ${llEscape(stage)}:</b> ${scoreCaption} ${aggregate}. Eşitlik bozulmadı; penaltılara gidiliyor.`;
   actions.querySelectorAll('button').forEach(button=>button.disabled=true);
   actions.insertAdjacentHTML('beforebegin',`<section class="ll-penalty-shootout" id="ll-penalty-shootout" aria-live="polite">
     <div class="ll-penalty-kicker">PENALTI ATIŞLARI</div>
