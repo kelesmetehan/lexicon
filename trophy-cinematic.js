@@ -98,8 +98,9 @@ function llShowTrophyAnimation(trophyName,options={}){
   const root=document.getElementById('ll-trophy-cinematic');
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if(!reduced){
-    llTrophySpawnParticles(root,70,particleColors);
-    if(typeof navigator.vibrate==='function')navigator.vibrate(theme==='elimination'?[30,45,30]:[40,40,60]);
+    /* Elenme anı sade kalır; parçacıklar yalnızca kutlamada kullanılır. */
+    if(theme!=='elimination')llTrophySpawnParticles(root,70,particleColors);
+    if(typeof navigator.vibrate==='function')navigator.vibrate(theme==='elimination'?[70,40,70]:[40,40,60]);
   }else root.style.animation='none';
   window.setTimeout(()=>root?.querySelector('.ll-trophy-continue')?.focus(),1050);
   return true;
@@ -377,4 +378,49 @@ if(typeof llRenderDashboard==='function'){
   };
 }
 
+llTrophyCinematicState(lexLeague?.state);
+
+/* V3: dedicated relegation cinematic, separate from cup/Europe elimination. */
+LL_TROPHY_CINEMATIC_VERSION=3;
+function llShowRelegationAnimation(fromLeagueLabel,detail,options={}){
+  if(typeof document==='undefined'||document.getElementById('ll-trophy-cinematic'))return false;
+  const state=lexLeague?.state,team=options.team||state?.playerTeam||'';
+  const title=options.title||'Küme Düştün';
+  const subtitle=options.subtitle||`${team} sezonu küme düşme hattında tamamladı.`;
+  document.body.classList.add('ll-cinematic-open');
+  document.body.insertAdjacentHTML('beforeend',`<div class="ll-relegation-cinematic" id="ll-trophy-cinematic" role="dialog" aria-modal="true" aria-label="${llEscape(title)}"><div class="ll-relegation-stage"><div class="ll-relegation-icon" aria-hidden="true">⬇️</div><div class="ll-relegation-title">${llEscape(title)}</div><div class="ll-relegation-name">${llEscape(fromLeagueLabel)}</div><div class="ll-relegation-sub">${llEscape(subtitle)}</div>${detail?`<div class="ll-relegation-detail">${llEscape(detail)}</div>`:''}<button class="ll-btn ll-relegation-continue" type="button" onclick="llCloseTrophyAnimation()">Devam Et</button></div></div>`);
+  const root=document.getElementById('ll-trophy-cinematic');
+  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced&&typeof navigator.vibrate==='function')navigator.vibrate([70,40,70]);
+  if(reduced)root.style.animation='none';
+  window.setTimeout(()=>root?.querySelector('.ll-relegation-continue')?.focus(),1000);
+  return true;
+}
+const llTrophyShowAnimationV3Base=llShowTrophyAnimation;
+llShowTrophyAnimation=function(trophyName,options={}){
+  if(options?.theme==='relegation')return llShowRelegationAnimation(trophyName,options.detail,options);
+  return llTrophyShowAnimationV3Base(trophyName,options);
+};
+function llQueueSeasonRelegationIfNeeded(state=lexLeague?.state){
+  if(!state?.seasonEnded||!state?.playerTeam)return false;
+  const summary=state.lastSeasonSummary||{},team=state.playerTeam,country=state.playerCountry||summary.country||'TUR';
+  const competition=typeof llMLTeamCompetition==='function'?llMLTeamCompetition(team,state):null;
+  const tier=competition?.tier||(summary.playerLeague==='super'?'tier1':summary.playerLeague==='first'?'tier2':null);
+  const countrySummary=summary.countrySummaries?.[country]||summary;
+  const rows=tier==='tier1'?(countrySummary.tier1Rows||summary.tier1Rows||summary.superRows||[]):(countrySummary.tier2Rows||summary.tier2Rows||summary.firstRows||[]);
+  const position=rows.findIndex(row=>row?.team===team)+1;
+  const relegated=(countrySummary.relegated||summary.relegated||[]).includes(team);
+  const careerDrop=Boolean(state.careerEnded&&tier==='tier2');
+  if(!relegated&&!careerDrop)return false;
+  const leagueName=llLeagueDisplayName(country,tier||'tier1'),nextLeague=llLeagueDisplayName(country,'tier2');
+  return llQueueTrophyAnimation({season:state.season,kind:careerDrop?'career-relegation':'league-relegation',country,tier:tier||'tier1',title:careerDrop?'Kariyer Sona Erdi':'Küme Düştün',name:leagueName,subtitle:careerDrop?`${team} alt lige düştü.`:`${team} sezonu küme düşme hattında tamamladı.`,detail:careerDrop?`${position||'—'}. sırada tamamladın · Kulüp oynanmayan alt lige düştü; kariyerin sona erdi.`:`${position||'—'}. sırada tamamladın · ${nextLeague} ligine düştün.`,team,icon:'⬇️',theme:'relegation'});
+}
+if(typeof llV2FinalizeSeason==='function'){
+  const llTrophyFinalizeSeasonV3Base=llV2FinalizeSeason;
+  llV2FinalizeSeason=function(...args){const result=llTrophyFinalizeSeasonV3Base(...args);llQueueSeasonRelegationIfNeeded(lexLeague?.state);if(typeof llSave==='function')llSave();return result;};
+}
+if(typeof llRenderSeasonEnd==='function'){
+  const llTrophyRenderSeasonEndV3Base=llRenderSeasonEnd;
+  llRenderSeasonEnd=function(...args){const result=llTrophyRenderSeasonEndV3Base(...args);llQueueSeasonRelegationIfNeeded(lexLeague?.state);llScheduleTrophyAnimation(90);return result;};
+}
 llTrophyCinematicState(lexLeague?.state);
