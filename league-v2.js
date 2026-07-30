@@ -468,9 +468,18 @@ function llCommitCurrentMatch(){
   else if(comp==='playoff')llV2FinishPlayoffMatch(winner);
   s.pendingFixture=null;llSave();llRenderRoundSummary(s.week-(comp==='league'?1:0),lp,pg,og,comp,winner===m.player);
 }
+function llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName=''){
+  const finalIndex=LL_EURO_ROUNDS.length-1,nextIndex=Number(e?.round),player=lexLeague.state?.playerTeam;
+  const champion=advanced&&(e?.winner===player||e?.phase==='winner'||completedRound>=finalIndex||nextIndex>=LL_EURO_ROUNDS.length);
+  if(!advanced)return `${stageName||'Bu tur'} aşamasında elendin.`;
+  if(champion)return `${llV2EuroLabel(comp)} kupasını kazandın.`;
+  if(Number.isInteger(nextIndex)&&nextIndex>=0&&nextIndex<LL_EURO_ROUNDS.length&&Number.isFinite(Number(LL_EURO_WEEKS[nextIndex])))return `Sıradaki tur: ${LL_EURO_ROUNDS[nextIndex]} · ${LL_EURO_WEEKS[nextIndex]}. hafta`;
+  return 'Tur atladın. Sıradaki eşleşme hazırlanıyor.';
+}
+
 function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=false){
   const isEurope=['ucl','uel','uecl'].includes(comp),label=comp==='league'?'Lig':comp==='cup'?'Türkiye Kupası':comp==='playoff'?'Play-Off':isEurope?llV2EuroLabel(comp):comp.toUpperCase(),result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet',e=lexLeague.state.europe;
-  const completedRound=isEurope?Math.max(0,Math.min(LL_EURO_ROUNDS.length-1,advanced?Number(e?.round||1)-1:Number(e?.round||0))):null,stageName=isEurope?LL_EURO_ROUNDS[completedRound]:'',nextStage=isEurope&&advanced?(e?.winner===lexLeague.state.playerTeam?'Avrupa kupasını kazandın.':`Sıradaki tur: ${LL_EURO_ROUNDS[Number(e?.round)||0]} · ${LL_EURO_WEEKS[Number(e?.round)||0]}. hafta`):isEurope?`${stageName} aşamasında elendin.`:'';
+  const completedRound=isEurope?Math.max(0,Math.min(LL_EURO_ROUNDS.length-1,advanced?Number(e?.round||1)-1:Number(e?.round||0))):null,stageName=isEurope?LL_EURO_ROUNDS[completedRound]:'',nextStage=isEurope?llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName):'';
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel" style="text-align:center"><div class="quiz-start-title">${label} · ${result} <em>${pg}-${og}</em></div><div class="ll-notice">+${lp} LP${comp!=='league'&&pg===og?` · Penaltılar: ${advanced?'Tur atladın':'Elendin'}`:''}${isEurope?`<br><b>${stageName}:</b> ${llEscape(nextStage)}`:''}</div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">${isEurope?`<button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${comp}')">Avrupa Tur Yolunu Gör</button>`:''}<button class="ll-btn primary" onclick="llRenderDashboard()">Devam Et</button></div></div></div>`;
 }
 
