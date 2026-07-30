@@ -295,7 +295,7 @@ if(typeof llV2FinishEuropeRound==='function'){
       return;
     }
     const stage=(before.tie?.stage)||before.phase;
-    if(!['r16','qf','sf','final'].includes(stage))return;
+    if(!['playoff','r16','qf','sf','final'].includes(stage))return;
     const tie=after.tie||before.tie||{};
     const scoreText=`Toplam ${Number(tie.playerGoals)||0}-${Number(tie.opponentGoals)||0}`;
     llQueueEuropeKnockoutElimination(state,after.type||before.type,stage,tie.opponent||'',scoreText,tie.penalties||null);
