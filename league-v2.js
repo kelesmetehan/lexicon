@@ -455,8 +455,13 @@ function llCommitCurrentMatch(){
   const lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;s.lp+=lp;
   const rolledCardIds=(m.playerDice||[]).map(die=>die.cardId).filter(Boolean),usedCardIds=rolledCardIds.length?rolledCardIds:LL_POSITIONS.map(pos=>llTeamState(m.player)?.cards?.[pos]).filter(Boolean),conditionMetCardIds=llTriggeredPlayerCardIds(m),appliedCardIds=llAppliedPlayerCardIds(m);llRecordPlayerCardPerformance(usedCardIds,pg>og?'win':pg===og?'draw':'loss',comp,pg,og,conditionMetCardIds,appliedCardIds);
   llRecordMatch(f.home,f.away,hg,ag,s.week,true,comp,f.league||null);llApplyLocks(r,m.player,m.opponent);
-  let winner=pg===og?(Math.random()<.5?m.player:m.opponent):pg>og?m.player:m.opponent;
-  if(comp!=='league'){const recorded=s.results[s.results.length-1];if(recorded?.userMatch)recorded.knockoutWinner=winner;}
+  /* Tek maçlı yerel kupa / play-off beraberlikleri yazıyla değil, saklanan penaltı serisiyle çözülür. Avrupa rövanşları kendi toplam skor motorunda çözülür. */
+  const penaltyShootout=(comp==='cup'||comp==='playoff')&&pg===og&&typeof llV12PenaltyShootout==='function'
+    ?llV12PenaltyShootout(s,m.player,m.opponent)
+    :null;
+  if(penaltyShootout)penaltyShootout.aggregate={player:pg,opponent:og};
+  let winner=penaltyShootout?penaltyShootout.winner:(pg===og?(Math.random()<.5?m.player:m.opponent):pg>og?m.player:m.opponent);
+  if(comp!=='league'){const recorded=s.results[s.results.length-1];if(recorded?.userMatch){recorded.knockoutWinner=winner;if(penaltyShootout)recorded.penaltyShootout={...penaltyShootout};}}
   if(comp==='league'){llV2PlayLeagueWeek('super',f.league==='super'?f:null);llV2PlayLeagueWeek('first',f.league==='first'?f:null);llDevelopOpponents(s.week);s.week++;}
   else if(comp==='cup')llV2FinishCupRound(winner);
   else if(['ucl','uel','uecl'].includes(comp))llV2FinishEuropeRound(winner);
