@@ -176,3 +176,64 @@ llRenderDashboard=function(){
   const card=llArea()?.querySelector('.ll-next-match')?.closest('.ll-card');
   if(card&&!card.querySelector('.ll-euro-leg-context'))card.querySelector('.ll-next-match')?.insertAdjacentHTML('beforebegin',context);
 };
+
+
+/* Current domestic matchweek fixtures beside dashboard standings. */
+function llCCDashboardWeekFixturesHtml(key){
+  const state=lexLeague.state,week=Math.max(1,Number(state?.week)||1),round=llCurrentRound(key)||[];
+  if(!round.length)return '';
+  const played=round.filter(fixture=>llV2FixtureResult(fixture.home,fixture.away,'league',week)).length;
+  return `<div class="ll-card ll-dashboard-fixtures" data-dashboard-week-fixtures><div class="ll-card-title">${week}. Hafta ? E?le?meler <span class="ll-round-meta">${played}/${round.length} oynand?</span></div><div class="ll-fixture-list">${round.map(fixture=>llV2FixtureRow(fixture.home,fixture.away,llV2FixtureResult(fixture.home,fixture.away,'league',week))).join('')}</div></div>`;
+}
+const llCCDashboardWithWeekFixtures=llRenderDashboard;
+llRenderDashboard=function(){
+  llCCDashboardWithWeekFixtures();
+  const fixture=llPlayerFixture();
+  if(!fixture||fixture.competition!=='league')return;
+  const key=fixture.league||llTeamLeague(lexLeague.state?.playerTeam)||'first',html=llCCDashboardWeekFixturesHtml(key);
+  if(!html)return;
+  const grid=llArea()?.querySelector('.ll-grid'),column=grid?.lastElementChild;
+  if(column&&!column.querySelector('[data-dashboard-week-fixtures]'))column.insertAdjacentHTML('beforeend',html);
+};
+
+
+/* Archived domestic standings for every simulated country at season end. */
+function llCCSeasonEndCountrySummaries(entry){
+  const codes=(typeof LL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES))?LL_COUNTRY_CODES:[entry?.country||'TUR'];
+  return codes.filter(code=>typeof llMLArchiveSummary==='function'&&llMLArchiveSummary(entry,code));
+}
+function llCCSeasonEndCountryStandingsHtml(entry,requestedCountry,requestedTier){
+  const countries=llCCSeasonEndCountrySummaries(entry);
+  if(!countries.length)return '';
+  const fallback=entry?.country||countries[0];
+  const country=countries.includes(requestedCountry)?requestedCountry:(countries.includes(fallback)?fallback:countries[0]);
+  const tier=requestedTier==='tier2'?'tier2':'tier1';
+  const summary=llMLArchiveSummary(entry,country),meta=llMLCountryMeta(country),leagueLabel=llMLLeagueLabel(country,tier),cupNames=typeof LL_DOMESTIC_CUP_NAMES!=='undefined'?LL_DOMESTIC_CUP_NAMES:{},cupName=cupNames[country]||'Yerel Kupa';
+  const champion=summary?.tier1Rows?.[0]?.team||'—';
+  const countryTabs=countries.map(code=>{const item=llMLCountryMeta(code);return `<button class="ll-btn ${code===country?'primary':''}" type="button" onclick="llCCSelectSeasonEndStandings('${code}','${tier}')">${llEscape(item.flag)} ${llEscape(item.country)}</button>`;}).join('');
+  const tierTabs=['tier1','tier2'].map(item=>`<button class="ll-btn ${item===tier?'primary':''}" type="button" onclick="llCCSelectSeasonEndStandings('${country}','${item}')">${llEscape(llMLLeagueLabel(country,item))}</button>`).join('');
+  return `<div class="ll-card-title">Sezon Sonu Puan Durumu <span style="color:var(--text3);font-size:.76em">${llEscape(meta.flag)} ${llEscape(meta.country)}</span></div><div class="ll-actions" style="margin:0 0 10px">${countryTabs}</div><div class="ll-actions" style="margin:0 0 10px">${tierTabs}</div><div class="ll-notice" style="margin:0 0 12px"><b>${llEscape(leagueLabel)} şampiyonu:</b> ${llEscape(champion)} · <b>${llEscape(cupName)}:</b> ${llEscape(summary?.cupWinner||'—')}</div>${llMLArchivedTableHtml(summary,country,tier)}`;
+}
+function llCCInjectSeasonEndCountryStandings(country,tier){
+  const state=lexLeague.state,entry=state?.lastSeasonSummary,root=llArea();
+  if(!state||!entry||!root||typeof llMLArchivedTableHtml!=='function')return;
+  const host=[...root.querySelectorAll('.ll-card')].find(card=>/Sezon Sonu Puan Durumu/i.test(card.querySelector('.ll-card-title')?.textContent||''));
+  if(!host)return;
+  const currentCountry=country||state.__ccSeasonEndCountry||state.playerCountry||entry.country;
+  const currentTier=tier||state.__ccSeasonEndTier||'tier1';
+  const html=llCCSeasonEndCountryStandingsHtml(entry,currentCountry,currentTier);
+  if(html)host.innerHTML=html;
+}
+function llCCSelectSeasonEndStandings(country,tier){
+  const state=lexLeague.state;
+  if(!state)return;
+  state.__ccSeasonEndCountry=country;
+  state.__ccSeasonEndTier=tier==='tier2'?'tier2':'tier1';
+  llCCInjectSeasonEndCountryStandings(state.__ccSeasonEndCountry,state.__ccSeasonEndTier);
+}
+const llCCManagerMarketWithSeasonEndCountries=llRenderManagerMarket;
+llRenderManagerMarket=function(tableKey='super'){
+  llCCManagerMarketWithSeasonEndCountries(tableKey);
+  const defaultTier=String(tableKey)==='first'?'tier2':'tier1';
+  llCCInjectSeasonEndCountryStandings(lexLeague.state?.__ccSeasonEndCountry||lexLeague.state?.playerCountry,lexLeague.state?.__ccSeasonEndTier||defaultTier);
+};
