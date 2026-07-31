@@ -237,3 +237,51 @@ llRenderManagerMarket=function(tableKey='super'){
   const defaultTier=String(tableKey)==='first'?'tier2':'tier1';
   llCCInjectSeasonEndCountryStandings(lexLeague.state?.__ccSeasonEndCountry||lexLeague.state?.playerCountry,lexLeague.state?.__ccSeasonEndTier||defaultTier);
 };
+
+
+/* Season-opening presentation must follow the manager's newly selected country. */
+function llCCOpeningArchiveStar(entry,country,name){
+  const summary=typeof llMLArchiveSummary==='function'?llMLArchiveSummary(entry,country):null;
+  const rows=[...(summary?.tier1Rows||[]),...(summary?.tier2Rows||[])];
+  const row=rows.find(item=>item.team===name);
+  return Number(row?.stars||0);
+}
+function llCCOpeningStarChanges(state,latest,country){
+  const previous=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-2)||null;
+  const names=[...(state.leagues?.[country]?.tier1||[]),...(state.leagues?.[country]?.tier2||[])];
+  return names.map(name=>{
+    const from=previous?llCCOpeningArchiveStar(previous,country,name):llCCOpeningArchiveStar(latest,country,name);
+    const to=previous?llCCOpeningArchiveStar(latest,country,name):Number(state.teams?.[name]?.stars||0);
+    return {name,from,to};
+  }).filter(item=>item.from&&item.to&&item.from!==item.to).sort((a,b)=>Math.abs(b.to-b.from)-Math.abs(a.to-a.from)||a.name.localeCompare(b.name,'tr'));
+}
+function llCCOpeningTeamRows(names,emptyText){
+  if(!names?.length)return `<div class="ll-muted">${llEscape(emptyText)}</div>`;
+  return `<div class="ll-season-team-list">${names.map(name=>`<div class="ll-season-team-row"><strong>${llTeamLogo(name,'table')}${llEscape(name)}</strong><span>${llStars(llV2TeamStarsInState(lexLeague.state,name))}</span></div>`).join('')}</div>`;
+}
+function llCCPatchSeasonOpeningCountryData(){
+  const state=lexLeague.state,root=llArea(),country=state?.playerCountry;
+  if(!state||!root||!country||typeof llMLArchiveSummary!=='function')return;
+  const latest=(state.seasonHistory||[]).find(item=>Number(item.season)===Number(state.season)-1)||null;
+  const summary=latest?llMLArchiveSummary(latest,country):null;
+  if(!summary)return;
+  const countryMeta=llMLCountryMeta(country),tier=llMLTeamCompetition(state.playerTeam,state)?.tier||'tier2',leagueNames=state.leagues?.[country]?.[tier]||[];
+  const grids=[...root.querySelectorAll('.ll-season-grid')];
+  if(grids[0])grids[0].innerHTML=`<div class="ll-season-card"><div class="ll-card-title">${llEscape(llMLLeagueLabel(country,'tier1'))}'e Yükselenler</div>${llCCOpeningTeamRows(summary.promoted||[],'Yükselen takım kaydı yok.')}</div><div class="ll-season-card"><div class="ll-card-title">${llEscape(llMLLeagueLabel(country,'tier2'))}'e Düşenler</div>${llCCOpeningTeamRows(summary.relegated||[],'Düşen takım kaydı yok.')}</div>`;
+  const changes=llCCOpeningStarChanges(state,latest,country),distribution=[6,5,4,3,2,1].map(star=>({star,count:leagueNames.filter(name=>llV2TeamStarsInState(state,name)===star).length})).filter(item=>item.count);
+  const starCard=grids[1]?[...grids[1].querySelectorAll('.ll-season-card')].find(card=>/Yıldız Dengesi/.test(card.textContent||'')):null;
+  if(starCard){
+    const changeHtml=changes.length?llCCOpeningTeamRows(changes.slice(0,8).map(item=>item.name),'')+`<div class="ll-muted" style="margin-top:8px">${changes.slice(0,8).map(item=>`${llEscape(item.name)}: ${item.from}★ → ${item.to}★`).join(' · ')}</div>`:'<div class="ll-muted">Kaydedilen sezonlar arasında yıldız değişimi yok.</div>';
+    starCard.innerHTML=`<div class="ll-card-title">Yıldız Dengesi ve Değişimler</div><div class="ll-muted" style="margin-bottom:9px">${llEscape(countryMeta.flag)} ${distribution.map(item=>`${item.star}★: ${item.count} takım`).join(' · ')}</div>${changeHtml}`;
+  }
+  const europeGrid=grids[2],europeCard=europeGrid?[...europeGrid.querySelectorAll('.ll-season-card')].find(card=>/Avrupa Temsilcileri/.test(card.textContent||'')):null;
+  if(europeCard){
+    const q=summary.qualifications||{ucl:[],uel:[],uecl:[]};
+    europeCard.innerHTML=`<div class="ll-card-title">${llEscape(countryMeta.country)} Avrupa Temsilcileri</div><div class="ll-season-europe-grid">${['ucl','uel','uecl'].map(type=>`<div class="ll-season-europe"><b>${llEscape(llV2EuroLabel(type))}</b>${(q[type]||[]).map(name=>`<div class="ll-season-team-row"><strong>${llTeamLogo(name,'table')}${llEscape(name)}</strong><span>${name===state.playerTeam?'SEN':''}</span></div>`).join('')||'<div class="ll-muted">Temsilci yok.</div>'}</div>`).join('')}</div>`;
+  }
+}
+const llCCSeasonOpeningCountryBase=llRenderSeasonOpening;
+llRenderSeasonOpening=function(){
+  llCCSeasonOpeningCountryBase();
+  llCCPatchSeasonOpeningCountryData();
+};
