@@ -285,3 +285,25 @@ llRenderSeasonOpening=function(){
   llCCSeasonOpeningCountryBase();
   llCCPatchSeasonOpeningCountryData();
 };
+
+
+/* Explain the club-market discount wherever a regular pack price is shown. */
+function llCCMarketDiscountCard(state=lexLeague.state){
+  const card=llCard(llTeamState(state?.playerTeam)?.clubCards?.market);
+  return card?.id==='RBU04'?card:null;
+}
+const llCCTransferBannerWithDiscount=llTransferWindowBanner;
+llTransferWindowBanner=function(week){
+  const html=llCCTransferBannerWithDiscount(week),card=llCCMarketDiscountCard();
+  if(!html||!card)return html;
+  return html.replace(/Kart kasas\u0131 100 AP/,'Kart kasas\u0131 <s>150 AP</s> \u2192 <b>100 AP</b> \u00b7 '+llEscape(card.name)+' indirimi aktif');
+};
+const llCCShopWithDiscountExplanation=llRenderShop;
+llRenderShop=function(){
+  llCCShopWithDiscountExplanation();
+  const card=llCCMarketDiscountCard(),root=llArea();
+  if(!card||!root||root.querySelector('[data-market-discount-note]'))return;
+  const topbar=root.querySelector('.ll-topbar');
+  if(topbar)topbar.insertAdjacentHTML('afterend','<div class="ll-notice" data-market-discount-note style="margin:12px 0;border-color:rgba(250,204,21,.58)"><b>\u2699 '+llEscape(card.name)+' indirimi aktif:</b> Bu kul\u00fcb\u00fcn kal\u0131c\u0131 market kart\u0131 normal kasa bedelini bu transfer d\u00f6neminde <s>150 AP</s> \u2192 <b>100 AP</b> yap\u0131yor.</div>');
+  root.querySelectorAll('button[onclick*="llOpenShopPack"]').forEach(button=>{if(/100 AP ile Kasa A\u00e7/.test(button.textContent||''))button.textContent='100 AP \u00b7 \u0130ndirimli Kasa A\u00e7';});
+};
