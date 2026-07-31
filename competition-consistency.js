@@ -307,3 +307,44 @@ llRenderShop=function(){
   if(topbar)topbar.insertAdjacentHTML('afterend','<div class="ll-notice" data-market-discount-note style="margin:12px 0;border-color:rgba(250,204,21,.58)"><b>\u2699 '+llEscape(card.name)+' indirimi aktif:</b> Bu kul\u00fcb\u00fcn kal\u0131c\u0131 market kart\u0131 normal kasa bedelini bu transfer d\u00f6neminde <s>150 AP</s> \u2192 <b>100 AP</b> yap\u0131yor.</div>');
   root.querySelectorAll('button[onclick*="llOpenShopPack"]').forEach(button=>{if(/100 AP ile Kasa A\u00e7/.test(button.textContent||''))button.textContent='100 AP \u00b7 \u0130ndirimli Kasa A\u00e7';});
 };
+
+
+/* Taktik Tahtasi: visible dedicated club-market offer. */
+const LL_TACTIC_BOARD_ID='RBU04';
+const LL_TACTIC_BOARD_COST=150;
+const llTacticBoardEligibleCardsBase=llEligibleCards;
+llEligibleCards=function(teamName,pos){
+  return llTacticBoardEligibleCardsBase(teamName,pos).filter(card=>!card?.clubCard);
+};
+function llTacticBoardCard(){return llCard(LL_TACTIC_BOARD_ID);}
+function llTacticBoardMarketHtml(){
+  const state=lexLeague.state,team=llTeamState(state?.playerTeam),card=llTacticBoardCard();
+  if(!state||!team||!card)return '';
+  const owned=team?.clubCards?.market===card.id;
+  const other=team?.clubCards?.market&&team.clubCards.market!==card.id?llCard(team.clubCards.market):null;
+  if(owned)return '<div class="ll-card" data-tactic-board-market style="margin-top:16px;border-color:rgba(250,204,21,.7);background:linear-gradient(135deg,rgba(120,53,15,.22),rgba(14,116,144,.14))"><div class="ll-card-title">\u2699 Kul\u00fcp / Market Kart\u0131</div><div class="ll-team-name">'+llEscape(card.name)+' <span class="ll-rarity rare">NAD\u0130R</span></div><div class="ll-sub" style="margin-top:8px"><b>Aktif indirim:</b> Normal kasa <s>150 AP</s> \u2192 <b>100 AP</b>. Bu kart aktif zar yuvalar\u0131n\u0131 ve kart s\u00f6zle\u015fmelerini etkilemez.</div></div>';
+  if(other)return '<div class="ll-card" data-tactic-board-market style="margin-top:16px"><div class="ll-card-title">\u2699 Kul\u00fcp / Market Kart\u0131</div><div class="ll-muted">Kul\u00fcb\u00fcn market yuvas\u0131nda '+llEscape(other.name)+' var.</div></div>';
+  const disabled=Number(state.ap||0)<LL_TACTIC_BOARD_COST;
+  return '<div class="ll-card" data-tactic-board-market style="margin-top:16px;border-color:rgba(250,204,21,.7);background:linear-gradient(135deg,rgba(120,53,15,.22),rgba(14,116,144,.14))"><div class="ll-card-title">\u2699 \u00d6zel Kul\u00fcp Teklifi \u00b7 Transfer D\u00f6nemi</div><div class="ll-team-name">'+llEscape(card.name)+' <span class="ll-rarity rare">NAD\u0130R</span></div><div class="ll-sub" style="margin-top:8px"><b>Kul\u00fcp / Market kart\u0131:</b> Aktif zar yuvas\u0131 i\u015fgal etmez. Bir kez al\u0131nd\u0131\u011f\u0131nda normal kasa bedeli kal\u0131c\u0131 olarak <s>150 AP</s> \u2192 <b>100 AP</b> olur.</div><button class="ll-btn gold" style="width:100%;margin-top:12px" '+(disabled?'disabled':'')+' onclick="llBuyTacticBoard()">'+LL_TACTIC_BOARD_COST+' AP ile Taktik Tahtas\u0131 Al</button></div>';
+}
+function llBuyTacticBoard(){
+  const state=lexLeague.state;
+  if(!state||!llIsTransferWindow(state.week)){alert('Taktik Tahtas\u0131 yaln\u0131zca transfer d\u00f6neminde al\u0131nabilir.');return false;}
+  const team=llTeamState(state.playerTeam);llPrepareV7Team(team,state);
+  const card=llTacticBoardCard();
+  if(team?.clubCards?.market===card?.id){alert('Taktik Tahtas\u0131 zaten aktif. Normal kasalar 100 AP.');return false;}
+  if(team?.clubCards?.market){alert('Kul\u00fcp / Market yuvas\u0131 dolu.');return false;}
+  if(Number(state.ap||0)<LL_TACTIC_BOARD_COST){alert('Yetersiz AP. Gerekli: '+LL_TACTIC_BOARD_COST+' AP');return false;}
+  if(!confirm(card.name+' kart\u0131 '+LL_TACTIC_BOARD_COST+' AP ile al\u0131ns\u0131n m\u0131?\n\nEtkisi: Normal kasa bedeli kal\u0131c\u0131 olarak 150 AP yerine 100 AP olur.'))return false;
+  state.ap-=LL_TACTIC_BOARD_COST;team.clubCards.market=card.id;
+  if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];
+  const family=llCardFamilyName(card);if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);
+  llDiscoverCards([card.id]);llSave();llRenderShop();return true;
+}
+const llTacticBoardRenderShopBase=llRenderShop;
+llRenderShop=function(){
+  llTacticBoardRenderShopBase();
+  const root=llArea();if(!root||root.querySelector('[data-tactic-board-market]'))return;
+  const target=root.querySelector('#ll-club-card-shop')||root.querySelector('#ll-shop-offers');
+  if(target)target.insertAdjacentHTML('beforebegin',llTacticBoardMarketHtml());
+};
