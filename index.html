@@ -3256,7 +3256,7 @@ function llRenderRoundSummary(completedWeek,lpGain,pg,og){
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${result} <em>${pg}-${og}</em></div><div class="ll-muted">${completedWeek}. hafta tamamlandı · +${lpGain} LP</div></div></div><div class="ll-grid"><div>${llTableHtml()}</div><div class="ll-card"><div class="ll-card-title">Haftanın Sonuçları</div><div class="ll-result-list">${weekResults.map(x=>`<div class="ll-result-row"><span>${llEscape(x.home)}</span><b>${x.homeGoals}-${x.awayGoals}</b><span>${llEscape(x.away)}</span></div>`).join('')}</div></div></div><div style="display:flex;justify-content:center;margin-top:16px"><button class="ll-btn primary" onclick="${lexLeague.state.seasonEnded?'llRenderSeasonEnd()':'llRenderDashboard()'}">${lexLeague.state.seasonEnded?'Sezon Sonucuna Geç':'Dashboard’a Dön'}</button></div></div></div>`;
 }
 
-// ------------------------- KART HAVUZU / DÜKKÂN -------------------------
+// ------------------------- KART HAVUZU / DÜKKAN -------------------------
 function llOwnTriggerCompatible(card,stars){
   if(card.minStar>stars)return false;if(llBaseName(card)==='Yıldız Oyuncu'&&stars<3)return false;
   if(!/Kendi zarın\s+[1-6]/i.test(card.trigger))return true;
@@ -3295,14 +3295,16 @@ function llRenderShop(){
   lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Transfer <em>Merkezi</em></div><div class="ll-muted">${period} · Kasa açma bedeli ${cost} AP · AP: ${lexLeague.state.ap}</div></div><button class="ll-btn" onclick="llRenderDashboard()">← ${seasonEnd?'Sezon Sonu':'Dashboard'}</button></div><div class="ll-notice"><b>Tekrarsız teklif dönemi:</b> Bu dönemde gördüğün kart ailesi yeniden çıkmaz ve aynı pakette iki benzer kart bulunmaz. Bir kez seçip kullandığın kart ailesinin daha güçlü/zayıf benzeri kariyer boyunca tekrar teklif edilmez. Kaleci, Orta Saha ve Forvet kartları kendi kasalarına özeldir; “Evrensel” kartlar istisna olarak herhangi bir yuvaya takılabilir ama aile kilidi nedeniyle yalnız bir kez görünür.</div><div class="ll-shop-grid" style="margin-top:16px">${LL_POSITIONS.map(pos=>`<div class="ll-card"><div class="ll-slot-head"><div class="ll-card-title" style="margin:0">${LL_POSITION_ICONS[pos]} ${pos}</div><div class="ll-stars">${llStars(llTeamState(lexLeague.state.playerTeam).stars)}</div></div>${llCardHtml(llTeamState(lexLeague.state.playerTeam).cards[pos],lexLeague.state.playerTeam,'Mevcut kart yok')}<button class="ll-btn gold" style="width:100%;margin-top:11px" onclick="llOpenShopPack('${pos}')">${cost} AP ile Kasa Aç</button></div>`).join('')}</div><div id="ll-shop-offers"></div></div></div>`;
 }
-function llOpenShopPack(pos){
-  const s=lexLeague.state,cost=llShopCost();
+function llOpenShopPack(pos,source='paid'){
+  const s=lexLeague.state,cost=llShopCost(),achievement=source==='achievement';
   if(s.pendingPremiumPack){alert('Önce açık Elit Paketteki iki karttan birini seç veya paketten vazgeç.');llRenderShop();return;}
-  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers]};llRenderShopOffers();return;}
-  if(s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
+  if(s.pendingRegularPack){lexLeague.shop={mode:'regular',position:s.pendingRegularPack.position,offers:[...s.pendingRegularPack.offers],source:s.pendingRegularPack.source||'paid'};llRenderShopOffers();return;}
+  if(achievement&&Math.max(0,Number(s.sealedRegularPacks)||0)<1){alert('Kullanılabilir sezon başarı paketin yok.');return;}
+  if(!achievement&&s.ap<cost){alert(`Yetersiz AP. Gerekli: ${cost} AP`);return;}
   const seen=llShopSeenFamilies(),pool=llEligibleCards(s.playerTeam,pos).filter(card=>!seen.has(llCardFamilyName(card)));if(new Set(pool.map(llCardFamilyName)).size<2){alert('Bu transfer döneminde bu mevki için tüm farklı kart ailelerini gördün. AP harcanmadı; yeni transfer döneminde havuz yenilenecek.');return;}
   const offers=llPickDistinctOfferPair(pool);if(offers.length<2)return;
-  s.ap-=cost;const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost,offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers]};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost});
+  if(achievement)s.sealedRegularPacks--;else s.ap-=cost;
+  const pending={season:s.season,windowKey:llShopWindowKey(),position:pos,cost:achievement?0:cost,source:achievement?'achievement':'paid',offers:offers.map(c=>c.id),openedAt:new Date().toISOString()};s.pendingRegularPack=pending;lexLeague.shop={mode:'regular',position:pos,offers:[...pending.offers],source:pending.source};llMarkShopFamiliesSeen(offers);llDiscoverCards(pending.offers);llSave();llRenderShopOffers();llShowPackOpening('regular',pending.offers,{cost:achievement?0:cost,source:pending.source});
 }
 function llRevealOpenedPack(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;
@@ -3486,6 +3488,38 @@ function llBuildRuntimeNativePool() {
     isActiveMistake: false, type: ""
   }));
 }
+function llMojibakeScore(value) {
+  return (String(value || '').match(/[\u00c2\u00c3\u00e2\u00f0\u00ef\ufffd\u0192\u201a\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\u017d\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\u017e\u0178]/g) || []).length;
+}
+function llRepairMojibakeText(value) {
+  if (typeof value !== 'string' || !value) return value;
+  const cp1252 = {'\u20ac':0x80,'\u201a':0x82,'\u0192':0x83,'\u201e':0x84,'\u2026':0x85,'\u2020':0x86,'\u2021':0x87,'\u02c6':0x88,'\u2030':0x89,'\u0160':0x8a,'\u2039':0x8b,'\u0152':0x8c,'\u017d':0x8e,'\u2018':0x91,'\u2019':0x92,'\u201c':0x93,'\u201d':0x94,'\u2022':0x95,'\u2013':0x96,'\u2014':0x97,'\u02dc':0x98,'\u2122':0x99,'\u0161':0x9a,'\u203a':0x9b,'\u0153':0x9c,'\u017e':0x9e,'\u0178':0x9f};
+  let current = value;
+  for (let pass = 0; pass < 4 && llMojibakeScore(current) > 0; pass++) {
+    const bytes = [], chars = Array.from(current);
+    let encodable = true;
+    for (const char of chars) {
+      const code = char.codePointAt(0);
+      if (code <= 0xff) bytes.push(code);
+      else if (Object.prototype.hasOwnProperty.call(cp1252, char)) bytes.push(cp1252[char]);
+      else { encodable = false; break; }
+    }
+    if (!encodable) break;
+    let repaired = '';
+    try { repaired = new TextDecoder('utf-8', {fatal:true}).decode(new Uint8Array(bytes)); } catch (error) { break; }
+    if (!repaired || llMojibakeScore(repaired) >= llMojibakeScore(current)) break;
+    current = repaired;
+  }
+  return current;
+}
+function llRepairStoredWordEncoding(word) {
+  if (!word || typeof word !== 'object') return word;
+  ['en','tr','example','exampleTr','note','definition'].forEach(field => {
+    if (typeof word[field] === 'string') word[field] = llRepairMojibakeText(word[field]);
+  });
+  return word;
+}
+
 function initDatabase() {
   try {
     let existingWords = [];
@@ -3494,6 +3528,7 @@ function initDatabase() {
     } catch(e) { existingWords = []; }
 
     existingWords.forEach(word => {
+      llRepairStoredWordEncoding(word);
       const spellingFixes = {ctirics:'critics', grandchlid:'grandchild', nauesous:'nauseous', upseting:'upsetting', temporarly:'temporarily','interpretation of a bug':'diagnose a bug'};
       const normalizedEn = String(word.en || '').trim().toLowerCase();
       if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
@@ -5434,12 +5469,12 @@ renderPreStart();
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
 <script src="europe-knockout-tiebreak.js?v=20260723-1"></script>
-<script src="europe-team-pools.js?v=20260731-2"></script>
-<script src="european-leagues-pools.js?v=20260731-1"></script>
+<script src="europe-team-pools.js?v=20260731-3"></script>
+<script src="european-leagues-pools.js?v=20260731-2"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260731-2"></script>
 <script src="ai-opponent-strategy.js?v=20260726-1"></script>
-<script src="multi-league-engine.js?v=20260731-1"></script>
+<script src="multi-league-engine.js?v=20260731-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260731-1"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
