@@ -155,3 +155,24 @@ llV2MatchImportance=function(fixture,key){
   }catch(e){}
   return '';
 };
+
+/* European knockout second-leg context on the match dashboard. */
+function llCCEuropeFirstLegContextHtml(fixture){
+  const state=lexLeague.state,e=state?.europe,comp=fixture?.competition;
+  if(!state||!e||!['ucl','uel','uecl'].includes(comp)||fixture?.league!=='euro-knockout'||Number(e?.tie?.leg)!==2)return '';
+  const player=state.playerTeam,opponent=e.tie?.opponent;
+  if(!player||!opponent)return '';
+  const first=[...(state.results||[])].reverse().find(result=>result?.userMatch&&result.competition===comp&&result.league==='euro-knockout'&&result.home===opponent&&result.away===player);
+  if(!first)return '';
+  const playerGoals=Number(first.awayGoals)||0,opponentGoals=Number(first.homeGoals)||0;
+  const totalLabel=playerGoals===opponentGoals?'Toplam skor e?it; 90 dakika sonunda e?it kal?rsa penalt?lar at?l?r.':playerGoals>opponentGoals?'Toplamda ?ndesin.':'Toplamda geridesin.';
+  return `<div class="ll-euro-leg-context"><div><span>?LK MA?</span><b>${llEscape(opponent)} ${opponentGoals}?${playerGoals} ${llEscape(player)}</b></div><div><span>TOPLAM</span><strong>${llEscape(player)} ${playerGoals}?${opponentGoals} ${llEscape(opponent)}</strong></div><small>${totalLabel}</small></div>`;
+}
+const llCCDashboardWithLegContext=llRenderDashboard;
+llRenderDashboard=function(){
+  llCCDashboardWithLegContext();
+  const fixture=llPlayerFixture(),context=llCCEuropeFirstLegContextHtml(fixture);
+  if(!context)return;
+  const card=llArea()?.querySelector('.ll-next-match')?.closest('.ll-card');
+  if(card&&!card.querySelector('.ll-euro-leg-context'))card.querySelector('.ll-next-match')?.insertAdjacentHTML('beforebegin',context);
+};
