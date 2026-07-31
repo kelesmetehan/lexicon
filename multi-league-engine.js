@@ -136,20 +136,25 @@ function llMLPreviousCountrySummaries(state){
   if(archived?.countrySummaries)return archived.countrySummaries;
   return Number(state?.lastSeasonSummary?.season)===season?state.lastSeasonSummary.countrySummaries:null;
 }
+function llMLSeedEuropeQualifications(state,country){
+  const teams=[...(state?.leagues?.[country]?.tier1||[])].sort((a,b)=>llV2TeamStarsInState(state,b)-llV2TeamStarsInState(state,a)||String(a).localeCompare(String(b)));
+  if(teams.length<6)return {ucl:[],uel:[],uecl:[]};
+  return llV2Qualifications(teams.map(team=>({team})),teams[2]||null);
+}
 function llMLResolveEuropeParticipants(state){
   const fallback=llV3ResolveEuropeQualifications(state),summaries=llMLPreviousCountrySummaries(state);
-  if(!summaries)return fallback;
   const participants={ucl:[],uel:[],uecl:[]},used=new Set(),sources={};
   for(const type of ['ucl','uel','uecl']){
     for(const country of LL_COUNTRY_CODES){
-      for(const team of summaries[country]?.qualifications?.[type]||[]){
+      const countryQualifications=summaries?.[country]?.qualifications||llMLSeedEuropeQualifications(state,country);
+      for(const team of countryQualifications?.[type]||[]){
         if(!team||used.has(team))continue;
         participants[type].push(team);used.add(team);
-        sources[team]={country,competition:type,reason:'previous-season domestic qualification'};
+        sources[team]={country,competition:type,reason:summaries?.[country]?.qualifications?'previous-season domestic qualification':'initial seeded domestic qualification'};
       }
     }
     for(const team of fallback[type]||[]){
-      if(participants[type].length>=2||used.has(team))continue;
+      if(participants[type].length>=14||used.has(team))continue;
       participants[type].push(team);used.add(team);
       sources[team]={country:state.playerCountry||'TUR',competition:type,reason:'legacy qualification fallback'};
     }

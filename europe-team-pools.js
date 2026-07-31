@@ -201,7 +201,7 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   const player=canonical(state?.playerTeam),registryCountry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[player]?.country:null;
   // Oynanabilir ligi olan ülkelerin temsilcileri yalnızca kendi sezon sonu
   // kontenjanından gelir. Sabit havuz, oyunda ligi olmayan ülkeler içindir.
-  const activeCountry=state?.playerCountry||registryCountry||'TUR',dynamicCountries=new Set(Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:[]),blocked=new Set([...qualifiers.map(canonical),...reserved]);
+  const dynamicCountryCodes=typeof LL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:['TUR','ENG','GER','ESP','FRA','ITA','NED'],dynamicCountries=new Set(dynamicCountryCodes),blocked=new Set([...qualifiers.map(canonical),...reserved]);
   const pinned=[];
   for(const name of llV14PinnedTeams(state,type)){
     const key=canonical(name);if(!name||blocked.has(key))continue;
@@ -218,7 +218,7 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
     const key=canonical(name);if(!name||blocked.has(key)||dynamicCountries.has(llV14TeamCountry(name)))continue;
     blocked.add(key);combined.push(name);
   }
-  if(combined.length<needed)console.warn(`${llV2EuroLabel(type)} sabit havuzu ${needed-combined.length} gerçek kulüp eksik kaldı.`);
+  if(combined.length<needed){const label=typeof llV2EuroLabel==='function'?llV2EuroLabel(type):String(type||'Avrupa kupas\u0131');console.warn(`${label} sabit havuzu ${needed-combined.length} ger\u00e7ek kul\u00fcp eksik kald\u0131.`);}
   return combined.slice(0,needed);
 }
 function llV14PinPlayerFixtures(state,type,fixtures){

@@ -21,6 +21,8 @@ LL_TIER1_POOLS.NED=LL_NED_ERE_DIVISIE_2026_ORDER.map(name=>{
 /* Kaynak tablodaki 17–18 doğrudan düşer. 16. sıra play-off'u motorun ayrı bir aşaması
    olmadığından bu sürümde doğrudan düşme sayısına dahil edilmez. */
 LL_COUNTRY_META.NED.relegate=2;
+LL_COUNTRY_META.NED.promoteDirect=2;
+LL_COUNTRY_META.NED.promotePlayoff=0;
 const LL_DOMESTIC_CUP_NAMES=Object.fromEntries(Object.entries(LL_COUNTRY_META).map(([code,meta])=>[code,meta.cupName]));
 const LL_LEAGUE_META=Object.fromEntries(Object.entries(LL_COUNTRY_META).map(([code,meta])=>[code,{...meta,tier1:{label:meta.tier1Label,teamCount:LL_TIER1_POOLS[code].length,promoteDirect:0,promotePlayoff:0,relegate:meta.relegate,cupName:meta.cupName,seasonGoalThresholds:{top40:.40,top50:.50,top75:.75}},tier2:{label:meta.tier2Label,teamCount:LL_TIER2_POOLS[code].length,promoteDirect:meta.promoteDirect,promotePlayoff:meta.promotePlayoff,relegate:0,cupName:meta.cupName,seasonGoalThresholds:{top40:.40,top50:.50,top75:.75}},seasonGoalThresholds:{top10Percent:size=>Math.max(1,Math.round(size*.10)),top25Percent:size=>Math.max(1,Math.round(size*.25)),top40Percent:size=>Math.max(1,Math.round(size*.40)),top50Percent:size=>Math.max(1,Math.round(size*.50)),top75Percent:size=>Math.max(1,Math.round(size*.75))}}]));
 const LL_ALL_DOMESTIC_TEAMS=Object.keys(LL_COUNTRY_META).flatMap(code=>[...LL_TIER1_POOLS[code],...LL_TIER2_POOLS[code]]);
