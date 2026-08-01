@@ -348,3 +348,171 @@ llRenderShop=function(){
   const target=root.querySelector('#ll-club-card-shop')||root.querySelector('#ll-shop-offers');
   if(target)target.insertAdjacentHTML('beforebegin',llTacticBoardMarketHtml());
 };
+
+/* DIE_PROGRESSION_SYSTEM_START */
+/* Three-position die progression. Team stars remain the card eligibility tier. */
+var LL_DIE_PROGRESSION_SYSTEM_VERSION=1;
+var LL_DIE_PROGRESSION_COSTS={1:275,2:475,3:735,4:1175,5:1675};
+
+function llDieProgressionClampStar(value){return Math.max(1,Math.min(6,Math.round(Number(value)||1)));}
+function llDieProgressionEnsureTeam(team){
+  if(!team)return null;
+  team.stars=llDieProgressionClampStar(team.stars);
+  var progress=team.dieProgression;
+  var valid=progress&&typeof progress==='object'&&Number(progress.baseStar)===team.stars&&progress.upgraded&&typeof progress.upgraded==='object';
+  if(!valid){
+    progress={version:LL_DIE_PROGRESSION_SYSTEM_VERSION,baseStar:team.stars,upgraded:{}};
+    LL_POSITIONS.forEach(function(position){progress.upgraded[position]=false;});
+    team.dieProgression=progress;
+  }
+  progress.version=LL_DIE_PROGRESSION_SYSTEM_VERSION;
+  progress.baseStar=team.stars;
+  LL_POSITIONS.forEach(function(position){progress.upgraded[position]=!!progress.upgraded[position]&&team.stars<6;});
+  if(!Array.isArray(progress.history))progress.history=[];
+  return progress;
+}
+function llDieProgressionForTeam(teamOrName){return typeof teamOrName==='string'?llDieProgressionEnsureTeam(llTeamState(teamOrName)):llDieProgressionEnsureTeam(teamOrName);}
+function llDieProgressionStar(teamOrName,position){
+  var team=typeof teamOrName==='string'?llTeamState(teamOrName):teamOrName,progress=llDieProgressionEnsureTeam(team);
+  return Math.min(6,Number(team&&team.stars)||1)+(progress&&progress.upgraded[position]?1:0);
+}
+function llDieProgressionCount(teamOrName){
+  var progress=llDieProgressionForTeam(teamOrName);
+  return progress?LL_POSITIONS.filter(function(position){return !!progress.upgraded[position];}).length:0;
+}
+function llDieProgressionCost(teamOrName){
+  var team=typeof teamOrName==='string'?llTeamState(teamOrName):teamOrName;
+  if(!team||Number(team.stars)>=6)return 0;
+  return Number(LL_DIE_PROGRESSION_COSTS[Number(team.stars)])||0;
+}
+function llDieProgressionRangeText(teamOrName,position){return llRangeText(llDieProgressionStar(teamOrName,position));}
+function llDieProgressionStatusText(team){
+  var done=llDieProgressionCount(team);
+  return Number(team.stars)>=6?'6 \u2605 maks. seviye':done+'/3 zar geli\u015ftirildi';
+}
+function llDieProgressionRecord(team,entry){
+  var progress=llDieProgressionEnsureTeam(team);
+  if(!progress)return;
+  progress.history.push(entry);
+  progress.history=progress.history.slice(-40);
+}
+function llUpgradePositionDie(position){
+  var state=lexLeague.state,team=llTeamState(state&&state.playerTeam);
+  if(!state||!team||!LL_POSITIONS.includes(position))return;
+  var progress=llDieProgressionEnsureTeam(team),fromStar=Number(team.stars)||1;
+  if(fromStar>=6){alert('Tak\u0131m 6 \u2605 seviyesinde; zar geli\u015ftirme tamamland\u0131.');return;}
+  if(progress.upgraded[position]){alert(position+' zar\u0131 bu y\u0131ld\u0131z basama\u011f\u0131nda zaten geli\u015ftirildi. Di\u011fer iki mevkiyi de geli\u015ftirince tak\u0131m y\u0131ld\u0131z\u0131 artar.');return;}
+  var cost=llDieProgressionCost(team),before=llRangeText(fromStar),after=llRangeText(Math.min(6,fromStar+1));
+  if(Number(state.lp)<cost){alert('Yetersiz LP. Gerekli: '+cost+' LP');return;}
+  if(!confirm(position+' zar\u0131 '+before+' aral\u0131\u011f\u0131ndan '+after+' aral\u0131\u011f\u0131na geli\u015fecek. Bedel: '+cost+' LP. Onayl\u0131yor musun?'))return;
+  state.lp-=cost;
+  progress.upgraded[position]=true;
+  var completed=LL_POSITIONS.every(function(pos){return progress.upgraded[pos];});
+  llDieProgressionRecord(team,{season:Number(state.season)||1,week:Number(state.week)||1,type:'die-upgrade',position:position,fromStar:fromStar,toStar:Math.min(6,fromStar+1),costLp:cost,at:new Date().toISOString()});
+  if(completed){
+    team.stars=Math.min(6,fromStar+1);
+    progress.baseStar=team.stars;
+    LL_POSITIONS.forEach(function(pos){progress.upgraded[pos]=false;});
+    llDieProgressionRecord(team,{season:Number(state.season)||1,week:Number(state.week)||1,type:'team-star-complete',fromStar:fromStar,toStar:team.stars,at:new Date().toISOString()});
+    alert('Uc mevki de geli\u015fti. Tak\u0131m '+team.stars+' \u2605 oldu.');
+  }
+  llSave();llRenderDashboard();
+}
+
+function llDieProgressionPanelHtml(team){
+  var progress=llDieProgressionEnsureTeam(team),done=llDieProgressionCount(team),cost=llDieProgressionCost(team),maxed=Number(team.stars)>=6;
+  var rows=LL_POSITIONS.map(function(position){
+    var upgraded=!!progress.upgraded[position],current=llDieProgressionStar(team,position),base=Number(team.stars)||1;
+    var label=upgraded?'Geli\u015ftirildi':maxed?'Maksimum':'Geli\u015ftir';
+    var disabled=upgraded||maxed?' disabled':'';
+    var detail=upgraded?llRangeText(current)+' aktif':llRangeText(base)+' \u2192 '+llRangeText(Math.min(6,base+1));
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.07)"><span><b>'+LL_POSITION_ICONS[position]+' '+llEscape(position)+'</b><small style="display:block;color:var(--text2);margin-top:2px">'+detail+'</small></span><button class="ll-btn '+(upgraded?'':'gold')+'" style="padding:7px 10px;font-size:12px"'+disabled+' onclick="llUpgradePositionDie(\''+position+'\')">'+label+(upgraded?'':' \u00b7 '+cost+' LP')+'</button></div>';
+  }).join('');
+  return '<div class="ll-card" id="ll-die-progression" style="margin-top:12px;border-color:rgba(34,211,238,.38)"><div class="ll-card-title">Zar Geli\u015fimi \u00b7 '+llDieProgressionStatusText(team)+'</div><div class="ll-sub" style="margin:6px 0 8px">Her mevki ayr\u0131 geli\u015fir. Ucuncu geli\u015fim tamamlan\u0131nca tak\u0131m y\u0131ld\u0131z\u0131 artar; kart uygunlu\u011fu o ana kadar mevcut tak\u0131m y\u0131ld\u0131z\u0131yla hesaplan\u0131r.</div>'+rows+'<div class="ll-muted" style="margin-top:8px">Bu basamak: '+done+'/3 \u00b7 Her zar geli\u015fimi '+(maxed?'tamamland\u0131':cost+' LP')+'.</div></div>';
+}
+
+var llDieProgressionRepairBase=llV2RepairState;
+llV2RepairState=function(state){
+  state=llDieProgressionRepairBase(state);
+  if(!state)return state;
+  Object.values(state.teams||{}).forEach(llDieProgressionEnsureTeam);
+  state.dieProgressionSystemVersion=LL_DIE_PROGRESSION_SYSTEM_VERSION;
+  return state;
+};
+
+var llDieProgressionRollBase=llRollValue;
+llRollValue=function(teamName,position){
+  var team=llTeamState(teamName),range=llRange(llDieProgressionStar(team,position)),min=range[0],max=range[1],locked=team.lockedDice&&team.lockedDice[position],value;
+  if(Number.isFinite(locked)){delete team.lockedDice[position];value=locked;}else value=llRandomInt(min,max);
+  var bonus=Number(team.nextMatchBonuses&&team.nextMatchBonuses[position]||0);
+  if(bonus){delete team.nextMatchBonuses[position];value+=bonus;}
+  var card=llCard(llActiveCardId(teamName,position));
+  if(llBaseName(card)==='Y\u0131ld\u0131z Oyuncu'&&team.stars>=3)value=Math.max(4,value);
+  return value;
+};
+llMakeDice=function(teamName,plusPos){
+  var team=llTeamState(teamName);llEnsureTeamContracts(team);
+  return LL_POSITIONS.map(function(position){return {uid:teamName+'-'+position+'-'+Math.random(),position:position,value:llRollValue(teamName,position)+(position===plusPos?1:0),cardId:llActiveCardId(teamName,position),stars:llDieProgressionStar(team,position)};});
+};
+
+var llDieProgressionAiTriggerBase=llAiTriggerProbability;
+llAiTriggerProbability=function(card,teamName,position){
+  if(!card)return 0;
+  var team=teamName?llTeamState(teamName):null;
+  if(team&&LL_POSITIONS.includes(position||card.position)){
+    var originalStars=team.stars;
+    try{team.stars=llDieProgressionStar(team,position||card.position);return llDieProgressionAiTriggerBase(card,teamName,position);}finally{team.stars=originalStars;}
+  }
+  return llDieProgressionAiTriggerBase(card,teamName,position);
+};
+llAiPossibleRerollValues=function(teamName,position){
+  var team=llTeamState(teamName),values=llAiDieValues(llDieProgressionStar(team,position)),card=llCard(llActiveCardId(teamName,position));
+  return values.map(function(value){return llBaseName(card)==='Y\u0131ld\u0131z Oyuncu'&&team.stars>=3?Math.max(4,value):value;});
+};
+function llDieProgressionAiReserve(teamName){
+  var team=llTeamState(teamName);if(!team)return 0;llEnsureTeamContracts(team);
+  return LL_POSITIONS.map(function(position){var card=llCard(team.cards[position]),contract=team.cardContracts[position];if(!card||!contract||contract.remaining>8)return 0;return typeof llAiShouldRenew==='function'&&llAiShouldRenew(teamName,position,card)?Number(llCardContractRule(card).renewLp)||0:0;}).reduce(function(sum,value){return sum+value;},0);
+}
+function llDieProgressionAiPositionScore(teamName,position){
+  var team=llTeamState(teamName),card=llCard(team&&team.cards&&team.cards[position]),stat=team&&team.aiCardPerformance&&card?team.aiCardPerformance[card.id]:null,current=llDieProgressionStar(team,position);
+  var cardScore=card&&typeof llAiCardScore==='function'?Number(llAiCardScore(card,teamName,position))||0:0;
+  var triggerRate=stat&&Number(stat.matches)>0?(Number(stat.triggers)||0)/Number(stat.matches):0;
+  var applicationRate=stat&&Number(stat.matches)>0?(Number(stat.applications)||0)/Number(stat.matches):0;
+  var noCard=card?0:45;
+  return noCard+(6-current)*12+(80-cardScore)*.35+(1-triggerRate)*7+(1-applicationRate)*5;
+}
+function llDieProgressionAiAdvance(teamName){
+  var state=lexLeague.state,team=llTeamState(teamName);
+  if(!state||!team||teamName===state.playerTeam||Number(team.stars)>=6)return {spent:false};
+  var progress=llDieProgressionEnsureTeam(team),cost=llDieProgressionCost(team),reserve=llDieProgressionAiReserve(teamName);
+  if(Number(team.aiLp)<cost+reserve)return {spent:false,reserve:reserve};
+  var candidates=LL_POSITIONS.filter(function(position){return !progress.upgraded[position];}).sort(function(left,right){return llDieProgressionAiPositionScore(teamName,right)-llDieProgressionAiPositionScore(teamName,left)||LL_POSITIONS.indexOf(left)-LL_POSITIONS.indexOf(right);});
+  var position=candidates[0];if(!position)return {spent:false};
+  var fromStar=Number(team.stars)||1;
+  team.aiLp-=cost;progress.upgraded[position]=true;
+  var completed=LL_POSITIONS.every(function(pos){return progress.upgraded[pos];});
+  llDieProgressionRecord(team,{season:Number(state.season)||1,week:Number(state.week)||1,type:'ai-die-upgrade',position:position,fromStar:fromStar,toStar:Math.min(6,fromStar+1),costLp:cost,at:new Date().toISOString()});
+  if(completed){team.stars=Math.min(6,fromStar+1);progress.baseStar=team.stars;LL_POSITIONS.forEach(function(pos){progress.upgraded[pos]=false;});llDieProgressionRecord(team,{season:Number(state.season)||1,week:Number(state.week)||1,type:'ai-team-star-complete',fromStar:fromStar,toStar:team.stars,at:new Date().toISOString()});}
+  team.aiLastDieUpgrade={season:Number(state.season)||1,week:Number(state.week)||1,position:position,cost:cost,completed:completed};
+  return {spent:true,position:position,cost:cost,completed:completed};
+}
+var llDieProgressionAiRenewBase=llV4RenewAiContracts;
+llV4RenewAiContracts=function(teamName){
+  llDieProgressionAiRenewBase(teamName);
+  return llDieProgressionAiAdvance(teamName);
+};
+
+llUpgradeStars=function(){alert('Tak\u0131m y\u0131ld\u0131z\u0131 art\u0131k tek seferde sat\u0131n al\u0131nmaz. Kadro alt\u0131ndaki Zar Geli\u015fimi panelinden Kaleci, Orta Saha ve Forvet zarlar\u0131n\u0131 ayr\u0131 geli\u015ftir.');};
+var llDieProgressionDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){
+  llDieProgressionDashboardBase();
+  var state=lexLeague.state,root=typeof llArea==='function'?llArea():null,team=state&&llTeamState(state.playerTeam);
+  if(!root||!team||state.seasonEnded)return;
+  llDieProgressionEnsureTeam(team);
+  var slots=root.querySelectorAll('.ll-squad .ll-slot');
+  slots.forEach(function(slot,index){var position=LL_POSITIONS[index],die=slot.querySelector('.ll-die-mini');if(!die||!position)return;var star=llDieProgressionStar(team,position);die.className='ll-die-mini star'+star;die.textContent=llRangeText(star);});
+  var legacy=root.querySelector('button[onclick="llUpgradeStars()"]');
+  if(legacy)legacy.outerHTML=llDieProgressionPanelHtml(team);
+};
+/* DIE_PROGRESSION_SYSTEM_END */
+
