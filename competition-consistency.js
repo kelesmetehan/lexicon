@@ -165,8 +165,8 @@ function llCCEuropeFirstLegContextHtml(fixture){
   const first=[...(state.results||[])].reverse().find(result=>result?.userMatch&&result.competition===comp&&result.league==='euro-knockout'&&result.home===opponent&&result.away===player);
   if(!first)return '';
   const playerGoals=Number(first.awayGoals)||0,opponentGoals=Number(first.homeGoals)||0;
-  const totalLabel=playerGoals===opponentGoals?'Toplam skor e?it; 90 dakika sonunda e?it kal?rsa penalt?lar at?l?r.':playerGoals>opponentGoals?'Toplamda ?ndesin.':'Toplamda geridesin.';
-  return `<div class="ll-euro-leg-context"><div><span>?LK MA?</span><b>${llEscape(opponent)} ${opponentGoals}?${playerGoals} ${llEscape(player)}</b></div><div><span>TOPLAM</span><strong>${llEscape(player)} ${playerGoals}?${opponentGoals} ${llEscape(opponent)}</strong></div><small>${totalLabel}</small></div>`;
+  const totalLabel=playerGoals===opponentGoals?'Toplam skor e\u015fit; 90 dakika sonunda e\u015fit kal\u0131rsa penalt\u0131lar at\u0131l\u0131r.':playerGoals>opponentGoals?'Toplamda \u00f6ndesin.':'Toplamda geridesin.';
+  return `<div class="ll-euro-leg-context"><div><span>\u0130LK MA\u00c7</span><b>${llEscape(opponent)} ${opponentGoals}-${playerGoals} ${llEscape(player)}</b></div><div><span>TOPLAM</span><strong>${llEscape(player)} ${playerGoals}-${opponentGoals} ${llEscape(opponent)}</strong></div><small>${totalLabel}</small></div>`;
 }
 const llCCDashboardWithLegContext=llRenderDashboard;
 llRenderDashboard=function(){
@@ -183,7 +183,7 @@ function llCCDashboardWeekFixturesHtml(key){
   const state=lexLeague.state,week=Math.max(1,Number(state?.week)||1),round=llCurrentRound(key)||[];
   if(!round.length)return '';
   const played=round.filter(fixture=>llV2FixtureResult(fixture.home,fixture.away,'league',week)).length;
-  return `<div class="ll-card ll-dashboard-fixtures" data-dashboard-week-fixtures><div class="ll-card-title">${week}. Hafta ? E?le?meler <span class="ll-round-meta">${played}/${round.length} oynand?</span></div><div class="ll-fixture-list">${round.map(fixture=>llV2FixtureRow(fixture.home,fixture.away,llV2FixtureResult(fixture.home,fixture.away,'league',week))).join('')}</div></div>`;
+  return `<div class="ll-card ll-dashboard-fixtures" data-dashboard-week-fixtures><div class="ll-card-title">${week}. Hafta E\u015fle\u015fmeleri <span class="ll-round-meta">${played}/${round.length} oynand\u0131</span></div><div class="ll-fixture-list">${round.map(fixture=>llV2FixtureRow(fixture.home,fixture.away,llV2FixtureResult(fixture.home,fixture.away,'league',week))).join('')}</div></div>`;
 }
 const llCCDashboardWithWeekFixtures=llRenderDashboard;
 llRenderDashboard=function(){
