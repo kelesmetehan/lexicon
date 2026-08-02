@@ -2105,7 +2105,7 @@ const LL_BALANCED_CARD_POOL=[
   {id:'RBU01',position:'Evrensel',name:'Moral Bozukluğu',minStar:1,trigger:'Rakip art arda 2 maç kaybettiyse',effect:'Rakibin bu maçtaki en yüksek zarı 1 azalır',rarity:'rare'},
   {id:'RBU02',position:'Evrensel',name:'Ev Sahibi Avantajı',minStar:1,trigger:'Maç senin evinde oynanıyorsa',effect:'Kendi en düşük zarına +1',rarity:'rare'},
   {id:'RBU03',position:'Evrensel',name:'Deplasman Ruhu',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en yüksek zarı 1 azalır',rarity:'rare'},
-  {id:'RBU04',position:'Kulüp/Market',name:'Taktik Tahtası',minStar:1,trigger:'Transfer döneminde',effect:'Kasa açma bedeli 150 AP yerine 100 AP olur',rarity:'rare',clubCard:true},
+  {id:'RBU04',position:'Kulüp/Market',name:'Taktik Tahtası',minStar:1,trigger:'Transfer döneminde',effect:'Normal kart kasalar\u0131 sabit 150 APdir; eski indirim etkisi kapat\u0131ld\u0131.',rarity:'rare',clubCard:true},
   {id:'RBU05',position:'Evrensel',name:'Sakatlık Riski',logicName:'Sakatlık Şansı',minStar:2,trigger:'Rakibin üç zarından herhangi biri 1 gelirse',effect:'O zar gelecek maça 1 olarak kilitlenir',rarity:'epic'},
   {id:'RBU06',position:'Evrensel',name:'Form Patlaması',logicName:'Form Tutmuyor',minStar:1,trigger:'Bu mevki zarı 3 maç üst üste 6 gelirse',effect:'Gelecek maç aynı mevki zarına +1',rarity:'common'},
   {id:'RBU07',position:'Evrensel',name:'VAR İncelemesi',minStar:1,trigger:'Berabere biten herhangi bir zar düellosunda',effect:'Kart sahibinin berabere kalan zarı yeniden atılır',rarity:'common'},
@@ -3298,7 +3298,7 @@ function llShopSeenFamilies(){
 function llMarkShopFamiliesSeen(cards=[]){
   const s=lexLeague.state,seen=llShopSeenFamilies(),key=llShopWindowKey();cards.forEach(card=>seen.add(llCardFamilyName(card)));s.shopSeenByWindow[key]=[...seen].filter(Boolean);
 }
-function llShopCost(){const team=llTeamState(lexLeague.state.playerTeam);return team?.clubCards?.market==='RBU04'?100:150;}
+function llShopCost(){return 150;}
 function llRenderShop(){
   const week=Number(lexLeague.state.week),seasonEnd=!!lexLeague.state.seasonEnded,earlySeason=week>=1&&week<=3;if(!seasonEnd&&!earlySeason&&![10,20,30].includes(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
   lexLeague.shop={position:null,offers:[]};const cost=llShopCost(),period=seasonEnd?`Sezon ${lexLeague.state.season} sonu`:earlySeason?`Sezon başlangıcı · ${week}/3. açık hafta`:`${week}. hafta`;
@@ -5491,6 +5491,6 @@ renderPreStart();
 <script src="competition-consistency.js?v=20260801-2"></script>
 <script src="indexeddb-storage.js?v=20260801-1"></script>
 <script src="die-upgrade-cinematic.js?v=20260801-1"></script>
-<script src="club-facility-progression.js?v=20260802-2"></script>
+<script src="club-facility-progression.js?v=20260802-3"></script>
 </body>
 </html>
