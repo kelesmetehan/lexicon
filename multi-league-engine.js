@@ -249,3 +249,79 @@ const llMLManagerMarketBase=llRenderManagerMarket;
 llRenderManagerMarket=function(tableKey='super'){llMLManagerMarketBase(tableKey);llMLRelabelRenderedScreen(llArea(),lexLeague.state?.playerCountry||'TUR');};
 const llMLCareerFinalizeBase=llV2FinalizeSeason;
 llV2FinalizeSeason=function(playoffWinner){llMLCareerFinalizeBase(playoffWinner);const state=lexLeague.state;if(!state)return;const country=state.playerCountry||'TUR';if(state.careerEnded){state.careerEndReason=`${llMLLeagueLabel(country,'tier2')} küme düşme hattında sezonu tamamlama`;if(state.lastSeasonSummary)state.lastSeasonSummary.careerEndReason=state.careerEndReason;}llSave();};
+
+
+/* FOREIGN_MANAGER_OFFER_CAP_START */
+/* Foreign managerial offers are deliberately gated so cross-country careers progress credibly. */
+var LL_ML_FOREIGN_OFFER_RULES_VERSION=1;
+function llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,candidate,promotionStarCap){
+  if(candidate.country===state.playerCountry)return 6;
+  var cap=4;
+  var majorDomestic=!fired&&!!performance.superChampion&&!!performance.primaryAchieved&&Number(performance.winRate)>=60&&Number(profile.reputation)>=65;
+  var eliteContinental=!fired&&!!performance.europeTrophy&&Number(profile.reputation)>=70;
+  var worldElite=eliteContinental&&!!performance.superChampion&&Number(currentStars)>=5&&Number(profile.reputation)>=80;
+  if(worldElite)cap=6;
+  else if(majorDomestic||eliteContinental)cap=5;
+  if(promotionStarCap)cap=Math.min(cap,Math.max(1,Number(currentStars)||1));
+  return cap;
+}
+
+llManagerBuildOffers=function(state,summary,performance,profile,fired){
+  var source=summary?.leagueRows||state.__mlFinalRows?.leagueRows||{};
+  var currentStars=llV2TeamStarsInState(state,performance.from);
+  var promotionStarCap=performance.league==='first'&&performance.promoted;
+  var all=[];
+  for(const country of LL_COUNTRY_CODES)for(const tier of ['tier1','tier2'])for(const row of source[country]?.[tier]||[]){
+    if(row.team===performance.from)continue;
+    all.push({team:row.team,country:country,stars:llV2TeamStarsInState(state,row.team),nextLeague:llManagerNextLeague(summary,row.team,country),tier:tier});
+  }
+  var capFor=function(item){return llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,item,promotionStarCap);};
+  var eligible=all.filter(function(item){return Number(item.stars)<=capFor(item);});
+  var chosen=[],used=new Set(),usedCountries=new Map(),seed=String(summary.season||state.season||1)+'|'+String(performance.from||'');
+  var add=function(candidate,kind){
+    if(!candidate||used.has(candidate.team)||chosen.length>=3)return false;
+    var sameCountry=usedCountries.get(candidate.country)||0;
+    if(sameCountry>=2)return false;
+    used.add(candidate.team);usedCountries.set(candidate.country,sameCountry+1);
+    var offer=llManagerOffer(summary,candidate.team,kind,candidate.country);
+    offer.foreign=candidate.country!==state.playerCountry;
+    offer.foreignStarCap=capFor(candidate);
+    offer.foreignElite=offer.foreign&&Number(candidate.stars)>4;
+    chosen.push(offer);
+    return true;
+  };
+  var progression=!promotionStarCap&&!fired&&Number(performance.winRate)>=55&&!!performance.primaryAchieved&&Number(currentStars)<6;
+  var prestige=!promotionStarCap&&!fired&&(!!performance.superChampion||!!performance.cupFinal||!!performance.europeSuccess)&&Number(profile.reputation)>=55;
+  var stepCap=Math.min(6,Number(currentStars)+(performance.europeTrophy?2:1));
+  if(prestige){
+    var prestigePool=eligible.filter(function(item){return item.nextLeague==='super'&&Number(item.stars)>Number(currentStars)&&Number(item.stars)<=Math.min(stepCap,capFor(item));}).sort(function(a,b){return Number(b.stars)-Number(a.stars)||String(a.team).localeCompare(String(b.team),'tr');});
+    add(llManagerStablePick(prestigePool,seed+'|prestige'),'prestige');
+  }
+  if(progression){
+    var progressionPool=eligible.filter(function(item){return item.nextLeague==='super'&&Number(item.stars)===Number(currentStars)+1;}).sort(function(a,b){return String(a.team).localeCompare(String(b.team),'tr');});
+    add(llManagerStablePick(progressionPool,seed+'|progress'),'progress');
+  }
+  var safePool=eligible.filter(function(item){return Number(item.stars)<=Number(currentStars)&&item.nextLeague==='super';}).sort(function(a,b){return Number(b.stars)-Number(a.stars)||String(a.team).localeCompare(String(b.team),'tr');});
+  for(const candidate of safePool){if(chosen.length>=3)break;add(candidate,'safe');}
+  var fallback=eligible.slice().sort(function(a,b){return Number(b.stars)-Number(a.stars)||String(a.team).localeCompare(String(b.team),'tr');});
+  for(const candidate of fallback){if(chosen.length>=3)break;add(candidate,'safe');}
+  return {offers:chosen,progression:progression,prestige:prestige,promotionStarCap:promotionStarCap,foreignOfferRulesVersion:LL_ML_FOREIGN_OFFER_RULES_VERSION};
+};
+
+var llMLForeignOfferEnsureBase=llEnsureManagerMarket;
+llEnsureManagerMarket=function(state=lexLeague.state){
+  if(state?.managerMarket?.status==='pending'&&Number(state.managerMarket.foreignOfferRulesVersion)!==LL_ML_FOREIGN_OFFER_RULES_VERSION)state.managerMarket=null;
+  var market=llMLForeignOfferEnsureBase(state);
+  if(market)market.foreignOfferRulesVersion=LL_ML_FOREIGN_OFFER_RULES_VERSION;
+  return market;
+};
+
+var llMLForeignOfferRenderBase=llRenderManagerMarket;
+llRenderManagerMarket=function(tableKey='super'){
+  llMLForeignOfferRenderBase(tableKey);
+  var state=lexLeague.state,market=state?.managerMarket,root=llArea();
+  if(!root||market?.status!=='pending'||root.querySelector('.ll-foreign-offer-rule'))return;
+  var host=root.querySelector('.ll-metrics')||root.querySelector('.ll-panel');
+  if(host)host.insertAdjacentHTML('afterend','<div class="ll-notice ll-foreign-offer-rule"><b>Yurt d\u0131\u015f\u0131 teklif dengesi:</b> Normal teklifler en fazla 4\u2605. 5\u2605 i\u00e7in b\u00fcy\u00fck ba\u015far\u0131, 6\u2605 i\u00e7in Avrupa kupas\u0131 + lig \u015fampiyonlu\u011fu gerekir.</div>');
+};
+/* FOREIGN_MANAGER_OFFER_CAP_END */
