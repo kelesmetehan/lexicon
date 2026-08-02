@@ -52,16 +52,16 @@
       const reward=llFacilityReward(key,state);
       return `<tr><td>${LL_FACILITY_LABELS[key]}</td><td>${reward.ap}</td><td>${reward.win}</td><td>${reward.draw}</td><td>${reward.loss}</td></tr>`;
     }).join('');
-    return `<div class="ll-card" data-facility-reward-table><div class="ll-card-title">AP / LP Ödülleri · Tesis Sv. ${level}</div><div class="ll-table-wrap"><table class="ll-table" style="min-width:520px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>Galibiyet LP</th><th>Beraberlik LP</th><th>Mağlubiyet LP</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ll-muted" style="margin-top:9px">Tesis yalnızca senin doğru cevap AP’ni ve resmi maç LP’ni etkiler. Hata geri kazanımı, hedef ödülleri, zarlar, kartlar ve AI ekonomisi değişmez.</div></div>`;
+    return `<div class="ll-card" data-facility-reward-table><div class="ll-card-title">AP / LP Ödülleri · Tesis Sv. ${level}</div><div class="ll-table-wrap"><table class="ll-table" style="min-width:520px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>Galibiyet LP</th><th>Beraberlik LP</th><th>Mağlubiyet LP</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ll-muted" style="margin-top:9px">Teknik direktör gelişimi yalnızca senin doğru cevap AP’ni ve resmi maç LP’ni etkiler. Hata geri kazanımı, hedef ödülleri, zarlar, kartlar ve AI ekonomisi değişmez.</div></div>`;
   }
   function llFacilityPanelHtml(state){
     const facility=llFacilityEnsure(state),level=facility.level,current=llFacilityReward('league',state),next=llFacilityNextCost(state);
     const progress=`${'●'.repeat(level)}${'○'.repeat(6-level)}`;
     const currentText=`Lig: doğru ${current.ap} AP · G ${current.win} LP · B ${current.draw} LP · M ${current.loss} LP`;
     const upgrade=next
-      ?`<div class="ll-facility-next"><div><b>Sonraki seviye: ${next.nextLevel}/6</b><span>${next.stars}★ takımın · ${llFacilityBandLabel(next.band)} maliyeti</span><small>Bedel: <strong>${next.ap} AP + ${next.lp} LP</strong></small></div><button class="ll-btn gold" ${Number(state.ap||0)<next.ap||Number(state.lp||0)<next.lp?'disabled':''} onclick="llUpgradeClubFacility()">Tesisi Geliştir</button></div>`
-      :`<div class="ll-facility-next"><div><b>Tesis maksimum seviyede</b><span>Tüm resmi maç ve kelime AP bonusları aktif.</span></div></div>`;
-    return `<div class="ll-card ll-club-facility" data-club-facility style="margin-top:12px"><div class="ll-card-title">🏟️ Kulüp Tesisi · Seviye ${level}/6</div><div class="ll-facility-top"><div class="ll-facility-progress" aria-label="Tesis seviyesi ${level}/6">${progress}</div><div class="ll-muted">Kariyer tesisidir; takım değiştirsen de korunur.</div></div><div class="ll-facility-current"><b>Aktif kazanç</b><span>${currentText}</span></div>${upgrade}<details class="ll-facility-details"><summary>Bu seviyedeki tüm ödülleri gör</summary><div class="ll-table-wrap" style="margin-top:10px"><table class="ll-table" style="min-width:470px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>G</th><th>B</th><th>M</th></tr></thead><tbody>${['league','cup','playoff','ucl','uel','uecl'].map(key=>{const reward=llFacilityReward(key,state);return `<tr><td>${LL_FACILITY_LABELS[key]}</td><td>${reward.ap}</td><td>${reward.win}</td><td>${reward.draw}</td><td>${reward.loss}</td></tr>`;}).join('')}</tbody></table></div></details></div>`;
+      ?`<div class="ll-facility-next"><div><b>Sonraki seviye: ${next.nextLevel}/6</b><span>${next.stars}★ takımın · ${llFacilityBandLabel(next.band)} maliyeti</span><small>Bedel: <strong>${next.ap} AP + ${next.lp} LP</strong></small></div><button class="ll-btn gold" ${Number(state.ap||0)<next.ap||Number(state.lp||0)<next.lp?'disabled':''} onclick="llUpgradeClubFacility()">Gelişimi Yükselt</button></div>`
+      :`<div class="ll-facility-next"><div><b>Teknik direktör gelişimi maksimum seviyede</b><span>Tüm resmi maç ve kelime AP bonusları aktif.</span></div></div>`;
+    return `<div class="ll-card ll-club-facility" data-club-facility style="margin-top:12px"><div class="ll-card-title">🎓 Teknik Direktör Gelişimi · Seviye ${level}/6</div><div class="ll-facility-top"><div class="ll-facility-progress" aria-label="Teknik direktör seviyesi ${level}/6">${progress}</div><div class="ll-muted">Teknik direktör kariyerine aittir; takım değiştirsen de korunur.</div></div><div class="ll-facility-current"><b>Aktif kazanç</b><span>${currentText}</span></div>${upgrade}<details class="ll-facility-details"><summary>Bu seviyedeki tüm ödülleri gör</summary><div class="ll-table-wrap" style="margin-top:10px"><table class="ll-table" style="min-width:470px"><thead><tr><th>Organizasyon</th><th>Doğru AP</th><th>G</th><th>B</th><th>M</th></tr></thead><tbody>${['league','cup','playoff','ucl','uel','uecl'].map(key=>{const reward=llFacilityReward(key,state);return `<tr><td>${LL_FACILITY_LABELS[key]}</td><td>${reward.ap}</td><td>${reward.win}</td><td>${reward.draw}</td><td>${reward.loss}</td></tr>`;}).join('')}</tbody></table></div></details></div>`;
   }
   function llFacilityInjectCss(){
     if(document.getElementById('ll-club-facility-css'))return;
@@ -76,10 +76,10 @@
   window.llUpgradeClubFacility=function(){
     const state=lexLeague?.state;if(!state)return false;
     const facility=llFacilityEnsure(state),cost=llFacilityNextCost(state);
-    if(!cost){alert('Kulüp tesisi zaten maksimum seviyede.');return false;}
+    if(!cost){alert('Teknik direktör gelişimi zaten maksimum seviyede.');return false;}
     if(Number(state.ap||0)<cost.ap||Number(state.lp||0)<cost.lp){alert(`Yetersiz puan. Seviye ${cost.nextLevel} için ${cost.ap} AP ve ${cost.lp} LP gerekli.`);return false;}
     const nextLeague=LL_FACILITY_REWARDS.league[cost.nextLevel];
-    const message=`Kulüp Tesisi Seviye ${facility.level} → ${cost.nextLevel}\n\nMaliyet: ${cost.ap} AP + ${cost.lp} LP\nYeni lig ödülü: doğru ${nextLeague.ap} AP · galibiyet ${nextLeague.win} LP · beraberlik ${nextLeague.draw} LP · mağlubiyet ${nextLeague.loss} LP\n\nBu yatırım kariyerine aittir; takım değiştirsen de korunur. Onaylıyor musun?`;
+    const message=`Teknik Direktör Gelişimi Seviye ${facility.level} → ${cost.nextLevel}\n\nMaliyet: ${cost.ap} AP + ${cost.lp} LP\nYeni lig ödülü: doğru ${nextLeague.ap} AP · galibiyet ${nextLeague.win} LP · beraberlik ${nextLeague.draw} LP · mağlubiyet ${nextLeague.loss} LP\n\nTeknik direktör kariyerine aittir; takım değiştirsen de korunur. Onaylıyor musun?`;
     if(!confirm(message))return false;
     state.ap-=cost.ap;state.lp-=cost.lp;facility.level=cost.nextLevel;
     facility.history.push({season:Number(state.season)||1,week:Number(state.week)||1,level:facility.level,spentAp:cost.ap,spentLp:cost.lp,team:state.playerTeam,stars:cost.stars,band:cost.band,at:new Date().toISOString()});
@@ -126,12 +126,12 @@
       record.facilityRewardApplied=true;record.facilityLevel=llFacilityLevel(state);record.facilityBaseLp=awarded;record.facilityBonusLp=bonus;record.facilityTotalLp=target;
       if(bonus!==0)state.lp=Math.max(0,Number(state.lp||0)+bonus);
       const notice=typeof llArea==='function'?llArea()?.querySelector('.ll-panel .ll-notice'):null;
-      const facilityNote=`<div data-facility-result style="margin-top:7px;color:#83f1d6"><b>Kul?p Tesisi Sv. ${llFacilityLevel(state)}:</b> ${bonus>=0?'+':''}${bonus} LP ? Resmi ma? ?d?l?: ${target} LP</div>`;
+      const facilityNote=`<div data-facility-result style="margin-top:7px;color:#83f1d6"><b>Teknik Direktör Sv. ${llFacilityLevel(state)}:</b> ${bonus>=0?'+':''}${bonus} LP · Resmi maç ödülü: ${target} LP</div>`;
       if(notice){
         notice.innerHTML=notice.innerHTML.replace(`+${awarded} LP`,`+${target} LP`);
         if(!notice.querySelector('[data-facility-result]'))notice.insertAdjacentHTML('beforeend',facilityNote);
       }
-      /* The penalty animation owns the notice again after the last kick; give it the facility-adjusted final text too. */
+      /* The penalty animation owns the notice again after the last kick; give it the manager-adjusted final text too. */
       if(typeof llV15PenaltyRuntime!=='undefined'&&llV15PenaltyRuntime?.notice===notice){
         llV15PenaltyRuntime.finalNotice=String(llV15PenaltyRuntime.finalNotice||'').replace(`+${awarded} LP`,`+${target} LP`);
         if(!String(llV15PenaltyRuntime.finalNotice||'').includes('Kul?p Tesisi'))llV15PenaltyRuntime.finalNotice+=facilityNote;
