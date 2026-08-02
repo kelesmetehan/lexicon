@@ -60,7 +60,7 @@ function llQueueTrophyAnimation(event){
 
 function llTrophyOtherCinematicOpen(){
   if(typeof document==='undefined')return true;
-  return !!document.querySelector('#ll-trophy-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic');
+  return !!document.querySelector('#ll-trophy-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-penalty-shootout');
 }
 
 function llTrophySpawnParticles(root,count,colors){

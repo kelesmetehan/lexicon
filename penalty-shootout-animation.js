@@ -93,6 +93,21 @@ function llV15StopPenaltyAnimation(){
   llV15PenaltyRuntime.timers=[];
 }
 
+function llV15UnlockPenaltyActions(runtime){
+  runtime?.actions?.querySelectorAll('button').forEach(button=>button.disabled=false);
+}
+
+function llV15ContinueAfterPenaltyAnimation(){
+  const runtime=llV15PenaltyRuntime;
+  if(!runtime||!runtime.completed)return false;
+  llV15StopPenaltyAnimation();
+  document.getElementById('ll-penalty-shootout')?.remove();
+  llV15UnlockPenaltyActions(runtime);
+  llV15PenaltyRuntime=null;
+  if(typeof llTryShowQueuedTrophyAnimation==='function')window.setTimeout(()=>llTryShowQueuedTrophyAnimation(),60);
+  return true;
+}
+
 function llV15FinishPenaltyAnimation(){
   const runtime=llV15PenaltyRuntime;
   if(!runtime)return;
@@ -103,12 +118,16 @@ function llV15FinishPenaltyAnimation(){
   const won=runtime.shootout.winner===runtime.shootout.playerTeam;
   if(status){
     status.hidden=false;
-    status.innerHTML=`<strong>${won?'TURU GEÇTİN':'ELENDİN'}</strong><span>Penaltılar ${runtime.shootout.player}–${runtime.shootout.opponent}</span>`;
+    status.innerHTML='<strong>'+(won?'TURU GE\u00c7T\u0130N':'ELEND\u0130N')+'</strong><span>Penalt\u0131lar '+runtime.shootout.player+'\u2013'+runtime.shootout.opponent+'</span>';
   }
   if(skip)skip.hidden=true;
-  runtime.actions?.querySelectorAll('button').forEach(button=>button.disabled=false);
   if(runtime.notice)runtime.notice.innerHTML=runtime.finalNotice;
   panel?.classList.add('complete');
+  runtime.completed=true;
+  runtime.actions?.querySelectorAll('button').forEach(button=>button.disabled=true);
+  if(panel&&!panel.querySelector('.ll-penalty-continue')){
+    panel.insertAdjacentHTML('beforeend','<button class="ll-btn primary ll-penalty-continue" type="button" onclick="llV15ContinueAfterPenaltyAnimation()">'+(won?'Sonucu G\u00f6r':'Elenme Animasyonunu G\u00f6r')+'</button>');
+  }
 }
 
 function llV15RevealPenaltyKick(index){
