@@ -115,7 +115,7 @@
   }
 
   window.llUpgradePositionDie=function(position){
-    var state=window.lexLeague&&lexLeague.state,team=state&&typeof llTeamState==='function'?llTeamState(state.playerTeam):null;
+    var state=(typeof lexLeague!=='undefined'&&lexLeague)?lexLeague.state:null,team=state&&typeof llTeamState==='function'?llTeamState(state.playerTeam):null;
     if(!state||!team||typeof LL_POSITIONS==='undefined'||!Array.isArray(LL_POSITIONS)||!LL_POSITIONS.includes(position))return false;
     var progress=llDieProgressionEnsureTeam(team),fromStar=Number(team.stars)||1;
     if(fromStar>=6){alert('Takım 6 ★ seviyesinde; zar geliştirme tamamlandı.');return false;}
