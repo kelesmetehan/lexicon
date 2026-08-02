@@ -543,3 +543,70 @@ llNewState=function(playerTeam){
   return state;
 };
 /* DOMESTIC_CUP_TWO_LEGS_NEW_CAREER_FIX_END */
+/* SEASON_CALENDAR_V1_START
+ * The game uses an in-world calendar, not the device clock. Season 1 is
+ * 2026/27; every following season advances one calendar year. This is fully
+ * deterministic, so old saves need no migration of every historical result.
+ */
+var LL_CALENDAR_VERSION=1;
+var LL_CALENDAR_FIRST_SEASON_YEAR=2026;
+function llCalendarEnsureState(state){
+  if(!state)return state;
+  if(!Number.isInteger(Number(state.calendarStartYear))||Number(state.calendarStartYear)<2000)state.calendarStartYear=LL_CALENDAR_FIRST_SEASON_YEAR;
+  state.calendarVersion=LL_CALENDAR_VERSION;
+  return state;
+}
+function llCalendarSeasonYear(state){return Number(state&&state.calendarStartYear)||LL_CALENDAR_FIRST_SEASON_YEAR;}
+function llCalendarSeasonStartYear(state){return llCalendarSeasonYear(state)+Math.max(0,Number(state&&state.season||1)-1);}
+function llCalendarSeasonLabel(state){var year=llCalendarSeasonStartYear(state);return year+'/'+String(year+1).slice(-2);}
+function llCalendarCompetitionOffset(competition){
+  if(['ucl','uel','uecl'].includes(String(competition)))return 5; // Thursday
+  if(String(competition)==='cup')return 3; // Tuesday
+  if(String(competition)==='playoff')return 0; // Saturday
+  return 0; // League Saturday
+}
+function llCalendarDate(state,week,competition='league'){
+  var year=llCalendarSeasonStartYear(state),safeWeek=Math.max(1,Number(week)||1);
+  // 8 August 2026 is a Saturday; UTC prevents a locale/DST date shift.
+  return new Date(Date.UTC(year,7,8+(safeWeek-1)*7+llCalendarCompetitionOffset(competition),12,0,0));
+}
+function llCalendarDateText(state,week,competition='league'){
+  try{return llCalendarDate(state,week,competition).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});}
+  catch{return String(week)+'. hafta';}
+}
+function llCalendarMatchText(state,fixture,week){
+  var competition=fixture&&fixture.competition||'league';
+  return llCalendarDateText(state,week==null?state&&state.week:week,competition)+' · '+(String(competition)==='league'?'Lig maçı':String(competition)==='cup'?'Yerel kupa':String(competition)==='playoff'?'Play-off':'Avrupa maçı');
+}
+var llCalendarRepairStateBase=llV2RepairState;
+llV2RepairState=function(state){return llCalendarEnsureState(llCalendarRepairStateBase(state));};
+
+function llCalendarDecorateDashboard(){
+  var state=lexLeague.state,root=typeof llArea==='function'?llArea():null,fixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
+  if(!state||!root||!fixture)return;
+  var brand=root.querySelector&&root.querySelector('.ll-brand .ll-muted');
+  if(brand&&!brand.querySelector?.('.ll-season-calendar'))brand.insertAdjacentHTML('beforeend','<span class="ll-season-calendar"> · '+llEscape(llCalendarSeasonLabel(state))+'</span>');
+  var match=root.querySelector&&root.querySelector('.ll-next-match');
+  if(match&&!root.querySelector('.ll-match-date'))match.insertAdjacentHTML('beforebegin','<div class="ll-match-date" style="margin:8px 0 10px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.03em;color:#67e8f9">📅 '+llEscape(llCalendarMatchText(state,fixture))+'</div>');
+}
+var llCalendarDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){llCalendarDashboardBase();llCalendarDecorateDashboard();};
+
+var llCalendarMatchRenderBase=llRenderMatch;
+llRenderMatch=function(){
+  llCalendarMatchRenderBase();
+  var state=lexLeague.state,root=typeof llArea==='function'?llArea():null,fixture=lexLeague.match&&lexLeague.match.fixture;
+  if(!state||!root||!fixture||root.querySelector('.ll-duel-date'))return;
+  var top=root.querySelector('.ll-topbar');
+  if(top)top.insertAdjacentHTML('afterend','<div class="ll-duel-date" style="text-align:center;margin:3px 0 13px;font-size:13px;font-weight:800;color:#67e8f9">📅 '+llEscape(llCalendarMatchText(state,fixture))+'</div>');
+};
+
+var llCalendarRoundSummaryBase=llRenderRoundSummary;
+llRenderRoundSummary=function(completedWeek,lp,pg,og,competition,advanced){
+  llCalendarRoundSummaryBase(completedWeek,lp,pg,og,competition,advanced);
+  var state=lexLeague.state,root=typeof llArea==='function'?llArea():null;
+  if(!state||!root||root.querySelector('.ll-result-date'))return;
+  var title=root.querySelector('.quiz-start-title');
+  if(title)title.insertAdjacentHTML('afterend','<div class="ll-result-date" style="margin:8px 0 12px;font-size:13px;font-weight:800;color:#67e8f9">📅 '+llEscape(llCalendarDateText(state,completedWeek,competition||'league'))+'</div>');
+};
+/* SEASON_CALENDAR_V1_END */
