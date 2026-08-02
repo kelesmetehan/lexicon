@@ -297,7 +297,7 @@ function llV2SeasonGoalsHtml(final=false){
   const s=lexLeague.state,goals=llV2EnsureSeasonGoals(s),items=final&&goals.evaluated?goals.results:goals.items.map(g=>({...g,...llV2GoalStatus(s,g)}));
   return `<div class="ll-card"><div class="ll-card-title">${final?'Yönetim Hedefleri · Sezon Sonu':'Sezonluk Yönetim Hedefleri'}</div><div class="ll-muted" style="margin-bottom:10px">${llStars(goals.stars||llV2TeamStarsInState(s,s.playerTeam))} ${llEscape(llLeagueLabel(goals.league))} beklentileri · kulübün gücüne göre belirlendi</div><div class="ll-goals">${items.map(g=>`<div class="ll-goal ${final?(g.achieved?'success':'fail'):''}"><div><div class="ll-goal-title">${final?(g.achieved?'✓':'✕'):'◆'} ${llEscape(g.label)}</div><div class="ll-goal-progress">${llEscape(g.progress)}</div></div><div class="ll-goal-reward">${llV2RewardText(g,final?g.achieved:true)}</div></div>`).join('')}</div>${final?`<div class="ll-notice" style="margin-top:12px"><b>Hedef ödülleri:</b> +${goals.earnedAp} AP · +${goals.earnedLp} LP${goals.promotionSupportAp?`<br><b>Yükselme desteği:</b> +${goals.promotionSupportAp} AP`:''}${goals.badge?`<br><b>Kulüp rozeti:</b> 🏅 ${llEscape(goals.badge)}`:''}</div>`:`<div class="ll-muted" style="margin-top:10px">Hedefler sezon başında sabitlenir. Yıldızın sezon içinde yükselirse mevcut hedef değişmez; daha güçlü hedefler sonraki sezon başlar. Başarılmayan hedef 0 puan verir.</div>`}</div>`;
 }
-function llIsTransferWindow(week=lexLeague.state?.week){const s=lexLeague.state,n=Number(week);return !!s?.seasonEnded||(n>=1&&n<=3)||[10,20,30].includes(n);}
+function llIsTransferWindow(week=lexLeague.state?.week){const s=lexLeague.state,n=Number(week);return !!s?.seasonEnded||(n>=1&&n<=3)||[10,18,30].includes(n);}
 function llV2MatchImportance(f,key){
   const s=lexLeague.state,comp=f.competition||'league',pair=[f.home,f.away].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),derbies=new Set([['Galatasaray','Fenerbahçe'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Galatasaray','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Fenerbahçe','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|')]);
   if(comp==='cup'&&/Final/i.test(f.roundLabel||''))return '🏆 TÜRKİYE KUPASI FİNALİ';
@@ -670,7 +670,7 @@ llChooseShopCard=function(id){
 };
 llRenderShop=function(){
   const s=lexLeague.state,week=Number(s.week),seasonEnd=!!s.seasonEnded,earlySeason=week>=1&&week<=3;
-  if(!llIsTransferWindow(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 20., 30. haftalarda ve sezon sonunda açıktır.');return;}
+  if(!llIsTransferWindow(week)){alert('Transfer merkezi sezonun ilk 3 haftasında, 10., 18., 30. haftalarda ve sezon sonunda açıktır.');return;}
   llV3EnsurePremiumState(s);
   const pending=s.pendingPremiumPack,regularPending=s.pendingRegularPack;
   if(pending)lexLeague.shop={mode:'premium',position:pending.position,offers:[...pending.offers],source:pending.source};
