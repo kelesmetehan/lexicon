@@ -2136,7 +2136,21 @@ const LL_BALANCED_CARD_POOL=[
   {id:'NCL04',position:'Evrensel',name:'Mükemmeliyetçi',minStar:3,trigger:'Üç düellonun tamamını kazanırsan',effect:'+2 ekstra sanal gol',rarity:'legendary'},
   {id:'NCM02',position:'Evrensel',name:'Dev Avcısı',minStar:1,trigger:'Rakibin yıldızı senden yüksekse',effect:'Rakibin en yüksek zarı -1',rarity:'rare'},
   {id:'NCM04',position:'Evrensel',name:'Deplasman Disiplini',minStar:1,trigger:'Maç rakip sahasında oynanıyorsa',effect:'Rakibin en düşük zarı -1',rarity:'common'},
-  {id:'NCM06',position:'Forvet',name:'Fırsatçı',minStar:1,trigger:'Forvet düellosu öncesinde öndeysen',effect:'+1 sanal gol',rarity:'rare'}
+  {id:'NCM06',position:'Forvet',name:'Fırsatçı',minStar:1,trigger:'Forvet düellosu öncesinde öndeysen',effect:'+1 sanal gol',rarity:'rare'},
+  // Pozisyonlar arasi kosullu sinerji kartlari
+  {id:'SYN01',position:'Kaleci',name:'Kaleden \u00c7\u0131k\u0131\u015f',minStar:1,trigger:'Kaleci d\u00fcellosu kazan\u0131lm\u0131\u015fsa',effect:'Orta Saha zar\u0131na +1',rarity:'common',category:'Pas zinciri'},
+  {id:'SYN02',position:'Orta Saha',name:'Ara Pas\u0131',minStar:1,trigger:'Orta Saha d\u00fcellosu kazan\u0131lm\u0131\u015fsa',effect:'Forvet zar\u0131na +1',rarity:'common',category:'Pas zinciri'},
+  {id:'SYN03',position:'Evrensel',name:'Tam Ba\u011flant\u0131',minStar:2,trigger:'\u00dc\u00e7 temel zar\u0131n toplam\u0131 13 veya \u00fcst\u00fcyse',effect:'Tak\u0131m\u0131n en d\u00fc\u015f\u00fck zar\u0131na +1',rarity:'epic',category:'Pozisyon sinerjisi'},
+  {id:'SYN04',position:'Orta Saha',name:'\u00dc\u00e7l\u00fc Pres',minStar:1,trigger:'Kaleci ve Orta Saha d\u00fcellolar\u0131 beraber veya galipse',effect:'Rakibin Forvet zar\u0131na -1',rarity:'rare',category:'Savunma hatt\u0131'},
+  {id:'SYN05',position:'Kaleci',name:'Savunma Blo\u011fu',minStar:2,trigger:'Rakip temel iki d\u00fcelloda \u00f6ndeyse',effect:'Rakibin en y\u00fcksek zar\u0131na -1',rarity:'rare',category:'Savunma hatt\u0131'},
+  {id:'SYN06',position:'Orta Saha',name:'\u00c7ift Y\u00f6nl\u00fc Oyun',minStar:1,trigger:'Kaleci ve Forvet temel zarlar\u0131 e\u015fitse',effect:'Kaleci zar\u0131na +1',rarity:'rare',category:'Pozisyon sinerjisi'},
+  {id:'SYN07',position:'Forvet',name:'Kontraatak',minStar:2,trigger:'Kaleci d\u00fcellosu kaybedilmi\u015f, Orta Saha kazan\u0131lm\u0131\u015fsa',effect:'Forvet zar\u0131na +2',rarity:'epic',category:'Risk-\u00f6d\u00fcl'},
+  {id:'SYN08',position:'Kaleci',name:'Kontroll\u00fc Risk',minStar:2,trigger:'Forvet d\u00fcellosu kaybedilirse',effect:'Kaleci d\u00fcellosu galibiyet say\u0131l\u0131r; Forvet gol\u00fc olu\u015fmaz',rarity:'epic',category:'Risk-\u00f6d\u00fcl'},
+  {id:'SYN09',position:'Orta Saha',name:'Geri D\u00f6n\u00fc\u015f Plan\u0131',minStar:2,trigger:'\u0130lk iki d\u00fcellodan sonra gerideysen ve Forvet zar\u0131n kaybediyorsa',effect:'Forvet zar\u0131na +2',rarity:'rare',category:'Skora duyarl\u0131'},
+  {id:'SYN10',position:'Forvet',name:'Plan B',minStar:1,trigger:'Reroll sonras\u0131 Forvet zar\u0131 d\u00fc\u015ferse',effect:'Eski Forvet zar\u0131 korunur; reroll hakk\u0131 yine harcan\u0131r',rarity:'rare',category:'Reroll etkile\u015fimi'},
+  {id:'SYN11',position:'Orta Saha',name:'Lig Maratonu',minStar:1,trigger:'Lig ma\u00e7\u0131nda son 5 resmi ma\u00e7ta en az 3 galibiyet varsa',effect:'Orta Saha zar\u0131na +1',rarity:'rare',category:'Organizasyon uzmanl\u0131\u011f\u0131'},
+  {id:'SYN12',position:'Kaleci',name:'Deplasman Plan\u0131',minStar:1,trigger:'Deplasmandaysan',effect:'Kendi en d\u00fc\u015f\u00fck zar\u0131na +1; rakibin Ev Sahibi Avantaj\u0131 kart\u0131n\u0131 etkisizle\u015ftirir',rarity:'rare',category:'Ma\u00e7 kimli\u011fi'},
+  {id:'SYN13',position:'Forvet',name:'Evde Bask\u0131',minStar:1,trigger:'Ev sahibiysen ve Kaleci d\u00fcellosu kazan\u0131ld\u0131ysa',effect:'Forvet zar\u0131na +1',rarity:'rare',category:'Ma\u00e7 kimli\u011fi'}
 ];
 const LL_CARD_UPGRADE_DEFINITIONS=[
   {from:'RBK02',card:{id:'UPK01',position:'Kaleci',name:'Son Adam (Geliştirilmiş)',minStar:1,trigger:'Rakip zarı 5 veya 6 gelirse',effect:'Rakibin o zarını 1 azalt',rarity:'common'}},
@@ -2759,6 +2773,16 @@ function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,is
     case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp;}
     case 'Boş Kadro': return LL_POSITIONS.some(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos));
     case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos));
+    case 'Kaleden \u00c7\u0131k\u0131\u015f': return die.position==='Kaleci'&&own>opp;
+    case 'Ara Pas\u0131': return die.position==='Orta Saha'&&own>opp;
+    case 'Tam Ba\u011flant\u0131': return llSum(ownDice)>=13;
+    case '\u00dc\u00e7l\u00fc Pres': case 'Kontraatak': case 'Kontroll\u00fc Risk': case 'Geri D\u00f6n\u00fc\u015f Plan\u0131': return true;
+    case 'Savunma Blo\u011fu': return die.position==='Kaleci'&&LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value<llFindPosition(oppDice,pos)?.value).length>=2;
+    case '\u00c7ift Y\u00f6nl\u00fc Oyun': return die.position==='Orta Saha'&&llFindPosition(ownDice,'Kaleci')?.value===llFindPosition(ownDice,'Forvet')?.value;
+    case 'Lig Maratonu': return llHatTrickForm(teamName,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'}).active;
+    case 'Deplasman Plan\u0131': return !isHome;
+    case 'Evde Bask\u0131': return die.position==='Forvet'&&isHome;
+    case 'Plan B': return false;
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die);
     case 'Taktik Tahtası': case 'Yedek Kulübesi': return false;
     case 'Form Tutmuyor': return (team?.sixStreaks?.[die.position]||0)>=2&&own===6;
@@ -2814,6 +2838,7 @@ function llIsConsecutiveLine(dice){const values=dice.map(d=>d.value).sort((a,b)=
 function llAllDiceEqual(dice){return dice.length===3&&dice.every(d=>d.value===dice[0].value);}
 function llHasDoubleWing(dice){const keeper=llFindPosition(dice,'Kaleci'),mid=llFindPosition(dice,'Orta Saha'),forward=llFindPosition(dice,'Forvet');return !!keeper&&!!mid&&!!forward&&keeper.value===forward.value&&mid.value!==keeper.value;}
 function llIsBalancedEleven(dice){const values=dice.map(d=>d.value);return values.length===3&&Math.max(...values)-Math.min(...values)<=1;}
+function llWonOrDrew(result,key){return result===key||result==='draw';}
 function llCardGoalAmount(card){const m=card?.effect.match(/\+(\d+)\s+(?:ekstra\s+)?sanal gol/i)||card?.effect.match(/(\d+)\s+(?:ekstra\s+)?sanal gol/i);return m?Number(m[1]):1;}
 function llResolutionCardOutcomes(side,rawDice,events,disabled,scoreFor,scoreAgainst){
   const outcomes={};
@@ -2844,11 +2869,12 @@ function llResolutionTriggeredCardIds(side,rawDice,events,disabled,scoreFor,scor
 function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   // Zarları değerlerine göre değil, sabit mevki sırasına göre eşleştir.
   // Böylece Kaleci daima Kaleciyle, Orta Saha Orta Sahayla ve Forvet Forvetle düello yapar.
-  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[])],eventScores=(scouting.events||[]).map(()=>null),nextLocks={a:{},b:{}};
+  const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[]),...(ctx.manualCardEvents||[])],eventScores=[...(scouting.events||[]),...(ctx.manualCardEvents||[])].map(()=>null),nextLocks={a:{},b:{}};
   const rawADice=llDeep(aDice),rawBDice=llDeep(bDice);
   const aState=llTeamState(aName),bState=llTeamState(bName);
   const sides={a:{name:aName,dice:aDice,state:aState,home:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:!ctx.aHome,extra:0,shield:0}};
   const disabled={a:new Set(scouting.disabled?.a||[]),b:new Set(scouting.disabled?.b||[])};
+  [['a','b'],['b','a']].forEach(([key,oppKey])=>{const me=sides[key],opp=sides[oppKey];if(me.home||!me.dice.some(d=>llBaseName(llCard(d.cardId))==='Deplasman Plan\u0131'))return;const homeCard=opp.dice.find(d=>llBaseName(llCard(d.cardId))==='Ev Sahibi Avantaj\u0131');if(homeCard){disabled[oppKey].add(homeCard.uid);events.push(me.name+': Deplasman Plan\u0131 \u2192 rakibin Ev Sahibi Avantaj\u0131 kart\u0131 etkisizle\u015ftirildi.');eventScores.push(null);}});
   let scoreA=0,scoreB=0,processedPairs=0,extrasCommitted=false;
   const shieldCommitted={a:false,b:false};
   function projectedScore(){
@@ -2865,6 +2891,9 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   function applyCombinationCards(me,key,rawDice){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c),rawDie=llFindPosition(rawDice,d.position);if(!c||!rawDie)return;
+      if(base==='Tam Ba\u011flant\u0131'&&llSum(rawDice)>=13){const target=llLowestDie(me.dice),old=target.value;target.value+=1;log(me.name+': Tam Ba\u011flant\u0131 \u2192 temel zar toplam\u0131 '+llSum(rawDice)+'; '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(base==='Savunma Blo\u011fu'){const losses=LL_POSITIONS.filter(pos=>llFindPosition(rawDice,pos)?.value<llFindPosition(key==='a'?rawBDice:rawADice,pos)?.value).length;if(losses>=2){const target=llHighestDie(key==='a'?bDice:aDice),old=target.value;target.value=Math.max(1,old-1);log(me.name+': Savunma Blo\u011fu \u2192 rakip temel iki d\u00fcelloda \u00f6ndeydi; rakibin '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}}
+      if(base==='\u00c7ift Y\u00f6nl\u00fc Oyun'&&llFindPosition(rawDice,'Kaleci')?.value===llFindPosition(rawDice,'Forvet')?.value){const target=llFindPosition(me.dice,'Kaleci'),old=target.value;target.value+=1;log(me.name+': \u00c7ift Y\u00f6nl\u00fc Oyun \u2192 Kaleci ve Forvet temel zarlar\u0131 e\u015fit; Kaleci zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
       if(base==='İkili Pres'&&d.position==='Orta Saha'&&llDieBelongsToExactPair(rawDice,rawDie)){const old=d.value,bonus=c.upgradeRule==='double-press'&&rawDie.value>=4?2:1;d.value+=bonus;log(`${me.name}: İkili Pres → Orta Saha zarı ${old}→${d.value} (zar etkisi, uygulanan +${bonus}).`);}
       if(base==='Kusursuz Hat'&&llIsConsecutiveLine(rawDice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Kusursuz Hat → SKOR BONUSU +${n} (zara değil, maç skoruna eklenir).`);}
       if(base==='Altın Seri'&&(c.upgradeLevel?[8,12,13]:[8,13]).includes(llSum(rawDice))){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Uğurlu Sayılar → temel zar toplamı ${llSum(rawDice)}; SKOR BONUSU +${n}.`);}
@@ -2885,13 +2914,15 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     });
   }
   const globalPhaseCards={
-    self:new Set(['Ev Sahibi Avantajı','Kaptanlık Pazubandı','Uzun Top','Pas Ustası']),
+    self:new Set(['Ev Sahibi Avantajı','Kaptanlık Pazubandı','Uzun Top','Pas Ustası','Lig Maratonu','Deplasman Plan\u0131']),
     opponent:new Set(['Deplasman Ruhu','Deplasman Disiplini','Dev Avcısı','Kalenin Efendisi','Moral Bozukluğu','Kilitleme','Ofsayt Tuzağı']),
     post:new Set(['Sakatlık Şansı'])
   };
   function applyGlobals(me,opp,key,phase){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c);if(!c||!globalPhaseCards[phase]?.has(base))return;
+      if(base==='Lig Maratonu'&&ctx.competition==='league'){const form=llHatTrickForm(me.name,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'});if(form.active){const target=llFindPosition(me.dice,'Orta Saha'),old=target.value;target.value+=1;log(me.name+': Lig Maratonu \u2192 son '+form.windowSize+' resmi ma\u00e7ta '+form.wins+' galibiyet; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}}
+      if(base==='Deplasman Plan\u0131'&&!me.home){const target=llLowestDie(me.dice),old=target.value;target.value+=1;log(me.name+': Deplasman Plan\u0131 \u2192 deplasmanda '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
       if(base==='Ev Sahibi Avantajı'&&me.home){const own=llFindPosition(me.dice,d.position),min=Math.min(...me.dice.map(x=>x.value)),target=c.upgradeRule==='home-advantage'&&own?.value===min?own:llLowestDie(me.dice),bonus=c.upgradeRule==='home-advantage'&&target===own?2:1,old=target.value;target.value+=bonus;log(`${me.name}: Ev Sahibi Avantajı → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +${bonus}).`);}
       const preparedCaptain=scouting.randoms?.[key]?.captain?.[d.uid],captainActive=c.upgradeRule==='captain'&&llLowestDie(me.dice).value<=2?true:(typeof preparedCaptain==='boolean'?preparedCaptain:Math.random()<.5);
       if(base==='Kaptanlık Pazubandı'&&captainActive){const low=llLowestDie(me.dice),old=low.value;low.value+=1;log(`${me.name}: Kaptanlık Pazubandı → ${low.position} zarı ${old}→${low.value} (zar etkisi, uygulanan +1).`);}
@@ -2991,6 +3022,10 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
         log(`${bName}: VAR İncelemesi → ${b.position} düellosu ${oldB}-${oldA} berabereydi; kendi ${b.position} zarı yeniden atıldı ${oldB}→${b.value}; yeni düello ${b.value}-${a.value} (${state}).`);
       }
     }
+    if(i===2){
+      if(sideHasBase('a','Geri D\u00f6n\u00fc\u015f Plan\u0131')&&scoreA<scoreB&&a.value<b.value){const old=a.value;a.value+=2;log(aName+': Geri D\u00f6n\u00fc\u015f Plan\u0131 \u2192 ilk iki d\u00fcello sonras\u0131 '+scoreA+'-'+scoreB+' geride; Forvet zar\u0131 '+old+'\u2192'+a.value+' (zar etkisi, uygulanan +2).');}
+      if(sideHasBase('b','Geri D\u00f6n\u00fc\u015f Plan\u0131')&&scoreB<scoreA&&b.value<a.value){const old=b.value;b.value+=2;log(bName+': Geri D\u00f6n\u00fc\u015f Plan\u0131 \u2192 ilk iki d\u00fcello sonras\u0131 '+scoreB+'-'+scoreA+' geride; Forvet zar\u0131 '+old+'\u2192'+b.value+' (zar etkisi, uygulanan +2).');}
+    }
     let result='draw';
     if(!blocked){
       if(autoA&&!autoB)result='a';else if(autoB&&!autoA)result='b';else if(a.value>b.value)result='a';else if(b.value>a.value)result='b';
@@ -3001,6 +3036,24 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     }
     if(result==='a'){scoreA+=multA;if(sonPerdeA)log(`${aName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;log(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}}
     if(result==='b'){scoreB+=multB;if(sonPerdeB)log(`${bName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;log(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}}
+    if(i===0){
+      if(result==='a'&&sideHasBase('a','Kaleden \u00c7\u0131k\u0131\u015f')){const target=llFindPosition(aDice,'Orta Saha'),old=target.value;target.value+=1;log(aName+': Kaleden \u00c7\u0131k\u0131\u015f \u2192 Kaleci d\u00fcellosu kazan\u0131ld\u0131; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(result==='b'&&sideHasBase('b','Kaleden \u00c7\u0131k\u0131\u015f')){const target=llFindPosition(bDice,'Orta Saha'),old=target.value;target.value+=1;log(bName+': Kaleden \u00c7\u0131k\u0131\u015f \u2192 Kaleci d\u00fcellosu kazan\u0131ld\u0131; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(result==='a'&&sides.a.home&&sideHasBase('a','Evde Bask\u0131')){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value+=1;log(aName+': Evde Bask\u0131 \u2192 ev sahibi Kaleci d\u00fcellosunu kazand\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(result==='b'&&sides.b.home&&sideHasBase('b','Evde Bask\u0131')){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value+=1;log(bName+': Evde Bask\u0131 \u2192 ev sahibi Kaleci d\u00fcellosunu kazand\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+    }
+    if(i===1){
+      if(result==='a'&&sideHasBase('a','Ara Pas\u0131')){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value+=1;log(aName+': Ara Pas\u0131 \u2192 Orta Saha d\u00fcellosu kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(result==='b'&&sideHasBase('b','Ara Pas\u0131')){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value+=1;log(bName+': Ara Pas\u0131 \u2192 Orta Saha d\u00fcellosu kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(sideHasBase('a','\u00dc\u00e7l\u00fc Pres')&&llWonOrDrew(pairResults[0]?.result,'a')&&llWonOrDrew(result,'a')){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value=Math.max(1,old-1);log(aName+': \u00dc\u00e7l\u00fc Pres \u2192 Kaleci ve Orta Saha d\u00fcellolar\u0131 kaybedilmedi; rakip Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}
+      if(sideHasBase('b','\u00dc\u00e7l\u00fc Pres')&&llWonOrDrew(pairResults[0]?.result,'b')&&llWonOrDrew(result,'b')){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value=Math.max(1,old-1);log(bName+': \u00dc\u00e7l\u00fc Pres \u2192 Kaleci ve Orta Saha d\u00fcellolar\u0131 kaybedilmedi; rakip Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}
+      if(sideHasBase('a','Kontraatak')&&pairResults[0]?.result==='b'&&result==='a'){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value+=2;log(aName+': Kontraatak \u2192 Kaleci kaybedildi, Orta Saha kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +2).');}
+      if(sideHasBase('b','Kontraatak')&&pairResults[0]?.result==='a'&&result==='b'){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value+=2;log(bName+': Kontraatak \u2192 Kaleci kaybedildi, Orta Saha kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+b.value+' (zar etkisi, uygulanan +2).');}
+    }
+    if(i===2){
+      if(result==='b'&&sideHasBase('a','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='b'){scoreB=Math.max(0,scoreB-was.bGoals);scoreA+=1;was.result='a';was.aGoals=1;was.bGoals=0;log(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+aName+' skora +1 yazd\u0131.');}else log(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
+      if(result==='a'&&sideHasBase('b','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='a'){scoreA=Math.max(0,scoreA-was.aGoals);scoreB+=1;was.result='b';was.aGoals=0;was.bGoals=1;log(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+bName+' skora +1 yazd\u0131.');}else log(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
+    }
     const logPreparedMultiplier=(side,base,mult,resultForSide,opponentAuto,wasBlocked)=>{
       if(!['Golcü İçgüdüsü','Son Vuruş'].includes(base)||mult<=1)return;
       const team=side==='a'?aName:bName;
@@ -3032,12 +3085,12 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
 function llBeginMatch(plusPos){
   const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
   const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
-  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,committed:false};
+  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,manualCardEvents:[],committed:false};
   llRenderMatch();
 }
 function llRefreshMatchProjection(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length){if(m)m.projectedResolution=null;return;}
-  const randoms=m.scouting?.randoms;m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,randoms});m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
+  const randoms=m.scouting?.randoms;m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,randoms});m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
 }
 function llAnimateVisibleDice(m,token,duration){
   const tick=()=>{if(lexLeague.match!==m||m.rollAnimationToken!==token)return;document.querySelectorAll('.ll-die.rolling').forEach((el,i)=>{el.textContent=String(1+Math.floor(Math.random()*6));el.setAttribute('aria-label',`Zar dönüyor: ${el.textContent}`);});};
@@ -3066,7 +3119,7 @@ function llUseReroll(){
   setTimeout(()=>{
     if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
     const current=m.playerDice.find(d=>d.uid===uid);if(!current)return;
-    current.value=llRollValue(m.player,current.position)+(current.position===m.plusPos?1:0);m.playerDice=llOrderDiceByPosition(m.playerDice);llRefreshMatchProjection(m);
+    const old=current.value;current.value=llRollValue(m.player,current.position)+(current.position===m.plusPos?1:0);if(current.position==='Forvet'&&llBaseName(llCard(current.cardId))==='Plan B'&&current.value<old){const rolled=current.value;current.value=old;m.manualCardEvents=(m.manualCardEvents||[]);m.manualCardEvents.push(m.player+': Plan B \u2192 Forvet reroll sonucu '+rolled+' geldi ve eski '+old+' korundu; reroll hakk\u0131 harcand\u0131.');}m.playerDice=llOrderDiceByPosition(m.playerDice);llRefreshMatchProjection(m);
     m.rollingUid=null;m.justLandedUid=uid;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
     setTimeout(()=>{if(lexLeague.match===m)m.justLandedUid=null;},420);
   },wait);
@@ -3074,7 +3127,7 @@ function llUseReroll(){
 function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.rerollCredits={base:0,general:0,Kaleci:0,'Orta Saha':0};m.selectedUid=null;m.phase='preview';llRenderMatch();}
 function llFinalizeCurrentMatch(){
   const m=lexLeague.match;if(!m||m.resolution)return;
-  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,scouting:m.scouting});
+  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
   if(m.resolution.scoreA>0||m.resolution.scoreB>0){m.scorePop=true;m.scoreFlash=m.resolution.scoreA>m.resolution.scoreB?'player':m.resolution.scoreB>m.resolution.scoreA?'opponent':'draw';}
   m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
 }
@@ -3133,6 +3186,18 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedD
     case 'Fırsatçı': {const score=llRawScoreBeforePosition(ownDice,oppDice,'Forvet');return score.own>score.opp?active(`İlk iki ham düelloda ${score.own}-${score.opp} öndesin.`):inactive(`İlk iki ham düello ${score.own}-${score.opp}; önde değilsin.`);}
     case 'Boş Kadro': {const empty=LL_POSITIONS.filter(pos=>pos!==die.position&&!llCardContractSlotActive(team,pos)).length;return empty?active(`${empty} boş veya sözleşmesi bitmiş yuva var; ${die.position} zarına +${Math.min(2,empty)} uygulanacak.`):inactive('Diğer iki kart yuvası da aktif.');}
     case 'Takım Kimyası': return LL_POSITIONS.every(pos=>llCardContractSlotActive(team,pos))?active('Üç kart yuvası da aktif.'):inactive('Üç aktif kart yuvasının tamamı dolu değil.');
+    case 'Kaleden \u00c7\u0131k\u0131\u015f': return ownValue>oppValue?active('Kaleci d\u00fcellosu \u015fu an kazan\u0131l\u0131yor; Orta Saha zar\u0131na +1 aktar\u0131lacak.'):inactive('Kaleci d\u00fcellosu kazan\u0131lm\u0131\u015f de\u011fil.');
+    case 'Ara Pas\u0131': return ownValue>oppValue?active('Orta Saha d\u00fcellosu \u015fu an kazan\u0131l\u0131yor; Forvet zar\u0131na +1 aktar\u0131lacak.'):inactive('Orta Saha d\u00fcellosu kazan\u0131lm\u0131\u015f de\u011fil.');
+    case 'Tam Ba\u011flant\u0131': return llSum(ownDice)>=13?active('Temel zar toplam\u0131 '+llSum(ownDice)+'; en d\u00fc\u015f\u00fck zara +1 uygulanacak.'):inactive('Temel zar toplam\u0131 '+llSum(ownDice)+'; en az 13 gerekli.');
+    case 'Savunma Blo\u011fu': {const n=LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value<llFindPosition(oppDice,pos)?.value).length;return n>=2?active('Rakip '+n+' temel d\u00fcelloda \u00f6nde; en y\u00fcksek zara -1 uygulanacak.'):inactive('Rakip iki temel d\u00fcelloda \u00f6nde de\u011fil.');}
+    case '\u00c7ift Y\u00f6nl\u00fc Oyun': return llFindPosition(ownDice,'Kaleci')?.value===llFindPosition(ownDice,'Forvet')?.value?active('Kaleci ve Forvet temel zarlar\u0131 e\u015fit; Kaleci zar\u0131na +1 uygulanacak.'):inactive('Kaleci ve Forvet temel zarlar\u0131 e\u015fit de\u011fil.');
+    case 'Kontraatak': return uncertain('Kaleci/Orta Saha d\u00fcellolar\u0131n\u0131n kesin sonucuna bak\u0131lacak.');
+    case 'Kontroll\u00fc Risk': return uncertain('Yaln\u0131zca Forvet d\u00fcellosu kaybedilirse kesin \u00e7\u00f6z\u00fcmde devreye girer.');
+    case 'Geri D\u00f6n\u00fc\u015f Plan\u0131': return uncertain('\u0130lk iki kartl\u0131 d\u00fcellodan sonraki skora ve Forvet durumuna bak\u0131lacak.');
+    case 'Plan B': return uncertain('Yaln\u0131zca Forvet reroll sonucu eski de\u011ferden d\u00fc\u015f\u00fckse devreye girer.');
+    case 'Lig Maratonu': {const f=llHatTrickForm(teamName,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'});return f.active?active('Son '+f.windowSize+' resmi ma\u00e7ta '+f.wins+' galibiyet var; lig ma\u00e7\u0131nda Orta Saha zar\u0131na +1.'):inactive('Yaln\u0131zca lig ma\u00e7\u0131nda son 5 resmi ma\u00e7ta en az 3 galibiyetle \u00e7al\u0131\u015f\u0131r.');}
+    case 'Deplasman Plan\u0131': return !isHome?active('Tak\u0131m deplasmanda; en d\u00fc\u015f\u00fck zar +1 alacak ve Ev Sahibi Avantaj\u0131 varsa bloklanacak.'):inactive('Tak\u0131m ev sahibi.');
+    case 'Evde Bask\u0131': return isHome?uncertain('Ev sahibi; Kaleci d\u00fcellosu kazan\u0131l\u0131rsa Forvet zar\u0131 +1 alacak.'):inactive('Tak\u0131m deplasmanda.');
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die)?active('Diğer iki kart da Nadir veya daha üstü; +1 reroll hazır.'):inactive('Diğer iki kartın ikisi de Nadir veya daha üstü değil.');
     case 'Taktik Tahtası': return inactive('Bu kart yalnızca transfer haftasında çalışır.');
     case 'Reflex': return active(`${llEffectAmount(card,1)} ekstra reroll hakkı maç başında verildi.`);
@@ -3222,9 +3287,9 @@ function llRenderMatch(){
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
   <div style="text-align:center;margin-top:16px">${controls}</div>${r?llCardEffectChainHtml(m,r,false):''}</div></div>`;
 }
-function llSimulateMatch(home,away){
+function llSimulateMatch(home,away,competition='league'){
   let hd=llMakeDice(home),ad=llMakeDice(away);const scouting=llPrepareScouting(home,away,hd,ad,{aHome:true});const hc=llRerollCreditsFromDice(hd,scouting.disabled.a),ac=llRerollCreditsFromDice(ad,scouting.disabled.b);hd=llAutoRerollWithCredits(home,hd,hc,llTakeCarriedRerolls(home));ad=llAutoRerollWithCredits(away,ad,ac,llTakeCarriedRerolls(away));
-  const r=llResolveBattle(home,away,hd,ad,{aHome:true,scouting});return {homeGoals:r.scoreA,awayGoals:r.scoreB,resolution:r};
+  const r=llResolveBattle(home,away,hd,ad,{aHome:true,competition,scouting});return {homeGoals:r.scoreA,awayGoals:r.scoreB,resolution:r};
 }
 function llApplyLocks(resolution,aName,bName){
   Object.assign(llTeamState(aName).lockedDice,resolution.nextLocks.a||{});Object.assign(llTeamState(bName).lockedDice,resolution.nextLocks.b||{});
@@ -5473,7 +5538,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260802-2"></script>
+<script src="league-v2.js?v=20260802-3"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -5482,8 +5547,8 @@ renderPreStart();
 <script src="european-leagues-pools.js?v=20260731-2"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260802-1"></script>
-<script src="ai-opponent-strategy.js?v=20260726-1"></script>
-<script src="multi-league-engine.js?v=20260802-1"></script>
+<script src="ai-opponent-strategy.js?v=20260802-1"></script>
+<script src="multi-league-engine.js?v=20260802-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260731-1"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
