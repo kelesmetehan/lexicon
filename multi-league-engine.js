@@ -325,3 +325,221 @@ llRenderManagerMarket=function(tableKey='super'){
   if(host)host.insertAdjacentHTML('afterend','<div class="ll-notice ll-foreign-offer-rule"><b>Yurt d\u0131\u015f\u0131 teklif dengesi:</b> Normal teklifler en fazla 4\u2605. 5\u2605 i\u00e7in b\u00fcy\u00fck ba\u015far\u0131, 6\u2605 i\u00e7in Avrupa kupas\u0131 + lig \u015fampiyonlu\u011fu gerekir.</div>');
 };
 /* FOREIGN_MANAGER_OFFER_CAP_END */
+
+/* DOMESTIC_CUP_TWO_LEGS_V1_START
+ * New cups: every round before the final is home-and-away. Existing saves keep
+ * their already-created single-leg cup, so an in-progress career is never
+ * rewritten halfway through a tournament.
+ */
+var LL_DOMESTIC_CUP_TWO_LEG_VERSION=4;
+var LL_DOMESTIC_CUP_TIE_WEEKS=[[2,3],[6,7],[10,12],[15,16],[20,21],[26]];
+function llMLCupUsesTwoLegs(cup){return Number(cup&&cup.formatVersion)>=LL_DOMESTIC_CUP_TWO_LEG_VERSION;}
+function llMLCupRoundWeeks(round){return LL_DOMESTIC_CUP_TIE_WEEKS[Number(round)]||[Number(LL_CUP_WEEKS&&LL_CUP_WEEKS[round])||1];}
+function llMLCupRoundIsFinal(round){return Number(round)>=Number(LL_CUP_ROUNDS.length)-1;}
+function llMLCupTieId(state,round,pair){return 'domestic-s'+Number(state.season)+'-r'+Number(round)+'-'+String(pair&&pair[0]||'').replace(/[^a-z0-9]+/ig,'_')+'-'+String(pair&&pair[1]||'').replace(/[^a-z0-9]+/ig,'_');}
+function llMLCupAggregate(pair,first,second){
+  var a=pair&&pair[0],b=pair&&pair[1],score=function(result,team){if(!result)return 0;return result.home===team?Number(result.homeGoals)||0:result.away===team?Number(result.awayGoals)||0:0;};
+  return {a:score(first,a)+score(second,a),b:score(first,b)+score(second,b)};
+}
+function llMLCupRecordLeg(state,fixture,score,week,round,leg,tieId,userMatch){
+  if(userMatch)llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,week,true,'cup',null);
+  else llMLRecordDataMatch(state,llMLCountryForTeam(fixture.home,state)||state.playerCountry,null,fixture,score,week,'cup',round);
+  var result=state.results[state.results.length-1];
+  if(result)Object.assign(result,{cupRound:Number(round),cupLeg:Number(leg),cupTieId:tieId,roundLabel:(LL_CUP_ROUNDS[round]||'Cup')+(llMLCupRoundIsFinal(round)?'':' \u00b7 '+(Number(leg)===1?'1. Ma\u00e7':'R\u00f6van\u015f'))});
+  return result;
+}
+function llMLCupSimLeg(state,fixture,week,round,leg,tieId){
+  var sim=llSimulateMatch(fixture.home,fixture.away,'cup');
+  var result=llMLCupRecordLeg(state,fixture,sim,week,round,leg,tieId,false);
+  if(sim.resolution)llApplyLocks(sim.resolution,fixture.home,fixture.away);
+  return result;
+}
+function llMLCupSimTie(state,pair,round,weeks){
+  var firstFixture={home:pair[0],away:pair[1]},tieId=llMLCupTieId(state,round,pair),first=llMLCupSimLeg(state,firstFixture,weeks[0],round,1,tieId);
+  if(llMLCupRoundIsFinal(round)){
+    var finalShootout=Number(first.homeGoals)===Number(first.awayGoals)&&typeof llV12PenaltyShootout==='function'?llV12PenaltyShootout(state,pair[0],pair[1]):null;
+    var finalWinner=finalShootout?finalShootout.winner:Number(first.homeGoals)===Number(first.awayGoals)?(Math.random()<.5?pair[0]:pair[1]):Number(first.homeGoals)>Number(first.awayGoals)?pair[0]:pair[1];
+    if(finalShootout){finalShootout.aggregate={player:Number(first.homeGoals)||0,opponent:Number(first.awayGoals)||0};first.penaltyShootout=finalShootout;first.decisionResult=finalWinner===pair[0]?'penalties-win':'penalties-loss';}
+    first.knockoutWinner=finalWinner;return finalWinner;
+  }
+  var secondFixture={home:pair[1],away:pair[0]},second=llMLCupSimLeg(state,secondFixture,weeks[1],round,2,tieId),aggregate=llMLCupAggregate(pair,first,second),winner;
+  if(aggregate.a===aggregate.b){
+    var shootout=typeof llV12PenaltyShootout==='function'?llV12PenaltyShootout(state,pair[0],pair[1]):null;
+    winner=shootout?shootout.winner:(Math.random()<.5?pair[0]:pair[1]);
+    if(shootout){shootout.aggregate={player:aggregate.a,opponent:aggregate.b};second.penaltyShootout=shootout;second.decisionResult=winner===pair[0]?'penalties-win':'penalties-loss';}
+  }else winner=aggregate.a>aggregate.b?pair[0]:pair[1];
+  first.aggregate={home:aggregate.a,away:aggregate.b};second.aggregate={home:aggregate.a,away:aggregate.b};second.knockoutWinner=winner;
+  return winner;
+}
+
+var llMLCreateCupSingleLegBase=llMLCreateCup;
+llMLCreateCup=function(state,country){
+  var cup=llMLCreateCupSingleLegBase(state,country);
+  cup.formatVersion=LL_DOMESTIC_CUP_TWO_LEG_VERSION;
+  cup.tieWeeks=LL_DOMESTIC_CUP_TIE_WEEKS.map(function(weeks){return weeks.slice();});
+  return cup;
+};
+
+var llMLBackgroundCupSingleLegBase=llMLProgressBackgroundCup;
+llMLProgressBackgroundCup=function(state,country,week){
+  var cup=state.cups&&state.cups[country];
+  if(!llMLCupUsesTwoLegs(cup))return llMLBackgroundCupSingleLegBase(state,country,week);
+  if(!cup||cup.winner||country===state.playerCountry)return;
+  while(cup.round<LL_CUP_ROUNDS.length){
+    var round=Number(cup.round),weeks=llMLCupRoundWeeks(round),pending=cup.backgroundTieRound;
+    if(pending&&Number(pending.round)===round){
+      if(Number(week)<Number(weeks[1]||weeks[0]))return;
+      for(const tie of pending.ties){
+        if(tie.bye)continue;
+        var winner=llMLCupSimTie(state,tie.pair,round,weeks);
+        pending.next.push(winner);
+      }
+      cup.field=pending.next;cup.backgroundTieRound=null;cup.round++;
+      if(cup.field.length===1){cup.winner=cup.field[0];cup.alive=false;return;}
+      continue;
+    }
+    if(Number(week)<Number(weeks[0]))return;
+    cup.history=cup.history||{};cup.history[round]=[...cup.field];
+    var ties=[],next=[];
+    for(var i=0;i<cup.field.length;i+=2){
+      var a=cup.field[i],b=cup.field[i+1];
+      if(!a&&!b)continue;
+      if(!a||!b){next.push(a||b);ties.push({bye:true,pair:[a,b]});continue;}
+      ties.push({bye:false,pair:[a,b]});
+    }
+    if(llMLCupRoundIsFinal(round)){
+      for(const tie of ties)if(!tie.bye)next.push(llMLCupSimTie(state,tie.pair,round,weeks));
+      cup.field=next;cup.round++;if(next.length===1){cup.winner=next[0];cup.alive=false;}return;
+    }
+    cup.backgroundTieRound={round:round,ties:ties,next:next};
+    if(Number(week)<Number(weeks[1]))return;
+  }
+};
+
+var llMLCupRepairSingleLegBase=llV2RepairCupProgress;
+llV2RepairCupProgress=function(state){
+  var cup=state&&state.cup;
+  if(!llMLCupUsesTwoLegs(cup))return llMLCupRepairSingleLegBase(state);
+  cup.history=cup.history||{};
+  if(!cup.history[cup.round]&&Array.isArray(cup.field))cup.history[cup.round]=[...cup.field];
+  return cup;
+};
+
+var llMLCupEnsureSingleLegBase=llV2EnsureCup;
+llV2EnsureCup=function(){
+  var state=lexLeague.state,cup=state&&state.cup;
+  if(!llMLCupUsesTwoLegs(cup))return llMLCupEnsureSingleLegBase();
+  if(!cup||cup.winner||cup.round>=LL_CUP_ROUNDS.length||state.pendingFixture)return;
+  var round=Number(cup.round),weeks=llMLCupRoundWeeks(round);
+  if(cup.pending){
+    if(Number(cup.pending.leg)!==2||Number(state.week)<Number(weeks[1]||weeks[0]))return;
+    state.pendingFixture={home:cup.pending.pair[1],away:cup.pending.pair[0],competition:'cup',cupLeg:2,cupTieId:cup.pending.tieId,roundLabel:(LL_CUP_ROUNDS[round]||'Cup')+' \u00b7 R\u00f6van\u015f'};return;
+  }
+  if(Number(state.week)<Number(weeks[0]))return;
+  cup.history=cup.history||{};cup.history[round]=[...cup.field];
+  var next=[],playerPair=null;
+  for(var i=0;i<cup.field.length;i+=2){
+    var a=cup.field[i],b=cup.field[i+1];
+    if(!a&&!b)continue;
+    if(!a||!b){next.push(a||b);continue;}
+    if(a===state.playerTeam||b===state.playerTeam){playerPair=[a,b];continue;}
+    next.push(llMLCupSimTie(state,[a,b],round,weeks));
+  }
+  if(playerPair){
+    var tieId=llMLCupTieId(state,round,playerPair);
+    cup.pending={next:next,pair:playerPair,round:round,tieId:tieId,leg:1,firstLeg:null};
+    state.pendingFixture={home:playerPair[0],away:playerPair[1],competition:'cup',cupLeg:1,cupTieId:tieId,roundLabel:(LL_CUP_ROUNDS[round]||'Cup')+(llMLCupRoundIsFinal(round)?'':' \u00b7 1. Ma\u00e7')};
+  }else{
+    cup.field=next;cup.round++;if(cup.field.length===1){cup.winner=cup.field[0];cup.alive=false;}
+  }
+};
+
+var llMLCupFinishSingleLegBase=llV2FinishCupRound;
+llV2FinishCupRound=function(winner){
+  var cup=lexLeague.state&&lexLeague.state.cup;
+  if(!llMLCupUsesTwoLegs(cup))return llMLCupFinishSingleLegBase(winner);
+  if(!cup||!cup.pending)return;
+  cup.pending.next.push(winner);cup.field=cup.pending.next;cup.pending=null;cup.round++;
+  if(winner!==lexLeague.state.playerTeam)cup.alive=false;
+  if(cup.field.length===1){cup.winner=cup.field[0];if(cup.winner===lexLeague.state.playerTeam)lexLeague.state.trophies.push({season:lexLeague.state.season,name:cup.name||'Local Cup'});}
+};
+
+/* The multi-league wrapper calls llMLCommitBase, so replacing that inner handler
+ * keeps background-country simulation intact while teaching the player cup about
+ * the first leg, aggregate and second-leg-only shootout. */
+llMLCommitBase=function(){
+  var match=lexLeague.match;if(!match||match.committed||!match.resolution)return;
+  match.committed=true;
+  var state=lexLeague.state,fixture=match.fixture,competition=fixture.competition||'league',resolution=match.resolution,hg=match.playerHome?resolution.scoreA:resolution.scoreB,ag=match.playerHome?resolution.scoreB:resolution.scoreA,pg=resolution.scoreA,og=resolution.scoreB,reward=LL_COMP_REWARDS[competition]||LL_COMP_REWARDS.league;
+  var lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;state.lp+=lp;
+  var rolled=(match.playerDice||[]).map(function(die){return die.cardId;}).filter(Boolean),used=rolled.length?rolled:LL_POSITIONS.map(function(position){return llTeamState(match.player).cards[position];}).filter(Boolean),met=llTriggeredPlayerCardIds(match),applied=llAppliedPlayerCardIds(match);
+  llRecordPlayerCardPerformance(used,pg>og?'win':pg===og?'draw':'loss',competition,pg,og,met,applied);
+  llRecordMatch(fixture.home,fixture.away,hg,ag,state.week,true,competition,fixture.league||null);llApplyLocks(resolution,match.player,match.opponent);
+  var recorded=state.results[state.results.length-1],cup=state.cup,isDouble=competition==='cup'&&llMLCupUsesTwoLegs(cup)&&!llMLCupRoundIsFinal(cup.round)&&cup&&cup.pending&&fixture.cupTieId===cup.pending.tieId,firstLeg=isDouble&&Number(fixture.cupLeg)===1,secondLeg=isDouble&&Number(fixture.cupLeg)===2,aggregate=null;
+  if(recorded&&competition==='cup')Object.assign(recorded,{country:llMLCountryForTeam(fixture.home,state)||state.playerCountry,cupRound:Number(cup&&cup.round),cupLeg:Number(fixture.cupLeg)||1,cupTieId:fixture.cupTieId||null,roundLabel:fixture.roundLabel||null});
+  if(secondLeg)aggregate={player:(Number(cup.pending.firstLeg&&cup.pending.firstLeg.playerGoals)||0)+pg,opponent:(Number(cup.pending.firstLeg&&cup.pending.firstLeg.opponentGoals)||0)+og};
+  var needsPens=(competition==='playoff'&&pg===og)||(competition==='cup'&&!firstLeg&&(secondLeg?aggregate.player===aggregate.opponent:pg===og));
+  var shootout=needsPens&&typeof llV12PenaltyShootout==='function'?llV12PenaltyShootout(state,match.player,match.opponent):null;
+  if(shootout)shootout.aggregate=aggregate||{player:pg,opponent:og};
+  var winner=firstLeg?null:shootout?shootout.winner:secondLeg?(aggregate.player>aggregate.opponent?match.player:match.opponent):(pg===og?(Math.random()<.5?match.player:match.opponent):pg>og?match.player:match.opponent);
+  if(recorded&&competition!=='league'){
+    recorded.knockoutWinner=winner;
+    if(aggregate)recorded.aggregate={player:aggregate.player,opponent:aggregate.opponent};
+    if(firstLeg)recorded.decisionResult='first-leg';
+    else if(shootout){recorded.penaltyShootout=Object.assign({},shootout);recorded.regulationResult='draw';recorded.decisionResult=winner===match.player?'penalties-win':'penalties-loss';var decidedLp=winner===match.player?reward.win:reward.loss;state.lp+=decidedLp-lp;lp=decidedLp;recorded.lpAwarded=lp;recorded.lpDecision='penalties';}
+    else{recorded.decisionResult=winner===match.player?'win':'loss';recorded.lpAwarded=lp;}
+  }
+  if(competition==='league'){llV2PlayLeagueWeek('super',fixture.league==='super'?fixture:null);llV2PlayLeagueWeek('first',fixture.league==='first'?fixture:null);llDevelopOpponents(state.week);state.week++;}
+  else if(competition==='cup'){
+    if(firstLeg){cup.pending.firstLeg={playerGoals:pg,opponentGoals:og,home:fixture.home,away:fixture.away};cup.pending.leg=2;}
+    else llV2FinishCupRound(winner);
+  }else if(['ucl','uel','uecl'].includes(competition))llV2FinishEuropeRound(winner);
+  else if(competition==='playoff')llV2FinishPlayoffMatch(winner);
+  state.pendingFixture=null;llSave();llRenderRoundSummary(state.week-(competition==='league'?1:0),lp,pg,og,competition,winner===match.player);
+  if(secondLeg&&!shootout){var notice=llArea()&&llArea().querySelector('.ll-notice');if(notice)notice.innerHTML+='<br><b>Toplam skor:</b> '+aggregate.player+'-'+aggregate.opponent+' \u00b7 '+(winner===match.player?'Tur atlad\u0131n':'Elendin');}
+};
+
+var llMLCupRoundsSingleLegBase=llV2CupRoundsHtml;
+llV2CupRoundsHtml=function(){
+  var state=lexLeague.state,cup=state&&state.cup;
+  if(!llMLCupUsesTwoLegs(cup))return llMLCupRoundsSingleLegBase();
+  var results=(state.results||[]).filter(function(result){return result.competition==='cup';});
+  return '<div class="ll-round-list">'+LL_CUP_ROUNDS.map(function(name,round){
+    var field=llV2CupRoundField(round),pairs=[];if(field)for(var i=0;i<field.length;i+=2)pairs.push([field[i]||null,field[i+1]||null]);
+    var done=!!cup.winner||round<Number(cup.round),current=round===Number(cup.round),weeks=llMLCupRoundWeeks(round);
+    var body=pairs.length?pairs.map(function(pair){
+      var home=pair[0],away=pair[1];if(!home||!away)return llV2FixtureRow(home,away,null);
+      var roundResults=results.filter(function(result){return Number(result.cupRound)===round&&(result.home===home&&result.away===away||result.home===away&&result.away===home);});
+      var first=roundResults.find(function(result){return Number(result.cupLeg||1)===1&&result.home===home;})||roundResults.find(function(result){return Number(result.cupLeg||1)===1;})||null;
+      var second=roundResults.find(function(result){return Number(result.cupLeg)===2;})||null;
+      if(llMLCupRoundIsFinal(round))return llV2FixtureRow(home,away,first);
+      var total=first&&second?llMLCupAggregate(pair,first,second):null,advance=second&&second.knockoutWinner?(second.knockoutWinner===home?home:away):null;
+      return '<div class="ll-cup-tie"><div class="ll-muted" style="padding:7px 4px 2px">1. ma\u00e7</div>'+llV2FixtureRow(home,away,first)+'<div class="ll-muted" style="padding:7px 4px 2px">R\u00f6van\u015f</div>'+llV2FixtureRow(away,home,second)+(total?'<div class="ll-muted" style="padding:7px 4px 10px"><b>Toplam '+total.a+'-'+total.b+'</b>'+(advance?' \u00b7 '+llEscape(advance)+' tur atlad\u0131':'')+'</div>':'')+'</div>';
+    }).join(''):'<div class="ll-muted" style="padding:4px 4px 10px">E\u015fle\u015fmeler \u00f6nceki tur tamamlan\u0131nca belli olacak.</div>';
+    var status=done?'Tamamland\u0131':current?'G\u00fcncel tur':'Bekliyor',date=llMLCupRoundIsFinal(round)?weeks[0]+'. hafta':weeks[0]+'-'+weeks[1]+'. haftalar';
+    return '<details class="ll-round-card" '+(current&&!cup.winner?'open':'')+'><summary><span>'+llEscape(name)+'</span><span class="ll-round-meta">'+date+' \u00b7 '+status+'</span></summary><div class="ll-fixture-list">'+body+'</div></details>';
+  }).join('')+'</div>';
+};
+
+var llMLCupDashboardBase=llRenderDashboard;
+llRenderDashboard=function(){
+  llMLCupDashboardBase();
+  var state=lexLeague.state,fixture=typeof llPlayerFixture==='function'?llPlayerFixture():null,cup=state&&state.cup,root=llArea();
+  if(!root||!fixture||fixture.competition!=='cup'||Number(fixture.cupLeg)!==2||!llMLCupUsesTwoLegs(cup)||!cup.pending||!cup.pending.firstLeg||root.querySelector('.ll-cup-first-leg'))return;
+  var first=cup.pending.firstLeg,player=state.playerTeam,opponent=fixture.home===player?fixture.away:fixture.home,playerWasHome=first.home===player,playerGoals=playerWasHome?first.playerGoals:first.opponentGoals,opponentGoals=playerWasHome?first.opponentGoals:first.playerGoals;
+  var host=root.querySelector('.ll-next-match');
+  if(host)host.insertAdjacentHTML('afterend','<div class="ll-notice ll-cup-first-leg" style="margin-top:10px"><b>\u0130lk ma\u00e7:</b> '+llEscape(player)+' '+Number(playerGoals)+'-'+Number(opponentGoals)+' '+llEscape(opponent)+'. R\u00f6van\u015fta toplam skor belirleyici olacak.</div>');
+};
+/* DOMESTIC_CUP_TWO_LEGS_V1_END */
+/* New careers used to inherit the old Turkish cup object created before the
+ * multi-league bridge. Rebuild every country cup once at career creation only. */
+var llMLNewStateCupFormatBase=llNewState;
+llNewState=function(playerTeam){
+  var state=llMLNewStateCupFormatBase(playerTeam);
+  if(state&&state.cups&&state.leagues){
+    for(const country of LL_COUNTRY_CODES)state.cups[country]=llMLCreateCup(state,country);
+    llMLAttachLegacyAliases(state);
+  }
+  return state;
+};
+/* DOMESTIC_CUP_TWO_LEGS_NEW_CAREER_FIX_END */
