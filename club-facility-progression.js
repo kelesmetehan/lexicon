@@ -153,6 +153,15 @@
       if(rewardCard)rewardCard.insertAdjacentHTML('beforebegin',llFacilityPanelHtml(state));else column.insertAdjacentHTML('beforeend',llFacilityPanelHtml(state));
     };
   }
+
+  /* Normal packs are a fixed 150 AP economy rule. The legacy Taktik Tahtas? discount is disabled without altering saved squads. */
+  const LL_STANDARD_PACK_COST=150;
+  if(typeof llShopCost==='function')llShopCost=function(){return LL_STANDARD_PACK_COST;};
+  if(typeof llCCMarketDiscountCard==='function')llCCMarketDiscountCard=function(){return null;};
+  if(typeof llTacticBoardShopHtml==='function')llTacticBoardShopHtml=function(){return '';};
+  window.llBuyTacticBoard=function(){alert('Normal kart kasalar? sabit olarak 150 APdir. Taktik Tahtas?n?n eski kasa indirimi art?k kullan?lm?yor.');return false;};
+  try{const retired=typeof llCard==='function'?llCard('RBU04'):null;if(retired){retired.trigger='Eski kural';retired.effect='Normal kart kasalar? art?k sabit olarak 150 APdir. Bu kart?n eski indirim etkisi kapal?d?r.';}}catch(error){}
+
   llFacilityInjectCss();
 })();
 /* CLUB_FACILITY_PROGRESSION_END */
