@@ -1,8 +1,8 @@
-/* Competition Badge Dice v2: one-season, home-only title rewards with dashboard visibility. */
+/* Competition Badge Dice v1: one-season, home-only title rewards for the player. */
 (()=>{
   const LL_BADGE_POSITIONS=['Kaleci','Orta Saha','Forvet'];
   const LL_BADGE_EURO_TYPES=['ucl','uel','uecl'];
-  const LL_BADGE_LABELS={league:'Lig Şampiyonluğu',cup:'Yerel Kupa',ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'};
+  const LL_BADGE_LABELS={league:'Lig Sampiyonlugu',cup:'Yerel Kupa',ucl:'Sampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'};
   const llBadgeText=key=>LL_BADGE_LABELS[key]||key||'Yarisma';
   function llBadgeEnsure(state){
     if(!state)return [];
@@ -28,12 +28,13 @@
     const state=lexLeague?.state,match=lexLeague?.match,fixture=llBadgeCurrentFixture();
     return !!(state&&match&&teamName===state.playerTeam&&match.playerHome&&llBadgeForFixture(state,fixture,position));
   }
-  function llBadgeBaseRange(teamName,position){
-    const team=llTeamState(teamName),star=typeof llDieProgressionStar==='function'?llDieProgressionStar(team,position):(team?.stars||1);
-    return llRange(star);
+  function llBadgeNormalRange(teamName,position){
+    const team=llTeamState(teamName);
+    const stars=typeof llDieProgressionStar==='function'?llDieProgressionStar(team,position):(team?.stars||1);
+    return llRange(stars);
   }
   function llBadgeRange(teamName,position){
-    const normal=llBadgeBaseRange(teamName,position);
+    const normal=llBadgeNormalRange(teamName,position);
     return llBadgeIsActive(teamName,position)?[normal[0],Math.max(normal[1],7)]:normal;
   }
   function llBadgeCompetitionForNextSeason(state,badge){
@@ -47,24 +48,6 @@
     });
   }
   function llBadgePending(state){return llBadgeEnsure(state).filter(badge=>Number(badge.activeSeason)===Number(state.season)&&!LL_BADGE_POSITIONS.includes(badge.role));}
-  function llBadgeActive(state){return llBadgeEnsure(state).filter(badge=>Number(badge.activeSeason)===Number(state.season)&&LL_BADGE_POSITIONS.includes(badge.role));}
-  function llBadgeDashboardHtml(state){
-    const badges=llBadgeActive(state),pending=llBadgePending(state);
-    if(!badges.length&&!pending.length)return '';
-    const activeRows=badges.map(badge=>{
-      const competition=llBadgeText(badge.targetCompetition),position=badge.role,icon=LL_POSITION_ICONS[position]||'🎲',normalMin=llBadgeBaseRange(state.playerTeam,position)[0];
-      return `<div class="ll-badge-dashboard-row"><div class="ll-badge-dashboard-main"><span class="ll-badge-dashboard-icon">${icon}</span><span><b>${llEscape(position)} zarı: ${normalMin}-7</b><small>${llEscape(competition)} · yalnızca iç saha maçları</small></span></div><span class="ll-badge-dashboard-status">AKTİF</span></div>`;
-    }).join('');
-    const pendingRows=pending.map(badge=>`<div class="ll-badge-dashboard-row pending"><div class="ll-badge-dashboard-main"><span class="ll-badge-dashboard-icon">🏅</span><span><b>${llEscape(llBadgeText(badge.targetCompetition))}</b><small>7 tavanı için mevki seçimi bekleniyor</small></span></div><button class="ll-btn" type="button" onclick="llBadgePromptSelection()">Mevki Seç</button></div>`).join('');
-    return `<section class="ll-badge-dashboard" data-competition-badge-dashboard><div class="ll-badge-dashboard-head"><div><b>🏅 Sezonluk Rozetli Zar</b><span>Sezon ${Number(state.season)} boyunca kazanılmış şampiyonluk avantajları</span></div><span class="ll-badge-dashboard-season">S${Number(state.season)}</span></div>${activeRows}${pendingRows}</section>`;
-  }
-  function llBadgeDecorateDashboard(){
-    const state=lexLeague?.state,root=typeof llArea==='function'?llArea():null;
-    if(!state||!root||state.seasonEnded||root.querySelector('[data-competition-badge-dashboard]'))return;
-    const html=llBadgeDashboardHtml(state);if(!html)return;
-    const topbar=root.querySelector('.ll-topbar');
-    if(topbar)topbar.insertAdjacentHTML('afterend',html);else root.querySelector('.ll-panel')?.insertAdjacentHTML('afterbegin',html);
-  }
   function llBadgeSelectionHtml(badge){
     const target=llBadgeText(badge.targetCompetition);
     return `<div class="ll-card-title">\uD83C\uDFC5 Rozetli Zar \u00d6d\u00fcl\u00fc</div><div class="ll-sub" style="margin:8px 0 14px"><b>${llEscape(target)}</b> zaferi i\u00e7in bir rol se\u00e7. Bu rol, Sezon ${Number(badge.activeSeason)} boyunca yaln\u0131zca ${llEscape(target)} i\u00e7 saha ma\u00e7lar\u0131nda normal tavan\u0131 yerine <b>7</b> atabilir.</div><div class="ll-save-grid">${LL_BADGE_POSITIONS.map(position=>`<button class="ll-team-option" onclick="llChooseCompetitionBadgeRole('${llEscape(badge.key)}','${llEscape(position)}')"><b>${LL_POSITION_ICONS[position]} ${llEscape(position)}</b><div class="ll-range">Rozetli aral\u0131k: normal taban \u2192 7</div></button>`).join('')}</div>`;
@@ -82,7 +65,6 @@
     if(!pending||typeof llShowModal!=='function'||document.getElementById('ll-modal'))return;
     llShowModal(llBadgeSelectionHtml(pending));
   }
-  window.llBadgePromptSelection=llBadgePromptSelection;
   function llBadgeAwardNotice(badge){
     if(!badge)return;
     const state=lexLeague?.state;
@@ -94,7 +76,7 @@
     const team=llTeamState(teamName),range=llBadgeRange(teamName,position),locked=team?.lockedDice?.[position];
     let value;
     if(Number.isFinite(locked)){delete team.lockedDice[position];value=locked;}
-    else if(range[1]!==llBadgeBaseRange(teamName,position)[1])value=llRandomInt(range[0],range[1]);
+    else if(range[1]!==llRange(team?.stars||1)[1])value=llRandomInt(range[0],range[1]);
     else return llBadgeRollValueBase(teamName,position);
     const bonus=Number(team?.nextMatchBonuses?.[position]||0);
     if(bonus){delete team.nextMatchBonuses[position];value+=bonus;}
@@ -113,7 +95,7 @@
     let html=llBadgeDieRowBase(die,...args);
     if(!die?.badgeActive)return html;
     html=html.replace('class="ll-die ',`class="ll-die ll-badge-die ${Number(die.value)===7?'ll-badge-seven':''} `);
-    html=html.replace('<div class="ll-die-card">',`<div class="ll-die-card"><span class="ll-badge-mark">\uD83C\uDFC5 Rozetli: ${llBadgeBaseRange(lexLeague.state.playerTeam,die.position)[0]}-7</span><br>`);
+    html=html.replace('<div class="ll-die-card">',`<div class="ll-die-card"><span class="ll-badge-mark">\uD83C\uDFC5 Rozetli: ${llBadgeNormalRange(lexLeague.state.playerTeam,die.position)[0]}-7</span><br>`);
     return html;
   };
   const llBadgeRenderMatchBase=llRenderMatch;
@@ -124,8 +106,8 @@
     const badges=LL_BADGE_POSITIONS.map(position=>({position,badge:llBadgeForFixture(state,fixture,position)})).filter(item=>item.badge);
     if(!badges.length)return;
     const host=llArea()?.querySelector('.ll-next-match');if(!host||host.querySelector('[data-competition-badge]'))return;
-    const text=badges.map(item=>`${LL_POSITION_ICONS[item.position]} ${item.position}: ${llBadgeBaseRange(state.playerTeam,item.position)[0]}-7`).join(' \u00b7 ');
-    host.insertAdjacentHTML('afterend',`<div class="ll-competition-badge" data-competition-badge>\uD83C\uDFC5 <b>${llEscape(llBadgeText(fixture.competition||'league'))} Rozeti aktif</b> \u00b7 ${llEscape(text)} \u00b7 7 geldiğinde turkuaz zar</div>`);
+    const text=badges.map(item=>`${LL_POSITION_ICONS[item.position]} ${item.position}: ${llBadgeNormalRange(state.playerTeam,item.position)[0]}-7`).join(' \u00b7 ');
+    host.insertAdjacentHTML('afterend',`<div class="ll-competition-badge" data-competition-badge>\uD83C\uDFC5 <b>${llEscape(llBadgeText(fixture.competition||'league'))} Rozeti aktif</b> \u00b7 ${llEscape(text)} \u00b7 7 geldiginde cyan zar</div>`);
   };
   const llBadgeFinishCupRoundBase=llV2FinishCupRound;
   llV2FinishCupRound=function(winner){
@@ -154,13 +136,28 @@
     if(state){llBadgePrepareNewSeason(state);if(typeof llSave==='function')llSave();}
     return result;
   };
+  function llBadgeRenderDashboardRanges(){
+    const state=lexLeague?.state,fixture=llBadgeCurrentFixture(),root=typeof llArea==='function'?llArea():null;
+    if(!state||!fixture||!root)return;
+    const team=llTeamState(state.playerTeam),home=fixture.home===state.playerTeam;
+    const slots=[...root.querySelectorAll('.ll-squad .ll-slot')];
+    slots.forEach((slot,index)=>{
+      const position=LL_BADGE_POSITIONS[index],die=slot.querySelector('.ll-die-mini');
+      if(!position||!die)return;
+      const badge=home?llBadgeForFixture(state,fixture,position):null;
+      const normal=llBadgeNormalRange(state.playerTeam,position);
+      die.classList.toggle('ll-badge-range',!!badge);
+      die.textContent=badge?`${normal[0]}-7`:`${normal[0]}-${normal[1]}`;
+      slot.querySelector('[data-badge-dashboard-label]')?.remove();
+      if(badge)slot.insertAdjacentHTML('beforeend',`<div class="ll-badge-dashboard-label" data-badge-dashboard-label>\uD83C\uDFC5 ${llEscape(llBadgeText(fixture.competition||'league'))} rozeti · ${normal[0]}-7</div>`);
+    });
+  }
   const llBadgeRenderDashboardBase=llRenderDashboard;
-  llRenderDashboard=function(){llBadgeRenderDashboardBase();llBadgeDecorateDashboard();setTimeout(llBadgePromptSelection,0);};
+  llRenderDashboard=function(){llBadgeRenderDashboardBase();llBadgeRenderDashboardRanges();setTimeout(llBadgePromptSelection,0);};
   function llBadgeInjectCss(){
     if(document.getElementById('ll-competition-badge-style'))return;
     const style=document.createElement('style');style.id='ll-competition-badge-style';style.textContent=`
-      .ll-competition-badge{margin:12px 0 0;padding:10px 13px;border:1px solid rgba(34,211,238,.72);border-radius:10px;background:linear-gradient(90deg,rgba(8,47,73,.82),rgba(8,145,178,.14));color:#baf6ff;font-size:12px;line-height:1.5}.ll-badge-mark{display:inline-block;margin-bottom:3px;color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.04em}.ll-die.ll-badge-seven{background:#22d3ee!important;color:#082f49!important;border-color:#a5f3fc!important;box-shadow:0 0 0 3px rgba(34,211,238,.22),0 0 22px rgba(34,211,238,.42)}
-      .ll-badge-dashboard{margin:0 0 16px;padding:14px;border:1px solid rgba(34,211,238,.55);border-radius:14px;background:linear-gradient(120deg,rgba(8,47,73,.88),rgba(14,116,144,.24),rgba(15,23,42,.82));box-shadow:0 12px 28px rgba(0,0,0,.18)}.ll-badge-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.ll-badge-dashboard-head>div{display:flex;flex-direction:column;gap:3px}.ll-badge-dashboard-head b{color:#cffafe;font-size:14px}.ll-badge-dashboard-head span{color:#94a3b8;font-size:11px}.ll-badge-dashboard-season{flex:0 0 auto;padding:5px 9px;border:1px solid rgba(165,243,252,.42);border-radius:999px;color:#a5f3fc!important;background:rgba(8,145,178,.18);font-weight:900}.ll-badge-dashboard-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-top:1px solid rgba(255,255,255,.08);background:rgba(2,6,23,.18)}.ll-badge-dashboard-row:last-child{border-radius:0 0 9px 9px}.ll-badge-dashboard-row.pending{border-top-color:rgba(250,204,21,.24)}.ll-badge-dashboard-main{display:flex;align-items:center;gap:10px;min-width:0}.ll-badge-dashboard-main>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}.ll-badge-dashboard-main b{color:#ecfeff;font-size:13px}.ll-badge-dashboard-main small{color:#a5f3fc;font-size:11px;line-height:1.35}.ll-badge-dashboard-icon{font-size:22px}.ll-badge-dashboard-status{flex:0 0 auto;padding:4px 8px;border-radius:999px;color:#083344;background:#67e8f9;font-size:9px;font-weight:950;letter-spacing:.08em}@media(max-width:620px){.ll-badge-dashboard-row{align-items:flex-start}.ll-badge-dashboard-status{margin-top:2px}.ll-badge-dashboard-row.pending{flex-direction:column}.ll-badge-dashboard-row.pending .ll-btn{width:100%}}
+      .ll-competition-badge{margin:12px 0 0;padding:10px 13px;border:1px solid rgba(34,211,238,.72);border-radius:10px;background:linear-gradient(90deg,rgba(8,47,73,.82),rgba(8,145,178,.14));color:#baf6ff;font-size:12px;line-height:1.5}.ll-badge-mark{display:inline-block;margin-bottom:3px;color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.04em}.ll-die.ll-badge-seven,.ll-die-mini.ll-badge-range{background:#22d3ee!important;color:#082f49!important;border-color:#a5f3fc!important;box-shadow:0 0 0 3px rgba(34,211,238,.22),0 0 22px rgba(34,211,238,.42)}.ll-badge-dashboard-label{margin:7px 0 0;padding:5px 6px;border-radius:6px;background:rgba(8,145,178,.16);border:1px solid rgba(34,211,238,.4);color:#a5f3fc;font-size:9px;font-weight:800;line-height:1.3;text-align:center}
     `;document.head.appendChild(style);
   }
   llBadgeInjectCss();
