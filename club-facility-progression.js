@@ -134,7 +134,7 @@
       /* The penalty animation owns the notice again after the last kick; give it the manager-adjusted final text too. */
       if(typeof llV15PenaltyRuntime!=='undefined'&&llV15PenaltyRuntime?.notice===notice){
         llV15PenaltyRuntime.finalNotice=String(llV15PenaltyRuntime.finalNotice||'').replace(`+${awarded} LP`,`+${target} LP`);
-        if(!String(llV15PenaltyRuntime.finalNotice||'').includes('Kul?p Tesisi'))llV15PenaltyRuntime.finalNotice+=facilityNote;
+        if(!String(llV15PenaltyRuntime.finalNotice||'').includes('Kulüp Tesisi'))llV15PenaltyRuntime.finalNotice+=facilityNote;
       }
       if(typeof llSave==='function')llSave();
     };
@@ -159,8 +159,8 @@
   if(typeof llShopCost==='function')llShopCost=function(){return LL_STANDARD_PACK_COST;};
   if(typeof llCCMarketDiscountCard==='function')llCCMarketDiscountCard=function(){return null;};
   if(typeof llTacticBoardShopHtml==='function')llTacticBoardShopHtml=function(){return '';};
-  window.llBuyTacticBoard=function(){alert('Normal kart kasalar? sabit olarak 150 APdir. Taktik Tahtas?n?n eski kasa indirimi art?k kullan?lm?yor.');return false;};
-  try{const retired=typeof llCard==='function'?llCard('RBU04'):null;if(retired){retired.trigger='Eski kural';retired.effect='Normal kart kasalar? art?k sabit olarak 150 APdir. Bu kart?n eski indirim etkisi kapal?d?r.';}}catch(error){}
+  window.llBuyTacticBoard=function(){alert('Normal kart kasaları sabit olarak 150 AP’dir. Taktik Tahtası’nın eski kasa indirimi artık kullanılmıyor.');return false;};
+  try{const retired=typeof llCard==='function'?llCard('RBU04'):null;if(retired){retired.trigger='Eski kural';retired.effect='Normal kart kasaları artık sabit olarak 150 AP’dir. Bu kartın eski indirim etkisi kapalıdır.';}}catch(error){}
 
   llFacilityInjectCss();
 })();

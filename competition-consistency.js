@@ -516,3 +516,19 @@ llRenderDashboard=function(){
 };
 /* DIE_PROGRESSION_SYSTEM_END */
 
+
+/* Taktik Tahtası eski indirim geçişi: normal kasa bedeli sabit 150 AP. */
+llCCMarketDiscountCard=function(){return null;};
+llTacticBoardMarketHtml=function(){
+  const state=lexLeague.state,team=llTeamState(state?.playerTeam),card=llTacticBoardCard();
+  if(!state||!team||!card)return '';
+  const owned=team?.clubCards?.market===card.id;
+  const other=team?.clubCards?.market&&team.clubCards.market!==card.id?llCard(team.clubCards.market):null;
+  if(owned)return `<div class="ll-card" data-tactic-board-market style="margin-top:16px;border-color:rgba(250,204,21,.7);background:linear-gradient(135deg,rgba(120,53,15,.22),rgba(14,116,144,.14))"><div class="ll-card-title">🏢 Kulüp / Market Kartı</div><div class="ll-team-name">${llEscape(card.name)} <span class="ll-rarity rare">NADİR</span></div><div class="ll-sub" style="margin-top:8px">Kalıcı, sözleşmesiz. Normal kart kasaları artık sabit olarak <b>150 AP</b>’dir. Bu kartın eski indirim etkisi kapalıdır.</div></div>`;
+  if(other)return `<div class="ll-card" data-tactic-board-market style="margin-top:16px"><div class="ll-card-title">🏢 Kulüp / Market Kartı</div><div class="ll-muted">Kulübün market yuvasında ${llEscape(other.name)} var.</div></div>`;
+  return '';
+};
+llBuyTacticBoard=function(){
+  alert('Taktik Tahtası’nın eski kasa indirimi kapatıldı. Normal kart kasaları sabit olarak 150 AP’dir; bu kart artık yeni teklif olarak sunulmaz.');
+  return false;
+};
