@@ -3598,7 +3598,7 @@ function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
   const rawToken = token || `${card?.id || 'word'}-${llExampleSerial++}`;
   const panelId = `example-tr-${String(rawToken).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   const sentenceClass = compact ? 'word-ex' : 'quiz-example';
-  return `<div class="example-block"><div class="example-line"><div class="${sentenceClass}">“${llEscape(shownExample)}”</div>${translation?`<button class="example-translate-btn" type="button" aria-label="Türkçe çeviriyi göster" aria-expanded="false" aria-controls="${panelId}" title="Türkçe çeviriyi göster" onclick="toggleExampleTranslation(event,'${panelId}')"><span aria-hidden="true">æ–‡</span><span>TR</span></button>`:''}</div>${translation?`<div class="example-translation" id="${panelId}" hidden>${llEscape(translation)}</div>`:''}</div>`;
+  return `<div class="example-block"><div class="example-line"><div class="${sentenceClass}">“${llEscape(shownExample)}”</div>${translation?`<button class="example-translate-btn" type="button" aria-label="Türkçe çeviriyi göster" aria-expanded="false" aria-controls="${panelId}" title="Türkçe çeviriyi göster" onclick="toggleExampleTranslation(event,'${panelId}')"><span aria-hidden="true">↔</span><span>TR</span></button>`:''}</div>${translation?`<div class="example-translation" id="${panelId}" hidden>${llEscape(translation)}</div>`:''}</div>`;
 }
 function toggleExampleTranslation(event, panelId) {
   event?.preventDefault();
