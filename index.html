@@ -580,32 +580,100 @@
   .ll-ability.rare { border-color:rgba(59,130,246,.55); box-shadow:inset 3px 0 #3b82f6; }
   .ll-ability.epic { border-color:rgba(168,85,247,.55); box-shadow:inset 3px 0 #a855f7; }
   .ll-ability.legendary { border-color:rgba(234,179,8,.60); box-shadow:inset 3px 0 #eab308; }
-  .ll-table-wrap { overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:11px; }
+  .ll-table-wrap { overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:11px; -webkit-overflow-scrolling:touch; overscroll-behavior-inline:contain; }
   .ll-table { width:100%; border-collapse:collapse; font-size:12px; min-width:650px; }
   .ll-table th { position:sticky; top:0; background:var(--bg3); color:var(--text3); text-transform:uppercase; font-size:10px; letter-spacing:1px; padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
   .ll-table th:nth-child(2), .ll-table td:nth-child(2) { text-align:left; }
-  /* Takım adı ve yıldızları satır içinde kalır; dar ekranda tablo yatay kayar. */
-  .ll-table { min-width:760px; }
-  .ll-table th:nth-child(2), .ll-table td:nth-child(2) { min-width:225px; white-space:nowrap; }
-  .ll-table td:nth-child(2) .ll-stars { display:inline-flex; white-space:nowrap; margin-left:4px; vertical-align:middle; }
   .ll-table td { padding:10px 9px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045); }
-  /* Puan tablosu: kritik puan sütununu dar ekranlarda görünür tut. */
-  .ll-table-wrap { -webkit-overflow-scrolling:touch; overscroll-behavior-inline:contain; }
-  @media(max-width:800px){
-    .ll-domestic-table { min-width:640px; }
-    .ll-domestic-table th, .ll-domestic-table td { padding:9px 6px; }
-    .ll-domestic-table th:nth-child(2), .ll-domestic-table td:nth-child(2) { min-width:210px; }
-    .ll-domestic-table th:nth-child(11), .ll-domestic-table td:nth-child(11) { display:none; }
-    .ll-domestic-table th:nth-child(1), .ll-domestic-table td:nth-child(1) { position:sticky; left:0; z-index:3; background:#141b25; }
-    .ll-domestic-table th:nth-child(2), .ll-domestic-table td:nth-child(2) { position:sticky; left:31px; z-index:2; background:#141b25; box-shadow:8px 0 12px rgba(2,6,23,.32); }
-    .ll-domestic-table tr.player td:nth-child(-n+2) { background:#103032; }
+
+  /* Puan durumu tabloları kendi kart genişliğine göre sıkışır; yatay kaydırma gerekmez. */
+  .ll-standings-wrap { overflow-x:hidden; container-type:inline-size; }
+  .ll-standings-table { min-width:0; width:100%; table-layout:fixed; font-variant-numeric:tabular-nums; }
+  .ll-standings-table th,
+  .ll-standings-table td { padding:9px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ll-standings-table th:first-child,
+  .ll-standings-table td:first-child { width:36px; }
+  .ll-standings-table th:nth-child(2),
+  .ll-standings-table td:nth-child(2) { width:30%; min-width:0; }
+  .ll-domestic-table th:nth-child(10),
+  .ll-domestic-table td:nth-child(10) { width:7%; }
+  .ll-domestic-table th:nth-child(11),
+  .ll-domestic-table td:nth-child(11) { width:8%; }
+  .ll-domestic-table th:nth-child(12),
+  .ll-domestic-table td:nth-child(12) { width:6%; }
+  .ll-standing-team { display:flex; align-items:center; gap:6px; min-width:0; }
+  .ll-standing-team .ll-team-logo.table { flex:0 0 auto; width:21px; height:21px; margin-right:0; }
+  .ll-standing-team-name { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .ll-standing-stars { flex:0 0 auto; color:#facc15; font-size:10px; font-weight:800; letter-spacing:0; }
+
+  /* Kart içindeki dar puan tabloları: ikincil istatistikleri kademeli azalt. */
+  @container (max-width:680px){
+    .ll-standings-table { font-size:11px; }
+    .ll-standings-table th { font-size:9px; letter-spacing:.35px; }
+    .ll-standings-table th,
+    .ll-standings-table td { padding:8px 4px; }
+    .ll-domestic-table th:nth-child(7), .ll-domestic-table td:nth-child(7),
+    .ll-domestic-table th:nth-child(8), .ll-domestic-table td:nth-child(8),
+    .ll-domestic-table th:nth-child(10), .ll-domestic-table td:nth-child(10),
+    .ll-domestic-table th:nth-child(11), .ll-domestic-table td:nth-child(11),
+    .ll-compact-standings-table th:nth-child(7), .ll-compact-standings-table td:nth-child(7),
+    .ll-compact-standings-table th:nth-child(8), .ll-compact-standings-table td:nth-child(8) { display:none; }
+    .ll-standings-table th:nth-child(2),
+    .ll-standings-table td:nth-child(2) { width:38%; }
   }
+  @container (max-width:470px){
+    .ll-domestic-table th:nth-child(4), .ll-domestic-table td:nth-child(4),
+    .ll-domestic-table th:nth-child(5), .ll-domestic-table td:nth-child(5),
+    .ll-domestic-table th:nth-child(6), .ll-domestic-table td:nth-child(6),
+    .ll-compact-standings-table th:nth-child(4), .ll-compact-standings-table td:nth-child(4),
+    .ll-compact-standings-table th:nth-child(5), .ll-compact-standings-table td:nth-child(5),
+    .ll-compact-standings-table th:nth-child(6), .ll-compact-standings-table td:nth-child(6) { display:none; }
+    .ll-standings-table th:first-child,
+    .ll-standings-table td:first-child { width:29px; }
+    .ll-standings-table th:nth-child(2),
+    .ll-standings-table td:nth-child(2) { width:auto; }
+    .ll-standings-table th:nth-child(3),
+    .ll-standings-table td:nth-child(3) { width:34px; }
+    .ll-standings-table th:nth-child(9),
+    .ll-standings-table td:nth-child(9) { width:38px; }
+    .ll-domestic-table th:nth-child(12),
+    .ll-domestic-table td:nth-child(12),
+    .ll-compact-standings-table th:nth-child(10),
+    .ll-compact-standings-table td:nth-child(10) { width:38px; }
+    .ll-standing-stars { display:none; }
+    .ll-standing-team .ll-team-logo.table { width:19px; height:19px; }
+  }
+
+  /* Container query desteklemeyen eski mobil tarayıcılar için güvenli geri dönüş. */
   @media(max-width:560px){
-    .ll-domestic-table { min-width:100%; font-size:11px; }
-    .ll-domestic-table th { font-size:9px; padding:8px 4px; letter-spacing:.35px; }
-    .ll-domestic-table td { padding:8px 4px; }
-    .ll-domestic-table th:nth-child(2), .ll-domestic-table td:nth-child(2) { min-width:180px; }
-    .ll-domestic-table th:nth-child(10), .ll-domestic-table td:nth-child(10) { display:none; }
+    .ll-standings-table { min-width:0; table-layout:fixed; font-size:11px; }
+    .ll-standings-table th,
+    .ll-standings-table td { padding:8px 4px; }
+    .ll-standings-table th:first-child,
+    .ll-standings-table td:first-child { width:29px; }
+    .ll-standings-table th:nth-child(2),
+    .ll-standings-table td:nth-child(2) { width:auto; }
+    .ll-standings-table th:nth-child(3),
+    .ll-standings-table td:nth-child(3) { width:34px; }
+    .ll-standings-table th:nth-child(9),
+    .ll-standings-table td:nth-child(9) { width:38px; }
+    .ll-domestic-table th:nth-child(12),
+    .ll-domestic-table td:nth-child(12),
+    .ll-compact-standings-table th:nth-child(10),
+    .ll-compact-standings-table td:nth-child(10) { width:38px; }
+    .ll-standing-stars { display:none; }
+    .ll-domestic-table th:nth-child(4), .ll-domestic-table td:nth-child(4),
+    .ll-domestic-table th:nth-child(5), .ll-domestic-table td:nth-child(5),
+    .ll-domestic-table th:nth-child(6), .ll-domestic-table td:nth-child(6),
+    .ll-domestic-table th:nth-child(7), .ll-domestic-table td:nth-child(7),
+    .ll-domestic-table th:nth-child(8), .ll-domestic-table td:nth-child(8),
+    .ll-domestic-table th:nth-child(10), .ll-domestic-table td:nth-child(10),
+    .ll-domestic-table th:nth-child(11), .ll-domestic-table td:nth-child(11),
+    .ll-compact-standings-table th:nth-child(4), .ll-compact-standings-table td:nth-child(4),
+    .ll-compact-standings-table th:nth-child(5), .ll-compact-standings-table td:nth-child(5),
+    .ll-compact-standings-table th:nth-child(6), .ll-compact-standings-table td:nth-child(6),
+    .ll-compact-standings-table th:nth-child(7), .ll-compact-standings-table td:nth-child(7),
+    .ll-compact-standings-table th:nth-child(8), .ll-compact-standings-table td:nth-child(8) { display:none; }
   }
   .ll-table tr.player { background:rgba(94,234,212,.07); color:#99f6e4; font-weight:700; }
   .ll-table tr.champion-zone { box-shadow:inset 3px 0 #22c55e; }
@@ -2644,7 +2712,7 @@ function llUpgradeStars(){
 }
 function llTableHtml(){
   const rows=llSortTable();
-  return `<div class="ll-table-wrap"><table class="ll-table ll-domestic-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const team=llTeamState(r.team),cardCount=LL_POSITIONS.filter(pos=>team.cards[pos]).length;return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${i<3?'champion-zone ':''}${i>=15?'relegation-zone':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(team.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td><b>${cardCount}/3</b></td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(team.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>`;
+  return `<div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-domestic-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const team=llTeamState(r.team),cardCount=LL_POSITIONS.filter(pos=>team.cards[pos]).length;return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${i<3?'champion-zone ':''}${i>=15?'relegation-zone':''}"><td>${i+1}</td><td><span class="ll-standing-team">${llTeamLogo(r.team,'table')}<span class="ll-standing-team-name" title="${llEscape(r.team)}">${llEscape(r.team)}</span><span class="ll-standing-stars">${team.stars}★</span></span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td><b>${cardCount}/3</b></td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(team.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function llRenderStandings(){
   llSetWide(true);llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Lig <em>Tablosu</em></div><div class="ll-muted">Sezon ${lexLeague.state.season} · ${Math.min(lexLeague.state.week-1,34)} hafta tamamlandı</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${llTableHtml()}</div></div>`;
@@ -5622,7 +5690,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260802-6"></script>
+<script src="league-v2.js?v=20260803-7"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -5632,9 +5700,9 @@ renderPreStart();
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260802-1"></script>
 <script src="ai-opponent-strategy.js?v=20260802-1"></script>
-<script src="multi-league-engine.js?v=20260803-2"></script>
+<script src="multi-league-engine.js?v=20260803-3"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
-<script src="country-browser.js?v=20260731-1"></script>
+<script src="country-browser.js?v=20260803-2"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
 <script src="trophy-cinematic.js?v=20260802-1"></script>
 <script src="competition-consistency.js?v=20260801-2"></script>
