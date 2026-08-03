@@ -253,7 +253,7 @@ llV2FinalizeSeason=function(playoffWinner){llMLCareerFinalizeBase(playoffWinner)
 
 /* FOREIGN_MANAGER_OFFER_CAP_START */
 /* Foreign managerial offers are deliberately gated so cross-country careers progress credibly. */
-var LL_ML_FOREIGN_OFFER_RULES_VERSION=1;
+var LL_ML_FOREIGN_OFFER_RULES_VERSION=2;
 function llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,candidate,promotionStarCap){
   if(candidate.country===state.playerCountry)return 6;
   var cap=4;
@@ -271,19 +271,19 @@ llManagerBuildOffers=function(state,summary,performance,profile,fired){
   var currentStars=llV2TeamStarsInState(state,performance.from);
   var promotionStarCap=performance.league==='first'&&performance.promoted;
   var all=[];
-  for(const country of LL_COUNTRY_CODES)for(const tier of ['tier1','tier2'])for(const row of source[country]?.[tier]||[]){
+  for(const country of LL_COUNTRY_CODES)for(const tier of ['tier1'])for(const row of source[country]?.[tier]||[]){
     if(row.team===performance.from)continue;
     all.push({team:row.team,country:country,stars:llV2TeamStarsInState(state,row.team),nextLeague:llManagerNextLeague(summary,row.team,country),tier:tier});
   }
   var capFor=function(item){return llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,item,promotionStarCap);};
-  var eligible=all.filter(function(item){return Number(item.stars)<=capFor(item);});
+  var eligible=all.filter(function(item){return item.tier==='tier1'&&item.nextLeague==='super'&&Number(item.stars)<=capFor(item);});
   var chosen=[],used=new Set(),usedCountries=new Map(),seed=String(summary.season||state.season||1)+'|'+String(performance.from||'');
   var add=function(candidate,kind){
     if(!candidate||used.has(candidate.team)||chosen.length>=3)return false;
     var sameCountry=usedCountries.get(candidate.country)||0;
     if(sameCountry>=2)return false;
     used.add(candidate.team);usedCountries.set(candidate.country,sameCountry+1);
-    var offer=llManagerOffer(summary,candidate.team,kind,candidate.country);
+    var offer=llManagerOffer(state,summary,candidate.team,kind);
     offer.foreign=candidate.country!==state.playerCountry;
     offer.foreignStarCap=capFor(candidate);
     offer.foreignElite=offer.foreign&&Number(candidate.stars)>4;

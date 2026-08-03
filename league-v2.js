@@ -379,7 +379,7 @@ function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
   const legend=key==='first'
     ?`<div class="ll-zone-legend"><span><i class="ll-zone-dot direct"></i>1–2: Doğrudan Süper Lig'e yükselir</span><span><i class="ll-zone-dot playoff"></i>3–7: Play-Off oynar</span></div>`
     :`<div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span><span><i class="ll-zone-dot relegation"></i>Son 3: TFF 1. Lig'e düşer</span></div>`;
-  return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>llCardContractSlotActive(t,p)).length,euroClass=key!=='super'?'':euroZones.ucl.has(r.team)?'ucl-zone ':euroZones.uel.has(r.team)?'uel-zone ':euroZones.uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euroClass}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}`;}
+  return `<div class="ll-table-wrap"><table class="ll-table ll-domestic-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>Kart</th><th>AI AP</th><th>P</th></tr></thead><tbody>${rows.map((r,i)=>{const t=llTeamState(r.team),cards=LL_POSITIONS.filter(p=>llCardContractSlotActive(t,p)).length,euroClass=key!=='super'?'':euroZones.ucl.has(r.team)?'ucl-zone ':euroZones.uel.has(r.team)?'uel-zone ':euroZones.uecl.has(r.team)?'uecl-zone ':'';return `<tr class="${r.team===lexLeague.state.playerTeam?'player ':''}${key==='first'&&i<2?'champion-zone ':''}${key==='first'&&i>=2&&i<=6?'playoff-zone ':''}${euroClass}${key==='super'&&i>=rows.length-3?'relegation-zone ':''}"><td>${i+1}</td><td>${llTeamLogo(r.team,'table')}${llEscape(r.team)} <span class="ll-stars">${llStars(t.stars)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${cards}/3</td><td>${r.team===lexLeague.state.playerTeam?'—':Math.floor(t.aiAp||0)}</td><td><b>${r.Pts}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}`;}
 function llV2CupResultRound(result){
   if(Number.isInteger(result?.cupRound))return result.cupRound;
   let round=0;for(let i=0;i<LL_CUP_WEEKS.length;i++)if(Number(result?.week)>=LL_CUP_WEEKS[i])round=i;return round;
@@ -547,6 +547,9 @@ const LL_PREMIUM_EPIC_CHANCE=.65;
 const LL_EURO_FORMAT_VERSION=3;
 const LL_EURO_LEAGUE_WEEKS={ucl:[4,7,10,13,16,19,22,25],uel:[4,7,10,13,16,19,22,25],uecl:[4,7,10,13,16,19]};
 const LL_EURO_KNOCKOUT_LABELS={playoff:'Eleme Turu Play-Off',r16:'Son 16',qf:'Çeyrek Final',sf:'Yarı Final',final:'Final'};
+const LL_V3_EURO_PHASES=new Set(['league','playoff','r16','qf','sf','final','eliminated','winner']);
+const LL_V3_EURO_KNOCKOUT_PHASES=new Set(['playoff','r16','qf','sf','final']);
+const llV3EuropeStageLabel=stage=>LL_EURO_KNOCKOUT_LABELS?.[stage]||'Avrupa eleme turu';
 
 function llV3EnsurePremiumState(state){
   if(!state)return state;
@@ -715,14 +718,41 @@ llV2CreateEuropeStandings=function(state){
   (state.results||[]).filter(result=>types.includes(result.competition)&&result.league==='euro-table'&&Number(result.season)===Number(state.season)).forEach(result=>{const table=standings[result.competition];if(table?.teams.includes(result.home)&&table.teams.includes(result.away))llV2ApplyEuropeStanding(state,result.competition,result.home,result.homeGoals,result.away,result.awayGoals);});
   return standings;
 };
+function llV3NormalizeEuropeState(state,type,count,userResults){
+  const e=state?.europe;
+  if(!e||e.type!==type)return false;
+  const phase=String(e.phase||'').trim(),pending=state.pendingFixture;
+  const invalid=!LL_V3_EURO_PHASES.has(phase);
+  const wrongLeagueState=phase==='league'&&(!!e.tie||(pending?.competition===type&&pending?.league==='euro-knockout'));
+  if(!invalid&&!wrongLeagueState)return false;
+  if((invalid||phase==='league')&&pending?.competition===type&&pending?.league==='euro-knockout')state.pendingFixture=null;
+  let voided=0;
+  if(invalid){
+    (state.results||[]).forEach(result=>{
+      if(Number(result.season)===Number(state.season)&&result?.userMatch&&result.competition===type&&result.league==='euro-knockout'&&!LL_V3_EURO_KNOCKOUT_PHASES.has(result.euroStage)){
+        result.league='euro-format-void';result.voidedByEuropeFormatRepair=true;voided++;
+      }
+    });
+  }
+  e.phase='league';
+  e.round=Math.min(count,Math.max(0,Number(userResults)||0));
+  e.alive=true;e.pending=null;e.tie=null;e.winner=null;delete e.seedRank;delete e.nextMatchWeek;
+  e.status=voided?`Lig aşaması onarıldı · ${voided} hatalı rövanş kaydı geçersiz sayıldı.`:e.round?`Lig aşaması ${e.round}/${count} tamamlandı`:'Lig aşaması başlamadı';
+  return true;
+}
 llV2EnsureEuropeStandings=function(state){
   const valid=state.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&state.europeStandings.formatVersion===LL_EURO_FORMAT_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],count=LL_EURO_LEAGUE_WEEKS[type].length;return table?.teams?.length===36&&table.fixtures?.length===count&&table.fixtures.every(round=>round.length===18);});
-  if(!valid)llV2CreateEuropeStandings(state);const q=llV3ResolveEuropeQualifications(state),type=['ucl','uel','uecl'].find(key=>q[key].includes(state.playerTeam));
-  if(type){const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===state.playerTeam||r.away===state.playerTeam)).length;if(!state.europe||state.europe.type!==type)state.europe={type,phase:'league',round:Math.min(count,userResults),alive:true,pending:null,winner:null,usedOpponents:[]};else if(!state.europe.phase){state.europe.phase='league';state.europe.round=Math.min(count,Math.max(Number(state.europe.round)||0,userResults));state.europe.alive=true;state.europe.usedOpponents=[];}}
-  else if(state.europe?.phase==='league')state.europe=null;
+  if(!valid)llV2CreateEuropeStandings(state);
+  const q=llV3ResolveEuropeQualifications(state),type=['ucl','uel','uecl'].find(key=>q[key].includes(state.playerTeam));
+  let repaired=false;
+  if(type){
+    const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===state.playerTeam||r.away===state.playerTeam)).length;
+    if(!state.europe||state.europe.type!==type)state.europe={type,phase:'league',round:Math.min(count,userResults),alive:true,pending:null,winner:null,usedOpponents:[]};
+    else repaired=llV3NormalizeEuropeState(state,type,count,userResults);
+  }else if(state.europe?.phase==='league')state.europe=null;
+  if(repaired&&typeof llSave==='function')llSave();
   return state.europeStandings;
-};
-llV2SortEuropeTable=function(type){const table=llV2EnsureEuropeStandings(lexLeague.state)?.[type];return table?Object.values(table.standings).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.team.localeCompare(b.team,'tr')):[];};
+};llV2SortEuropeTable=function(type){const table=llV2EnsureEuropeStandings(lexLeague.state)?.[type];return table?Object.values(table.standings).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.team.localeCompare(b.team,'tr')):[];};
 llV2SimulateEuropeTables=function(){
   const s=lexLeague.state,tables=llV2EnsureEuropeStandings(s);['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(s.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(s.results||[]).some(r=>r.season===s.season&&r.competition===type&&r.league==='euro-table'&&r.home===fixture.home&&r.away===fixture.away);if(exists||fixture.home===s.playerTeam||fixture.away===s.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,weeks[roundIndex],false,type,'euro-table');});table.playedRounds++;}});llSave();
 };
@@ -749,7 +779,7 @@ llV2EnsureEurope=function(){
   }
   if(e.phase==='eliminated'||e.phase==='winner'||Number(s.week)<Number(e.nextMatchWeek||0))return;
   if(!e.tie){const opponent=llV3KnockoutOpponent(e.phase);if(!opponent){e.alive=false;e.phase='eliminated';return;}e.tie={stage:e.phase,opponent,leg:1,playerGoals:0,opponentGoals:0};e.usedOpponents.push(opponent);}
-  const tie=e.tie,final=tie.stage==='final',playerHome=final||tie.leg===2,home=playerHome?s.playerTeam:tie.opponent,away=playerHome?tie.opponent:s.playerTeam;llV3EnsureEuroOpponent(tie.opponent);e.pending=tie.opponent;s.pendingFixture={home,away,competition:e.type,league:'euro-knockout',roundLabel:final?`${LL_EURO_KNOCKOUT_LABELS.final} · Tarafsız Saha`:`${LL_EURO_KNOCKOUT_LABELS[tie.stage]} · ${tie.leg===1?'1. Maç':'Rövanş'}`};
+  const tie=e.tie,final=tie.stage==='final',playerHome=final||tie.leg===2,home=playerHome?s.playerTeam:tie.opponent,away=playerHome?tie.opponent:s.playerTeam;llV3EnsureEuroOpponent(tie.opponent);e.pending=tie.opponent;s.pendingFixture={home,away,competition:e.type,league:'euro-knockout',roundLabel:final?`${llV3EuropeStageLabel('final')} · Tarafsız Saha`:`${llV3EuropeStageLabel(tie.stage)} · ${tie.leg===1?'1. Maç':'Rövanş'}`};
 };
 llV2FinishEuropeRound=function(winner){
   const s=lexLeague.state,e=s.europe;if(!e)return;e.pending=null;
