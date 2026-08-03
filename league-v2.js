@@ -723,24 +723,28 @@ function llV3NormalizeEuropeState(state,type,count,userResults){
   if(!e||e.type!==type)return false;
   const phase=String(e.phase||'').trim(),pending=state.pendingFixture;
   const invalid=!LL_V3_EURO_PHASES.has(phase);
-  const wrongLeagueState=phase==='league'&&(!!e.tie||(pending?.competition===type&&pending?.league==='euro-knockout'));
-  if(!invalid&&!wrongLeagueState)return false;
-  if((invalid||phase==='league')&&pending?.competition===type&&pending?.league==='euro-knockout')state.pendingFixture=null;
+  const incompleteLeague=Number(userResults)<Number(count);
+  const wrongPending=!!(pending?.competition===type&&pending?.league!=='euro-table');
+  const prematureKnockout=incompleteLeague&&phase!=='league';
+  const wrongLeagueState=phase==='league'&&(!!e.tie||wrongPending);
+  const repair=invalid||prematureKnockout||wrongLeagueState;
+  if(!repair)return false;
+  if(pending?.competition===type&&pending?.league!=='euro-table')state.pendingFixture=null;
   let voided=0;
-  if(invalid){
+  if(invalid||prematureKnockout||wrongLeagueState){
     (state.results||[]).forEach(result=>{
-      if(Number(result.season)===Number(state.season)&&result?.userMatch&&result.competition===type&&result.league==='euro-knockout'&&!LL_V3_EURO_KNOCKOUT_PHASES.has(result.euroStage)){
+      if(Number(result.season)===Number(state.season)&&result?.userMatch&&result.competition===type&&result.league==='euro-knockout'){
         result.league='euro-format-void';result.voidedByEuropeFormatRepair=true;voided++;
       }
     });
+    if(state.europeKnockouts?.competitions?.[type])delete state.europeKnockouts.competitions[type];
   }
   e.phase='league';
   e.round=Math.min(count,Math.max(0,Number(userResults)||0));
   e.alive=true;e.pending=null;e.tie=null;e.winner=null;delete e.seedRank;delete e.nextMatchWeek;
-  e.status=voided?`Lig aşaması onarıldı · ${voided} hatalı rövanş kaydı geçersiz sayıldı.`:e.round?`Lig aşaması ${e.round}/${count} tamamlandı`:'Lig aşaması başlamadı';
+  e.status=voided?`Lig aşaması onarıldı · ${voided} hatalı eleme kaydı geçersiz sayıldı.`:e.round?`Lig aşaması ${e.round}/${count} tamamlandı`:'Lig aşaması başlamadı';
   return true;
-}
-llV2EnsureEuropeStandings=function(state){
+}llV2EnsureEuropeStandings=function(state){
   const valid=state.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&state.europeStandings.formatVersion===LL_EURO_FORMAT_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],count=LL_EURO_LEAGUE_WEEKS[type].length;return table?.teams?.length===36&&table.fixtures?.length===count&&table.fixtures.every(round=>round.length===18);});
   if(!valid)llV2CreateEuropeStandings(state);
   const q=llV3ResolveEuropeQualifications(state),type=['ucl','uel','uecl'].find(key=>q[key].includes(state.playerTeam));
@@ -844,7 +848,7 @@ function llV4EnsureEuropeTeams(state,tables=state?.europeStandings){if(!state||!
 const llV4EnsureEuropeStandingsBase=llV2EnsureEuropeStandings;
 llV2EnsureEuropeStandings=function(state){const tables=llV4EnsureEuropeStandingsBase(state);llV4EnsureEuropeTeams(state,tables);return tables;};
 const llV4RepairStateBase=llV2RepairState;
-llV2RepairState=function(state){state=llV4RepairStateBase(state);llV4EnsureEuropeTeams(state,state?.europeStandings);return llEnsureContractState(state);};
+llV2RepairState=function(state){state=llV4RepairStateBase(state);llV2EnsureEuropeStandings(state);llV4EnsureEuropeTeams(state,state?.europeStandings);return llEnsureContractState(state);};
 const llV4EnsureEuroOpponentBase=llV3EnsureEuroOpponent;
 llV3EnsureEuroOpponent=function(name){llV4EnsureEuroOpponentBase(name);const team=llV4CreateEuroTeam(lexLeague.state,name);LL_POSITIONS.forEach(pos=>{if(!team.cards[pos])llV4FreeCardForState(lexLeague.state,name,pos);});llEnsureTeamContracts(team);};
 const llV4ChooseShopCardBase=llChooseShopCard;
