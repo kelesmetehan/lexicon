@@ -3055,6 +3055,17 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Takım Kimyası'&&LL_POSITIONS.every(pos=>llCardContractSlotActive(me.state,pos))){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position),old=target.value;target.value+=1;log(`${me.name}: Takım Kimyası → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +1).`);}
     });
   }
+  function applyCalmHeadCards(me,opp,key,rawOwnDice,rawOppDice){
+    me.dice.forEach(d=>{
+      const c=activeCard(d,key),base=llBaseName(c);if(!c||base!=='Sakin Kafa')return;
+      const rawOwn=llFindPosition(rawOwnDice,d.position),rawOpp=llFindPosition(rawOppDice,d.position);if(!rawOwn||!rawOpp||rawOwn.value>=rawOpp.value)return;
+      const limit=c.upgradeRule==='calm-common'?(rawOwn.value<=2?2:1):c.upgradeRule==='calm-rare'&&me.state.stars<opp.state.stars&&rawOpp.value===Math.max(...rawOppDice.map(x=>x.value))?3:llEffectAmount(c,1);
+      const old=d.value,rawGap=rawOpp.value-rawOwn.value,remainingGap=Math.max(0,rawOpp.value-old),applied=Math.min(limit,remainingGap);
+      d.value=old+applied;
+      const afterGap=Math.max(0,rawOpp.value-d.value),resultText=afterGap?`mağlubiyet farkı ${rawGap}→${afterGap} azaldı`:'düello en az beraberliğe geldi';
+      log(`${me.name}: Sakin Kafa → ham ${d.position} düellosu ${rawOwn.value}-${rawOpp.value}; kart gücü ${limit}, uygulanan +${applied}; ${d.position} zarı ${old}→${d.value}; ${resultText}.`);
+    });
+  }
   function applyFinalCombinationCards(me,key){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c);if(!c||base!=='Üçlü Hücum')return;
@@ -3104,6 +3115,9 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   }
 
   applyCombinationCards(sides.a,'a',rawADice);applyCombinationCards(sides.b,'b',rawBDice);
+  // Sakin Kafa'nın tetik koşulu ham karşılıklı zarlarla sabitlenir. Böylece Kilitleme gibi
+  // rakip zarını daha sonra değiştiren kartlar, ham düelloda sağlanan koşulu geriye dönük silemez.
+  applyCalmHeadCards(sides.a,sides.b,'a',rawADice,rawBDice);applyCalmHeadCards(sides.b,sides.a,'b',rawBDice,rawADice);
   applyGlobals(sides.a,sides.b,'a','self');applyGlobals(sides.b,sides.a,'b','self');
   applyGlobals(sides.a,sides.b,'a','opponent');applyGlobals(sides.b,sides.a,'b','opponent');
   applyGlobals(sides.a,sides.b,'a','post');applyGlobals(sides.b,sides.a,'b','post');
@@ -3116,14 +3130,6 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     const rawA=llFindPosition(rawADice,a.position),rawB=llFindPosition(rawBDice,b.position);
     if(ba==='Son Adam'&&llOppTrigger(ca,b.value)){const n=llEffectAmount(ca,1),old=b.value;b.value=Math.max(1,old-n);log(`${aName}: Son Adam → rakibin ${b.position} zarı ${old}→${b.value} (zar etkisi, uygulanan -${old-b.value}; kart sınırı -${n}).`);}
     if(bb==='Son Adam'&&llOppTrigger(cb,a.value)){const n=llEffectAmount(cb,1),old=a.value;a.value=Math.max(1,old-n);log(`${bName}: Son Adam → rakibin ${a.position} zarı ${old}→${a.value} (zar etkisi, uygulanan -${old-a.value}; kart sınırı -${n}).`);}
-    if(ba==='Sakin Kafa'&&a.value<b.value){
-      const old=a.value,opponent=b.value,limit=ca.upgradeRule==='calm-common'?(old<=2?2:1):ca.upgradeRule==='calm-rare'&&aState.stars<bState.stars&&b.value===Math.max(...bDice.map(x=>x.value))?3:llEffectAmount(ca,1);a.value=Math.min(opponent,old+limit);const applied=a.value-old,remaining=opponent-a.value;
-      log(`${aName}: Sakin Kafa → ${a.position} zarı ${old}→${a.value} (kart sınırı +${limit}, uygulanan +${applied}); rakip ${a.position} zarı ${opponent}; ${remaining?`mağlubiyet farkı ${opponent-old}→${remaining} azaldı`:'düello beraberliğe geldi'}.`);
-    }
-    if(bb==='Sakin Kafa'&&b.value<a.value){
-      const old=b.value,opponent=a.value,limit=cb.upgradeRule==='calm-common'?(old<=2?2:1):cb.upgradeRule==='calm-rare'&&bState.stars<aState.stars&&a.value===Math.max(...aDice.map(x=>x.value))?3:llEffectAmount(cb,1);b.value=Math.min(opponent,old+limit);const applied=b.value-old,remaining=opponent-b.value;
-      log(`${bName}: Sakin Kafa → ${b.position} zarı ${old}→${b.value} (kart sınırı +${limit}, uygulanan +${applied}); rakip ${b.position} zarı ${opponent}; ${remaining?`mağlubiyet farkı ${opponent-old}→${remaining} azaldı`:'düello beraberliğe geldi'}.`);
-    }
     // Kalenin Efendisi, diğer kartlar Kaleci zarını sonradan yükseltse bile 4 tavanını korur.
     if(a.position==='Kaleci'&&sideHasBase('a','Kalenin Efendisi')&&b.value>4){const old=b.value;b.value=4;log(`${aName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${b.value}.`);}
     if(b.position==='Kaleci'&&sideHasBase('b','Kalenin Efendisi')&&a.value>4){const old=a.value;a.value=4;log(`${bName}: Kalenin Efendisi → rakip Kaleci zarı sonraki kart etkisiyle ${old} oldu; 4 tavanı yeniden uygulandı ${old}→${a.value}.`);}
