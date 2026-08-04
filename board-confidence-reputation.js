@@ -30,10 +30,10 @@ function sortedRows(state,key=currentLeague(state)){
   catch{return [];}
 }
 function primaryGoal(state){
-  const goals=state?.seasonGoals?.items||[];
+  const goals=Array.isArray(state?.seasonGoals?.items)?state.seasonGoals.items:[];
   return goals.find(goal=>goal?.id==='club_primary')||goals[0]||{id:'club_primary',type:'league_position',value:10,label:'Yönetim hedefi'};
 }
-function sideGoals(state){return (state?.seasonGoals?.items||[]).filter(goal=>goal?.id!=='club_primary');}
+function sideGoals(state){return (Array.isArray(state?.seasonGoals?.items)?state.seasonGoals.items:[]).filter(goal=>goal?.id!=='club_primary');}
 function targetPosition(goal,rows,state){
   const count=Math.max(1,rows?.length||18),type=goal?.type;
   if(type==='champion')return 1;
@@ -78,9 +78,22 @@ function reputationTier(value){
   return 'Yerel Seviye';
 }
 function ensureProfile(state){
-  if(typeof globalThis.llManagerProfile==='function')return llManagerProfile(state);
-  if(!state.managerProfile||typeof state.managerProfile!=='object')state.managerProfile={reputation:50,failedPrimaryStreak:0,lastEvaluatedSeason:0,currentTeam:state.playerTeam,history:[]};
+  if(typeof globalThis.llManagerProfile==='function'){
+    try{
+      const profile=llManagerProfile(state);
+      if(profile&&typeof profile==='object'&&!Array.isArray(profile)){
+        if(!Array.isArray(profile.history))profile.history=[];
+        if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];
+        if(!Array.isArray(profile.reputationEvents))profile.reputationEvents=[];
+        profile.reputation=clamp(profile.reputation||50,0,100);
+        return profile;
+      }
+    }catch(error){console.warn('[Yönetim Güveni] Menajer profili onarımı atlandı:',error);}
+  }
+  if(!state.managerProfile||typeof state.managerProfile!=='object'||Array.isArray(state.managerProfile))state.managerProfile={reputation:50,failedPrimaryStreak:0,lastEvaluatedSeason:0,currentTeam:state.playerTeam,history:[]};
   if(!Array.isArray(state.managerProfile.history))state.managerProfile.history=[];
+  if(!Array.isArray(state.managerProfile.reputationHistory))state.managerProfile.reputationHistory=[];
+  if(!Array.isArray(state.managerProfile.reputationEvents))state.managerProfile.reputationEvents=[];
   state.managerProfile.reputation=clamp(state.managerProfile.reputation||50,0,100);
   return state.managerProfile;
 }
@@ -91,7 +104,7 @@ function boardSnapshot(state){
 function ensureBoard(state){
   if(!state)return null;
   const season=num(state.season,1);
-  if(!state.boardConfidence||typeof state.boardConfidence!=='object'||num(state.boardConfidence.season)!==season){
+  if(!state.boardConfidence||typeof state.boardConfidence!=='object'||Array.isArray(state.boardConfidence)||num(state.boardConfidence.season)!==season){
     const start=startingConfidence(state);
     state.boardConfidence={
       version:VERSION,season,value:start,startValue:start,status:confidenceStatus(start).key,
@@ -610,16 +623,17 @@ function decorateProfile(){
     const span=repBox.querySelector('span');if(span){span.setAttribute('data-reputation-tier','');span.textContent=`İtibar: ${reputationTier(profile.reputation)} (${profile.reputation})`;}
   }
   if(!root.querySelector('[data-profile-board]')){
-    const hero=root.querySelector('.ll-profile-hero'),board=ensureBoard(state),status=confidenceStatus(board.value),lastRep=[...(profile.reputationHistory||[])].at(-1);
-    const html=`<div class="ll-card ll-profile-board-card" data-profile-board><div class="ll-card-title">Yönetim ve İtibar Özeti</div><div class="ll-profile-board-grid"><div><b>${board.value}/100</b><span>Yönetim Güveni · ${esc(status.label)}</span></div><div><b>${profile.reputation}/100</b><span>${esc(reputationTier(profile.reputation))}</span></div><div><b>${lastRep?`${lastRep.delta>=0?'+':''}${lastRep.delta}`:'—'}</b><span>Son İtibar Değişimi</span></div></div>${lastRep?`<div class="ll-muted" style="margin-top:9px">${esc((lastRep.reasons||[]).map(item=>`${item.points>=0?'+':''}${item.points} ${item.label}`).join(' · '))}</div>`:''}</div>`;
+    const hero=root.querySelector('.ll-profile-hero'),board=ensureBoard(state),status=confidenceStatus(board.value),history=Array.isArray(profile.reputationHistory)?profile.reputationHistory:[],lastRep=[...history].at(-1),reasons=Array.isArray(lastRep?.reasons)?lastRep.reasons:[];
+    const reasonText=reasons.map(item=>`${num(item?.points)>=0?'+':''}${num(item?.points)} ${item?.label||''}`).join(' · ');
+    const html=`<div class="ll-card ll-profile-board-card" data-profile-board><div class="ll-card-title">Yönetim ve İtibar Özeti</div><div class="ll-profile-board-grid"><div><b>${board.value}/100</b><span>Yönetim Güveni · ${esc(status.label)}</span></div><div><b>${profile.reputation}/100</b><span>${esc(reputationTier(profile.reputation))}</span></div><div><b>${lastRep?`${num(lastRep.delta)>=0?'+':''}${num(lastRep.delta)}`:'—'}</b><span>Son İtibar Değişimi</span></div></div>${lastRep&&reasonText?`<div class="ll-muted" style="margin-top:9px">${esc(reasonText)}</div>`:''}</div>`;
     if(hero)hero.insertAdjacentHTML('afterend',html);
   }
 }
 function decorateSeasonEndReputation(){
   const state=stateNow(),root=typeof globalThis.llArea==='function'?llArea():null,profile=state&&ensureProfile(state);if(!state||!root||!profile||root.querySelector('[data-reputation-report]'))return;
-  const report=[...(profile.reputationHistory||[])].filter(item=>num(item.season)===num(state.lastSeasonSummary?.season||state.season)).at(-1);
+  const history=Array.isArray(profile.reputationHistory)?profile.reputationHistory:[],report=[...history].filter(item=>num(item?.season)===num(state.lastSeasonSummary?.season||state.season)).at(-1);
   if(!report)return;
-  const rows=(report.reasons||[]).map(item=>`<div><span>${esc(item.label)}</span><b class="${item.points>=0?'positive':'negative'}">${item.points>=0?'+':''}${item.points}</b></div>`).join('')||'<div><span>Bu sezon itibar değişimi oluşmadı.</span><b>0</b></div>';
+  const reasons=Array.isArray(report.reasons)?report.reasons:[],rows=reasons.map(item=>{const points=num(item?.points);return `<div><span>${esc(item?.label||'İtibar değişimi')}</span><b class="${points>=0?'positive':'negative'}">${points>=0?'+':''}${points}</b></div>`;}).join('')||'<div><span>Bu sezon itibar değişimi oluşmadı.</span><b>0</b></div>';
   const html=`<div class="ll-card ll-reputation-report" data-reputation-report><div class="ll-card-title">Menajer İtibarı Raporu</div><div class="ll-sub">${esc(reputationTier(report.before))} ${report.before} → ${esc(reputationTier(report.after))} ${report.after}</div><div class="ll-reputation-rows">${rows}</div></div>`;
   const board=root.querySelector('[data-board-confidence]');if(board)board.insertAdjacentHTML('afterend',html);else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend',html);
 }
@@ -648,7 +662,7 @@ function install(){
   wrap('llRenderManagerMarket',base=>function(){const result=base.apply(this,arguments);decorateManagerMarket();return result;});
   wrap('llRenderVacantManagerJobs',base=>function(){const market=stateNow()?.managerMarket;Object.keys(market?.applications||{}).forEach(adjustApplication);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
   wrap('llShowVacantJobReport',base=>function(team){adjustApplication(team);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
-  wrap('llRenderManagerProfile',base=>function(){const result=base.apply(this,arguments);decorateProfile();return result;});
+  wrap('llRenderManagerProfile',base=>function(){const result=base.apply(this,arguments);try{decorateProfile();}catch(error){console.error('[Hoca Profili] Yönetim özeti eklenemedi:',error);}return result;});
   wrap('llCommitCurrentMatch',base=>function(){
     const state=stateNow(),match=globalThis.lexLeague?.match,weekBefore=num(state?.week),already=match?.__boardConfidenceProcessed;
     const result=base.apply(this,arguments);
