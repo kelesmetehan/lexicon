@@ -13,7 +13,7 @@
 (function(){
   'use strict';
 
-  var LL_TEAM_STAR_DECLINE_VERSION=1;
+  var LL_TEAM_STAR_DECLINE_VERSION=2;
   var LL_DIE_PROGRESSION_ABSOLUTE_VERSION=2;
   var LL_STAR_DECLINE_UPPER_RATES={3:.8,4:.7,5:.6,6:.5};
   var LL_STAR_DECLINE_POSITIONS=typeof LL_POSITIONS!=='undefined'&&Array.isArray(LL_POSITIONS)
@@ -237,6 +237,7 @@
     var record={
       season:Number(context.season)||Number(state.season)||1,team:name,country:context.country||null,tier:context.tier||null,
       position:Number(context.position)||0,threshold:Number(context.threshold)||0,playoffTo:Number(context.playoffTo)||0,
+      teamCount:Number(context.teamCount)||0,reasonCode:context.reasonCode||null,
       reason:reason,fromStars:fromStars,toStars:toStars,player:isPlayer,rolledBackPosition:rolledBackPosition,
       refundLp:refundLp,refundedCostLp:paidEntry?Number(paidEntry.costLp)||0:0,at:new Date().toISOString()
     };
@@ -282,7 +283,7 @@
 
           if(isRelegated){
             status='direct-relegation';
-            var direct=applyStarLoss(state,name,'Üst ligden küme düşme',{season:season,country:country,tier:tier,position:position});
+            var direct=applyStarLoss(state,name,'Üst ligden küme düşme',{season:season,country:country,tier:tier,position:position,teamCount:count,reasonCode:'direct-relegation'});
             if(direct)declines.push(direct);
             resetCounter(club,season,wonCup?'trophy-reset-after-relegation':'direct-relegation');
           }else if(wonCup){
@@ -302,7 +303,7 @@
               var countBad=addBadSeason(club,season,mode);status='bad-'+countBad;
               if(countBad>=2){
                 var label=mode==='upper-underperformance'?'Yıldız seviyesinin çok altında iki sezon':'İkinci ligde iki sezon play-off hattı dışında';
-                var decline=applyStarLoss(state,name,label,{season:season,country:country,tier:tier,position:position,threshold:threshold,playoffTo:playoffTo});
+                var decline=applyStarLoss(state,name,label,{season:season,country:country,tier:tier,position:position,threshold:threshold,playoffTo:playoffTo,teamCount:count,reasonCode:mode});
                 if(decline)declines.push(decline);
                 resetCounter(club,season,'declined');status=decline?'declined':'floor-1-star';
               }
@@ -351,17 +352,123 @@
     }
     return '';
   }
-  function allDeclinesHtml(summary){
-    var list=summary&&summary.starDeclines||[];
-    if(!list.length)return '';
-    return '<div class="ll-card ll-star-decline-list"><div class="ll-card-title">Sezon Sonu Yıldız Düşüşleri</div>'+list.map(function(item){
-      return '<div class="ll-star-decline-row"><span><b>'+escapeHtml(item.team)+'</b><small>'+escapeHtml(declineReasonText(item))+'</small></span><strong>'+item.fromStars+'★ → '+item.toStars+'★</strong></div>';
-    }).join('')+'</div>';
+  function declineReasonCode(item){
+    if(!item)return 'unknown';
+    if(item.reasonCode)return item.reasonCode;
+    if(item.reason==='Üst ligden küme düşme')return 'direct-relegation';
+    if(item.threshold)return 'upper-underperformance';
+    if(item.playoffTo)return 'second-tier-outside-playoff';
+    return 'unknown';
   }
+  function declineReasonMeta(item){
+    var code=declineReasonCode(item);
+    if(code==='direct-relegation')return {code:code,icon:'📉',title:'Doğrudan küme düşme',short:'Üst ligden düşme',className:'danger'};
+    if(code==='upper-underperformance')return {code:code,icon:'⚠️',title:'İki sezon ağır başarısızlık',short:'Üst lig performans eşiği',className:'warning'};
+    if(code==='second-tier-outside-playoff')return {code:code,icon:'🚫',title:'İki sezon play-off dışında',short:'İkinci lig play-off eşiği',className:'warning'};
+    return {code:code,icon:'⬇️',title:item&&item.reason||'Yıldız düşüşü',short:item&&item.reason||'Yıldız düşüşü',className:'neutral'};
+  }
+  function reportCountryMeta(code){
+    if(typeof llMLCountryMeta==='function')return llMLCountryMeta(code);
+    return {country:code||'Lig',flag:'🌍'};
+  }
+  function reportLeagueLabel(country,tier){
+    if(typeof llMLLeagueLabel==='function')return llMLLeagueLabel(country,tier);
+    return tier==='tier2'?'2. Lig':'1. Lig';
+  }
+  function reportCountryCodes(summary){
+    var configured=typeof LL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:[];
+    var found=[];
+    (summary&&summary.starDeclineEvaluations||[]).concat(summary&&summary.starDeclines||[]).forEach(function(item){if(item&&item.country&&!found.includes(item.country))found.push(item.country);});
+    if(summary&&summary.countrySummaries)Object.keys(summary.countrySummaries).forEach(function(code){if(!found.includes(code))found.push(code);});
+    configured.forEach(function(code){if(!found.includes(code))found.push(code);});
+    if(!found.length)found.push(summary&&summary.country||'TUR');
+    return found;
+  }
+  function reportDataForSeason(state,season){
+    if(!state)return null;
+    var requested=Number(season)||Number(state.lastSeasonSummary&&state.lastSeasonSummary.season)||Number(state.season)||1;
+    if(state.lastSeasonSummary&&Number(state.lastSeasonSummary.season)===requested)return state.lastSeasonSummary;
+    return (state.seasonHistory||[]).find(function(item){return Number(item&&item.season)===requested;})||state.lastSeasonSummary||null;
+  }
+  function reportTeamLogo(name){
+    if(typeof llTeamLogo==='function')return llTeamLogo(name,'table');
+    return '<span class="ll-star-report-logo-fallback">'+escapeHtml(String(name||'?').slice(0,2).toUpperCase())+'</span>';
+  }
+  function declineDetailText(item){
+    var code=declineReasonCode(item),position=Number(item.position)||0;
+    if(code==='direct-relegation')return reportLeagueLabel(item.country,'tier1')+' sezonunu '+position+'. sırada, küme düşme hattında tamamladı. Doğrudan 1★ düşüş uygulandı.';
+    if(code==='upper-underperformance')return (item.fromStars||'?')+'★ takım için ağır başarısızlık eşiği '+(item.threshold||'?')+'. sıra veya altıydı. Takım bu koşulu iki sezon üst üste sağladı.';
+    if(code==='second-tier-outside-playoff')return 'Play-off hattı '+(item.playoffTo||'?')+'. sırada sona erdi. Takım '+position+'. sırada kaldı ve iki sezon üst üste hattın dışında tamamladı.';
+    return item.reason||'Yıldız düşüşü uygulandı.';
+  }
+  function declineTeamCardHtml(item){
+    var meta=declineReasonMeta(item),teamCount=Number(item.teamCount)||0;
+    var context=[];
+    if(item.position)context.push(item.position+'. sıra');
+    if(teamCount)context.push(teamCount+' takımlı lig');
+    if(item.player)context.push('Senin kulübün');
+    return '<article class="ll-star-report-team-card '+meta.className+'">'
+      +'<div class="ll-star-report-team-head"><div class="ll-star-report-team-id">'+reportTeamLogo(item.team)+'<div><b>'+escapeHtml(item.team)+'</b><small>'+escapeHtml(reportLeagueLabel(item.country,item.tier))+(context.length?' · '+escapeHtml(context.join(' · ')):'')+'</small></div></div>'
+      +'<div class="ll-star-report-change"><span>'+item.fromStars+'★</span><i>→</i><strong>'+item.toStars+'★</strong></div></div>'
+      +'<div class="ll-star-report-reason"><span class="ll-star-report-reason-icon">'+meta.icon+'</span><div><b>'+escapeHtml(meta.title)+'</b><p>'+escapeHtml(declineDetailText(item))+'</p></div></div>'
+      +(item.refundLp?'<div class="ll-star-report-refund"><b>LP iadesi:</b> +'+item.refundLp+' LP · Geri alınan zar: '+escapeHtml(item.rolledBackPosition||'—')+'</div>':'')
+      +'</article>';
+  }
+  function declineRulesHtml(){
+    return '<div class="ll-card ll-star-report-rules"><div class="ll-card-title">Yıldız Düşüş Kuralları</div><div class="ll-star-report-scroll-hint">Tablonun devamı için sağa kaydır →</div><div class="ll-star-report-table-wrap"><table class="ll-star-report-table"><thead><tr><th>Durum</th><th>Kimler için?</th><th>Sonuç</th></tr></thead><tbody>'
+      +'<tr><td><b>Üst ligden küme düşme</b></td><td>2★–6★ tüm kulüpler</td><td>Hemen −1★</td></tr>'
+      +'<tr><td><b>Üst ligde ağır başarısızlık</b></td><td>3★ ve üzeri; kendi yıldız eşiğinde iki sezon üst üste başarısız</td><td>−1★</td></tr>'
+      +'<tr><td><b>İkinci ligde play-off dışında kalma</b></td><td>3★ ve üzeri; iki sezon üst üste play-off hattı dışında</td><td>−1★</td></tr>'
+      +'<tr><td><b>Yerel veya Avrupa kupası kazanma</b></td><td>Kötü performans sayacı bulunan kulüp</td><td>Sayaç sıfırlanır; doğrudan küme düşmeyi iptal etmez</td></tr>'
+      +'<tr><td><b>Yeni yükselen takım</b></td><td>Üst ligdeki ilk sezonu</td><td>Ağır başarısızlık sayacından muaf</td></tr>'
+      +'<tr><td><b>Sezon sınırı</b></td><td>Tüm kulüpler</td><td>Sezonda en fazla −1★; alt sınır 1★</td></tr>'
+      +'</tbody></table></div><div class="ll-star-threshold-grid">'
+      +'<div><b>3★</b><span>⌈Takım sayısı × 0,80⌉ veya altı<br>18 takım: 15. · 20 takım: 16.</span></div>'
+      +'<div><b>4★</b><span>⌈Takım sayısı × 0,70⌉ veya altı<br>18 takım: 13. · 20 takım: 14.</span></div>'
+      +'<div><b>5★</b><span>⌈Takım sayısı × 0,60⌉ veya altı<br>18 takım: 11. · 20 takım: 12.</span></div>'
+      +'<div><b>6★</b><span>⌈Takım sayısı × 0,50⌉ veya altı<br>18 takım: 9. · 20 takım: 10.</span></div>'
+      +'</div></div>';
+  }
+  function allDeclinesHtml(summary){
+    var list=summary&&summary.starDeclines||[],countries=new Set(list.map(function(item){return item.country;}).filter(Boolean));
+    var direct=list.filter(function(item){return declineReasonCode(item)==='direct-relegation';}).length;
+    var consecutive=list.length-direct;
+    var preview=list.slice(0,4).map(function(item){var meta=declineReasonMeta(item);return '<div class="ll-star-decline-row"><span>'+reportTeamLogo(item.team)+'<span><b>'+escapeHtml(item.team)+'</b><small>'+escapeHtml(reportLeagueLabel(item.country,item.tier))+' · '+escapeHtml(meta.short)+'</small></span></span><strong>'+item.fromStars+'★ → '+item.toStars+'★</strong></div>';}).join('');
+    return '<div class="ll-card ll-star-decline-list"><div class="ll-star-decline-overview-head"><div><div class="ll-card-title">Sezon Sonu Yıldız Düşüş Raporu</div><div class="ll-sub">Tüm ülkeleri ve ligleri ayrı ayrı inceleyebilirsin.</div></div><button class="ll-btn gold" onclick="llRenderStarDeclineReport('+(Number(summary&&summary.season)||1)+')">Lig Lig Detayı Aç</button></div>'
+      +'<div class="ll-star-decline-overview-metrics"><div><strong>'+list.length+'</strong><span>Yıldızı düşen</span></div><div><strong>'+countries.size+'</strong><span>Etkilenen ülke</span></div><div><strong>'+direct+'</strong><span>Doğrudan düşme</span></div><div><strong>'+consecutive+'</strong><span>2 sezonluk neden</span></div></div>'
+      +(preview||'<div class="ll-star-report-empty compact"><b>✓ Bu sezon yıldız düşüşü olmadı.</b><span>Lig lig raporda kuralları ve tüm ülkeleri yine inceleyebilirsin.</span></div>')
+      +(list.length>4?'<div class="ll-muted" style="margin-top:9px">+'+(list.length-4)+' kulüp daha · tümünü detay ekranında görebilirsin.</div>':'')
+      +'</div>';
+  }
+  function renderStarDeclineReport(season,country,tier){
+    var state=globalThis.lexLeague&&lexLeague.state,summary=reportDataForSeason(state,season);
+    if(!state||!summary||typeof llArea!=='function')return;
+    injectStyles();if(typeof llSetWide==='function')llSetWide(true);
+    var all=summary.starDeclines||[],countries=reportCountryCodes(summary),defaultCountry=state.playerCountry||countries[0];
+    var firstWithDecline=countries.find(function(code){return all.some(function(item){return item.country===code;});});
+    var selected=countries.includes(country)?country:(firstWithDecline||defaultCountry||countries[0]);
+    var selectedTier=tier==='tier2'?'tier2':'tier1';
+    if(!tier&&!all.some(function(item){return item.country===selected&&item.tier===selectedTier;})&&all.some(function(item){return item.country===selected&&item.tier==='tier2';}))selectedTier='tier2';
+    var selectedList=all.filter(function(item){return item.country===selected&&item.tier===selectedTier;}).sort(function(a,b){return (Number(a.position)||999)-(Number(b.position)||999)||String(a.team).localeCompare(String(b.team),'tr');});
+    var selectedCountryList=all.filter(function(item){return item.country===selected;});
+    var meta=reportCountryMeta(selected),seasonNumber=Number(summary.season)||Number(season)||1;
+    var back=state.seasonEnded&&state.lastSeasonSummary&&Number(state.lastSeasonSummary.season)===seasonNumber?'llRenderSeasonEnd()':(typeof llRenderSeasonArchive==='function'?"llRenderSeasonArchive("+seasonNumber+",'"+selectedTier+"','"+selected+"')":'llRenderDashboard()');
+    var countryTabs=countries.map(function(code){var count=all.filter(function(item){return item.country===code;}).length,m=reportCountryMeta(code);return '<button class="ll-star-country-tab '+(code===selected?'active':'')+'" onclick="llRenderStarDeclineReport('+seasonNumber+',\''+code+'\',\''+selectedTier+'\')"><span>'+escapeHtml(m.flag||'🌍')+' '+escapeHtml(m.country||code)+'</span><b>'+count+'</b></button>';}).join('');
+    var tierTabs=['tier1','tier2'].map(function(code){var count=all.filter(function(item){return item.country===selected&&item.tier===code;}).length;return '<button class="ll-star-league-tab '+(code===selectedTier?'active':'')+'" onclick="llRenderStarDeclineReport('+seasonNumber+',\''+selected+'\',\''+code+'\')"><span>'+escapeHtml(reportLeagueLabel(selected,code))+'</span><b>'+count+' düşüş</b></button>';}).join('');
+    var direct=selectedList.filter(function(item){return declineReasonCode(item)==='direct-relegation';}).length;
+    var cards=selectedList.map(declineTeamCardHtml).join('')||'<div class="ll-star-report-empty"><div>✓</div><b>'+escapeHtml(reportLeagueLabel(selected,selectedTier))+' içinde yıldız düşüşü yok</b><span>Bu sezon bu ligde hiçbir kulübün yıldızı silinmedi.</span></div>';
+    llArea().innerHTML='<div class="ll-shell"><div class="ll-panel ll-star-report-panel"><div class="ll-topbar"><div><div class="ll-title">Yıldız Düşüş <em>Raporu</em></div><div class="ll-muted">Sezon '+seasonNumber+' · '+escapeHtml(meta.flag||'')+' '+escapeHtml(meta.country||selected)+' · Lig bazlı sezon sonu analizi</div></div><button class="ll-btn" onclick="'+back+'">← Geri</button></div>'
+      +'<div class="ll-star-report-hero"><div><span>SEZON '+seasonNumber+'</span><h2>'+all.length+' kulübün yıldızı düştü</h2><p>Ülke ve lig sekmelerinden tüm yıldız kayıplarını, sıralamayı ve uygulanan nedeni inceleyebilirsin.</p></div><div class="ll-star-report-hero-mark">★<small>−1</small></div></div>'
+      +'<div class="ll-star-country-tabs">'+countryTabs+'</div><div class="ll-star-league-tabs">'+tierTabs+'</div>'
+      +'<div class="ll-star-report-metrics"><div><strong>'+selectedList.length+'</strong><span>Bu ligde düşüş</span></div><div><strong>'+selectedCountryList.length+'</strong><span>'+escapeHtml(meta.country||selected)+' toplamı</span></div><div><strong>'+direct+'</strong><span>Doğrudan küme düşme</span></div><div><strong>'+(selectedList.length-direct)+'</strong><span>İki sezonluk neden</span></div></div>'
+      +'<div class="ll-star-report-section-title"><div><b>'+escapeHtml(reportLeagueLabel(selected,selectedTier))+'</b><span>Yıldızı düşürülen kulüpler</span></div><small>'+selectedList.length+' kayıt</small></div><div class="ll-star-report-team-list">'+cards+'</div>'
+      +declineRulesHtml()+'</div></div>';
+  }
+  globalThis.llRenderStarDeclineReport=renderStarDeclineReport;
   function injectStyles(){
     if(typeof document==='undefined'||document.getElementById('ll-team-star-decline-style'))return;
     var style=document.createElement('style');style.id='ll-team-star-decline-style';style.textContent='\
-      .ll-star-decline-player,.ll-star-decline-warning{margin:14px 0;padding:13px 15px;border-radius:12px;line-height:1.55;background:linear-gradient(135deg,rgba(127,29,29,.28),rgba(15,23,42,.78));border:1px solid rgba(248,113,113,.58);color:#fee2e2}.ll-star-decline-warning{background:linear-gradient(135deg,rgba(120,53,15,.24),rgba(15,23,42,.78));border-color:rgba(251,191,36,.48);color:#fef3c7}.ll-star-decline-player span,.ll-star-decline-warning span{font-size:12px;opacity:.82}.ll-star-decline-list{margin-top:14px;border-color:rgba(248,113,113,.34)}.ll-star-decline-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}.ll-star-decline-row:first-of-type{border-top:0}.ll-star-decline-row span{min-width:0}.ll-star-decline-row small{display:block;margin-top:3px;color:var(--text2);white-space:normal}.ll-star-decline-row strong{white-space:nowrap;color:#fca5a5}@media(max-width:560px){.ll-star-decline-row{align-items:flex-start}.ll-star-decline-row strong{font-size:13px}}';
+      .ll-star-decline-player,.ll-star-decline-warning{margin:14px 0;padding:13px 15px;border-radius:12px;line-height:1.55;background:linear-gradient(135deg,rgba(127,29,29,.28),rgba(15,23,42,.78));border:1px solid rgba(248,113,113,.58);color:#fee2e2}.ll-star-decline-warning{background:linear-gradient(135deg,rgba(120,53,15,.24),rgba(15,23,42,.78));border-color:rgba(251,191,36,.48);color:#fef3c7}.ll-star-decline-player span,.ll-star-decline-warning span{font-size:12px;opacity:.82}.ll-star-decline-list{margin-top:14px;border-color:rgba(248,113,113,.34);overflow:hidden}.ll-star-decline-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ll-star-decline-overview-metrics,.ll-star-report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0}.ll-star-decline-overview-metrics>div,.ll-star-report-metrics>div{padding:11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(15,23,42,.5)}.ll-star-decline-overview-metrics strong,.ll-star-report-metrics strong{display:block;font-size:20px}.ll-star-decline-overview-metrics span,.ll-star-report-metrics span{display:block;margin-top:3px;color:var(--text2);font-size:11px}.ll-star-decline-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}.ll-star-decline-row:first-of-type{border-top:0}.ll-star-decline-row>span{display:flex;align-items:center;gap:9px;min-width:0}.ll-star-decline-row small{display:block;margin-top:3px;color:var(--text2);white-space:normal}.ll-star-decline-row strong{white-space:nowrap;color:#fca5a5}.ll-star-report-panel{overflow:hidden}.ll-star-report-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:14px 0 16px;padding:20px;border:1px solid rgba(248,113,113,.35);border-radius:18px;background:radial-gradient(circle at 90% 10%,rgba(248,113,113,.2),transparent 38%),linear-gradient(135deg,rgba(127,29,29,.22),rgba(15,23,42,.88))}.ll-star-report-hero span{font-size:11px;letter-spacing:.15em;color:#fca5a5;font-weight:800}.ll-star-report-hero h2{margin:5px 0 7px;font-size:25px}.ll-star-report-hero p{margin:0;max-width:680px;color:var(--text2);line-height:1.5}.ll-star-report-hero-mark{position:relative;flex:0 0 auto;font-size:65px;line-height:1;color:#fbbf24;text-shadow:0 0 24px rgba(251,191,36,.24)}.ll-star-report-hero-mark small{position:absolute;right:-4px;bottom:-5px;padding:4px 7px;border-radius:999px;background:#ef4444;color:white;font-size:13px;text-shadow:none}.ll-star-country-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 9px}.ll-star-country-tab{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:150px;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:rgba(15,23,42,.48);color:var(--text);cursor:pointer}.ll-star-country-tab b{display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px}.ll-star-country-tab.active{border-color:rgba(34,211,238,.66);background:rgba(8,145,178,.16)}.ll-star-country-tab.active b{background:#0891b2;color:white}.ll-star-league-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:4px 0 12px}.ll-star-league-tab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(15,23,42,.48);color:var(--text);cursor:pointer;text-align:left}.ll-star-league-tab b{color:var(--text2);font-size:11px}.ll-star-league-tab.active{border-color:rgba(251,191,36,.6);background:rgba(146,64,14,.18)}.ll-star-league-tab.active b{color:#fde68a}.ll-star-report-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:18px 0 9px}.ll-star-report-section-title b{display:block;font-size:17px}.ll-star-report-section-title span,.ll-star-report-section-title small{color:var(--text2);font-size:11px}.ll-star-report-team-list{display:grid;gap:10px}.ll-star-report-team-card{padding:14px;border-radius:14px;border:1px solid rgba(248,113,113,.28);background:linear-gradient(135deg,rgba(127,29,29,.14),rgba(15,23,42,.72))}.ll-star-report-team-card.warning{border-color:rgba(251,191,36,.28);background:linear-gradient(135deg,rgba(120,53,15,.13),rgba(15,23,42,.72))}.ll-star-report-team-head{display:flex;align-items:center;justify-content:space-between;gap:14px}.ll-star-report-team-id{display:flex;align-items:center;gap:10px;min-width:0}.ll-star-report-team-id b{display:block}.ll-star-report-team-id small{display:block;margin-top:4px;color:var(--text2);font-size:11px}.ll-star-report-change{display:flex;align-items:center;gap:7px;flex:0 0 auto}.ll-star-report-change span{color:var(--text2);font-size:18px;text-decoration:line-through}.ll-star-report-change i{font-style:normal;color:#fca5a5}.ll-star-report-change strong{padding:5px 9px;border-radius:9px;background:rgba(239,68,68,.15);color:#fca5a5;font-size:19px}.ll-star-report-reason{display:flex;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}.ll-star-report-reason-icon{font-size:20px}.ll-star-report-reason b{font-size:13px}.ll-star-report-reason p{margin:4px 0 0;color:var(--text2);font-size:12px;line-height:1.5}.ll-star-report-refund{margin-top:10px;padding:8px 10px;border-radius:9px;background:rgba(34,197,94,.1);color:#bbf7d0;font-size:12px}.ll-star-report-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:175px;padding:22px;border:1px dashed rgba(74,222,128,.3);border-radius:14px;background:rgba(20,83,45,.08);text-align:center}.ll-star-report-empty>div{display:grid;place-items:center;width:48px;height:48px;margin-bottom:9px;border-radius:999px;background:rgba(34,197,94,.14);color:#86efac;font-size:25px}.ll-star-report-empty span{margin-top:5px;color:var(--text2);font-size:12px}.ll-star-report-empty.compact{min-height:0;align-items:flex-start;text-align:left}.ll-star-report-rules{margin-top:18px;border-color:rgba(34,211,238,.24)}.ll-star-report-scroll-hint{display:none;margin-top:8px;color:var(--text2);font-size:10px}.ll-star-report-table-wrap{overflow-x:auto;margin-top:10px}.ll-star-report-table{width:100%;border-collapse:collapse;min-width:660px;font-size:12px}.ll-star-report-table th,.ll-star-report-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;vertical-align:top}.ll-star-report-table th{color:#a5f3fc;font-size:11px}.ll-star-report-table td:nth-child(3){color:#fde68a}.ll-star-threshold-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:13px}.ll-star-threshold-grid>div{padding:10px;border-radius:10px;background:rgba(15,23,42,.54);border:1px solid rgba(255,255,255,.07)}.ll-star-threshold-grid b{display:block;color:#fbbf24;font-size:16px}.ll-star-threshold-grid span{display:block;margin-top:4px;color:var(--text2);font-size:10px;line-height:1.45}.ll-star-report-logo-fallback{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:rgba(255,255,255,.08);font-size:10px;font-weight:800}@media(max-width:760px){.ll-star-decline-overview-head{display:block}.ll-star-decline-overview-head .ll-btn{width:100%;margin-top:10px}.ll-star-decline-overview-metrics,.ll-star-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ll-star-threshold-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ll-star-report-hero{padding:16px}.ll-star-report-hero-mark{font-size:48px}}@media(max-width:560px){.ll-star-decline-row{align-items:flex-start}.ll-star-decline-row strong{font-size:13px}.ll-star-league-tabs{grid-template-columns:1fr}.ll-star-report-team-head{align-items:flex-start}.ll-star-report-team-id small{white-space:normal}.ll-star-report-change span,.ll-star-report-change strong{font-size:15px}.ll-star-report-hero-mark{display:none}.ll-star-report-scroll-hint{display:block}.ll-star-threshold-grid{grid-template-columns:1fr}}';
     document.head.appendChild(style);
   }
   function injectSeasonEnd(){
