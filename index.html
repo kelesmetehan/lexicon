@@ -2365,6 +2365,9 @@ let lexLeague = {
   match:null,
   shop:null
 };
+// Harici oyun modülleri aynı çalışma durumuna globalThis üzerinden erişir.
+// `let` ile tanımlanan global bağ otomatik olarak window/globalThis özelliği olmaz.
+globalThis.lexLeague = lexLeague;
 
 function llEscape(value){
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -5714,8 +5717,8 @@ renderPreStart();
 <script src="achievement-cinematic.js?v=20260803-2"></script>
 <script src="team-star-decline.js?v=20260804-2"></script>
 <script src="manager-job-market.js?v=20260804-1"></script>
-<script src="manager-profile-overview.js?v=20260804-1"></script>
-<script src="board-confidence-reputation.js?v=20260804-1"></script>
+<script src="manager-profile-overview.js?v=20260804-2"></script>
+<script src="board-confidence-reputation.js?v=20260804-2"></script>
 </body>
 </html>
 
