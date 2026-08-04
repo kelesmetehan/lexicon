@@ -16,7 +16,9 @@ const CUSTOM_ACHIEVEMENTS=[
 
 function num(value,fallback=0){value=Number(value);return Number.isFinite(value)?value:fallback;}
 function esc(value){return typeof globalThis.llEscape==='function'?llEscape(String(value??'')):String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function unique(values){return [...new Set((values||[]).filter(Boolean))];}
+function arr(value){return Array.isArray(value)?value:[];}
+function obj(value){return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}
+function unique(values){return [...new Set(arr(values).filter(Boolean))];}
 function countryMeta(code){try{return globalThis.llMLCountryMeta?.(code)||{country:code,flag:'🌍'};}catch{return {country:code,flag:'🌍'};}}
 function leagueLabel(code,tier){try{return globalThis.llMLLeagueLabel?.(code,tier)||(tier==='tier1'?'Üst Lig':'İkinci Lig');}catch{return tier==='tier1'?'Üst Lig':'İkinci Lig';}}
 function teamCountry(team,state){try{return globalThis.llMLCountryForTeam?.(team,state)||state?.playerCountry||'TUR';}catch{return state?.playerCountry||'TUR';}}
@@ -36,7 +38,7 @@ function ensureCareer(state){
 }
 
 function inferHistoricalTeam(state,season){
-  const changes=[...(state.managerProfile?.history||[])].filter(item=>Number.isFinite(Number(item?.season))).sort((a,b)=>num(a.season)-num(b.season));
+  const changes=[...arr(state.managerProfile?.history)].filter(item=>Number.isFinite(Number(item?.season))).sort((a,b)=>num(a.season)-num(b.season));
   const exact=changes.find(item=>num(item.season)===num(season));
   if(exact?.from)return exact.from;
   const prior=changes.filter(item=>num(item.season)<num(season)).at(-1);
@@ -60,7 +62,7 @@ function seasonRecord(state,summary,team,source='live'){
   let tier='tier1',rows=tier1,row=tier1.find(item=>item.team===team);
   if(!row){tier='tier2';rows=tier2;row=tier2.find(item=>item.team===team);}
   const position=num(row?.position,rows.findIndex(item=>item.team===team)+1);
-  const trophies=unique((state.trophies||[]).filter(item=>num(item?.season)===season).map(item=>item?.name));
+  const trophies=unique(arr(state.trophies).filter(item=>num(item?.season)===season).map(item=>item?.name));
   const leagueChampion=position===1;
   const domesticCupWon=info?.cupWinner===team;
   const promoted=(info?.promoted||summary?.promoted||[]).includes(team);
@@ -86,7 +88,7 @@ function seasonRecord(state,summary,team,source='live'){
 }
 
 function migrateArchive(state,career){
-  const archives=[...(state.seasonHistory||[])].sort((a,b)=>num(a.season)-num(b.season));
+  const archives=[...arr(state.seasonHistory)].sort((a,b)=>num(a.season)-num(b.season));
   archives.forEach(entry=>{
     const season=num(entry?.season);
     if(!season||career.seasons.some(item=>num(item.season)===season))return;
@@ -99,7 +101,7 @@ function migrateArchive(state,career){
 }
 
 function aggregateCareer(career){
-  const seasons=[...(career?.seasons||[])].sort((a,b)=>num(a.season)-num(b.season));
+  const seasons=[...arr(career?.seasons)].sort((a,b)=>num(a.season)-num(b.season));
   const clubs={};
   let longestTenure=0,currentTenure=0,currentTenureTeam=null,streak=0,previousTeam=null,previousSeason=null,doubleCrown=false,rebuildMaster=false,continentalLegacy=false;
   seasons.forEach(record=>{
@@ -196,8 +198,8 @@ function nav(tab){return `<div class="ll-profile-tabs"><button class="ll-btn ${t
 function overviewHtml(state,aggregate){
   const recent=[...aggregate.seasons].sort((a,b)=>b.season-a.season).slice(0,4);
   const clubs=Object.values(aggregate.clubs).sort((a,b)=>b.seasons.length-a.seasons.length||b.trophies.length-a.trophies.length).slice(0,4);
-  const unlocked=Object.entries(state.achievements?.unlocked||{}).sort((a,b)=>num(b[1]?.season)-num(a[1]?.season)).slice(0,6);
-  return `<div class="ll-profile-overview-grid"><div class="ll-card"><div class="ll-card-title">Son Sezonlar</div><div class="ll-profile-season-cards">${recent.length?recent.map(record=>`<div class="ll-profile-mini-season"><b>S${record.season} · ${esc(record.team)}</b><span>${esc(record.leagueLabel)} · ${record.position||'—'}/${record.teamCount||'—'}</span><span>${record.W}G ${record.D}B ${record.L}M · %${record.winRate}</span><small>${esc(resultBadges(record))}</small></div>`).join(''):'<div class="ll-muted">Henüz tamamlanmış sezon yok.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderManagerProfile('seasons')">Tüm Sezonları Aç</button></div><div class="ll-card"><div class="ll-card-title">Kulüp Kariyeri</div><div class="ll-profile-club-list">${clubs.map(club=>`<div class="ll-profile-club-row"><span>${typeof globalThis.llTeamLogo==='function'?llTeamLogo(club.team,'table'):''}</span><div><b>${esc(club.team)}</b><small>${club.seasons.length} sezon · ${club.trophies.length} kupa · ${club.W} galibiyet</small></div></div>`).join('')||'<div class="ll-muted">Kulüp geçmişi oluşmadı.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderManagerProfile('clubs')">Kulüp Detayları</button></div></div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Son Açılan Başarımlar</div><div class="ll-profile-achievements">${unlocked.length?unlocked.map(([id,data])=>{const item=globalThis.LL_ACHIEVEMENTS?.find(a=>a.id===id);return `<div><span>🏅</span><b>${esc(item?.name||id)}</b><small>S${num(data?.season)} · ${esc(data?.team||'Kariyer')}</small></div>`;}).join(''):'<div class="ll-muted">Henüz açılan başarım yok.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderAchievements()">Tüm Başarımlar</button></div>`;
+  const unlocked=Object.entries(obj(state.achievements?.unlocked)).sort((a,b)=>num(b[1]?.season)-num(a[1]?.season)).slice(0,6);
+  return `<div class="ll-profile-overview-grid"><div class="ll-card"><div class="ll-card-title">Son Sezonlar</div><div class="ll-profile-season-cards">${recent.length?recent.map(record=>`<div class="ll-profile-mini-season"><b>S${record.season} · ${esc(record.team)}</b><span>${esc(record.leagueLabel)} · ${record.position||'—'}/${record.teamCount||'—'}</span><span>${record.W}G ${record.D}B ${record.L}M · %${record.winRate}</span><small>${esc(resultBadges(record))}</small></div>`).join(''):'<div class="ll-muted">Henüz tamamlanmış sezon yok.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderManagerProfile('seasons')">Tüm Sezonları Aç</button></div><div class="ll-card"><div class="ll-card-title">Kulüp Kariyeri</div><div class="ll-profile-club-list">${clubs.map(club=>`<div class="ll-profile-club-row"><span>${typeof globalThis.llTeamLogo==='function'?llTeamLogo(club.team,'table'):''}</span><div><b>${esc(club.team)}</b><small>${club.seasons.length} sezon · ${club.trophies.length} kupa · ${club.W} galibiyet</small></div></div>`).join('')||'<div class="ll-muted">Kulüp geçmişi oluşmadı.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderManagerProfile('clubs')">Kulüp Detayları</button></div></div><div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Son Açılan Başarımlar</div><div class="ll-profile-achievements">${unlocked.length?unlocked.map(([id,data])=>{const item=arr(globalThis.LL_ACHIEVEMENTS).find(a=>a&&a.id===id);return `<div><span>🏅</span><b>${esc(item?.name||id)}</b><small>S${num(data?.season)} · ${esc(data?.team||'Kariyer')}</small></div>`;}).join(''):'<div class="ll-muted">Henüz açılan başarım yok.</div>'}</div><button class="ll-btn" style="margin-top:12px" onclick="llRenderAchievements()">Tüm Başarımlar</button></div>`;
 }
 function seasonsHtml(aggregate){return `<div class="ll-card"><div class="ll-card-title">Sezon Sezon Kariyer Özeti</div><div class="ll-table-wrap"><table class="ll-table ll-profile-table"><thead><tr><th>Sezon</th><th>Kulüp</th><th>Lig</th><th>Sıra</th><th>O</th><th>G-B-M</th><th>Puan</th><th>Galibiyet</th><th>Hedef</th><th>Sezon Özeti</th></tr></thead><tbody>${[...aggregate.seasons].sort((a,b)=>b.season-a.season).map(record=>`<tr><td><b>S${record.season}</b></td><td><span class="ll-standing-team">${typeof globalThis.llTeamLogo==='function'?llTeamLogo(record.team,'table'):''}<span>${esc(record.team)}</span></span></td><td>${countryMeta(record.country).flag} ${esc(record.leagueLabel)}</td><td>${record.position||'—'}/${record.teamCount||'—'}</td><td>${record.P}</td><td>${record.W}-${record.D}-${record.L}</td><td>${record.Pts}</td><td>%${record.winRate}</td><td>${esc(goalText(record))}</td><td>${esc(resultBadges(record))}</td></tr>`).join('')||'<tr><td colspan="10">Henüz tamamlanmış sezon yok.</td></tr>'}</tbody></table></div></div>`;}
 function clubsHtml(aggregate){return `<div class="ll-profile-club-grid">${Object.values(aggregate.clubs).sort((a,b)=>b.seasons.length-a.seasons.length||b.trophies.length-a.trophies.length).map(club=>{const rate=club.P?Math.round(club.W/club.P*1000)/10:0;return `<div class="ll-card ll-profile-club-card"><div class="ll-profile-club-head"><div>${typeof globalThis.llTeamLogo==='function'?llTeamLogo(club.team,'match'):''}</div><div><div class="ll-team-name">${esc(club.team)}</div><div class="ll-sub">${countryMeta(club.country).flag} ${esc(countryMeta(club.country).country)} · S${Math.min(...club.seasons)}–S${Math.max(...club.seasons)}</div></div></div><div class="ll-metrics ll-profile-club-metrics"><div class="ll-metric"><strong>${club.seasons.length}</strong><span>Sezon</span></div><div class="ll-metric"><strong>${club.W}</strong><span>Galibiyet</span></div><div class="ll-metric"><strong>%${rate}</strong><span>Oran</span></div><div class="ll-metric"><strong>${club.trophies.length}</strong><span>Kupa</span></div></div><div class="ll-sub">${club.promotions?`⬆ ${club.promotions} terfi · `:''}${club.topLeagueTitles?`👑 ${club.topLeagueTitles} üst lig şampiyonluğu · `:''}${club.europeTitles?`🌍 ${club.europeTitles} Avrupa kupası · `:''}${club.relegations?`⬇ ${club.relegations} küme düşme`:''}</div></div>`;}).join('')||'<div class="ll-notice">Henüz kulüp kariyeri kaydı yok.</div>'}</div>`;}
@@ -207,13 +209,24 @@ function trophiesHtml(state,aggregate){
 }
 
 globalThis.llRenderManagerProfile=function(tab='overview'){
-  const state=globalThis.lexLeague?.state;if(!state)return;
-  registerAchievements();const career=ensureCareer(state),aggregate=aggregateCareer(career),profile=globalThis.llManagerProfile?.(state)||state.managerProfile||{reputation:50};
-  const reputation=Math.max(0,Math.min(100,num(profile.reputation,50))),status=managerStatus(reputation,aggregate),currentTeam=state.playerTeam||profile.currentTeam||'—',winRate=aggregate.total.P?Math.round(aggregate.total.W/aggregate.total.P*1000)/10:0;
-  const unlockedCount=Object.keys(state.achievements?.unlocked||{}).length,totalAchievements=globalThis.LL_ACHIEVEMENTS?.length||0;
-  const content=tab==='seasons'?seasonsHtml(aggregate):tab==='clubs'?clubsHtml(aggregate):tab==='trophies'?trophiesHtml(state,aggregate):overviewHtml(state,aggregate);
-  globalThis.llSetWide?.(true);
-  globalThis.llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Hoca <em>Profili</em></div><div class="ll-muted">Kariyer geçmişi, sezon karneleri, kulüp mirası ve kupa odası</div></div><button class="ll-btn" onclick="${backAction(state)}">← Geri</button></div><div class="ll-profile-hero"><div class="ll-profile-avatar">🧥</div><div class="ll-profile-identity"><span class="ll-rarity">${esc(status)}</span><h2>Teknik Direktör Profili</h2><div class="ll-profile-current">${typeof globalThis.llTeamLogo==='function'?llTeamLogo(currentTeam,'table'):''}<b>${esc(currentTeam)}</b><span>${countryMeta(state.playerCountry||teamCountry(currentTeam,state)).flag} ${esc(countryMeta(state.playerCountry||teamCountry(currentTeam,state)).country)}</span></div></div><div class="ll-profile-reputation"><strong>${reputation}</strong><span>İtibar / 100</span><div><i style="width:${reputation}%"></i></div></div></div><div class="ll-metrics ll-profile-main-metrics"><div class="ll-metric"><strong>${aggregate.seasons.length}</strong><span>Tamamlanan Sezon</span></div><div class="ll-metric"><strong>${Object.keys(aggregate.clubs).length}</strong><span>Çalışılan Kulüp</span></div><div class="ll-metric"><strong>${aggregate.allTrophies.length}</strong><span>Kupa ve Şampiyonluk</span></div><div class="ll-metric"><strong>${aggregate.total.W}</strong><span>Lig Galibiyeti</span></div><div class="ll-metric"><strong>%${winRate}</strong><span>Lig Galibiyet Oranı</span></div><div class="ll-metric"><strong>${unlockedCount}/${totalAchievements}</strong><span>Başarım</span></div></div>${nav(tab)}${content}</div></div>`;
+  const state=globalThis.lexLeague?.state;
+  const area=typeof globalThis.llArea==='function'?globalThis.llArea():null;
+  if(!state||!area)return false;
+  try{
+    registerAchievements();
+    const career=ensureCareer(state),aggregate=aggregateCareer(career),profile=(typeof globalThis.llManagerProfile==='function'?globalThis.llManagerProfile(state):null)||obj(state.managerProfile)||{reputation:50};
+    const reputation=Math.max(0,Math.min(100,num(profile.reputation,50))),status=managerStatus(reputation,aggregate),currentTeam=state.playerTeam||profile.currentTeam||'—',winRate=aggregate.total.P?Math.round(aggregate.total.W/aggregate.total.P*1000)/10:0;
+    const unlockedCount=Object.keys(obj(state.achievements?.unlocked)).length,totalAchievements=arr(globalThis.LL_ACHIEVEMENTS).length;
+    const safeTab=['overview','seasons','clubs','trophies'].includes(tab)?tab:'overview';
+    const content=safeTab==='seasons'?seasonsHtml(aggregate):safeTab==='clubs'?clubsHtml(aggregate):safeTab==='trophies'?trophiesHtml(state,aggregate):overviewHtml(state,aggregate);
+    globalThis.llSetWide?.(true);
+    area.innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Hoca <em>Profili</em></div><div class="ll-muted">Kariyer geçmişi, sezon karneleri, kulüp mirası ve kupa odası</div></div><button class="ll-btn" onclick="${backAction(state)}">← Geri</button></div><div class="ll-profile-hero"><div class="ll-profile-avatar">🧥</div><div class="ll-profile-identity"><span class="ll-rarity">${esc(status)}</span><h2>Teknik Direktör Profili</h2><div class="ll-profile-current">${typeof globalThis.llTeamLogo==='function'?llTeamLogo(currentTeam,'table'):''}<b>${esc(currentTeam)}</b><span>${countryMeta(state.playerCountry||teamCountry(currentTeam,state)).flag} ${esc(countryMeta(state.playerCountry||teamCountry(currentTeam,state)).country)}</span></div></div><div class="ll-profile-reputation"><strong>${reputation}</strong><span>İtibar / 100</span><div><i style="width:${reputation}%"></i></div></div></div><div class="ll-metrics ll-profile-main-metrics"><div class="ll-metric"><strong>${aggregate.seasons.length}</strong><span>Tamamlanan Sezon</span></div><div class="ll-metric"><strong>${Object.keys(aggregate.clubs).length}</strong><span>Çalışılan Kulüp</span></div><div class="ll-metric"><strong>${aggregate.allTrophies.length}</strong><span>Kupa ve Şampiyonluk</span></div><div class="ll-metric"><strong>${aggregate.total.W}</strong><span>Lig Galibiyeti</span></div><div class="ll-metric"><strong>%${winRate}</strong><span>Lig Galibiyet Oranı</span></div><div class="ll-metric"><strong>${unlockedCount}/${totalAchievements}</strong><span>Başarım</span></div></div>${nav(safeTab)}${content}</div></div>`;
+    return true;
+  }catch(error){
+    console.error('[Hoca Profili] Açılış hatası:',error);
+    area.innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Hoca <em>Profili</em></div><div class="ll-muted">Eski kayıt verileri güvenli biçimde hazırlanamadı.</div></div><button class="ll-btn" onclick="${backAction(state)}">← Geri</button></div><div class="ll-notice"><b>Profil açılırken bir kayıt uyumluluğu sorunu oluştu.</b><br>Oyununuz silinmedi. Ana ekrana dönüp kaydı bir kez yenileyin. Teknik ayrıntı: ${esc(error?.message||error)}</div></div></div>`;
+    return false;
+  }
 };
 
 function injectStyles(){if(typeof document==='undefined'||document.getElementById('ll-manager-profile-styles'))return;const style=document.createElement('style');style.id='ll-manager-profile-styles';style.textContent=`
