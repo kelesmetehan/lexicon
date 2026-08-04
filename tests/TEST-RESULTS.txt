@@ -1,0 +1,5 @@
+PASS e2e-new-features: legacy profile, tabs, confidence, reputation, shop, press APIs
+PASS all JavaScript syntax checks
+PASS profile legacy-save migration and all profile tabs
+PASS board confidence status/effective reputation/shop surcharge
+PASS press conference public flow APIs
