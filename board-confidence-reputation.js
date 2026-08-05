@@ -2,7 +2,8 @@
 (function(){
 'use strict';
 
-const VERSION=1;
+const VERSION=2;
+const STARTING_CONFIDENCE=75;
 const PRESS_WORD_COUNT=5;
 const INTERIM_EVERY=5;
 const REGULAR_PACK_SURCHARGE_RATE=.20;
@@ -44,21 +45,9 @@ function targetPosition(goal,rows,state){
   const stars=teamStars(state,state?.playerTeam);
   return clamp(Math.ceil(count*(stars>=6?.30:stars===5?.40:stars===4?.50:stars===3?.62:stars===2?.75:.85)),1,count);
 }
-function targetDifficulty(goal){
-  if(goal?.type==='champion')return 5;
-  if(goal?.type==='direct_promote')return 4;
-  if(goal?.type==='promote')return 3;
-  if(goal?.type==='playoff')return 2;
-  const value=num(goal?.value,10);
-  if(value<=3)return 4;
-  if(value<=6)return 3;
-  if(value<=10)return 2;
-  return 1;
-}
-function startingConfidence(state){
-  const difficulty=targetDifficulty(primaryGoal(state));
-  const base={5:55,4:58,3:62,2:66,1:70}[difficulty]||64;
-  return clamp(base,55,70);
+function startingConfidence(){
+  // EA FC benzeri, güvenli fakat hâlâ performansa duyarlı kariyer başlangıcı.
+  return STARTING_CONFIDENCE;
 }
 function confidenceStatus(value){
   value=clamp(value,0,100);
@@ -114,6 +103,18 @@ function ensureBoard(state){
     };
   }
   const board=state.boardConfidence;
+  // V1 kayıtlarında hedef zorluğuna göre 55-70 arası haksız derecede düşük bir
+  // başlangıç uygulanıyordu. Kazanılan/kaybedilen güven farkını koruyarak tabanı
+  // bir kez 75'e taşır; sonraki açılışlarda tekrar çalışmaz.
+  if(num(board.version)===1){
+    const oldStart=clamp(board.startValue||board.value,0,100);
+    const adjustment=STARTING_CONFIDENCE-oldStart;
+    if(adjustment>0){
+      board.value=clamp(num(board.value,oldStart)+adjustment,0,100);
+      board.startValue=STARTING_CONFIDENCE;
+      board.migration={fromVersion:1,toVersion:VERSION,oldStart,newStart:STARTING_CONFIDENCE,adjustment,appliedAt:new Date().toISOString()};
+    }
+  }
   board.version=VERSION;board.value=clamp(board.value,0,100);board.startValue=clamp(board.startValue||board.value,0,100);
   board.matchCount=Math.max(0,num(board.matchCount));board.leagueMatchCount=Math.max(0,num(board.leagueMatchCount));
   board.badStreak=Math.max(0,num(board.badStreak));board.lossStreak=Math.max(0,num(board.lossStreak));
