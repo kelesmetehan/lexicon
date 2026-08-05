@@ -2327,6 +2327,191 @@ const LL_CARD_UPGRADE_DEFINITIONS=[
 LL_CARD_UPGRADE_DEFINITIONS.forEach(({from,card})=>LL_BALANCED_CARD_POOL.push({...card,upgradeFrom:from,upgradeOnly:true,upgradeLevel:1}));
 const LL_CARD_UPGRADE_SOURCE_IDS=new Set(LL_CARD_UPGRADE_DEFINITIONS.map(item=>item.from));
 function llCardDisplayRarity(card){return `${LL_RARITY_LABELS[card?.rarity]||card?.rarity||''}${card?.upgradeLevel?'+':''}`;}
+function llTrNumberList(values){
+  const nums=[...new Set((values||[]).map(Number).filter(Number.isFinite))];
+  if(!nums.length)return '';
+  if(nums.length===1)return String(nums[0]);
+  if(nums.length===2)return `${nums[0]} veya ${nums[1]}`;
+  return `${nums.slice(0,-1).join(', ')} veya ${nums[nums.length-1]}`;
+}
+function llCardReadableText(card){
+  if(!card)return {trigger:'',effect:'',explanation:'',clarified:false};
+  const base=llBaseName(card),amount=llEffectAmount(card,1),goals=llCardGoalAmount(card),threshold=llThreshold(card.trigger,NaN),numbers=llTriggerNumbers(card.trigger),position=card.position==='Evrensel'?'kartın takılı olduğu mevki':card.position;
+  const fallback={trigger:card.trigger,effect:card.effect,explanation:'',clarified:false};
+  const clear=(trigger,effect,explanation='')=>({trigger,effect,explanation,clarified:true});
+  switch(base){
+    case 'Kale Direği':
+      return clear(`${position} zarın ${llTrNumberList(numbers)||'karttaki değere'} geldiğinde`,`Bu mevki düellosu zorunlu beraberlik olur; iki takım da bu düellodan gol alamaz.`,`Kart otomatik galibiyet vermez; yalnızca bu düellonun sonucunu beraberliğe çevirir.`);
+    case 'Son Adam':
+      return clear(`Rakibin aynı mevki zarı ${llTrNumberList(numbers)||'karttaki değerlerden biri'} olduğunda`,`Rakibin bu mevki zarını ${amount} düşürür; zar 1’in altına inmez.`,`Düşürülen son değer düelloda kullanılır; kart doğrudan gol silmez.`);
+    case 'Penaltı Ustası':
+      return clear('Kaleci düellosu tüm zar değişimlerinden sonra berabere kaldığında','Kaleci düellosu senin galibiyetin sayılır ve normal 1 gol getirir.','Rakipte de beraberliği galibiyete çeviren bir kart çalışırsa iki etki birbirini götürür ve düello beraberlikte kalır.');
+    case 'Sakin Kafa': {
+      let effect=`Kendi ${position} zarın en fazla +${amount} yükselir. Fark azalır; kart seni doğrudan galip yapmaz ve en fazla beraberlik sağlar.`;
+      if(card.upgradeRule==='calm-common')effect='Temel zarın 1–2 ise en fazla +2, diğer değerlerde en fazla +1 yükselir. Kart en fazla beraberlik sağlar.';
+      if(card.upgradeRule==='calm-rare')effect='Normalde kendi zarın en fazla +2 yükselir. Rakip daha yıldızlıysa ve en yüksek rakip zarı Kaleci ise sınır +3 olur. Kart en fazla beraberlik sağlar.';
+      return clear(`Temel ${position} zarın rakibin aynı mevki zarından düşük olduğunda`,effect,`Şart ilk atılan zarlarla belirlenir; sonraki kart etkileri bu şartı geriye dönük olarak iptal etmez.`);
+    }
+    case 'Reflex':
+      return clear('Maç başında',`Sadece Kaleci zarını yeniden atmak için ${amount} ek ücretsiz hak verir. Hak otomatik kullanılmaz.`,`Bu hak Orta Saha veya Forvet zarında kullanılamaz.`);
+    case 'Metronom':
+      return clear('Maç başında',`Sadece Orta Saha zarını yeniden atmak için ${amount} ek ücretsiz hak verir. Hak otomatik kullanılmaz.`,`Bu hak Kaleci veya Forvet zarında kullanılamaz.`);
+    case 'Kale Duvarı':
+      return clear(`Tüm zar değişimleri ve yeniden atışlar bittikten sonra rakibin üç zar toplamı ${threshold} veya üzerindeyse`,`Maç sonunda rakibin toplam skorundan en fazla ${amount} gol siler. Rakip gol atmadıysa etki boşa gider.`,`Düello golleri ile kartlardan gelen skor bonusları arasında ayrım yapmaz; rakibin son toplam skorundan düşer.`);
+    case 'Uzun Top': {
+      const effect=card.upgradeRule==='long-ball'?'Forvet zarın +1 artar. Kaleci zarın 6 ve Forvet kartın Destansı/Efsaneviyse artış +2 olur.':`Forvet zarın otomatik olarak +${amount} artar.`;
+      return clear(`Kart etkileri sırasında Kaleci zarın ${llTrNumberList(numbers)} olduğunda`,effect,`Bonus maç skoruna doğrudan gol eklemez; Forvet düellosunda kullanılacak zar değerini yükseltir.`);
+    }
+    case 'Vuruşsuz Gece':
+      return clear(`Rakibin aynı mevki zarı ${threshold} veya altındaysa`,`Bu mevki düellosu zorunlu beraberlik olur; rakip gol atamaz, sen de bu düellodan gol kazanamazsın.`,`Kart otomatik galibiyet sağlamaz.`);
+    case 'Çalım':
+      return clear('Orta Saha düellosu tüm zar değişimlerinden sonra berabere kaldığında','Orta Saha düellosu senin galibiyetin sayılır ve normal 1 gol getirir.','Rakipte de beraberliği galibiyete çeviren bir kart çalışırsa iki etki birbirini götürür ve düello beraberlikte kalır.');
+    case 'Pas Ustası': {
+      const effect=card.upgradeRule==='pass-master'?'Diğer iki zarından düşük olana +1 verir. İkisi de eşit ve en düşükse ikisine birden +1 verir.':`Diğer iki zarından değeri daha düşük olana otomatik +${amount} verir; hedefi sen seçmezsin.`;
+      return clear(`Kart etkileri sırasında Orta Saha zarın ${llTrNumberList(numbers)} olduğunda`,effect,`Bonus maç skoruna değil, seçilen zarın değerine eklenir.`);
+    }
+    case 'Alan Hakimiyeti':
+      return clear('Tüm kart etkileri ve yeniden atışlar bittikten sonra üç zar toplamın rakibinkinden yüksekse',`Maç skoruna +${goals} ek gol yazılır.`,`Toplam farkının kaç olduğu önemli değildir; yalnızca senin toplamının daha yüksek olması gerekir.`);
+    case 'Kilitleme':
+      return clear('Maç başındaki kart etkileri aşamasında',`Rakibin o andaki en yüksek zarını ${amount} düşürür; zar 1’in altına inmez.`,`En yüksek birden fazla zar eşitse oyun mevki sırasındaki ilkini seçer.`);
+    case 'İkili Oyun':
+      return clear(`Tüm zar değişimleri ve yeniden atışlar bittikten sonra Orta Saha zarın ${llTrNumberList(numbers)} olduğunda`,`Maç skoruna +${goals} ek gol yazılır.`,`Orta Saha düellosunun sonucunu değiştirmez; doğrudan toplam skora bonus ekler.`);
+    case 'Sahayı Oku':
+      return clear('Maç başlamadan, mevcut zarlarla rakip kartların şartları hesaplanırken','Şartı o anda hazır olan rakip kartlar arasından gücü en yüksek 1 kartı bu maç devre dışı bırakır.','Uygun rakip kart yoksa hiçbir kart kapanmaz. Kartın oynanış etkisi yalnızca 1 rakip kartını devre dışı bırakmaktır; ayrıca zar veya gol değiştirmez.');
+    case "Orta Saha Pres'i":
+      return clear(`Rakibin Orta Saha zarı ${llTrNumberList(numbers)||'karttaki değerlerden biri'} olduğunda`,'Orta Saha düellosu otomatik olarak senin galibiyetin sayılır ve normal 1 gol getirir.','İki takımın da otomatik galibiyet etkisi aynı düelloda çalışırsa düello normal zar karşılaştırmasına döner.');
+    case 'Golcü İçgüdüsü':
+      return clear(`Forvet düellosundaki son zarın ${llTrNumberList(numbers)} olduğunda`,`Forvet düellosunu kazanırsan bu düello toplam ${amount} gol sayılır; beraberlik veya mağlubiyette çarpan uygulanmaz.`,`“x${amount}” ifadesi +${amount} gol demek değildir; normal 1 golün yerine toplam ${amount} gol yazılır.`);
+    case 'Son Vuruş':
+      return clear('Forvet düellosundaki son zarın rakibi tam 1 farkla geçtiğinde',`Forvet düellosunu kazanırsan bu düello toplam ${amount} gol sayılır.`,`Şart oluşsa bile düello başka bir kartla bloke edilir veya kaybedilirse çarpan uygulanmaz.`);
+    case 'Frikik Ustası':
+      return clear(`Tüm zar değişimleri ve yeniden atışlar bittikten sonra Forvet zarın ${llTrNumberList(numbers)} olduğunda`,`Forvet düellosundan bağımsız olarak maç skoruna +${goals} ek gol yazılır.`,`Düelloyu kaybetsen bile zar şartı sağlanmışsa skor bonusu gelir.`);
+    case 'Hat-trick Ruhu': {
+      const match=card.trigger.match(/Son\s+(\d+).*en az\s+(\d+)/i),windowSize=Number(match?.[1]||5),need=Number(match?.[2]||3);
+      return clear(`Bu sezon en az ${windowSize} resmi maç tamamlandıysa ve son ${windowSize} resmi maçın en az ${need}’ünü kazandıysan`,`Maç skoruna +${goals} ek gol yazılır.`,`Lig, kupa, play-off ve Avrupa maçları “resmi maç” sayılır; yalnızca mevcut sezonun sonuçları kullanılır.`);
+    }
+    case 'Panenka':
+      return clear('Düello anında rakibin üç zarından en az ikisi aynı değeri gösteriyorsa','Forvet düellosu otomatik olarak senin galibiyetin sayılır.','Aynı değerin iki veya üç zarda bulunması yeterlidir.');
+    case 'Ofsayt Tuzağı':
+      return clear('Maç başındaki kart etkileri aşamasında','Rakibin o andaki en yüksek zarı bir kez yeniden atılır. Yeni sonuç daha düşük, aynı veya daha yüksek olabilir.','Kart düşüş garantisi vermez; yalnızca yeni bir zar sonucu üretir.');
+    case 'Bitiricilik':
+      return clear(`Tüm zar değişimleri ve yeniden atışlar bittikten sonra üç zar toplamın ${threshold} veya üzerindeyse`,`Maç skoruna +${goals} ek gol yazılır.`,`Toplam hesaplanırken kartlarla değişmiş son zar değerleri kullanılır.`);
+    case 'Son Dakika Golü': {
+      const bonus=/\+\d+\s+sanal gol/i.test(card.effect)?goals:0;
+      return clear('Kaleci ve Orta Saha düelloları tamamlandıktan sonra skor berabereyse',`Forvet düellosu otomatik kazanılır${bonus?`; ayrıca maç skoruna +${bonus} ek gol yazılır`:''}.`,`Otomatik Forvet galibiyeti normalde 1 gol getirir; ek skor bonusu varsa buna ayrıca eklenir.`);
+    }
+    case 'Moral Bozukluğu': {
+      const trigger=card.upgradeRule==='morale'?'Rakip son 2 maçını kaybettiyse veya son 3 maçında hiç kazanamadıysa':'Rakip son 2 maçını da kaybettiyse';
+      return clear(trigger,'Rakibin o andaki en yüksek zarı 1 düşer; zar 1’in altına inmez.','Sonuçlar takımın yakın maç geçmişinden alınır.');
+    }
+    case 'Ev Sahibi Avantajı': {
+      const effect=card.upgradeRule==='home-advantage'?'Kartın takılı olduğu zar o anda takımın en düşük zarıysa ona +2; değilse takımın en düşük zarına +1 verir.':'Takımının o andaki en düşük zarına +1 verir.';
+      return clear('Maç senin sahanda oynanıyorsa',effect,'Hedefi oyuncu seçmez; oyun en düşük zarı otomatik belirler.');
+    }
+    case 'Deplasman Ruhu':
+      return clear('Maç rakip sahasında oynanıyorsa','Rakibin o andaki en yüksek zarı 1 düşer; zar 1’in altına inmez.','En yüksek birden fazla zar eşitse oyun mevki sırasındaki ilkini seçer.');
+    case 'Taktik Tahtası':
+      return clear('Eski ve artık kullanılmayan kulüp/market kuralı','Yeni teklif olarak çıkmaz ve kasa indirimi sağlamaz; normal kart kasası 150 AP’dir.','Kayıtlardaki eski kart korunur ancak aktif bir oyun avantajı vermez.');
+    case 'Sakatlık Şansı':
+      return clear('Kart etkileri tamamlandığında rakibin zarlarından biri veya birkaçı 1 gösteriyorsa','Rakibin 1 gösteren her mevki zarı, rakibin gelecek maçında aynı mevki için 1 olarak kilitlenir.','Kilit yalnızca bir sonraki maçta bir kez kullanılır.');
+    case 'Form Tutmuyor': {
+      if(card.upgradeRule==='form-burst')return clear('Kartın takılı olduğu mevki zarı son 3 resmi maçın en az 2’sinde 6 geldiyse','Aynı mevki zarı gelecek maçta +1 ile başlar.','Üç maçlık takip penceresi tamamlanınca sayaç sıfırlanır.');
+      return clear('Kartın takılı olduğu mevki zarı 3 resmi maç üst üste 6 geldiyse','Aynı mevki zarı gelecek maçta +1 ile başlar.','Bonus bir sonraki maçta bir kez uygulanır; ardından 6 serisi sıfırlanır.');
+    }
+    case 'VAR İncelemesi':
+      return clear('Herhangi bir mevki düellosu kart etkileri sonrasında berabere kaldığında','Kart sahibinin o mevki zarı otomatik ve ücretsiz olarak yeniden atılır. Yeni sonuç daha iyi, aynı veya daha kötü olabilir.','Oyuncu yeniden atışı reddedemez; yalnızca kart sahibinin zarı değişir.');
+    case 'Şans Faktörü': {
+      const effect=card.upgradeRule==='chance-pity'?'Her maç %10 ihtimalle rastgele bir düelloyu otomatik kazanır. Dört maç üst üste çalışmazsa beşinci maçta kesin çalışır.':'Her maç %10 ihtimalle rastgele seçilen bir düelloyu otomatik kazanır.';
+      return clear('Maç başında bir kez şans kontrolü yapılır',effect,'Şans gerçekleşirse üç mevki düellosundan yalnızca biri seçilir.');
+    }
+    case 'Soğuk Kanlılık':
+      return clear('Maçta skor 0-0 iken ilk golünü bir düello galibiyetiyle attığında','O gole ek olarak maç skoruna +1 gol daha yazılır.','“İlk düello” değil, takımının maçtaki ilk golü esas alınır; rakip daha önce gol attıysa çalışmaz.');
+    case 'Yıldız Oyuncu':
+      return clear('Takımın 3 veya daha fazla yıldızlıysa','Kartın takılı olduğu mevki zarı atıldığında sonuç en az 4 olur. 1–3 gelirse 4’e yükseltilir.','Bu alt sınır yalnızca kartın bulunduğu mevkiye uygulanır.');
+    case 'Kaptanlık Pazubandı': {
+      const effect=card.upgradeRule==='captain'?'Takımın en düşük zarı 1–2 ise kesin +1; 3 veya üzeriyse %50 ihtimalle +1 alır.':'Takımın o andaki en düşük zarı %50 ihtimalle +1 alır.';
+      return clear('Maç başındaki kart etkileri aşamasında',effect,'Hedefi oyuncu seçmez; oyun en düşük zarı otomatik belirler.');
+    }
+    case 'Yedek Kulübesi':
+      return clear(card.upgradeLevel?'Maç berabere biter veya kaybedilirse':'Maç kaybedilirse','Bir sonraki maça 1 genel ücretsiz reroll hakkı taşınır.','Hak yalnızca sonraki maçta kullanılır ve herhangi bir mevki zarına harcanabilir.');
+    case 'Çift Ayak':
+      return clear(card.upgradeLevel?'Temel Orta Saha zarın rakibin temel Orta Saha zarından tam 1 düşükse':'Temel Orta Saha zarın çift sayıysa ve rakibin temel Orta Saha zarından tam 1 düşükse','Orta Saha düellosu zorunlu beraberlik sayılır.','Şart ilk atılan zarlarla kontrol edilir; sonraki zar değişimleri şartı değiştirmez.');
+    case 'İkili Pres': {
+      const effect=card.upgradeRule==='double-press'?'Temel eşleşen değer 1–3 ise Orta Saha zarına +1; 4–6 ise +2 verir.':'Orta Saha zarına +1 verir.';
+      return clear('Temel üç zarında tam iki zar aynı, üçüncü zar farklıysa ve Orta Saha eşleşen ikilinin içindeyse',effect,'Üç zarın da aynı olması bu kartı tetiklemez.');
+    }
+    case 'Kusursuz Hat':
+      return clear('Temel üç zarın sırası önemli olmadan art arda üç sayı oluşturuyorsa (ör. 2-3-4)','Maç skoruna +1 ek gol yazılır.','Şart kart etkileri ve reroll öncesindeki temel zarlarla kontrol edilir.');
+    case 'Altın Seri':
+      return clear(`Temel üç zar toplamın tam ${card.upgradeLevel?'8, 12 veya 13':'8 veya 13'} ise`,'Maç skoruna +1 ek gol yazılır.','Toplamın eşikten büyük olması yetmez; belirtilen sayılardan birine tam eşit olmalıdır.');
+    case 'Üçlü Hücum':
+      return clear('Tüm kart etkileri ve yeniden atışlar bittikten sonra üç zarın da aynı değeri gösteriyorsa','Maç skoruna +2 ek gol yazılır.','Bu kart temel zarları değil, maçtaki son zar değerlerini kontrol eder.');
+    case 'Çift Kanat':
+      return clear(card.upgradeRule==='direct-play'?'Temel Kaleci ve Forvet zarların aynıysa':'Temel Kaleci ve Forvet zarların aynı, Orta Saha zarın bu değerden farklıysa','Forvet zarına +1 verir.','Şart kart etkileri ve reroll öncesindeki temel zarlarla kontrol edilir.');
+    case 'Dengeli On Bir':
+      return clear('Temel en yüksek ve en düşük zarın arasındaki fark en fazla 1 ise','Temel zarlar içinde mevki sırasına göre ilk en düşük zara +1 verir.','Eşit en düşük zarlar varsa seçim sırası Kaleci → Orta Saha → Forvet’tir.');
+    case 'Son Perde':
+      return clear('İlk iki düellodan sonra gerideysen','Forvet düellosunu kazanırsan bu düello toplam 2 gol sayılır; beraberlik veya mağlubiyette bonus yoktur.','Geride olmak yalnızca çarpanı hazırlar; gol için Forvet düellosunu yine kazanmalısın.');
+    case 'Boş Kadro':
+      return clear('Kartın bulunduğu mevki dışındaki aktif kart yuvalarından biri veya ikisi boşsa','Kartın takılı olduğu zar, boş aktif yuva başına +1 alır; en fazla +2.','Sözleşmesi bitmiş kart yuvası boş kabul edilir.');
+    case 'Takım Kimyası':
+      return clear('Kaleci, Orta Saha ve Forvet yuvalarının üçünde de aktif sözleşmeli kart varsa','Temel zarlar içinde mevki sırasına göre ilk en düşük zara +1 verir.','Sözleşmesi bitmiş kart dolu sayılmaz.');
+    case 'Nadir Kimya':
+      return clear('Diğer iki kartın da Nadir, Destansı veya Efsanevi ise','Maça 1 genel ücretsiz reroll hakkı ekler.','Hak herhangi bir mevki zarında kullanılabilir.');
+    case 'Kalenin Efendisi':
+      return clear('Kaleci düellosu boyunca her zaman','Rakibin Kaleci zarı en fazla 4 sayılır; sonraki kartlar yükseltse bile 4 tavanı yeniden uygulanır.','Rakibin gerçek zarı 1–4 ise değiştirmez.');
+    case 'Katil İçgüdü':
+      return clear('Forvet zarın rakip Forvet zarından en az 2 yüksek olduğunda','Forvet düellosunu kazanırsan bu düello toplam 3 gol sayılır.','Şart sağlansa bile başka bir otomatik sonuç veya blokaj düelloyu değiştirirse çarpan uygulanmayabilir.');
+    case 'Mükemmeliyetçi':
+      return clear('Kaleci, Orta Saha ve Forvet düellolarının üçünü de kazanırsan','Maç skoruna +2 ek gol yazılır.','Beraberlik kazanılmış düello sayılmaz.');
+    case 'Dev Avcısı': {
+      const effect=card.upgradeRule==='giant-killer'?'Rakibin en yüksek zarı 1 düşer; en yüksek iki zar eşitse ikisi de 1 düşer.':'Rakibin o andaki en yüksek zarı 1 düşer.';
+      return clear('Rakibin takım yıldızı seninkinden yüksekse',effect,'Zarlar 1’in altına inmez.');
+    }
+    case 'Deplasman Disiplini': {
+      const effect=card.upgradeRule==='away-discipline'?'Rakibin en düşük zarı 1 düşer; en düşük iki zar eşitse ikisi de 1 düşer.':'Rakibin o andaki en düşük zarı 1 düşer.';
+      return clear('Maç rakip sahasında oynanıyorsa',effect,'Zarlar 1’in altına inmez; rakibin düşük zarı zaten 1 ise skor değişmeyebilir.');
+    }
+    case 'Fırsatçı':
+      return clear('Kaleci ve Orta Saha düellolarından sonra öndeysen','Forvet düellosunun sonucundan bağımsız olarak maç skoruna +1 ek gol yazılır.','Bonus Forvet düellosu başlamadan eklenir.');
+    case 'Kaleden Çıkış':
+      return clear('Kaleci düellosunu kazanırsan','Orta Saha düellosu başlamadan Orta Saha zarına +1 verir.','Kaleci düellosu beraber biterse çalışmaz.');
+    case 'Ara Pası':
+      return clear('Orta Saha düellosunu kazanırsan','Forvet düellosu başlamadan Forvet zarına +1 verir.','Orta Saha düellosu beraber biterse çalışmaz.');
+    case 'Tam Bağlantı':
+      return clear('Temel üç zar toplamın 13 veya üzerindeyse','Takımının o andaki en düşük zarına +1 verir.','Şart temel zarlarla, hedef ise kart etkileri uygulanırken mevcut zarlarla belirlenir.');
+    case 'Üçlü Pres':
+      return clear('Kaleci ve Orta Saha düellolarının ikisini de kaybetmediysen; ikisi de galibiyet veya beraberlik olabilir','Forvet düellosu başlamadan rakibin Forvet zarını 1 düşürür.','Rakip Forvet zarı 1’in altına inmez.');
+    case 'Savunma Bloğu':
+      return clear('Üç temel mevki eşleşmesinin en az ikisinde rakip zarı seninkinden yüksekse','Rakibin o andaki en yüksek zarını 1 düşürür.','“İki düello” ilk iki mevkiyi değil, üç mevki içindeki herhangi iki kaybı ifade eder.');
+    case 'Çift Yönlü Oyun':
+      return clear('Temel Kaleci ve Forvet zarların aynı değerdeyse','Kaleci zarına +1 verir.','Orta Saha zarının değeri şartı etkilemez.');
+    case 'Kontraatak':
+      return clear('Kaleci düellosunu kaybedip Orta Saha düellosunu kazanırsan','Forvet düellosu başlamadan Forvet zarına +2 verir.','İki sonuçtan biri farklıysa çalışmaz.');
+    case 'Kontrollü Risk':
+      return clear('Forvet düellosunu kaybettiğinde ve Kaleci düellosunu da daha önce kaybetmişsen','Kaybedilen Kaleci düellosunu senin galibiyetine çevirir: rakibin Kaleci golü silinir ve sana 1 gol yazılır. Forvet düellosunun sonucu değişmez.','Kaleci düellosunu zaten kazanmış veya berabere bitirmişsen ek skor değişikliği olmaz.');
+    case 'Geri Dönüş Planı':
+      return clear('İlk iki düellodan sonra gerideysen ve Forvet zarın rakip Forvet zarından düşükse','Forvet düellosundan hemen önce Forvet zarına +2 verir.','Forvet zarın zaten beraber veya öndeyse bonus verilmez.');
+    case 'Plan B':
+      return clear('Sen Forvet zarını reroll ile yeniden attığında yeni değer eskisinden düşük gelirse','Eski yüksek Forvet değeri korunur; reroll hakkı yine harcanır.','Yeni değer eşit veya yüksekse normal reroll sonucu kullanılır.');
+    case 'Lig Maratonu':
+      return clear('Oynanan maç lig maçıysa ve bu sezonki son 5 resmi maçında en az 3 galibiyetin varsa','Orta Saha zarına +1 verir.','Form hesabına lig dışındaki resmi kupa ve Avrupa maçları da girer; ancak bonus yalnızca lig maçında çalışır.');
+    case 'Deplasman Planı':
+      return clear('Maç rakip sahasında oynanıyorsa','Takımının o andaki en düşük zarına +1 verir ve rakibin Ev Sahibi Avantajı kartını bu maç devre dışı bırakır.','Rakipte Ev Sahibi Avantajı olmasa bile kendi +1 bonusun çalışır.');
+    case 'Evde Baskı':
+      return clear('Ev sahibiysen ve Kaleci düellosunu kazanırsan','Forvet düellosu başlamadan Forvet zarına +1 verir.','Kaleci düellosu beraber biterse çalışmaz.');
+    default:
+      return fallback;
+  }
+}
+function llCardReadableSummaryHtml(card,{includeExplanation=true}={}){
+  const text=llCardReadableText(card);
+  return `<b>Ne zaman çalışır:</b> ${llEscape(text.trigger)}<br><b>Ne yapar:</b> ${llEscape(text.effect)}${includeExplanation&&text.explanation?`<br><span class="ll-card-clarity-note" style="display:block;margin-top:7px;color:var(--text2);line-height:1.5"><b>Önemli:</b> ${llEscape(text.explanation)}</span>`:''}`;
+}
+function llCardTerminologyHtml(){
+  return '<div class="ll-muted" style="margin-top:10px;line-height:1.55"><b>Kısa sözlük:</b> Temel zar = ilk atılan değer · Son zar = reroll ve kart etkileri sonrası değer · Skor bonusu = maç skoruna doğrudan eklenen gol · x2/x3 = düello kazanılırsa o düellonun toplam gol değeri.</div>';
+}
+
 function llCardUpgradeBadgeHtml(card){
   if(!card)return '';
   const upgraded=!!card.upgradeLevel,upgradeable=LL_CARD_UPGRADE_SOURCE_IDS.has(card.id);
@@ -2340,8 +2525,8 @@ function llCardUpgradePreviewHtml(card){
   const definition=LL_CARD_UPGRADE_DEFINITIONS.find(item=>item.from===card.id);
   if(!definition)return '';
   const target=llCard(definition.card.id)||{...definition.card,upgradeLevel:1};
-  const cost=typeof llUpgradeCost==='function'?llUpgradeCost(card):0;
-  return `<div class="ll-upgrade-preview"><div class="ll-upgrade-preview-title">&#11014; Geli&#351;tirme &#246;nizlemesi</div><div class="ll-muted" style="margin-top:5px">Sonu&#231; rastgele de&#287;ildir${cost?` &middot; Bedel: ${cost} LP`:''}. Yaln&#305;zca transfer d&#246;neminde uygulan&#305;r.</div><div class="ll-upgrade-compare"><div class="ll-upgrade-state"><b>&#350;imdiki h&acirc;li &middot; ${llEscape(llCardDisplayRarity(card))}</b>Tetikleyici: ${llEscape(card.trigger)}<br>Etki: ${llEscape(card.effect)}</div><div class="ll-upgrade-state after"><b>Geli&#351;tirilmi&#351; h&acirc;li &middot; ${llEscape(llCardDisplayRarity(target))}</b>Tetikleyici: ${llEscape(target.trigger)}<br>Etki: ${llEscape(target.effect)}</div></div></div>`;
+  const cost=typeof llUpgradeCost==='function'?llUpgradeCost(card):0,currentText=llCardReadableText(card),targetText=llCardReadableText(target);
+  return `<div class="ll-upgrade-preview"><div class="ll-upgrade-preview-title">&#11014; Geli&#351;tirme &#246;nizlemesi</div><div class="ll-muted" style="margin-top:5px">Sonu&#231; rastgele de&#287;ildir${cost?` &middot; Bedel: ${cost} LP`:''}. Yaln&#305;zca transfer d&#246;neminde uygulan&#305;r.</div><div class="ll-upgrade-compare"><div class="ll-upgrade-state"><b>&#350;imdiki h&acirc;li &middot; ${llEscape(llCardDisplayRarity(card))}</b>Ne zaman çalışır: ${llEscape(currentText.trigger)}<br>Ne yapar: ${llEscape(currentText.effect)}</div><div class="ll-upgrade-state after"><b>Geli&#351;tirilmi&#351; h&acirc;li &middot; ${llEscape(llCardDisplayRarity(target))}</b>Ne zaman çalışır: ${llEscape(targetText.trigger)}<br>Ne yapar: ${llEscape(targetText.effect)}</div></div></div>`;
 }
 const LL_CARD_RARITY_RANK={common:1,rare:2,epic:3,legendary:4};
 const llCardFamilyName=card=>card?.name?.replace(/\s*\([^)]*\)\s*$/,'').trim()||'';
@@ -2540,9 +2725,9 @@ function llCardEffectKind(card){
 function llCardHtml(cardId,teamName,emptyText='Kart yok'){
   const card=llCard(cardId);
   if(!card) return `<button class="ll-ability empty" type="button">${emptyText}</button>`;
-  const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null;
+  const isPlayer=teamName===lexLeague.state?.playerTeam,performance=isPlayer?llCardPerformance(card.id):null,readable=llCardReadableText(card);
   const performanceLine=isPlayer?(performance?.matches?`<span class="ll-ability-performance">${performance.matches} maç · ${performance.triggers} şart (%${llCardTriggerRate(performance)}) · ${performance.applications} gerçek etki (%${llCardEffectRate(performance)})</span>`:`<span class="ll-ability-performance">Henüz maç verisi yok</span>`):'';
-  return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br>${llCardUpgradeBadgeHtml(card)}<span style="display:block"><b>${llEscape(llCardEffectKind(card))}:</b> ${llEscape(card.effect)}</span>${performanceLine}</button>`;
+  return `<button class="ll-ability ${card.rarity}" type="button" onclick="llShowCardPopup('${card.id}','${llEscape(teamName)}')"><b>${llEscape(card.name)}</b><br>${llCardUpgradeBadgeHtml(card)}<span style="display:block;line-height:1.45"><b>Şart:</b> ${llEscape(readable.trigger)}<br><b>Sonuç:</b> ${llEscape(readable.effect)}</span>${performanceLine}</button>`;
 }
 function llCardPerformance(cardId){
   const id=LL_LEGACY_CARD_REPLACEMENTS[cardId]||cardId,raw=lexLeague.state?.cardPerformance?.[id];
@@ -2611,7 +2796,7 @@ function llShowEmptyCard(team,pos){
 function llShowCardPopup(cardId,teamName=''){
   const c=llCard(cardId);if(!c)return;
   const showPerformance=!teamName||teamName===lexLeague.state?.playerTeam;
-  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-notice"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki türü:</b> ${llEscape(llCardEffectKind(c))}<br><b>Efekt:</b> ${llEscape(c.effect)}</div>${llCardUpgradePreviewHtml(c)}${showPerformance?llCardPerformanceHtml(c.id):''}`);
+  llShowModal(`<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="quiz-start-title" style="font-size:29px;margin-bottom:6px">${llEscape(c.name)}</div><div class="ll-sub" style="margin-bottom:12px">${teamName?`${llEscape(teamName)} · `:''}${llEscape(c.position)} · Min ${c.minStar}★ · ${llEscape(llCardEffectKind(c))}</div><div class="ll-notice">${llCardReadableSummaryHtml(c)}${llCardTerminologyHtml()}</div>${llCardUpgradePreviewHtml(c)}${showPerformance?llCardPerformanceHtml(c.id):''}`);
 }
 function llShowModal(content){
   const old=document.getElementById('ll-modal'); if(old)old.remove();
@@ -3371,7 +3556,7 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedD
 }
 function llForecastSideCards(dice,oppDice,label,teamName,isHome,disabled=new Set(),resolvedDice=null){
   const cards=llOrderDiceByPosition(dice).map(d=>({die:d,position:d.position,card:llCard(d.cardId)})).filter(x=>x.card);
-  return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
+  return `<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} · Olası Kart Etkileri</div>${cards.length?cards.map(x=>{const status=disabled.has(x.die.uid)?{state:'blocked',label:'⛔ BLOKLANDI',reason:'Sahayı Oku bu kartı etkisizleştirdi.'}:llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,resolvedDice),readable=llCardReadableText(x.card);return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} · ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Şart: ${llEscape(readable.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Sonuç: ${llEscape(readable.effect)}</span></div>`;}).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`}</div>`;
 }
 function llResolvedForecastStatus(card,rawStatus,resolution,sideKey,teamName){
   if(!resolution)return rawStatus;
@@ -3390,7 +3575,8 @@ llForecastSideCards=function(dice,oppDice,label,teamName,isHome,disabled=new Set
   const html=cards.length?cards.map(x=>{
     const rawStatus=llForecastCardStatus(x.card,x.die,dice,oppDice,teamName,isHome,finalDice);
     const status=disabled.has(x.die.uid)?{state:'blocked',label:'\u26D4 BLOKLANDI',reason:'Sahay\u0131 Oku bu kart\u0131 etkisizle\u015Ftirdi.'}:llResolvedForecastStatus(x.card,rawStatus,resolution,sideKey,teamName);
-    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Tetik: ${llEscape(x.card.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Etki: ${llEscape(x.card.effect)}</span></div>`;
+    const readable=llCardReadableText(x.card);
+    return `<div class="ll-forecast-card ${status.state}"><span class="ll-trigger-badge ${status.state}">${status.label}</span><br><b>${LL_POSITION_ICONS[x.position]} ${llEscape(x.position)} &middot; ${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}<br><span>${llEscape(status.reason)}</span><br><span>Şart: ${llEscape(readable.trigger)}</span><br><span><b>Etki türü: ${llEscape(llCardEffectKind(x.card))}</b></span><br><span>Sonuç: ${llEscape(readable.effect)}</span></div>`;
   }).join(''):`<div class="ll-muted" style="margin-top:7px">Aktif kart yok.</div>`;
   return `${order}<div class="ll-forecast-side"><div class="ll-card-title" style="margin-bottom:4px">${llEscape(label)} &middot; Kesin Zincirde Kart Durumu</div>${html}</div>`;
 };
@@ -3548,7 +3734,7 @@ function llRevealOpenedPack(){
 function llRenderShopOffers(){
   const host=document.getElementById('ll-shop-offers');if(!host)return;const sh=lexLeague.shop;
   const starter=sh.mode==='starter';
-  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Efekt:</b> ${llEscape(c.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
+  host.innerHTML=`<div class="ll-card" style="margin-top:16px"><div class="ll-card-title">${LL_POSITION_ICONS[sh.position]} ${sh.position} ${starter?'Ücretsiz Başlangıç':'Teklifleri'}</div><div class="ll-offers">${sh.offers.map(id=>{const c=llCard(id),readable=llCardReadableText(c);return `<div class="ll-offer ${c.rarity}"><div class="ll-rarity">${LL_RARITY_LABELS[c.rarity]}</div><div class="ll-team-name">${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:9px"><b>Ne zaman çalışır:</b> ${llEscape(readable.trigger)}<br><b>Ne yapar:</b> ${llEscape(readable.effect)}</div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llChooseShopCard('${id}')">Bu Kartı Seç</button></div>`;}).join('')}</div>${starter?'<div class="ll-notice" style="margin-top:12px">Başlangıç hakkı atlanamaz; iki karttan birini seçmelisin.</div>':'<button class="ll-btn danger" style="width:100%;margin-top:12px" onclick="llSkipShopCards()">Skip · AP İadesi Yok</button>'}</div>`;
   host.insertAdjacentHTML('afterbegin','<div class="ll-pack-opened-banner">&#10024; KASA A&#199;ILDI &middot; 2 KART SE&#199;&#304;M&#304;N&#304; BEKL&#304;YOR</div>');
 }
 function llChooseShopCard(id){
@@ -3571,7 +3757,7 @@ function llDiscoverCards(ids=[]){
 function llRenderCardArchive(filter='discovered'){
   const s=lexLeague.state;if(!s)return;llSetWide(true);llEnsureDiscoveredCards();
   const known=new Set(s.discoveredCards),ownedIds=Object.values(llTeamState(s.playerTeam)?.cards||{}).filter(Boolean).map(id=>LL_LEGACY_CARD_REPLACEMENTS[id]||id),owned=new Set(ownedIds),source=filter==='owned'?[...owned]:[...known],cards=source.map(llCard).filter(Boolean).sort((a,b)=>LL_POSITIONS.concat('Evrensel').indexOf(a.position)-LL_POSITIONS.concat('Evrensel').indexOf(b.position)||(LL_CARD_RARITY_RANK[b.rarity]||0)-(LL_CARD_RARITY_RANK[a.rarity]||0)||a.name.localeCompare(b.name,'tr'));
-  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>`<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Tetikleyici:</b> ${llEscape(c.trigger)}<br><b>Etki:</b> ${llEscape(c.effect)}</div>${llCardPerformanceHtml(c.id,true)}<button class="ll-btn ll-archive-detail-btn" type="button" onclick="llShowCardPopup('${c.id}','${llEscape(s.playerTeam)}')">Kart Detayı</button></div>`).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
+  const cardHtml=cards.length?`<div class="ll-archive-grid">${cards.map(c=>{const readable=llCardReadableText(c);return `<div class="ll-archive-card ${c.rarity}">${owned.has(c.id)?'<span class="ll-owned-badge">KADRODA</span>':''}<div class="ll-rarity">${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="ll-team-name" style="padding-right:54px">${LL_POSITION_ICONS[c.position]||'◆'} ${llEscape(c.name)}</div><div class="ll-muted">${llEscape(c.position)} · Min ${c.minStar}★</div><div class="ll-sub" style="margin-top:10px"><b>Ne zaman çalışır:</b> ${llEscape(readable.trigger)}<br><b>Ne yapar:</b> ${llEscape(readable.effect)}</div>${llCardPerformanceHtml(c.id,true)}<button class="ll-btn ll-archive-detail-btn" type="button" onclick="llShowCardPopup('${c.id}','${llEscape(s.playerTeam)}')">Kart Detayı</button></div>`;}).join('')}</div>`:`<div class="ll-notice">Bu bölümde henüz kart yok. Transfer kasalarında gördüğün kartlar keşfedilmiş sayılır.</div>`;
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Kart <em>Arşivi</em></div><div class="ll-muted">Keşfedilen ${known.size}/${LL_CARD_POOL.length} · Şu anda sahip olunan ${owned.size}/3</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div><div class="ll-comp-tabs"><button class="ll-comp-tab ${filter==='discovered'?'active':''}" onclick="llRenderCardArchive('discovered')">Keşfedilen Kartlar (${known.size})</button><button class="ll-comp-tab ${filter==='owned'?'active':''}" onclick="llRenderCardArchive('owned')">Sahip Olunanlar (${owned.size})</button></div>${cardHtml}</div></div>`;
 }
 function llAssignAiCard(teamName){
@@ -5699,7 +5885,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260803-7"></script>
+<script src="league-v2.js?v=20260805-card-clarity-1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260728-1"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
