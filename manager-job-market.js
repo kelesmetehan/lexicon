@@ -5,9 +5,9 @@
  * Existing incoming offers remain guaranteed; vacancies require an application.
  */
 (function(){
-  var LL_MANAGER_JOB_MARKET_VERSION=1;
-  var LL_MANAGER_JOB_SECURITY_VERSION=1;
-  var LL_JOB_VACANCY_THRESHOLD=75;
+  var LL_MANAGER_JOB_MARKET_VERSION=2;
+  var LL_MANAGER_JOB_SECURITY_VERSION=2;
+  var LL_JOB_VACANCY_THRESHOLD=65;
   var LL_JOB_REPUTATION_REQUIREMENTS={1:28,2:36,3:46,4:58,5:70,6:82};
   var LL_JOB_ACCEPTANCE_THRESHOLDS={1:55,2:60,3:66,4:73,5:81,6:89};
   var LL_JOB_WIN_RATE_REQUIREMENTS={
@@ -81,6 +81,29 @@
     return 'Ligi ilk '+position+' içinde bitir';
   }
   function lowWinRateFloor(stars,tier){return Number(LL_JOB_WIN_RATE_REQUIREMENTS[tier]?.[stars]||35);}
+  function vacancyFingerprint(state,summary,season){
+    var parts=['v'+LL_MANAGER_JOB_MARKET_VERSION,'s'+season];
+    countryCodes(summary).forEach(function(country){
+      var info=getCountrySummary(summary,country)||{};parts.push(country);
+      [['tier1',info.tier1Rows||[]],['tier2',info.tier2Rows||[]]].forEach(function(pair){
+        parts.push(pair[0]);pair[1].forEach(function(row,index){var team=row?.team||'',stars=clamp(Math.round(state?.teams?.[team]?.stars||globalThis.LL_TEAM_REGISTRY?.[team]?.stars||1),1,6);parts.push([team,rowPosition(row,index),Number(row?.P)||0,Number(row?.W)||0,stars].join(':'));});
+      });
+      parts.push('R='+(info.relegated||[]).slice().sort().join(','));
+      parts.push('P='+(info.promoted||[]).slice().sort().join(','));
+      parts.push('C='+(info.cupWinner||''));parts.push('PP='+(Array.from(previousPromoted(state,season,country))).sort().join(','));
+    });
+    return parts.join('|');
+  }
+  function resetSeasonSecurity(ledger,season){
+    Object.keys(ledger.clubs||{}).forEach(function(name){
+      var club=clubSecurity(ledger,name);
+      club.history=club.history.filter(function(item){return Number(item?.season)!==Number(season);});
+      var prior=club.history.filter(function(item){return Number(item?.season)<Number(season);}).sort(function(a,b){return Number(a?.season)-Number(b?.season);}).pop();
+      club.lastSeason=prior?Math.max(0,Number(prior.season)||0):0;
+      club.failedTargetStreak=prior?Math.max(0,Number(prior.failedTargetStreak)||0):0;
+      if(Number(club.lastEvaluation?.season)===Number(season)){if(prior)club.lastEvaluation=deep(prior);else delete club.lastEvaluation;}
+    });
+  }
   function ensureSecurity(state){
     if(!state.clubManagerSecurity||typeof state.clubManagerSecurity!=='object')state.clubManagerSecurity={version:LL_MANAGER_JOB_SECURITY_VERSION,clubs:{},seasons:{}};
     var ledger=state.clubManagerSecurity;
@@ -106,8 +129,9 @@
     return factors.find(function(item){return item.points>0;})||{code:'board-change',label:'Yönetim değişim kararı',detail:'Kulüp yönetimi yeni bir teknik direktör arıyor.',points:0};
   }
   function buildVacancies(state,market){
-    var summary=state.lastSeasonSummary||{},season=Number(summary.season)||Number(state.season)||1,ledger=ensureSecurity(state),seasonKey=String(season);
-    if(ledger.seasons[seasonKey]?.vacancies)return deep(ledger.seasons[seasonKey].vacancies);
+    var summary=state.lastSeasonSummary||{},season=Number(summary.season)||Number(state.season)||1,ledger=ensureSecurity(state),seasonKey=String(season),fingerprint=vacancyFingerprint(state,summary,season),cached=ledger.seasons[seasonKey];
+    if(Number(cached?.version)===LL_MANAGER_JOB_MARKET_VERSION&&cached?.fingerprint===fingerprint&&Array.isArray(cached?.vacancies))return deep(cached.vacancies);
+    resetSeasonSecurity(ledger,season);
     var vacancies=[];
     countryCodes(summary).forEach(function(country){
       var info=getCountrySummary(summary,country);if(!info)return;
@@ -122,21 +146,23 @@
           club.failedTargetStreak=consecutive;club.lastSeason=season;
           var isRelegated=tier==='tier1'&&relegated.has(team),newlyPromoted=tier==='tier1'&&priorPromoted.has(team),champion=position===1,promotedNow=tier==='tier2'&&promoted.has(team),wonCup=cupWinner===team,severeGap=Math.max(3,Math.ceil(teamCount*.15)),floor=lowWinRateFloor(stars,tier),factors=[];
           function factor(code,label,detail,points){factors.push({code:code,label:label,detail:detail,points:points});}
-          if(isRelegated)factor('relegation','Küme düşme','Kulüp üst ligden düştüğü için yönetim teknik direktör değişikliğini gündeme aldı.',90);
-          if(!targetMet)factor('target-missed','Yönetim hedefi kaçtı','Beklenti '+expected+'. sıra veya üstüydü; takım sezonu '+position+'. sırada tamamladı.',20);
-          if(gap>=severeGap)factor('severe-underperformance','Beklentinin çok altında kalma','Takım hedef sırasının '+gap+' basamak altında kaldı.',45);
+          if(isRelegated)factor('relegation','Küme düşme','Kulüp üst ligden düştüğü için yönetim teknik direktörün görevine son verdi.',100);
+          if(!targetMet)factor('target-missed','Yönetim hedefi kaçtı','Beklenti '+expected+'. sıra veya üstüydü; takım sezonu '+position+'. sırada tamamladı.',25);
+          if(gap>0)factor('target-gap','Hedeften uzaklaşma','Takım yönetim hedefinin '+gap+' basamak gerisinde kaldı.',Math.min(25,gap*5));
+          if(gap>=severeGap)factor('severe-underperformance','Beklentinin çok altında kalma','Takım hedef sırasının '+gap+' basamak altında kaldı.',35);
           if(consecutive>=2)factor('consecutive-failure','Üst üste hedef başarısızlığı','Yönetim hedefi art arda '+consecutive+' sezondur tamamlanamadı.',35);
           if(winRate<floor)factor('low-win-rate','Düşük galibiyet oranı','Galibiyet oranı %'+winRate+'; kulübün asgari beklentisi %'+floor+'.',25);
+          if(stars>=4&&gap>=2)factor('ambitious-board','Yüksek beklentili yönetim','4★ ve üzeri kulüpte hedefin en az 2 sıra gerisinde kalındı.',10);
           if(tier==='tier1'&&stars>=5&&position>Math.ceil(teamCount*.50))factor('elite-collapse','Büyük kulüpte ağır düşüş','Yüksek yıldızlı kulüp ligi alt yarıda tamamladı.',20);
           if(newlyPromoted)factor('promotion-patience','Yeni yükselen takıma sabır','Kulüp üst ligdeki ilk sezonu olduğu için yönetim ek tolerans tanıdı.',-35);
           if(promotedNow)factor('promotion-success','Yükselme başarısı','Takım üst lige yükseldi; teknik direktörün görevi güvence altında.',-100);
           if(wonCup)factor('trophy-protection','Kupa başarısı','Kupa kazanımı teknik direktörün görevini güvenceye aldı.',-100);
           if(champion)factor('champion-protection','Şampiyonluk','Lig şampiyonluğu teknik direktörün görevini güvenceye aldı.',-100);
-          var securityScore=factors.reduce(function(sum,item){return sum+Number(item.points||0);},0),threshold=newlyPromoted?100:LL_JOB_VACANCY_THRESHOLD,becomesVacant=securityScore>=threshold&&!promotedNow&&!wonCup&&!champion;
+          var securityScore=factors.reduce(function(sum,item){return sum+Number(item.points||0);},0),threshold=newlyPromoted?95:LL_JOB_VACANCY_THRESHOLD,becomesVacant=isRelegated||(securityScore>=threshold&&!promotedNow&&!wonCup&&!champion);
           club.lastEvaluation={season:season,country:country,tier:tier,position:position,stars:stars,expectedPosition:expected,winRate:winRate,targetMet:targetMet,failedTargetStreak:consecutive,securityScore:securityScore,threshold:threshold,vacant:becomesVacant,factors:deep(factors)};
           club.history.push(deep(club.lastEvaluation));club.history=club.history.slice(-10);
           if(!becomesVacant||team===market.fromTeam)return;
-          var nextLeague=typeof globalThis.llManagerNextLeague==='function'?llManagerNextLeague(summary,team):(isRelegated?'first':tier==='tier1'?'super':'first'),primary=vacancyPrimaryReason(factors);
+          var nextLeague=isRelegated?'first':promotedNow?'super':tier==='tier1'?'super':'first',primary=vacancyPrimaryReason(factors);
           vacancies.push({
             team:team,country:country,tier:tier,stars:stars,position:position,teamCount:teamCount,winRate:winRate,
             expectedPosition:expected,expectedLabel:expectedLabel(stars,tier,expected,teamCount,info),failedTargetStreak:consecutive,
@@ -148,7 +174,7 @@
       });
     });
     vacancies.sort(function(a,b){return b.securityScore-a.securityScore||b.stars-a.stars||a.team.localeCompare(b.team,'tr');});
-    ledger.seasons[seasonKey]={season:season,vacancies:deep(vacancies),processedAt:new Date().toISOString()};
+    ledger.seasons[seasonKey]={version:LL_MANAGER_JOB_MARKET_VERSION,season:season,fingerprint:fingerprint,vacancies:deep(vacancies),processedAt:new Date().toISOString()};
     return vacancies;
   }
 
@@ -195,14 +221,16 @@
   function ensureJobMarket(state,market){
     if(!state||!market||market.status!=='pending'||!state.lastSeasonSummary)return market;
     var offered=new Set((market.offers||[]).map(function(item){return item.team;}));
-    var available=buildVacancies(state,market).filter(function(item){return !offered.has(item.team);});
-    if(Number(market.vacancyVersion)!==LL_MANAGER_JOB_MARKET_VERSION){
+    var available=buildVacancies(state,market).map(function(item){return {...item,directOffer:offered.has(item.team)};}),seasonKey=String(Number(state.lastSeasonSummary?.season)||Number(state.season)||1),fingerprint=state.clubManagerSecurity?.seasons?.[seasonKey]?.fingerprint||'';
+    if(Number(market.vacancyVersion)!==LL_MANAGER_JOB_MARKET_VERSION||market.vacancyFingerprint!==fingerprint){
       market.vacancyVersion=LL_MANAGER_JOB_MARKET_VERSION;
+      market.vacancyFingerprint=fingerprint;
       market.vacancies=available;
       market.applications={};
     }else{
       market.vacancies=available;
       if(!market.applications||typeof market.applications!=='object')market.applications={};
+      var validTeams=new Set(available.map(function(item){return item.team;}));Object.keys(market.applications).forEach(function(team){if(!validTeams.has(team))delete market.applications[team];});
     }
     return market;
   }
@@ -235,20 +263,22 @@
       '</tbody></table></div></div>';
   }
   function vacancyRulesTable(){
-    return '<div class="ll-card ll-job-rules"><div class="ll-card-title">Bir Kulüp Nasıl Boşa Çıkar?</div><div class="ll-sub">Koltuk risk puanı 75’e ulaşırsa görev boşalır. Yeni yükselen kulüpte ilk sezon barajı 100’dür.</div><div class="ll-job-table-wrap"><table class="ll-job-table"><thead><tr><th>Durum</th><th>Risk etkisi</th><th>Açıklama</th></tr></thead><tbody>'+
-      '<tr><td><b>Üst ligden küme düşme</b></td><td>+90</td><td>Yerleşik üst lig kulübünde çoğunlukla doğrudan boşluk oluşturur.</td></tr>'+
-      '<tr><td><b>Yönetim hedefini kaçırma</b></td><td>+20</td><td>Kulübün yıldızına göre beklenen sıra tamamlanamazsa eklenir.</td></tr>'+
-      '<tr><td><b>Beklentinin çok altında kalma</b></td><td>+45</td><td>Hedef sıradan lig büyüklüğünün yaklaşık %15’i kadar daha aşağıda bitirme.</td></tr>'+
+    return '<div class="ll-card ll-job-rules"><div class="ll-card-title">Bir Kulüp Nasıl Boşa Çıkar?</div><div class="ll-sub">Küme düşen kulüpler doğrudan boşalır. Diğer kulüplerde koltuk risk puanı 65’e ulaşırsa teknik direktör kovulur; yeni yükselen kulüpte ilk sezon barajı 95’tir.</div><div class="ll-job-table-wrap"><table class="ll-job-table"><thead><tr><th>Durum</th><th>Risk etkisi</th><th>Açıklama</th></tr></thead><tbody>'+
+      '<tr><td><b>Üst ligden küme düşme</b></td><td>Doğrudan kovulma</td><td>Yeni yükselmiş olsa bile düşen kulübün teknik direktör koltuğu boşalır.</td></tr>'+
+      '<tr><td><b>Yönetim hedefini kaçırma</b></td><td>+25</td><td>Kulübün yıldızına göre beklenen sıra tamamlanamazsa eklenir.</td></tr>'+
+      '<tr><td><b>Hedeften her sıra uzaklaşma</b></td><td>+5, en fazla +25</td><td>Hedefin ne kadar gerisinde kalındığı ayrıca hesaba katılır.</td></tr>'+
+      '<tr><td><b>Beklentinin çok altında kalma</b></td><td>+35</td><td>Hedef sıradan lig büyüklüğünün yaklaşık %15’i kadar daha aşağıda bitirme.</td></tr>'+
       '<tr><td><b>İki sezon üst üste başarısızlık</b></td><td>+35</td><td>Yönetim hedefi art arda iki sezon kaçarsa sabır ciddi biçimde azalır.</td></tr>'+
       '<tr><td><b>Düşük galibiyet oranı</b></td><td>+25</td><td>Yıldız ve lig seviyesine göre belirlenen asgari oranın altında kalma.</td></tr>'+
+      '<tr><td><b>4★ ve üzeri kulüpte hedefin 2+ sıra gerisi</b></td><td>+10</td><td>Yüksek beklentili yönetimler hedef sapmasına daha sert tepki verir.</td></tr>'+
       '<tr><td><b>5★–6★ kulübün alt yarıya düşmesi</b></td><td>+20</td><td>Büyük kulüplerde beklenti çöküşü ayrıca cezalandırılır.</td></tr>'+
-      '<tr><td><b>Yeni yükselen takım toleransı</b></td><td>−35 ve baraj 100</td><td>Üst ligde ilk sezon yönetim daha sabırlıdır.</td></tr>'+
+      '<tr><td><b>Yeni yükselen takım toleransı</b></td><td>−35 ve baraj 95</td><td>Düşme dışındaki başarısızlıklarda üst ligde ilk sezon yönetim daha sabırlıdır.</td></tr>'+
       '<tr><td><b>Şampiyonluk / yükselme / kupa</b></td><td>−100</td><td>Başarı teknik direktörün görevini güvenceye alır.</td></tr>'+
       '</tbody></table></div></div>';
   }
   function vacancyCard(vacancy,application){
-    var status=application?'<div class="ll-job-status '+(application.accepted?'accepted':'rejected')+'"><b>'+(application.accepted?'✓ Başvuru kabul edildi':'✕ Başvuru reddedildi')+'</b> · '+application.totalScore+'/'+application.requiredScore+' puan</div>':'';
-    var button=application?'<button class="ll-btn '+(application.accepted?'gold':'')+'" style="width:100%" onclick="llShowVacantJobReport(decodeURIComponent(\''+teamArg(vacancy.team)+'\'))">Değerlendirme Raporunu Gör</button>':'<button class="ll-btn primary" style="width:100%" onclick="llApplyForVacantClub(decodeURIComponent(\''+teamArg(vacancy.team)+'\'))">Kulübe Başvur</button>';
+    var status=vacancy.directOffer?'<div class="ll-job-status accepted"><b>📨 Bu kulüpten doğrudan teklifin var</b> · Başvuru yapmana gerek yok</div>':application?'<div class="ll-job-status '+(application.accepted?'accepted':'rejected')+'"><b>'+(application.accepted?'✓ Başvuru kabul edildi':'✕ Başvuru reddedildi')+'</b> · '+application.totalScore+'/'+application.requiredScore+' puan</div>':'';
+    var button=vacancy.directOffer?'<button class="ll-btn gold" style="width:100%" onclick="llRenderManagerMarket(\'super\')">Doğrudan Teklifi Gör</button>':application?'<button class="ll-btn '+(application.accepted?'gold':'')+'" style="width:100%" onclick="llShowVacantJobReport(decodeURIComponent(\''+teamArg(vacancy.team)+'\'))">Değerlendirme Raporunu Gör</button>':'<button class="ll-btn primary" style="width:100%" onclick="llApplyForVacantClub(decodeURIComponent(\''+teamArg(vacancy.team)+'\'))">Kulübe Başvur</button>';
     return '<div class="ll-job-card"><div class="ll-job-card-head"><div class="ll-job-team">'+teamLogo(vacancy.team)+'<div><b>'+escapeHtml(vacancy.team)+'</b><small>'+escapeHtml(countryMeta(vacancy.country).flag||'')+' '+escapeHtml(countryMeta(vacancy.country).country||vacancy.country)+' · '+escapeHtml(vacancy.nextLeagueLabel)+'</small><div class="ll-stars">'+starText(vacancy.stars)+'</div></div></div><div class="ll-job-score"><strong>'+vacancy.securityScore+'</strong><span>koltuk risk puanı</span></div></div><div class="ll-job-reason"><b>'+escapeHtml(vacancy.reason)+'</b><p>'+escapeHtml(vacancy.reasonDetail)+'</p></div><div class="ll-job-facts"><div><span>Sezon sırası</span><b>'+vacancy.position+'. / '+vacancy.teamCount+'</b></div><div><span>Galibiyet oranı</span><b>%'+vacancy.winRate+'</b></div><div><span>Yönetim beklentisi</span><b>'+escapeHtml(vacancy.expectedLabel)+'</b></div><div><span>Yeni sezon hedefi</span><b>'+escapeHtml(vacancy.targetLabel)+'</b></div></div>'+status+button+'</div>';
   }
   function renderVacantJobs(country,tier){
@@ -271,7 +301,7 @@
   }
   function apply(team){
     var state=globalThis.lexLeague?.state,market=state&&typeof globalThis.llEnsureManagerMarket==='function'?llEnsureManagerMarket(state):state?.managerMarket;if(!state||!market||market.status!=='pending')return;
-    ensureJobMarket(state,market);var vacancy=(market.vacancies||[]).find(function(item){return item.team===team;});if(!vacancy)return;
+    ensureJobMarket(state,market);var vacancy=(market.vacancies||[]).find(function(item){return item.team===team;});if(!vacancy)return;if(vacancy.directOffer){if(typeof globalThis.llRenderManagerMarket==='function')llRenderManagerMarket('super');return;}
     if(!market.applications[team]){market.applications[team]=applicationEvaluation(state,market,vacancy);if(typeof globalThis.llSave==='function')llSave();}
     showReport(team);
   }
