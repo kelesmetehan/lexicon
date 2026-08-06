@@ -253,15 +253,19 @@ llV2FinalizeSeason=function(playoffWinner){llMLCareerFinalizeBase(playoffWinner)
 
 /* FOREIGN_MANAGER_OFFER_CAP_START */
 /* Foreign managerial offers are deliberately gated so cross-country careers progress credibly. */
-var LL_ML_FOREIGN_OFFER_RULES_VERSION=2;
+var LL_ML_FOREIGN_OFFER_RULES_VERSION=3;
 function llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,candidate,promotionStarCap){
-  if(candidate.country===state.playerCountry)return 6;
-  var cap=4;
+  var cap=candidate.country===state.playerCountry?6:4;
   var majorDomestic=!fired&&!!performance.superChampion&&!!performance.primaryAchieved&&Number(performance.winRate)>=60&&Number(profile.reputation)>=65;
   var eliteContinental=!fired&&!!performance.europeTrophy&&Number(profile.reputation)>=70;
   var worldElite=eliteContinental&&!!performance.superChampion&&Number(currentStars)>=5&&Number(profile.reputation)>=80;
-  if(worldElite)cap=6;
-  else if(majorDomestic||eliteContinental)cap=5;
+  if(candidate.country!==state.playerCountry){
+    if(worldElite)cap=6;
+    else if(majorDomestic||eliteContinental)cap=5;
+  }
+  /* Ana hedef kaçırıldıysa yüksek profil itibarı teklif sayısını korur; ancak
+     başarısız sezon 5-6 yıldızlı doğrudan teklif üretmez. */
+  if(!performance.primaryAchieved)cap=Math.min(cap,4);
   if(promotionStarCap)cap=Math.min(cap,Math.max(1,Number(currentStars)||1));
   return cap;
 }
@@ -322,7 +326,7 @@ llRenderManagerMarket=function(tableKey='super'){
   var state=lexLeague.state,market=state?.managerMarket,root=llArea();
   if(!root||market?.status!=='pending'||root.querySelector('.ll-foreign-offer-rule'))return;
   var host=root.querySelector('.ll-metrics')||root.querySelector('.ll-panel');
-  if(host)host.insertAdjacentHTML('afterend','<div class="ll-notice ll-foreign-offer-rule"><b>Yurt d\u0131\u015f\u0131 teklif dengesi:</b> Normal teklifler en fazla 4\u2605. 5\u2605 i\u00e7in b\u00fcy\u00fck ba\u015far\u0131, 6\u2605 i\u00e7in Avrupa kupas\u0131 + lig \u015fampiyonlu\u011fu gerekir.</div>');
+  if(host)host.insertAdjacentHTML('afterend','<div class="ll-notice ll-foreign-offer-rule"><b>Yurt d\u0131\u015f\u0131 teklif dengesi:</b> Normal teklifler en fazla 4\u2605. Ana hedef ba\u015far\u0131s\u0131zsa do\u011frudan teklifler 4\u2605 ile s\u0131n\u0131rlan\u0131r; 5\u2605 i\u00e7in b\u00fcy\u00fck ba\u015far\u0131, 6\u2605 i\u00e7in Avrupa kupas\u0131 + lig \u015fampiyonlu\u011fu gerekir.</div>');
 };
 /* FOREIGN_MANAGER_OFFER_CAP_END */
 

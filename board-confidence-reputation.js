@@ -481,6 +481,65 @@ function candidatesFromSummary(state,summary,options={}){
   return rows.filter(item=>(!options.tier||item.tier===options.tier)&&item.stars<=num(options.maxStars,6));
 }
 function uniqueOffers(items){const seen=new Set();return (items||[]).filter(item=>item?.team&&!seen.has(item.team)&&seen.add(item.team));}
+function managerOfferTarget(effective,status,fired){
+  effective=clamp(effective,0,100);
+  let target=effective<40?1:effective<60?2:3;
+  if(fired||status==='dismissal')target=Math.min(target,2);
+  return Math.max(1,target);
+}
+function managerOfferQualityCap(performance,currentStars,status){
+  let cap=6;
+  if(!performance?.primaryAchieved)cap=Math.min(cap,4);
+  if(status==='danger')cap=Math.min(cap,4);
+  if(status==='dismissal')cap=Math.min(cap,3);
+  if(performance?.league==='first'&&performance?.promoted)cap=Math.min(cap,currentStars);
+  return clamp(cap,1,6);
+}
+function offerCandidateNextLeague(summary,item){
+  try{return typeof globalThis.llManagerNextLeague==='function'?llManagerNextLeague(summary,item.team)==='super':item.tier==='tier1';}
+  catch{return item.tier==='tier1';}
+}
+function offerCandidateAllowed(state,summary,performance,profile,fired,currentStars,qualityCap,item){
+  if(!item||item.team===performance.from||num(item.stars)>qualityCap)return false;
+  const promotionStarCap=performance.league==='first'&&performance.promoted;
+  if(typeof globalThis.llMLForeignOfferStarCap==='function'){
+    try{
+      const foreignCap=llMLForeignOfferStarCap(state,performance,profile,fired,currentStars,item,promotionStarCap);
+      if(num(item.stars)>num(foreignCap,6))return false;
+    }catch{}
+  }
+  return true;
+}
+function refillManagerOffers(state,summary,performance,profile,fired,offers,target,qualityCap){
+  const currentStars=teamStars(state,performance.from),used=new Set(),countryCounts=new Map();
+  offers=uniqueOffers(offers).filter(offer=>{
+    if(num(offer.stars)>qualityCap)return false;
+    const item={team:offer.team,country:offer.country||'',tier:offer.nextLeague==='super'?'tier1':'tier2',stars:num(offer.stars)};
+    if(!offerCandidateAllowed(state,summary,performance,profile,fired,currentStars,qualityCap,item))return false;
+    used.add(offer.team);countryCounts.set(item.country,(countryCounts.get(item.country)||0)+1);return true;
+  });
+  const all=candidatesFromSummary(state,summary,{maxStars:qualityCap}).filter(item=>offerCandidateAllowed(state,summary,performance,profile,fired,currentStars,qualityCap,item));
+  const tier1=all.filter(item=>item.tier==='tier1'&&offerCandidateNextLeague(summary,item));
+  const fallback=all.filter(item=>!tier1.includes(item));
+  const seed=`${summary?.season||state?.season||0}|${performance.from}|board-offers`;
+  const hash=value=>typeof globalThis.llManagerHash==='function'?llManagerHash(value):String(value).split('').reduce((acc,ch)=>((acc*33)^ch.charCodeAt(0))>>>0,5381);
+  const addFrom=pool=>{
+    while(offers.length<target){
+      let available=pool.filter(item=>!used.has(item.team));
+      if(!available.length)break;
+      const diversified=available.filter(item=>(countryCounts.get(item.country)||0)<2);
+      if(diversified.length)available=diversified;
+      available.sort((a,b)=>(countryCounts.get(a.country)||0)-(countryCounts.get(b.country)||0)||num(b.stars)-num(a.stars)||hash(a.team+seed)-hash(b.team+seed)||a.team.localeCompare(b.team,'tr'));
+      const item=available[0];
+      try{
+        const offer=llManagerOffer(state,summary,item.team,'safe');offer.boardAdjusted=true;offer.country=item.country;
+        offers.push(offer);used.add(item.team);countryCounts.set(item.country,(countryCounts.get(item.country)||0)+1);
+      }catch{used.add(item.team);}
+    }
+  };
+  addFrom(tier1);addFrom(fallback);
+  return uniqueOffers(offers).slice(0,target);
+}
 function buildMarketOffers(base,state,summary,performance,profile,fired){
   const baseRep=clamp(profile?.reputation||50,0,100),effective=effectiveReputation(state,baseRep),proxy={...profile,reputation:effective},built=base(state,summary,performance,proxy,fired)||{offers:[]};
   let offers=uniqueOffers(built.offers||[]),currentStars=teamStars(state,performance.from),status=confidenceStatus(ensureBoard(state).value).key;
@@ -499,12 +558,10 @@ function buildMarketOffers(base,state,summary,performance,profile,fired){
       offers=uniqueOffers([...offers,...pool.map(makeOffer).filter(Boolean)]).slice(0,3);
     }
   }
-  if(status==='danger'){
-    offers=offers.filter(item=>num(item.stars)<=Math.min(4,currentStars)).slice(0,2);
-  }else if(status==='dismissal'){
-    offers=offers.filter(item=>num(item.stars)<=Math.max(1,currentStars)).slice(0,2);
-  }
-  built.offers=uniqueOffers(offers).slice(0,3);built.effectiveReputation=effective;built.baseReputation=baseRep;built.boardConfidence=ensureBoard(state).value;built.boardMarketModifier=marketModifier(state);
+  const target=managerOfferTarget(effective,status,fired),qualityCap=managerOfferQualityCap(performance,currentStars,status);
+  offers=offers.filter(item=>num(item.stars)<=qualityCap);
+  offers=refillManagerOffers(state,summary,performance,proxy,fired,offers,target,qualityCap);
+  built.offers=offers;built.offerCountTarget=target;built.offerQualityCap=qualityCap;built.effectiveReputation=effective;built.baseReputation=baseRep;built.boardConfidence=ensureBoard(state).value;built.boardMarketModifier=marketModifier(state);
   built.progression=!!built.progression&&effective>=31&&status!=='danger'&&status!=='dismissal';
   built.prestige=!!built.prestige&&effective>=61&&status!=='danger'&&status!=='dismissal';
   return built;
@@ -521,12 +578,16 @@ function installEnsureMarket(){
   const wrapped=function(state=stateNow()){
     const market=base.apply(this,arguments);if(!state||!market)return market;
     const board=ensureBoard(state),profile=ensureProfile(state),dismissal=boardDismissal(state);
-    market.boardConfidence=board.value;market.boardConfidenceStatus=confidenceStatus(board.value).label;market.baseReputation=profile.reputation;market.effectiveReputation=effectiveReputation(state,profile.reputation);market.boardMarketModifier=marketModifier(state);
+    const status=confidenceStatus(board.value),effective=effectiveReputation(state,profile.reputation);
+    market.boardConfidence=board.value;market.boardConfidenceStatus=status.label;market.baseReputation=profile.reputation;market.effectiveReputation=effective;market.boardMarketModifier=marketModifier(state);
+    let performance={from:market.fromTeam,league:null,promoted:false,primaryAchieved:market.primaryAchieved};
+    try{if(state.lastSeasonSummary)performance=llManagerPerformance(state,state.lastSeasonSummary);}catch{}
+    market.offerCountTarget=managerOfferTarget(effective,status.key,market.fired);market.offerQualityCap=managerOfferQualityCap(performance,num(market.fromStars,teamStars(state,market.fromTeam)),status.key);
     if(market.status==='pending'&&dismissal.dismiss&&!market.fired){
       market.fired=true;market.canStay=false;market.fireReason=`Yönetim güveni ${board.value}/100 seviyesine düştü ve ${board.badStreak} maçlık olumsuz seri oluştu. ${reputationTier(profile.reputation)} itibar seviyende güven eşiği ${dismissal.threshold}, gereken kötü seri ${dismissal.requiredBadStreak} maçtır.`;
       try{
         const performance=llManagerPerformance(state,state.lastSeasonSummary),rebuilt=llManagerBuildOffers(state,state.lastSeasonSummary,performance,profile,true);
-        market.offers=rebuilt.offers;market.progressionEligible=false;market.prestigeEligible=false;market.boardDismissal=true;
+        market.offers=rebuilt.offers;market.offerCountTarget=rebuilt.offerCountTarget;market.offerQualityCap=rebuilt.offerQualityCap;market.progressionEligible=false;market.prestigeEligible=false;market.boardDismissal=true;
       }catch{}
     }
     if(typeof globalThis.llSave==='function')llSave();return market;
@@ -536,7 +597,8 @@ function installEnsureMarket(){
 function decorateManagerMarket(){
   const state=stateNow(),market=state?.managerMarket,root=typeof globalThis.llArea==='function'?llArea():null;if(!state||!market||!root||root.querySelector('[data-board-market]'))return;
   const mod=num(market.boardMarketModifier),status=confidenceStatus(market.boardConfidence);
-  const notice=`<div class="ll-notice ll-board-market-note" data-board-market><b>Yönetim desteği ve itibar:</b> Profil itibarı ${market.baseReputation}/100 (${esc(reputationTier(market.baseReputation))}); güven ${market.boardConfidence}/100 olduğu için piyasada ${mod>0?'+':''}${mod} geçici etki uygulanıyor. Teklif havuzu <b>${esc(status.label)}</b> durumuna göre oluşturuldu.</div>`;
+  const count=Array.isArray(market.offers)?market.offers.length:0,target=num(market.offerCountTarget,count),cap=num(market.offerQualityCap,6);
+  const notice=`<div class="ll-notice ll-board-market-note" data-board-market><b>Yönetim desteği ve itibar:</b> Profil itibarı ${market.baseReputation}/100 (${esc(reputationTier(market.baseReputation))}); güven ${market.boardConfidence}/100 olduğu için piyasada ${mod>0?'+':''}${mod} geçici etki uygulanıyor. <b>${count} doğrudan teklif</b> üretildi${target?` (hedef ${target})`:''}; mevcut sezon ve güven durumu teklif seviyesini en fazla ${cap}★ ile sınırlandırıyor. Düşük güven, yüksek itibarlı bir menajeri tek teklife düşürmez.</div>`;
   const metrics=root.querySelector('.ll-metrics');if(metrics)metrics.insertAdjacentHTML('afterend',notice);
 }
 function adjustApplication(team){

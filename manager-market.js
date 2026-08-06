@@ -1,5 +1,5 @@
 /* Technical director job offers and club-switching flow. */
-const LL_MANAGER_WIN_RATE=55,LL_MANAGER_MARKET_VERSION=4;
+const LL_MANAGER_WIN_RATE=55,LL_MANAGER_MARKET_VERSION=5;
 function llManagerHash(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 function llManagerProfile(state){if(!state.managerProfile||typeof state.managerProfile!=='object')state.managerProfile={reputation:50,failedPrimaryStreak:0,lastEvaluatedSeason:0,currentTeam:state.playerTeam,history:[]};const p=state.managerProfile;p.reputation=Math.max(0,Math.min(100,Number(p.reputation)||50));p.failedPrimaryStreak=Math.max(0,Number(p.failedPrimaryStreak)||0);p.lastEvaluatedSeason=Math.max(0,Number(p.lastEvaluatedSeason)||0);if(!Array.isArray(p.history))p.history=[];if(!p.currentTeam)p.currentTeam=state.playerTeam;return p;}
 function llManagerSeasonRow(summary,team){const superIndex=(summary?.superRows||[]).findIndex(row=>row.team===team);if(superIndex>=0)return {row:summary.superRows[superIndex],league:'super',position:superIndex+1};const firstIndex=(summary?.firstRows||[]).findIndex(row=>row.team===team);return firstIndex>=0?{row:summary.firstRows[firstIndex],league:'first',position:firstIndex+1}:{row:null,league:null,position:0};}
