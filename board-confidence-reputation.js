@@ -17,7 +17,7 @@ function esc(value){
 }
 function deep(value){return value==null?value:JSON.parse(JSON.stringify(value));}
 function stateNow(){return globalThis.lexLeague?.state||null;}
-function fixtureNow(){try{return typeof globalThis.llPlayerFixture==='function'?llPlayerFixture():null;}catch{return null;}}
+function fixtureNow(){try{return globalThis.lexLeague?.quiz?.fixture||(typeof globalThis.llPlayerFixture==='function'?llPlayerFixture():null);}catch{return null;}}
 function teamStars(state,team){
   try{return clamp(typeof globalThis.llV2TeamStarsInState==='function'?llV2TeamStarsInState(state,team):state?.teams?.[team]?.stars,1,6);}
   catch{return clamp(state?.teams?.[team]?.stars||1,1,6);}

@@ -99,11 +99,11 @@
 
   /* The quiz's per-correct AP uses the active facility level. Recovery AP stays fixed by design. */
   if(typeof llQuizApPerWord==='function')llQuizApPerWord=function(){
-    try{return llFacilityReward(llPlayerFixture()?.competition||'league',lexLeague?.state).ap;}catch(error){return 5;}
+    try{return llFacilityReward(lexLeague?.quiz?.fixture?.competition||llPlayerFixture()?.competition||'league',lexLeague?.state).ap;}catch(error){return 5;}
   };
   if(typeof llFinishLeagueQuiz==='function')llFinishLeagueQuiz=function(){
     const quiz=lexLeague.quiz;if(!quiz||quiz.committed)return;quiz.committed=true;
-    const competition=llPlayerFixture()?.competition||'league',reward=llFacilityReward(competition,lexLeague.state),baseAp=Number(quiz.correct||0)*reward.ap,recoveryAp=Number(quiz.recoveryBonus||0),ap=baseAp+recoveryAp;
+    const competition=quiz.fixture?.competition||llPlayerFixture()?.competition||'league',reward=llFacilityReward(competition,lexLeague.state),baseAp=Number(quiz.correct||0)*reward.ap,recoveryAp=Number(quiz.recoveryBonus||0),ap=baseAp+recoveryAp;
     lexLeague.state.ap+=ap;
     const completed=!quiz.skipped&&quiz.index>=quiz.queue.length;let bonus='none';
     if(completed&&quiz.correct===10){bonus='perfect';lexLeague.state.lp+=10;}else if(completed&&quiz.correct===9)bonus='reroll';
