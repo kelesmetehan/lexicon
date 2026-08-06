@@ -2588,7 +2588,7 @@ function llSetEuropeMatchTheme(competition=null){
 function llSyncEuropeMatchTheme(){
   const host=typeof llArea==='function'?llArea():null;
   const matchCompetition=lexLeague?.match?.fixture?.competition;
-  const fixtureCompetition=typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null;
+  const fixtureCompetition=lexLeague?.quiz?.fixture?.competition||(typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null);
   const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
   llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
 }
@@ -2925,13 +2925,15 @@ function llMarkQuizWordUsed(ref){
 }
 function llStartMatchPreparation(){
   fcQueue=[];
+  const fixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
+  if(!fixture){alert('Sıradaki maç bulunamadı. Dashboarda dönüp fikstürün yeniden oluşturulmasını bekle.');return;}
   const queue=llPickQuizWords(10);
-  if(queue.length<10){alert(`Lig ma\u00e7\u0131 i\u00e7in en az 10 kelime gerekiyor. Kullan\u0131labilir kelime: ${queue.length}. Ana men\u00fcden \u201cHata Kayd\u0131n\u0131 \u0130ndir\u201d dosyas\u0131n\u0131 g\u00f6nder.`);return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2};
+  if(queue.length<10){alert(`Maç için en az 10 kelime gerekiyor. Kullanılabilir kelime: ${queue.length}. Ana menüden “Hata Kaydını İndir” dosyasını gönder.`);return;}
+  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,fixture:{...fixture}};
   llRenderLeagueQuiz();
 }
 function llQuizApPerWord(){
-  try{const comp=llPlayerFixture()?.competition||'league';return typeof LL_COMP_REWARDS!=='undefined'?(LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league).ap:5;}catch{return 5;}
+  try{const comp=lexLeague.quiz?.fixture?.competition||llPlayerFixture()?.competition||'league';return typeof LL_COMP_REWARDS!=='undefined'?(LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league).ap:5;}catch{return 5;}
 }
 function llRenderLeagueQuiz(){
   const q=lexLeague.quiz;if(!q)return;
@@ -3426,7 +3428,7 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds,conditionMetCardIds,appliedCardIds,cardOutcomes};
 }
 function llBeginMatch(plusPos){
-  const f=llPlayerFixture(),p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
+  const f=lexLeague.quiz?.fixture||llPlayerFixture();if(!f){alert('Maç fikstürü değişti veya geçersizleşti. Dashboarda dönülüyor.');llRenderDashboard();return;}const p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
   const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
   lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,manualCardEvents:[],committed:false};
   llRenderMatch();
@@ -5885,7 +5887,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260807-elite-owned-only-1"></script>
+<script src="league-v2.js?v=20260807-europe-calendar-guard-1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260806-2"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -5895,7 +5897,7 @@ renderPreStart();
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260802-1"></script>
 <script src="ai-opponent-strategy.js?v=20260802-1"></script>
-<script src="multi-league-engine.js?v=20260806-4"></script>
+<script src="multi-league-engine.js?v=20260807-europe-calendar-guard-1"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
 <script src="diagnostics.js?v=20260726-2"></script>
@@ -5912,6 +5914,7 @@ renderPreStart();
 <script src="manager-job-market.js?v=20260806-2"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
 <script src="board-confidence-reputation.js?v=20260806-2"></script>
+<script src="europe-calendar-guard.js?v=20260807-1"></script>
 </body>
 </html>
 
