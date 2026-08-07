@@ -474,12 +474,12 @@ function evaluateReputation(state,summary,performance){
   if(!performance.primaryAchieved)add(-2,'Ana hedef başarısızlığı');
   if(performance.superRelegated)add(-10,'Küme düşme');
   if(veryBadSeason(state,summary,performance))add(-4,'Ana hedefin çok altında biten sezon');
-  const before=clamp(profile.reputation||50,0,100),positiveCap=reputationSeasonPositiveCap(before),appliedPositive=Math.min(positive,positiveCap);
-  if(positive>positiveCap)reasons.push({points:-(positive-positiveCap),label:`İtibar seviyesi nedeniyle sezonluk artış sınırı (+${positiveCap})`});
+  const before=clamp(profile.reputation||50,0,100),legendPositive=Math.max(0,num(profile.legendCallReputationBySeason?.[String(season)])),capBasis=clamp(before-legendPositive,0,100),totalPositiveCap=reputationSeasonPositiveCap(capBasis),positiveCap=Math.max(0,totalPositiveCap-legendPositive),appliedPositive=Math.min(positive,positiveCap);
+  if(positive>positiveCap)reasons.push({points:-(positive-positiveCap),label:`İtibar seviyesi nedeniyle sezonluk artış sınırı (+${totalPositiveCap}; Efsaneni Çağır +${legendPositive} dahil)`});
   const delta=appliedPositive+negative,after=clamp(before+delta,0,100);
   profile.reputation=after;profile.lastEvaluatedSeason=season;profile.lastSeasonDelta=after-before;profile.lastSeasonWinRate=performance.winRate;profile.lastPrimaryAchieved=performance.primaryAchieved;
   profile.reputationSystemVersion=REPUTATION_SYSTEM_VERSION;if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];
-  profile.reputationHistory.push({season,before,delta:after-before,after,reasons,tenure,clubStars,expectationFactor:factor,positiveBeforeCap:positive,positiveCap,negative,systemVersion:REPUTATION_SYSTEM_VERSION,at:new Date().toISOString()});profile.reputationHistory=profile.reputationHistory.slice(-30);
+  profile.reputationHistory.push({season,before,delta:after-before,after,reasons,tenure,clubStars,expectationFactor:factor,positiveBeforeCap:positive,positiveCap:totalPositiveCap,legendPositive,remainingPositiveCap:positiveCap,negative,systemVersion:REPUTATION_SYSTEM_VERSION,at:new Date().toISOString()});profile.reputationHistory=profile.reputationHistory.slice(-30);
   return profile;
 }
 function installManagerEvaluate(){globalThis.llManagerEvaluate=evaluateReputation;}
