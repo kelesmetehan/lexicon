@@ -3224,7 +3224,10 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     // yazdırıyor ve Kale Duvarı satırını yanlış biçimde "Skor değişmedi" gösteriyordu.
     return {scoreA:a,scoreB:b};
   }
-  function log(msg){events.push(msg);eventScores.push(projectedScore());}
+  function scoreSnapshot(){return {scoreA,scoreB};}
+  function log(msg,score=null){events.push(msg);eventScores.push(score?{scoreA:score.scoreA,scoreB:score.scoreB}:null);}
+  function logProjected(msg){log(msg,projectedScore());}
+  function logActual(msg){log(msg,scoreSnapshot());}
   function activeCard(d,key){return disabled[key].has(d.uid)?null:llCard(d.cardId);}
   function sideHasBase(key,base){return sides[key].dice.some(d=>llBaseName(activeCard(d,key))===base);}
   function applyCombinationCards(me,key,rawDice){
@@ -3234,8 +3237,8 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(base==='Savunma Blo\u011fu'){const losses=LL_POSITIONS.filter(pos=>llFindPosition(rawDice,pos)?.value<llFindPosition(key==='a'?rawBDice:rawADice,pos)?.value).length;if(losses>=2){const target=llHighestDie(key==='a'?bDice:aDice),old=target.value;target.value=Math.max(1,old-1);log(me.name+': Savunma Blo\u011fu \u2192 rakip temel iki d\u00fcelloda \u00f6ndeydi; rakibin '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}}
       if(base==='\u00c7ift Y\u00f6nl\u00fc Oyun'&&llFindPosition(rawDice,'Kaleci')?.value===llFindPosition(rawDice,'Forvet')?.value){const target=llFindPosition(me.dice,'Kaleci'),old=target.value;target.value+=1;log(me.name+': \u00c7ift Y\u00f6nl\u00fc Oyun \u2192 Kaleci ve Forvet temel zarlar\u0131 e\u015fit; Kaleci zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
       if(base==='İkili Pres'&&d.position==='Orta Saha'&&llDieBelongsToExactPair(rawDice,rawDie)){const old=d.value,bonus=c.upgradeRule==='double-press'&&rawDie.value>=4?2:1;d.value+=bonus;log(`${me.name}: İkili Pres → Orta Saha zarı ${old}→${d.value} (zar etkisi, uygulanan +${bonus}).`);}
-      if(base==='Kusursuz Hat'&&llIsConsecutiveLine(rawDice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Kusursuz Hat → SKOR BONUSU +${n} (zara değil, maç skoruna eklenir).`);}
-      if(base==='Altın Seri'&&(c.upgradeLevel?[8,12,13]:[8,13]).includes(llSum(rawDice))){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Uğurlu Sayılar → temel zar toplamı ${llSum(rawDice)}; SKOR BONUSU +${n}.`);}
+      if(base==='Kusursuz Hat'&&llIsConsecutiveLine(rawDice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Kusursuz Hat → SKOR BONUSU +${n} kazanıldı; düellolar tamamlandıktan sonra skora işlenecek.`);}
+      if(base==='Altın Seri'&&(c.upgradeLevel?[8,12,13]:[8,13]).includes(llSum(rawDice))){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Uğurlu Sayılar → temel zar toplamı ${llSum(rawDice)}; SKOR BONUSU +${n} kazanıldı ve düellolar tamamlandıktan sonra skora işlenecek.`);}
       if(base==='Çift Kanat'&&(c.upgradeRule==='direct-play'?llFindPosition(rawDice,'Kaleci')?.value===llFindPosition(rawDice,'Forvet')?.value:llHasDoubleWing(rawDice))){const forward=llFindPosition(me.dice,'Forvet'),old=forward.value;forward.value+=1;log(`${me.name}: Direkt Oyun → Forvet zarı ${old}→${forward.value} (zar etkisi, uygulanan +1).`);}
       if(base==='Dengeli On Bir'&&llIsBalancedEleven(rawDice)){const rawLow=llLowestDie(rawDice),target=llFindPosition(me.dice,rawLow.position),old=target.value;target.value+=1;log(`${me.name}: Dengeli On Bir → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +1).`);}
       if(base==='Boş Kadro'){const emptyCount=LL_POSITIONS.filter(pos=>pos!==d.position&&!llCardContractSlotActive(me.state,pos)).length,bonus=Math.min(2,emptyCount);if(bonus){const old=d.value;d.value+=bonus;log(`${me.name}: Boş Kadro → ${d.position} zarı ${old}→${d.value} (zar etkisi, uygulanan +${bonus}).`);}}
@@ -3259,7 +3262,7 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       const values=llOrderDiceByPosition(me.dice).map(x=>x.value);
       if(llAllDiceEqual(me.dice)){
         const n=llCardGoalAmount(c);me.extra+=n;
-        log(`${me.name}: Üçlü Hücum → tüm kart etkileri sonrası zarlar ${values.join('-')}; SKOR BONUSU +${n} (maç skoruna eklenir).`);
+        logProjected(`${me.name}: Üçlü Hücum → tüm kart etkileri sonrası zarlar ${values.join('-')}; SKOR BONUSU +${n} (maç skoruna eklenir).`);
       }
     });
   }
@@ -3292,11 +3295,11 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   function applyFinalScoreCards(me,opp,key){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c);if(!c)return;
-      if(base==='Alan Hakimiyeti'&&llSum(me.dice)>llSum(opp.dice)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Alan Hakimiyeti \u2192 son zar toplam\u0131 ${llSum(me.dice)}-${llSum(opp.dice)}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='\u0130kili Oyun'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: \u0130kili Oyun \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='Frikik Ustas\u0131'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Frikik Ustas\u0131 \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
-      if(base==='Hat-trick Ruhu'){const form=llHatTrickForm(me.name,c);if(form.active){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Hat-trick Ruhu \u2192 son ${form.windowSize} resmi ma\u00E7ta ${form.wins} galibiyet; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
-      if(base==='Bitiricilik'){const need=llThreshold(c.trigger,99),total=llSum(me.dice);if(total>=need){const n=llCardGoalAmount(c);me.extra+=n;log(`${me.name}: Bitiricilik \u2192 yeniden at\u0131\u015Flar sonras\u0131 toplam ${total}/${need}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
+      if(base==='Alan Hakimiyeti'&&llSum(me.dice)>llSum(opp.dice)){const n=llCardGoalAmount(c);me.extra+=n;logProjected(`${me.name}: Alan Hakimiyeti \u2192 son zar toplam\u0131 ${llSum(me.dice)}-${llSum(opp.dice)}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
+      if(base==='\u0130kili Oyun'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;logProjected(`${me.name}: \u0130kili Oyun \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
+      if(base==='Frikik Ustas\u0131'&&llOwnTrigger(c,d.value)){const n=llCardGoalAmount(c);me.extra+=n;logProjected(`${me.name}: Frikik Ustas\u0131 \u2192 son ${d.position} zar\u0131 ${d.value}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}
+      if(base==='Hat-trick Ruhu'){const form=llHatTrickForm(me.name,c);if(form.active){const n=llCardGoalAmount(c);me.extra+=n;logProjected(`${me.name}: Hat-trick Ruhu \u2192 son ${form.windowSize} resmi ma\u00E7ta ${form.wins} galibiyet; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
+      if(base==='Bitiricilik'){const need=llThreshold(c.trigger,99),total=llSum(me.dice);if(total>=need){const n=llCardGoalAmount(c);me.extra+=n;logProjected(`${me.name}: Bitiricilik \u2192 yeniden at\u0131\u015Flar sonras\u0131 toplam ${total}/${need}; SKOR BONUSU +${n} (ma\u00E7 skoruna eklenir).`);}}
       if(base==='Kale Duvar\u0131'){const need=llThreshold(c.trigger,99),total=llSum(opp.dice);if(total>=need){const m=c.effect.match(/(\d+)\s+sanal gol elenir/i);me.shield+=m?Number(m[1]):1;}}
     });
   }
@@ -3310,10 +3313,17 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   applyGlobals(sides.a,sides.b,'a','post');applyGlobals(sides.b,sides.a,'b','post');
   const chance={a:scouting.randoms?.a?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)},b:scouting.randoms?.b?.chance||{active:Math.random()<.10,index:Math.floor(Math.random()*3)}};
   const chanceCardA=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Şans Faktörü'),chanceCardB=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Şans Faktörü');chance.a.active=!!chanceCardA&&(chance.a.active||(chanceCardA.upgradeRule==='chance-pity'&&Number(aState.chanceMisses||0)>=4));chance.b.active=!!chanceCardB&&(chance.b.active||(chanceCardB.upgradeRule==='chance-pity'&&Number(bState.chanceMisses||0)>=4));
+  const logPreparedMultiplier=(side,base,mult,resultForSide,opponentAuto,wasBlocked)=>{
+    if(!['Golcü İçgüdüsü','Son Vuruş'].includes(base)||mult<=1)return;
+    const team=side==='a'?aName:bName;
+    if(resultForSide)log(`${team}: ${base} → şart sağlandı ve Forvet düellosu kazanıldı; SKOR ÇARPANI x${mult} düello sonucunda skora yazılacak.`);
+    else if(wasBlocked)log(`${team}: ${base} → şart sağlandı ancak düello bloke edilip beraberlik sayıldı; SKOR ÇARPANI x${mult} uygulanmadı.`);
+    else if(opponentAuto)log(`${team}: ${base} → şart sağlandı ancak rakibin otomatik düello galibiyeti etkisi üstün geldi; SKOR ÇARPANI x${mult} uygulanmadı.`);
+    else log(`${team}: ${base} → şart sağlandı ancak Forvet düellosu kazanılamadı; SKOR ÇARPANI x${mult} uygulanmadı.`);
+  };
   const pairResults=[];
   for(let i=0;i<3;i++){
     const a=aDice[i],b=bDice[i],ca=activeCard(a,'a'),cb=activeCard(b,'b'),ba=llBaseName(ca),bb=llBaseName(cb);
-    const duelEventStart=events.length;
     const rawA=llFindPosition(rawADice,a.position),rawB=llFindPosition(rawBDice,b.position);
     if(ba==='Son Adam'&&llOppTrigger(ca,b.value)){const n=llEffectAmount(ca,1),old=b.value;b.value=Math.max(1,old-n);log(`${aName}: Son Adam → rakibin ${b.position} zarı ${old}→${b.value} (zar etkisi, uygulanan -${old-b.value}; kart sınırı -${n}).`);}
     if(bb==='Son Adam'&&llOppTrigger(cb,a.value)){const n=llEffectAmount(cb,1),old=a.value;a.value=Math.max(1,old-n);log(`${bName}: Son Adam → rakibin ${a.position} zarı ${old}→${a.value} (zar etkisi, uygulanan -${old-a.value}; kart sınırı -${n}).`);}
@@ -3333,14 +3343,14 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     if(bb==='Panenka'&&llHasAnyDuplicate(aDice)){autoB=true;log(`${bName}: Panenka → rakibin ${llDuplicateValues(aDice).join(', ')} zarı tekrarlandı; Forvet düellosu otomatik kazanıldı.`);}
     if(ba==='Son Dakika Golü'&&scoreA===scoreB){
       autoA=true;const bonus=/\+\d+\s+sanal gol/i.test(ca.effect)?llCardGoalAmount(ca):0;sides.a.extra+=bonus;
-      log(`${aName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} maç skoruna eklendi`:''}.`);
+      log(`${aName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} kazanıldı; düellolar tamamlandıktan sonra skora işlenecek`:''}.`);
     }
     if(bb==='Son Dakika Golü'&&scoreA===scoreB){
       autoB=true;const bonus=/\+\d+\s+sanal gol/i.test(cb.effect)?llCardGoalAmount(cb):0;sides.b.extra+=bonus;
-      log(`${bName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} maç skoruna eklendi`:''}.`);
+      log(`${bName}: Son Dakika Golü → Forvet düellosu otomatik kazanıldı${bonus?` ve SKOR BONUSU +${bonus} kazanıldı; düellolar tamamlandıktan sonra skora işlenecek`:''}.`);
     }
-    if(i===2&&sideHasBase('a','Fırsatçı')&&scoreA>scoreB){sides.a.extra+=1;log(`${aName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 maç skoruna eklendi.`);}
-    if(i===2&&sideHasBase('b','Fırsatçı')&&scoreB>scoreA){sides.b.extra+=1;log(`${bName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 maç skoruna eklendi.`);}
+    if(i===2&&sideHasBase('a','Fırsatçı')&&scoreA>scoreB){sides.a.extra+=1;log(`${aName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 kazanıldı ve düellolar tamamlandıktan sonra skora işlenecek.`);}
+    if(i===2&&sideHasBase('b','Fırsatçı')&&scoreB>scoreA){sides.b.extra+=1;log(`${bName}: Fırsatçı → Forvet düellosu öncesinde öndeydi; SKOR BONUSU +1 kazanıldı ve düellolar tamamlandıktan sonra skora işlenecek.`);}
     if(chance.a.active&&chance.a.index===i){autoA=true;log(`${aName}: Şans Faktörü → ${a.position} düellosu otomatik kazanıldı.`);}
     if(chance.b.active&&chance.b.index===i){autoB=true;log(`${bName}: Şans Faktörü → ${b.position} düellosu otomatik kazanıldı.`);}
     if(ba==='Golcü İçgüdüsü'&&llOwnTrigger(ca,a.value)){multA=llEffectAmount(ca,2);log(`${aName}: Golcü İçgüdüsü → Forvet zarı ${a.value}; düello x${multA} gol için hazır.`);}
@@ -3379,8 +3389,25 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
         if(bb==='Penaltı Ustası'||bb==='Çalım'){result=result==='a'?'draw':'b';log(`${bName}: ${bb} → ${b.position} beraberliği galibiyet sayıldı.`);}
       }
     }
-    if(result==='a'){scoreA+=multA;if(sonPerdeA)log(`${aName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → kazanılan Forvet düellosu x${multA} gol sayıldı.`);if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;log(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}}
-    if(result==='b'){scoreB+=multB;if(sonPerdeB)log(`${bName}: Son Perde → geriden gelirken kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → kazanılan Forvet düellosu x${multB} gol sayıldı.`);if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;log(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}}
+    logPreparedMultiplier('a',ba,multA,result==='a',autoB&&!autoA,blocked);
+    logPreparedMultiplier('b',bb,multB,result==='b',autoA&&!autoB,blocked);
+    if(result==='a'&&sonPerdeA)log(`${aName}: Son Perde → şart sağlandı; kazanılan Forvet düellosu x${multA} olarak skora yazılacak.`);
+    if(result==='b'&&sonPerdeB)log(`${bName}: Son Perde → şart sağlandı; kazanılan Forvet düellosu x${multB} olarak skora yazılacak.`);
+    if(result==='a'&&ba==='Katil İçgüdü')log(`${aName}: Katil İçgüdü → en az 2 fark şartı sağlandı; kazanılan Forvet düellosu x${multA} olarak skora yazılacak.`);
+    if(result==='b'&&bb==='Katil İçgüdü')log(`${bName}: Katil İçgüdü → en az 2 fark şartı sağlandı; kazanılan Forvet düellosu x${multB} olarak skora yazılacak.`);
+    if(result==='a')scoreA+=multA;
+    if(result==='b')scoreB+=multB;
+    // Bu noktada mevcut düello kesinleşmiştir. Zincirde yalnızca gerçek skor anlarını
+    // skor etiketiyle göster; kart hazırlığı/zar değişiklikleri tahmini skor gibi görünmesin.
+    processedPairs=i+1;
+    const duelLabel=result==='a'?`${aName} +${multA}`:result==='b'?`${bName} +${multB}`:'berabere';
+    logActual(`Düello sonucu · ${a.position}: ${a.value}-${b.value} → ${duelLabel}.`);
+    if(result==='a'){
+      if(scoreA===multA&&scoreB===0&&sideHasBase('a','Soğuk Kanlılık')){scoreA++;logActual(`${aName}: Soğuk Kanlılık → ilk gole +1.`);}
+    }
+    if(result==='b'){
+      if(scoreB===multB&&scoreA===0&&sideHasBase('b','Soğuk Kanlılık')){scoreB++;logActual(`${bName}: Soğuk Kanlılık → ilk gole +1.`);}
+    }
     if(i===0){
       if(result==='a'&&sideHasBase('a','Kaleden \u00c7\u0131k\u0131\u015f')){const target=llFindPosition(aDice,'Orta Saha'),old=target.value;target.value+=1;log(aName+': Kaleden \u00c7\u0131k\u0131\u015f \u2192 Kaleci d\u00fcellosu kazan\u0131ld\u0131; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
       if(result==='b'&&sideHasBase('b','Kaleden \u00c7\u0131k\u0131\u015f')){const target=llFindPosition(bDice,'Orta Saha'),old=target.value;target.value+=1;log(bName+': Kaleden \u00c7\u0131k\u0131\u015f \u2192 Kaleci d\u00fcellosu kazan\u0131ld\u0131; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
@@ -3393,34 +3420,28 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
       if(sideHasBase('a','\u00dc\u00e7l\u00fc Pres')&&llWonOrDrew(pairResults[0]?.result,'a')&&llWonOrDrew(result,'a')){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value=Math.max(1,old-1);log(aName+': \u00dc\u00e7l\u00fc Pres \u2192 Kaleci ve Orta Saha d\u00fcellolar\u0131 kaybedilmedi; rakip Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}
       if(sideHasBase('b','\u00dc\u00e7l\u00fc Pres')&&llWonOrDrew(pairResults[0]?.result,'b')&&llWonOrDrew(result,'b')){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value=Math.max(1,old-1);log(bName+': \u00dc\u00e7l\u00fc Pres \u2192 Kaleci ve Orta Saha d\u00fcellolar\u0131 kaybedilmedi; rakip Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan -'+(old-target.value)+').');}
       if(sideHasBase('a','Kontraatak')&&pairResults[0]?.result==='b'&&result==='a'){const target=llFindPosition(aDice,'Forvet'),old=target.value;target.value+=2;log(aName+': Kontraatak \u2192 Kaleci kaybedildi, Orta Saha kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +2).');}
-      if(sideHasBase('b','Kontraatak')&&pairResults[0]?.result==='a'&&result==='b'){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value+=2;log(bName+': Kontraatak \u2192 Kaleci kaybedildi, Orta Saha kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+b.value+' (zar etkisi, uygulanan +2).');}
+      if(sideHasBase('b','Kontraatak')&&pairResults[0]?.result==='a'&&result==='b'){const target=llFindPosition(bDice,'Forvet'),old=target.value;target.value+=2;log(bName+': Kontraatak \u2192 Kaleci kaybedildi, Orta Saha kazan\u0131ld\u0131; Forvet zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +2).');}
     }
     if(i===2){
-      if(result==='b'&&sideHasBase('a','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='b'){scoreB=Math.max(0,scoreB-was.bGoals);scoreA+=1;was.result='a';was.aGoals=1;was.bGoals=0;log(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+aName+' skora +1 yazd\u0131.');}else log(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
-      if(result==='a'&&sideHasBase('b','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='a'){scoreA=Math.max(0,scoreA-was.aGoals);scoreB+=1;was.result='b';was.aGoals=0;was.bGoals=1;log(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+bName+' skora +1 yazd\u0131.');}else log(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
+      if(result==='b'&&sideHasBase('a','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='b'){scoreB=Math.max(0,scoreB-was.bGoals);scoreA+=1;was.result='a';was.aGoals=1;was.bGoals=0;logActual(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+aName+' skora +1 yazd\u0131.');}else log(aName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
+      if(result==='a'&&sideHasBase('b','Kontroll\u00fc Risk')){const was=pairResults[0];if(was?.result==='a'){scoreA=Math.max(0,scoreA-was.aGoals);scoreB+=1;was.result='b';was.aGoals=0;was.bGoals=1;logActual(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu galibiyet say\u0131ld\u0131, rakibin Kaleci gol\u00fc geri al\u0131nd\u0131 ve '+bName+' skora +1 yazd\u0131.');}else log(bName+': Kontroll\u00fc Risk \u2192 Forvet d\u00fcellosu kaybedildi; Kaleci d\u00fcellosu zaten kazan\u0131lm\u0131\u015ft\u0131, ek skor de\u011fi\u015fmedi.');}
     }
-    const logPreparedMultiplier=(side,base,mult,resultForSide,opponentAuto,wasBlocked)=>{
-      if(!['Golcü İçgüdüsü','Son Vuruş'].includes(base)||mult<=1)return;
-      const team=side==='a'?aName:bName;
-      if(resultForSide)log(`${team}: ${base} → şart sağlandı, Forvet düellosu kazanıldı; SKOR ÇARPANI x${mult} uygulandı ve maç skoruna +${mult} gol yazıldı.`);
-      else if(wasBlocked)log(`${team}: ${base} → şart sağlandı ancak düello bloke edilip beraberlik sayıldı; SKOR ÇARPANI x${mult} uygulanmadı.`);
-      else if(opponentAuto)log(`${team}: ${base} → şart sağlandı ancak rakibin otomatik düello galibiyeti etkisi üstün geldi; SKOR ÇARPANI x${mult} uygulanmadı.`);
-      else log(`${team}: ${base} → şart sağlandı ancak Forvet düellosu kazanılamadı; SKOR ÇARPANI x${mult} uygulanmadı.`);
-    };
-    logPreparedMultiplier('a',ba,multA,result==='a',autoB&&!autoA,blocked);
-    logPreparedMultiplier('b',bb,multB,result==='b',autoA&&!autoB,blocked);
     pairResults.push({a:a.value,b:b.value,result,aGoals:result==='a'?multA:0,bGoals:result==='b'?multB:0});
-    processedPairs=i+1;if(events.length>duelEventStart)eventScores[events.length-1]=projectedScore();
+  }
+  const pendingEarlyExtraA=sides.a.extra,pendingEarlyExtraB=sides.b.extra;
+  if(pendingEarlyExtraA||pendingEarlyExtraB){
+    scoreA+=pendingEarlyExtraA;scoreB+=pendingEarlyExtraB;sides.a.extra=0;sides.b.extra=0;
+    logActual(`Önceden kazanılan sanal gol bonusları skora işlendi: ${aName} +${pendingEarlyExtraA}, ${bName} +${pendingEarlyExtraB}.`);
   }
   applyFinalScoreCards(sides.a,sides.b,'a');
   applyFinalScoreCards(sides.b,sides.a,'b');
   applyFinalCombinationCards(sides.a,'a');
   applyFinalCombinationCards(sides.b,'b');
-  if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
-  if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;log(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
+  if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;logProjected(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
+  if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;logProjected(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
   scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
-  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
-  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
+  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);const removed=before-scoreB;logActual(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
+  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);const removed=before-scoreA;logActual(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
   const cardOutcomes={a:llResolutionCardOutcomes(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionCardOutcomes(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
   const conditionMetCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id)};
   const appliedCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.applied).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.applied).map(([id])=>id)};
@@ -3601,11 +3622,11 @@ function llRerollChainDisplayText(text){
 }
 function llCardEffectChainHtml(m,resolution=m?.projectedResolution,preview=true){
   if(!m||!resolution)return '';
-  const raw=llRawScoreFromMatchDice(m),allSourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),embeddedRerolls=allSourceEvents.filter(llIsRerollChainEvent),rerollTexts=[...new Set([...(resolution.rerollEvents||[]),...embeddedRerolls].filter(Boolean))],events=allSourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text&&!llIsRerollChainEvent(item.text)),last={a:raw.player,b:raw.opponent};
+  const raw=llRawScoreFromMatchDice(m),allSourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),embeddedRerolls=allSourceEvents.filter(llIsRerollChainEvent),rerollTexts=[...new Set([...(resolution.rerollEvents||[]),...embeddedRerolls].filter(Boolean))],events=allSourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text&&!llIsRerollChainEvent(item.text)),last={a:0,b:0};
   const eventSteps=events.map(item=>{const score=item.score,same=score&&score.scoreA===last.a&&score.scoreB===last.b,label=score?`${same?'Skor değişmedi':'Ara skor'} ${score.scoreA}-${score.scoreB}`:'';if(score){last.a=score.scoreA;last.b=score.scoreB;}return {text:item.text,cls:item.text.startsWith(`${m.player}:`)?'player':item.text.startsWith(`${m.opponent}:`)?'opponent':'',scoreLabel:label};});
-  const steps=[{text:`${rerollTexts.length?'Rerollar sonrası ham zar düelloları':'Ham zar düelloları'} ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:`Ham ${raw.player}-${raw.opponent}`},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
+  const steps=[{text:`Kart çözümü 0-0'dan başlar. ${rerollTexts.length?'Rerollar sonrası':'Ham'} zarların kartlar uygulanmadan tam maç karşılığı ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:'Başlangıç 0-0'},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
   const rerollHtml=rerollTexts.length?`<div class="ll-card-title" style="margin:12px 0 5px">Reroll Aşaması</div><div class="ll-muted">Rerollar kart çözümünden önce tamamlanır. Sağdaki etiket gerçek zar değişimini gösterir; metindeki “karar tahmini” ise AI'ın reroll seçerken tüm kartlar uygulanmış gibi yaptığı simülasyondur ve gerçek ara skor değildir.</div><div class="ll-card-chain">${rerollTexts.map((text,index)=>`<div class="ll-chain-step opponent"><span class="ll-chain-index">R${index+1}</span><span class="ll-chain-text">${llEscape(llRerollChainDisplayText(text))}</span><span class="ll-chain-score">${llEscape(llRerollChainBadge(text))}</span></div>`).join('')}</div>`:'';
-  const cardHtml=events.length?`<div class="ll-card-title" style="margin:12px 0 5px">Kart Çözüm Aşaması</div><div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; rerollar sonrası ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`;
+  const cardHtml=events.length?`<div class="ll-card-title" style="margin:12px 0 5px">Kart Çözüm Aşaması</div><div class="ll-muted" style="margin-bottom:6px">Sağdaki skor etiketi yalnızca skor gerçekten kesinleştiğinde veya değiştiğinde gösterilir. Zar değiştiren/hazırlık yapan kartlar kendi satırında sonucu açıklar; ardından düello sonucu skora işlenir.</div><div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'BAŞ':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; rerollar sonrası ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`;
   return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zarlar, ardından kart çözüm zinciri yeniden hesaplanır. “Kart Etkilerini Uygula” dediğinde kart aşaması kesinleşir.':'Maç sonucu önce rerollar, sonra kart etkileri uygulanarak aşağıdaki sırayla oluştu.'}</div>${rerollHtml}${cardHtml}</div>`;
 }
 function llTriggeredCardLogHtml(m){
