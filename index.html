@@ -3215,13 +3215,13 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   const disabled={a:new Set(scouting.disabled?.a||[]),b:new Set(scouting.disabled?.b||[])};
   [['a','b'],['b','a']].forEach(([key,oppKey])=>{const me=sides[key],opp=sides[oppKey];if(me.home||!me.dice.some(d=>llBaseName(llCard(d.cardId))==='Deplasman Plan\u0131'))return;const homeCard=opp.dice.find(d=>llBaseName(llCard(d.cardId))==='Ev Sahibi Avantaj\u0131');if(homeCard){disabled[oppKey].add(homeCard.uid);events.push(me.name+': Deplasman Plan\u0131 \u2192 rakibin Ev Sahibi Avantaj\u0131 kart\u0131 etkisizle\u015ftirildi.');eventScores.push(null);}});
   let scoreA=0,scoreB=0,processedPairs=0,extrasCommitted=false;
-  const shieldCommitted={a:false,b:false};
   function projectedScore(){
     let a=scoreA,b=scoreB;
     for(let i=processedPairs;i<3;i++){const left=aDice[i],right=bDice[i];if(left.value>right.value)a++;else if(right.value>left.value)b++;}
     if(!extrasCommitted){a+=sides.a.extra;b+=sides.b.extra;}
-    if(!shieldCommitted.a&&sides.a.shield)b=Math.max(0,b-sides.a.shield);
-    if(!shieldCommitted.b&&sides.b.shield)a=Math.max(0,a-sides.b.shield);
+    // Kale Duvarı koruması zincirin son aşamasında gerçekten uygulandığında skora yansır.
+    // Bekleyen korumayı burada erkenden düşmek, önceki SKOR BONUSU satırına nihai skoru
+    // yazdırıyor ve Kale Duvarı satırını yanlış biçimde "Skor değişmedi" gösteriyordu.
     return {scoreA:a,scoreB:b};
   }
   function log(msg){events.push(msg);eventScores.push(projectedScore());}
@@ -3419,8 +3419,8 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   if(sideHasBase('a','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='a')){const card=aDice.map(d=>activeCard(d,'a')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.a.extra+=n;log(`${aName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
   if(sideHasBase('b','Mükemmeliyetçi')&&pairResults.every(pair=>pair.result==='b')){const card=bDice.map(d=>activeCard(d,'b')).find(c=>llBaseName(c)==='Mükemmeliyetçi'),n=llCardGoalAmount(card);sides.b.extra+=n;log(`${bName}: Mükemmeliyetçi → üç düello da kazanıldı; SKOR BONUSU +${n} maç skoruna eklendi.`);}
   scoreA+=sides.a.extra;scoreB+=sides.b.extra;extrasCommitted=true;
-  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);shieldCommitted.a=true;const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
-  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);shieldCommitted.b=true;const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
+  if(sides.a.shield){const before=scoreB;scoreB=Math.max(0,scoreB-sides.a.shield);const removed=before-scoreB;log(`${aName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.a.shield}).`);}
+  if(sides.b.shield){const before=scoreA;scoreA=Math.max(0,scoreA-sides.b.shield);const removed=before-scoreA;log(`${bName}: Kale Duvarı → ${removed?`${removed} rakip golü silindi`:'koruma hazırdı ancak silinecek rakip golü oluşmadı'} (kapasite: ${sides.b.shield}).`);}
   const cardOutcomes={a:llResolutionCardOutcomes(sides.a,rawADice,events,disabled.a,scoreA,scoreB),b:llResolutionCardOutcomes(sides.b,rawBDice,events,disabled.b,scoreB,scoreA)};
   const conditionMetCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id)};
   const appliedCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.applied).map(([id])=>id),b:Object.entries(cardOutcomes.b).filter(([,outcome])=>outcome.applied).map(([id])=>id)};
