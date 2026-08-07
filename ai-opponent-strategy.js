@@ -210,7 +210,24 @@ llSimulateMatch=function(home,away,competition='league'){
   let homeDice=llMakeDice(home),awayDice=llMakeDice(away),scouting=llPrepareScouting(home,away,homeDice,awayDice,{aHome:true}),homeCredits=llRerollCreditsFromDice(homeDice,scouting.disabled.a),awayCredits=llRerollCreditsFromDice(awayDice,scouting.disabled.b);
   homeDice=llAutoRerollWithCredits(home,homeDice,homeCredits,llTakeCarriedRerolls(home),away,awayDice,{aHome:true,competition});awayDice=llAutoRerollWithCredits(away,awayDice,awayCredits,llTakeCarriedRerolls(away),home,homeDice,{aHome:false,competition});scouting=llPrepareScouting(home,away,homeDice,awayDice,{aHome:true,randoms:scouting.randoms});const resolution=llResolveBattle(home,away,homeDice,awayDice,{aHome:true,competition,scouting});return {homeGoals:resolution.scoreA,awayGoals:resolution.scoreB,resolution};
 };
-function llAiAttachRerollEvents(resolution,events){if(!resolution||!events?.length)return;const unseen=events.filter(event=>!resolution.events?.includes(event));if(!unseen.length)return;resolution.events=[...unseen,...(resolution.events||[])];resolution.eventScores=[...unseen.map(()=>null),...(resolution.eventScores||[])];}
+function llAiAttachRerollEvents(resolution,events){
+  if(!resolution)return;
+  const rerolls=[...new Set((events||[]).filter(Boolean))];
+  resolution.rerollEvents=rerolls;
+  // Reroll kararları gerçek kart çözüm zincirinin bir parçası değildir. Eski sürümde
+  // bu metinler events dizisinin başına ekleniyordu; bu da AI'ın "tahmini kartlı skor"unu
+  // gerçek ara skor gibi gösterip sonraki kart adımlarıyla çelişkili bir zincir üretiyordu.
+  // Eski/önbelleklenmiş bir resolution içinde kalmış reroll satırlarını da ayır.
+  if(!Array.isArray(resolution.events)||!resolution.events.length)return;
+  const keptEvents=[],keptScores=[];
+  resolution.events.forEach((event,index)=>{
+    const text=String(event||'');
+    const isReroll=rerolls.includes(event)||/: Akıllı reroll →|: Plan B → .*reroll sonucu/i.test(text);
+    if(isReroll)return;
+    keptEvents.push(event);keptScores.push(resolution.eventScores?.[index]||null);
+  });
+  resolution.events=keptEvents;resolution.eventScores=keptScores;
+}
 const llAiV1RefreshProjectionBase=llRefreshMatchProjection;
 llRefreshMatchProjection=function(match){llAiV1RefreshProjectionBase(match);llAiAttachRerollEvents(match?.projectedResolution,match?.aiRerollEvents);};
 
