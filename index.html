@@ -3590,12 +3590,23 @@ function llProjectedOutcomeHtml(m){
 function llRawScoreFromMatchDice(m){
   let player=0,opponent=0;LL_POSITIONS.forEach(position=>{const a=llFindPosition(m.playerDice||[],position),b=llFindPosition(m.opponentDice||[],position);if(!a||!b)return;if(a.value>b.value)player++;else if(b.value>a.value)opponent++;});return {player,opponent};
 }
+function llIsRerollChainEvent(text){return /: Akıllı reroll →|: Plan B → .*reroll sonucu/i.test(String(text||''));}
+function llRerollChainBadge(text){
+  const value=String(text||''),smart=value.match(/Akıllı reroll →\s*(.+?)\s+zarı\s+(\d+)→(\d+)/i);if(smart)return `${smart[1]} ${smart[2]}→${smart[3]}`;
+  const planB=value.match(/Forvet reroll sonucu\s+(\d+)\s+geldi ve eski\s+(\d+)\s+korundu/i);if(planB)return `Forvet ${planB[1]}→${planB[2]} korundu`;
+  return 'Reroll';
+}
+function llRerollChainDisplayText(text){
+  return String(text||'').replace(/;\s*tahmini kartlı skor\s+(\d+-\d+)→(\d+-\d+)\./i,'; karar tahmini (tüm kartlar uygulanırsa) $1→$2.');
+}
 function llCardEffectChainHtml(m,resolution=m?.projectedResolution,preview=true){
   if(!m||!resolution)return '';
-  const raw=llRawScoreFromMatchDice(m),sourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),events=sourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text),last={a:raw.player,b:raw.opponent};
+  const raw=llRawScoreFromMatchDice(m),allSourceEvents=resolution.events?.length?resolution.events:(m.scouting?.events||[]),embeddedRerolls=allSourceEvents.filter(llIsRerollChainEvent),rerollTexts=[...new Set([...(resolution.rerollEvents||[]),...embeddedRerolls].filter(Boolean))],events=allSourceEvents.map((text,index)=>({text,score:resolution.eventScores?.[index]||null})).filter(item=>item.text&&!llIsRerollChainEvent(item.text)),last={a:raw.player,b:raw.opponent};
   const eventSteps=events.map(item=>{const score=item.score,same=score&&score.scoreA===last.a&&score.scoreB===last.b,label=score?`${same?'Skor değişmedi':'Ara skor'} ${score.scoreA}-${score.scoreB}`:'';if(score){last.a=score.scoreA;last.b=score.scoreB;}return {text:item.text,cls:item.text.startsWith(`${m.player}:`)?'player':item.text.startsWith(`${m.opponent}:`)?'opponent':'',scoreLabel:label};});
-  const steps=[{text:`Ham zar düelloları ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:`Ham ${raw.player}-${raw.opponent}`},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
-  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zincir ve ara skorlar yeni zarlarla baştan hesaplanır. “Kart Etkilerini Uygula” dediğinde bu sıra kesinleşir.':'Maç sonucu aşağıdaki neden–sonuç sırasıyla oluştu.'}</div>${events.length?`<div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`}</div>`;
+  const steps=[{text:`${rerollTexts.length?'Rerollar sonrası ham zar düelloları':'Ham zar düelloları'} ${raw.player}-${raw.opponent}.`,cls:'',scoreLabel:`Ham ${raw.player}-${raw.opponent}`},...eventSteps,{text:`Kart etkileri sonrası skor ${resolution.scoreA}-${resolution.scoreB}.`,cls:'final',scoreLabel:`Sonuç ${resolution.scoreA}-${resolution.scoreB}`}];
+  const rerollHtml=rerollTexts.length?`<div class="ll-card-title" style="margin:12px 0 5px">Reroll Aşaması</div><div class="ll-muted">Rerollar kart çözümünden önce tamamlanır. Sağdaki etiket gerçek zar değişimini gösterir; metindeki “karar tahmini” ise AI'ın reroll seçerken tüm kartlar uygulanmış gibi yaptığı simülasyondur ve gerçek ara skor değildir.</div><div class="ll-card-chain">${rerollTexts.map((text,index)=>`<div class="ll-chain-step opponent"><span class="ll-chain-index">R${index+1}</span><span class="ll-chain-text">${llEscape(llRerollChainDisplayText(text))}</span><span class="ll-chain-score">${llEscape(llRerollChainBadge(text))}</span></div>`).join('')}</div>`:'';
+  const cardHtml=events.length?`<div class="ll-card-title" style="margin:12px 0 5px">Kart Çözüm Aşaması</div><div class="ll-card-chain">${steps.map((step,index)=>`<div class="ll-chain-step ${step.cls}"><span class="ll-chain-index">${index===0?'HAM':index===steps.length-1?'SON':index}</span><span class="ll-chain-text">${llEscape(step.text)}</span>${step.scoreLabel?`<span class="ll-chain-score">${llEscape(step.scoreLabel)}</span>`:''}</div>`).join('')}</div>`:`<div class="ll-muted" style="margin-top:8px">Kart tetiklenmedi; rerollar sonrası ham skor doğrudan sonuç oldu: ${raw.player}-${raw.opponent}.</div>`;
+  return `<div class="ll-trigger-log"><div class="ll-card-title" style="margin-bottom:5px">Kart Tetikleme Zinciri</div><div class="ll-muted">${preview?'Reroll yapılırsa zarlar, ardından kart çözüm zinciri yeniden hesaplanır. “Kart Etkilerini Uygula” dediğinde kart aşaması kesinleşir.':'Maç sonucu önce rerollar, sonra kart etkileri uygulanarak aşağıdaki sırayla oluştu.'}</div>${rerollHtml}${cardHtml}</div>`;
 }
 function llTriggeredCardLogHtml(m){
   return llCardEffectChainHtml(m,m?.projectedResolution,true);
@@ -5896,7 +5907,7 @@ renderPreStart();
 <script src="european-leagues-pools.js?v=20260731-2"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260802-1"></script>
-<script src="ai-opponent-strategy.js?v=20260802-1"></script>
+<script src="ai-opponent-strategy.js?v=20260807-reroll-chain-1"></script>
 <script src="multi-league-engine.js?v=20260807-europe-calendar-guard-1"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
