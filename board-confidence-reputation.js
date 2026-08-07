@@ -2,7 +2,9 @@
 (function(){
 'use strict';
 
-const VERSION=2;
+const VERSION=3;
+const REPUTATION_SYSTEM_VERSION=3;
+const DISMISSAL_REPUTATION_PENALTY=5;
 const STARTING_CONFIDENCE=75;
 const PRESS_WORD_COUNT=5;
 const INTERIM_EVERY=5;
@@ -421,12 +423,29 @@ function veryBadSeason(state,summary,performance){
   const rows=performance.league==='super'?summary?.superRows||[]:summary?.firstRows||[],target=targetPosition(primaryGoal(state),rows,state),gap=num(performance.position,rows.length)-target,board=ensureBoard(state);
   return gap>=Math.max(4,Math.ceil((rows.length||18)*.20))||board.value<=25;
 }
-function europeReputationGain(state,performance){
-  if(performance?.europeTrophy)return {points:9,label:'Avrupa kupası / en üst Avrupa başarısı'};
-  if(performance?.europeSuccess)return {points:7,label:'Avrupa’da yarı final veya final seviyesi'};
+function reputationAchievementFactor(stars){
+  stars=clamp(stars,1,6);
+  if(stars>=6)return .50;
+  if(stars===5)return .65;
+  if(stars===4)return .80;
+  return 1;
+}
+function scaledReputationPoints(base,stars,minimum=1){return Math.max(minimum,Math.round(num(base)*reputationAchievementFactor(stars)));}
+function reputationSeasonPositiveCap(reputation){
+  reputation=clamp(reputation,0,100);
+  if(reputation>=95)return 1;
+  if(reputation>=90)return 2;
+  if(reputation>=85)return 3;
+  if(reputation>=75)return 5;
+  if(reputation>=60)return 7;
+  return 8;
+}
+function europeReputationGain(state,performance,stars){
+  if(performance?.europeTrophy)return {points:scaledReputationPoints(9,stars,4),label:`Avrupa kupası (${stars}★ kulüp beklentisi uygulandı)`};
+  if(performance?.europeSuccess)return {points:scaledReputationPoints(6,stars,3),label:`Avrupa’da yarı final veya final (${stars}★ kulüp beklentisi uygulandı)`};
   const results=(state?.results||[]).filter(item=>Number(item?.season||state.season)===Number(state.season)&&['ucl','uel','uecl'].includes(item?.competition));
   const knockout=results.some(item=>/Play-?Off|Eleme|Son 16|Çeyrek|Yarı|Final/i.test(String(item?.roundLabel||'')));
-  return knockout?{points:5,label:'Avrupa’da lig aşamasından çıkış / eleme turu'}:{points:0,label:''};
+  return knockout?{points:scaledReputationPoints(3,stars,2),label:`Avrupa’da eleme turuna çıkış (${stars}★ kulüp beklentisi uygulandı)`}:{points:0,label:''};
 }
 function currentTenure(state,team){
   try{
@@ -442,21 +461,25 @@ function evaluateReputation(state,summary,performance){
   const profile=ensureProfile(state),season=num(summary?.season,state?.season);
   if(num(profile.lastEvaluatedSeason)===season)return profile;
   profile.failedPrimaryStreak=performance.primaryAchieved?0:num(profile.failedPrimaryStreak)+1;
-  const reasons=[];let delta=0;
-  const add=(points,label)=>{if(!points)return;delta+=points;reasons.push({points,label});};
-  if(performance.superChampion)add(12,'Lig şampiyonluğu');
-  if(performance.promoted)add(8,'Üst lige yükselme');
+  const reasons=[];let positive=0,negative=0;
+  const add=(points,label)=>{points=num(points);if(!points)return;if(points>0)positive+=points;else negative+=points;reasons.push({points,label});};
+  const clubStars=teamStars(state,performance.from),factor=reputationAchievementFactor(clubStars);
+  if(performance.superChampion)add(scaledReputationPoints(8,clubStars,4),`Lig şampiyonluğu · ${clubStars}★ kulüp beklentisi`);
+  if(performance.promoted)add(6,'Üst lige yükselme');
   const cupWinner=summary?.countrySummaries?.[state.playerCountry||'TUR']?.cupWinner||summary?.cupWinner;
-  if(cupWinner===performance.from)add(6,'Yerel kupa kazanma');
-  const europe=europeReputationGain(state,performance);add(europe.points,europe.label);
-  const tenure=currentTenure(state,performance.from);if(tenure>=3)add(3,`Aynı kulüpte ${tenure}. sezon`);
-  if(overTarget(state,summary,performance))add(4,'Sezonu ana hedefin üzerinde bitirme');
+  if(cupWinner===performance.from)add(scaledReputationPoints(4,clubStars,2),`Yerel kupa · ${clubStars}★ kulüp beklentisi`);
+  const europe=europeReputationGain(state,performance,clubStars);add(europe.points,europe.label);
+  const tenure=currentTenure(state,performance.from);if(tenure>=3&&tenure%3===0)add(1,`Aynı kulüpte ${tenure}. sezon istikrarı`);
+  if(overTarget(state,summary,performance))add(2,'Sezonu ana hedefin belirgin üzerinde bitirme');
+  if(!performance.primaryAchieved)add(-2,'Ana hedef başarısızlığı');
   if(performance.superRelegated)add(-10,'Küme düşme');
-  if(veryBadSeason(state,summary,performance))add(-5,'Ana hedefin çok altında biten sezon');
-  const before=clamp(profile.reputation||50,0,100),after=clamp(before+delta,0,100);
+  if(veryBadSeason(state,summary,performance))add(-4,'Ana hedefin çok altında biten sezon');
+  const before=clamp(profile.reputation||50,0,100),positiveCap=reputationSeasonPositiveCap(before),appliedPositive=Math.min(positive,positiveCap);
+  if(positive>positiveCap)reasons.push({points:-(positive-positiveCap),label:`İtibar seviyesi nedeniyle sezonluk artış sınırı (+${positiveCap})`});
+  const delta=appliedPositive+negative,after=clamp(before+delta,0,100);
   profile.reputation=after;profile.lastEvaluatedSeason=season;profile.lastSeasonDelta=after-before;profile.lastSeasonWinRate=performance.winRate;profile.lastPrimaryAchieved=performance.primaryAchieved;
-  profile.reputationSystemVersion=2;if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];
-  profile.reputationHistory.push({season,before,delta:after-before,after,reasons,tenure,at:new Date().toISOString()});profile.reputationHistory=profile.reputationHistory.slice(-30);
+  profile.reputationSystemVersion=REPUTATION_SYSTEM_VERSION;if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];
+  profile.reputationHistory.push({season,before,delta:after-before,after,reasons,tenure,clubStars,expectationFactor:factor,positiveBeforeCap:positive,positiveCap,negative,systemVersion:REPUTATION_SYSTEM_VERSION,at:new Date().toISOString()});profile.reputationHistory=profile.reputationHistory.slice(-30);
   return profile;
 }
 function installManagerEvaluate(){globalThis.llManagerEvaluate=evaluateReputation;}
@@ -572,33 +595,53 @@ function installManagerBuildOffers(){
   const wrapped=function(state,summary,performance,profile,fired){return buildMarketOffers(base,state,summary,performance,profile,fired);};
   wrapped.__boardRep=true;globalThis.llManagerBuildOffers=wrapped;
 }
+function applyDismissalReputationPenalty(state,market){
+  if(!state||!market?.fired)return false;
+  const profile=ensureProfile(state),season=num(market.season,state.season),team=market.fromTeam||state.playerTeam,key=`dismissal-reputation-${season}-${team}`;
+  if(!Array.isArray(profile.reputationEvents))profile.reputationEvents=[];
+  if(profile.reputationEvents.some(item=>item.key===key))return false;
+  const before=clamp(profile.reputation,0,100),after=clamp(before-DISMISSAL_REPUTATION_PENALTY,0,100),points=after-before;
+  const event={key,season,before,delta:points,after,label:'Takımdan kovulma',team,at:new Date().toISOString()};profile.reputation=after;profile.reputationEvents.push(event);
+  if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];
+  const report=[...profile.reputationHistory].reverse().find(item=>num(item?.season)===season&&!item?.event);
+  if(report){
+    if(!Array.isArray(report.reasons))report.reasons=[];report.reasons.push({points,label:event.label});report.after=after;report.delta=after-num(report.before,before);report.dismissalPenalty=points;profile.lastSeasonDelta=report.delta;
+  }else profile.reputationHistory.push({season,before,delta:points,after,reasons:[{points,label:event.label}],event:true,dismissalPenalty:points,at:event.at});
+  profile.reputationHistory=profile.reputationHistory.slice(-30);market.dismissalReputationPenalty=points;market.reputationAfterDismissal=after;
+  return true;
+}
 function installEnsureMarket(){
   if(typeof globalThis.llEnsureManagerMarket!=='function'||globalThis.llEnsureManagerMarket.__boardRep)return;
   const base=globalThis.llEnsureManagerMarket;
   const wrapped=function(state=stateNow()){
     const market=base.apply(this,arguments);if(!state||!market)return market;
-    const board=ensureBoard(state),profile=ensureProfile(state),dismissal=boardDismissal(state);
-    const status=confidenceStatus(board.value),effective=effectiveReputation(state,profile.reputation);
-    market.boardConfidence=board.value;market.boardConfidenceStatus=status.label;market.baseReputation=profile.reputation;market.effectiveReputation=effective;market.boardMarketModifier=marketModifier(state);
+    const board=ensureBoard(state),profile=ensureProfile(state),dismissal=boardDismissal(state),status=confidenceStatus(board.value);
     let performance={from:market.fromTeam,league:null,promoted:false,primaryAchieved:market.primaryAchieved};
     try{if(state.lastSeasonSummary)performance=llManagerPerformance(state,state.lastSeasonSummary);}catch{}
-    market.offerCountTarget=managerOfferTarget(effective,status.key,market.fired);market.offerQualityCap=managerOfferQualityCap(performance,num(market.fromStars,teamStars(state,market.fromTeam)),status.key);
     if(market.status==='pending'&&dismissal.dismiss&&!market.fired){
-      market.fired=true;market.canStay=false;market.fireReason=`Yönetim güveni ${board.value}/100 seviyesine düştü ve ${board.badStreak} maçlık olumsuz seri oluştu. ${reputationTier(profile.reputation)} itibar seviyende güven eşiği ${dismissal.threshold}, gereken kötü seri ${dismissal.requiredBadStreak} maçtır.`;
+      market.fired=true;market.canStay=false;market.fireReason=`Yönetim güveni ${board.value}/100 seviyesine düştü ve ${board.badStreak} maçlık olumsuz seri oluştu. ${reputationTier(profile.reputation)} itibar seviyende güven eşiği ${dismissal.threshold}, gereken kötü seri ${dismissal.requiredBadStreak} maçtır.`;market.boardDismissal=true;
+    }
+    const penaltyApplied=applyDismissalReputationPenalty(state,market);
+    if(market.status==='pending'&&(penaltyApplied||market.boardDismissal)){
       try{
-        const performance=llManagerPerformance(state,state.lastSeasonSummary),rebuilt=llManagerBuildOffers(state,state.lastSeasonSummary,performance,profile,true);
-        market.offers=rebuilt.offers;market.offerCountTarget=rebuilt.offerCountTarget;market.offerQualityCap=rebuilt.offerQualityCap;market.progressionEligible=false;market.prestigeEligible=false;market.boardDismissal=true;
+        const rebuilt=llManagerBuildOffers(state,state.lastSeasonSummary,performance,profile,true);
+        market.offers=rebuilt.offers;market.offerCountTarget=rebuilt.offerCountTarget;market.offerQualityCap=rebuilt.offerQualityCap;market.progressionEligible=false;market.prestigeEligible=false;
       }catch{}
     }
+    const effective=effectiveReputation(state,profile.reputation);
+    market.boardConfidence=board.value;market.boardConfidenceStatus=status.label;market.baseReputation=profile.reputation;market.effectiveReputation=effective;market.boardMarketModifier=marketModifier(state);
+    market.offerCountTarget=managerOfferTarget(effective,status.key,market.fired);market.offerQualityCap=managerOfferQualityCap(performance,num(market.fromStars,teamStars(state,market.fromTeam)),status.key);
     if(typeof globalThis.llSave==='function')llSave();return market;
   };
   wrapped.__boardRep=true;globalThis.llEnsureManagerMarket=wrapped;
 }
+
 function decorateManagerMarket(){
   const state=stateNow(),market=state?.managerMarket,root=typeof globalThis.llArea==='function'?llArea():null;if(!state||!market||!root||root.querySelector('[data-board-market]'))return;
   const mod=num(market.boardMarketModifier),status=confidenceStatus(market.boardConfidence);
   const count=Array.isArray(market.offers)?market.offers.length:0,target=num(market.offerCountTarget,count),cap=num(market.offerQualityCap,6);
-  const notice=`<div class="ll-notice ll-board-market-note" data-board-market><b>Yönetim desteği ve itibar:</b> Profil itibarı ${market.baseReputation}/100 (${esc(reputationTier(market.baseReputation))}); güven ${market.boardConfidence}/100 olduğu için piyasada ${mod>0?'+':''}${mod} geçici etki uygulanıyor. <b>${count} doğrudan teklif</b> üretildi${target?` (hedef ${target})`:''}; mevcut sezon ve güven durumu teklif seviyesini en fazla ${cap}★ ile sınırlandırıyor. Düşük güven, yüksek itibarlı bir menajeri tek teklife düşürmez.</div>`;
+  const firingText=num(market.dismissalReputationPenalty)<0?` Kovulma nedeniyle profil itibarına ayrıca <b>${market.dismissalReputationPenalty}</b> uygulandı.`:'';
+  const notice=`<div class="ll-notice ll-board-market-note" data-board-market><b>Yönetim desteği ve itibar:</b> Profil itibarı ${market.baseReputation}/100 (${esc(reputationTier(market.baseReputation))}); güven ${market.boardConfidence}/100 olduğu için piyasada ${mod>0?'+':''}${mod} geçici etki uygulanıyor.${firingText} <b>${count} doğrudan teklif</b> üretildi${target?` (hedef ${target})`:''}; mevcut sezon ve güven durumu teklif seviyesini en fazla ${cap}★ ile sınırlandırıyor. Düşük güven, yüksek itibarlı bir menajeri tek teklife düşürmez.</div>`;
   const metrics=root.querySelector('.ll-metrics');if(metrics)metrics.insertAdjacentHTML('afterend',notice);
 }
 function adjustApplication(team){
@@ -630,8 +673,8 @@ function applyCleanDepartureBonus(state,market,fromTeam,toTeam){
   const profile=ensureProfile(state),season=num(market.season,state.season),key=`clean-departure-${season}-${fromTeam}-${toTeam}`;
   if(!Array.isArray(profile.reputationEvents))profile.reputationEvents=[];
   if(profile.reputationEvents.some(item=>item.key===key))return;
-  const before=profile.reputation,after=clamp(before+2,0,100);profile.reputation=after;
-  const event={key,season,before,delta:after-before,after,label:'Kovulmadan kulüpten ayrılma',at:new Date().toISOString()};profile.reputationEvents.push(event);
+  const before=profile.reputation,after=clamp(before+1,0,100);profile.reputation=after;
+  const event={key,season,before,delta:after-before,after,label:'Başarılı ve temiz kulüp ayrılığı',at:new Date().toISOString()};profile.reputationEvents.push(event);
   if(!Array.isArray(profile.reputationHistory))profile.reputationHistory=[];profile.reputationHistory.push({season,before,delta:after-before,after,reasons:[{points:after-before,label:event.label}],event:true,at:event.at});
 }
 function installDepartureWrappers(){
