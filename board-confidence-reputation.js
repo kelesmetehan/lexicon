@@ -323,25 +323,19 @@ function renderPressQuiz(){
   const questionHtml=ref.askTrToEn?esc(question):`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,question):esc(question)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`;
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,answer):esc(answer)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`:esc(answer);
   const pct=(pq.index/pq.queue.length)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Basın Toplantısı <em>Kelime Boost</em></div><div class="ll-muted">Normal sınavın devamı · ${pq.index+1}/5 · Boost için kusursuz 5/5 gerekir</div></div><div class="ll-stars">Doğru: ${pq.correct}/5</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llRevealPressQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${pq.revealed?`<div class="ll-answer">${answerHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${pq.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRatePressQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRatePressQuiz(true)">✓ Bildim</button></div><div class="ll-muted" style="text-align:center;margin-top:10px">Katılım başladıktan sonra 5 kelimenin tamamı cevaplanır.</div></div></div>`;
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Basın Toplantısı <em>Kelime Boost</em></div><div class="ll-muted">Normal sınavın devamı · ${pq.index+1}/5 · Boost için kusursuz 5/5 gerekir</div></div><div class="ll-stars">Doğru: ${pq.correct}/5</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llRevealPressQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${pq.revealed?`<div class="ll-answer">${answerHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${pq.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRatePressQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRatePressQuiz(true)">✓ Bildim</button></div><div class="ll-muted" style="text-align:center;margin-top:10px">Katılım başladıktan sonra 5 kelimenin tamamı cevaplanır.</div></div></div>`;
   if(typeof globalThis.markNewWordFrame==='function')markNewWordFrame(word,llArea().querySelector('.ll-question'));
 }
 function ratePressQuiz(correct){
-  const pq=globalThis.lexLeague?.pressQuiz;if(!pq||!pq.revealed)return;
-  const ref=pq.queue[pq.index],words=typeof globalThis.loadUserWords==='function'?loadUserWords():[],card=words.find(item=>item.id===ref.id),quality=correct?5:1;
-  if(card&&typeof globalThis.sm2==='function'){
-    const recovered=correct&&card.isActiveMistake===true,updated=sm2(card,quality);Object.assign(card,updated);
-    if(typeof globalThis.todayStr==='function')card.lastReviewed=todayStr();card.reviewCount=num(card.reviewCount)+1;
-    if(correct)card.isActiveMistake=false;else{card.wrongCount=num(card.wrongCount)+1;card.isActiveMistake=true;}
-    if(recovered){const bonus=typeof globalThis.LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;pq.recoveredWords++;pq.recoveryBonus+=bonus;}
-    if(typeof globalThis.saveWordsToStorage==='function')saveWordsToStorage(words);
-    if(typeof globalThis.loadMeta==='function'&&typeof globalThis.saveMeta==='function'){
-      const meta=loadMeta();if(!meta.activity)meta.activity={};const today=typeof globalThis.todayStr==='function'?todayStr():new Date().toISOString().slice(0,10);
-      if(!meta.activity[today])meta.activity[today]={reviews:0,correct:0};meta.activity[today].reviews++;if(correct)meta.activity[today].correct++;saveMeta(meta);
-    }
-  }
-  if(typeof globalThis.llMarkQuizWordUsed==='function')llMarkQuizWordUsed(ref);if(correct)pq.correct++;
-  pq.index++;pq.revealed=false;if(typeof globalThis.llSave==='function')llSave();renderPressQuiz();
+  const pq=globalThis.lexLeague?.pressQuiz;if(!pq||!pq.revealed||pq.answerBusy)return;
+  const answerIndex=num(pq.index),ref=pq.queue?.[answerIndex];if(!ref)return;
+  pq.answerBusy=true;if(correct)pq.correct=num(pq.correct)+1;pq.index=answerIndex+1;pq.revealed=false;
+  try{
+    if(typeof globalThis.llPersistQuizWordRating==='function')llPersistQuizWordRating(ref,pq,!!correct,{markUsed:true});
+    else if(typeof globalThis.llMarkQuizWordUsed==='function')llMarkQuizWordUsed(ref);
+  }catch(error){try{globalThis.llQuizDiagnostic?.('press_quiz_answer_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}catch{}}
+  try{if(typeof globalThis.llSave==='function')llSave();}catch(error){try{globalThis.llQuizDiagnostic?.('press_quiz_save_error',{question:answerIndex+1,message:String(error?.message||error)});}catch{}}
+  pq.answerBusy=false;renderPressQuiz();
 }
 function finishPressQuiz(){
   const state=stateNow(),pq=globalThis.lexLeague?.pressQuiz,q=globalThis.lexLeague?.quiz;if(!state||!pq||pq.completed)return;

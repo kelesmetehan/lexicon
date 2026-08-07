@@ -132,7 +132,7 @@ function quizWordHtml(event){
   const question=ref.askTrToEn?String(word.tr||'').split(',')[0].trim():word.en,answer=ref.askTrToEn?word.en:word.tr;
   let example='';if(word.example){if(ref.askTrToEn&&typeof globalThis.llMaskAnswerInExample==='function')example=llMaskAnswerInExample(word.example,word.en);else example=word.example;}
   const exampleHtml=example&&typeof globalThis.llExampleSentenceHtml==='function'?llExampleSentenceHtml(word,example,`legend-${q.index}-${word.id}`):'',questionHtml=ref.askTrToEn?esc(question):`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,question):esc(question)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`,answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,answer):esc(answer)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`:esc(answer),pct=(q.index/WORD_COUNT)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Efsaneni <em>Çağır</em></div><div class="ll-muted">Özel sınav · ${q.index+1}/${WORD_COUNT} · Her doğru normal maç AP’si kazandırır · ardından 10 kelimelik normal sınav</div></div><div class="ll-stars">Doğru: ${q.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llLegendReveal()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llLegendRate(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llLegendRate(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llLegendFinishEarly()">Burada Bırak · Şu anki ${q.correct} doğru üzerinden sonucu al</button></div></div>`;
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Efsaneni <em>Çağır</em></div><div class="ll-muted">Özel sınav · ${q.index+1}/${WORD_COUNT} · Her doğru normal maç AP’si kazandırır · ardından 10 kelimelik normal sınav</div></div><div class="ll-stars">Doğru: ${q.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llLegendReveal()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llLegendRate(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llLegendRate(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llLegendFinishEarly()">Burada Bırak · Şu anki ${q.correct} doğru üzerinden sonucu al</button></div></div>`;
   try{if(typeof globalThis.markNewWordFrame==='function')markNewWordFrame(word,llArea().querySelector('.ll-question'));}catch{}
 }
 function save(){if(typeof globalThis.llSave==='function')llSave();}
@@ -145,16 +145,16 @@ function startSpecialQuiz(event){
 }
 function renderSpecialQuiz(event){if(!event)return;if(event.quiz?.completed){renderOutcome(event);return;}quizWordHtml(event);}
 function rateSpecial(correct){
-  const state=stateNow(),event=currentEvent(state),q=event?.quiz;if(!state||!event||!q||!q.revealed||q.completed)return;
-  const ref=q.queue[q.index],words=typeof globalThis.loadUserWords==='function'?loadUserWords():[],card=words.find(w=>w.id===ref.id),quality=correct?5:1;
-  if(card&&typeof globalThis.sm2==='function'){
-    const recovered=correct&&card.isActiveMistake===true,updated=sm2(card,quality);Object.assign(card,updated);if(typeof globalThis.todayStr==='function')card.lastReviewed=todayStr();card.reviewCount=num(card.reviewCount)+1;
-    if(correct)card.isActiveMistake=false;else{card.wrongCount=num(card.wrongCount)+1;card.isActiveMistake=true;}
-    if(recovered){const bonus=typeof globalThis.LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords++;q.recoveryBonus+=bonus;}
-    if(typeof globalThis.saveWordsToStorage==='function')saveWordsToStorage(words);
-    try{if(typeof globalThis.loadMeta==='function'&&typeof globalThis.saveMeta==='function'){const meta=loadMeta();if(!meta.activity)meta.activity={};const t=typeof globalThis.todayStr==='function'?todayStr():new Date().toISOString().slice(0,10);if(!meta.activity[t])meta.activity[t]={reviews:0,correct:0};meta.activity[t].reviews++;if(correct)meta.activity[t].correct++;saveMeta(meta);}}catch{}
-  }
-  markSpecialWordUsed(ref,state);if(correct)q.correct++;q.index++;q.shown++;q.revealed=false;save();if(q.index>=q.queue.length)finishSpecialQuiz(event);else renderSpecialQuiz(event);
+  const state=stateNow(),event=currentEvent(state),q=event?.quiz;if(!state||!event||!q||!q.revealed||q.completed||q.answerBusy)return;
+  const answerIndex=num(q.index),ref=q.queue?.[answerIndex];if(!ref)return;
+  q.answerBusy=true;if(correct)q.correct=num(q.correct)+1;q.index=answerIndex+1;q.shown=num(q.shown)+1;q.revealed=false;
+  try{
+    if(typeof globalThis.llPersistQuizWordRating==='function')llPersistQuizWordRating(ref,q,!!correct,{markUsed:false});
+  }catch(error){try{globalThis.llQuizDiagnostic?.('legend_quiz_answer_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}catch{}}
+  try{markSpecialWordUsed(ref,state);}catch(error){try{globalThis.llQuizDiagnostic?.('legend_quiz_cycle_error',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});}catch{}}
+  q.answerBusy=false;
+  try{save();}catch(error){try{globalThis.llQuizDiagnostic?.('legend_quiz_save_error',{question:answerIndex+1,message:String(error?.message||error)});}catch{}}
+  if(q.index>=q.queue.length)finishSpecialQuiz(event);else renderSpecialQuiz(event);
 }
 function specialApPerWord(){try{return typeof globalThis.llQuizApPerWord==='function'?num(llQuizApPerWord(),5):5;}catch{return 5;}}
 function finishSpecialQuiz(event){
