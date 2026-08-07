@@ -315,6 +315,7 @@
     var profile=typeof globalThis.llManagerProfile==='function'?llManagerProfile(state):(state.managerProfile||{history:[]});if(!Array.isArray(profile.history))profile.history=[];
     profile.history.push({season:market.season,from:fromTeam,to:team,kind:'application',fired:market.fired,winRate:market.winRate,reputation:profile.reputation,applicationScore:application.totalScore,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=team;
     state.lastSeasonSummary.nextManagerTeam=team;state.playerTeam=team;
+    if(team!==fromTeam&&typeof globalThis.llAchievementRecordTeamChange==='function')globalThis.llAchievementRecordTeamChange(fromTeam,team,state);
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(team,state)||state.playerCountry;
     if(typeof globalThis.llMLAttachLegacyAliases==='function')llMLAttachLegacyAliases(state);
     if(typeof globalThis.llSave==='function')llSave();closeReport();if(typeof globalThis.llRenderSeasonEnd==='function')llRenderSeasonEnd();
