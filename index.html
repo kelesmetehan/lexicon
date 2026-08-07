@@ -708,7 +708,9 @@
   .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
   .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
   .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; position:relative; z-index:8; }
+  .ll-quiz-actions .ll-btn { min-height:46px; position:relative; z-index:1; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+  .ll-quiz-actions .ll-btn:hover { transform:none; }
   .ll-battle { display:grid; grid-template-columns:1fr 100px 1fr; gap:12px; align-items:center; }
   .ll-dice-side { display:flex; flex-direction:column; gap:11px; }
   .ll-die-row { display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:10px; }
@@ -2954,7 +2956,7 @@ function llRenderLeagueQuiz(){
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
-  <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button class="ll-btn danger" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button class="ll-btn primary" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
+  <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
   markNewWordFrame(word,llArea().querySelector('.ll-question'));
 }
 function llRevealQuiz(){ if(!lexLeague.quiz)return;lexLeague.quiz.revealed=true;llRenderLeagueQuiz(); }
@@ -2963,18 +2965,48 @@ function llSkipLeagueQuiz(){
   if(!confirm(answered?`Sınavı burada bitirip ${answered} cevaptaki ${q.correct} doğru için ${earned} AP alarak maça devam etmek istiyor musun?`:'Hiç soru cevaplamadın. 0 AP ile doğrudan maça devam etmek istiyor musun?'))return;
   q.skipped=true;q.totalAnswered=answered;llFinishLeagueQuiz();
 }
+function llQuizDiagnostic(type,details={}){
+  try{if(typeof llDiagnosticEvent==='function')llDiagnosticEvent(type,details);}catch{}
+}
+function llPersistQuizWordRating(ref,q,correct,{markUsed=true}={}){
+  const errors=[];let card=null,recovered=false;
+  try{
+    const words=loadUserWords();
+    card=words.find(w=>w.id===ref?.id)||null;
+    if(card){
+      recovered=!!(correct&&card.isActiveMistake===true);
+      try{
+        const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;
+        if(correct)card.isActiveMistake=false;else{card.wrongCount=(Number(card.wrongCount)||0)+1;card.isActiveMistake=true;}
+      }catch(error){errors.push({stage:'sm2',message:String(error?.message||error)});}
+      if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(Number(q.recoveredWords)||0)+1;q.recoveryBonus=(Number(q.recoveryBonus)||0)+bonus;}
+      try{saveWordsToStorage(words);}catch(error){errors.push({stage:'words-save',message:String(error?.message||error)});}
+      try{
+        const meta=loadMeta();if(!meta.activity||typeof meta.activity!=='object')meta.activity={};const t=todayStr();
+        if(!meta.activity[t]||typeof meta.activity[t]!=='object')meta.activity[t]={reviews:0,correct:0};
+        meta.activity[t].reviews=(Number(meta.activity[t].reviews)||0)+1;if(correct)meta.activity[t].correct=(Number(meta.activity[t].correct)||0)+1;saveMeta(meta);
+      }catch(error){errors.push({stage:'meta-save',message:String(error?.message||error)});}
+    }
+  }catch(error){errors.push({stage:'word-load',message:String(error?.message||error)});}
+  if(markUsed){try{llMarkQuizWordUsed(ref);}catch(error){errors.push({stage:'word-cycle',message:String(error?.message||error)});}}
+  if(errors.length)llQuizDiagnostic('quiz_answer_nonfatal_error',{question:Number(q?.index)+1,wordId:ref?.id||null,correct:!!correct,errors});
+  return {card,recovered,errors};
+}
+globalThis.llQuizDiagnostic=llQuizDiagnostic;
+globalThis.llPersistQuizWordRating=llPersistQuizWordRating;
 function llRateLeagueQuiz(correct){
-  const q=lexLeague.quiz;if(!q||!q.revealed)return;
-  const ref=q.queue[q.index],words=loadUserWords(),card=words.find(w=>w.id===ref.id),quality=correct?5:1;
-  if(card){
-    const recovered=correct&&card.isActiveMistake===true;
-    const updated=sm2(card,quality);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(card.reviewCount||0)+1;
-    if(correct)card.isActiveMistake=false;else{card.wrongCount=(card.wrongCount||0)+1;card.isActiveMistake=true;}
-    if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(q.recoveredWords||0)+1;q.recoveryBonus=(q.recoveryBonus||0)+bonus;}
-    saveWordsToStorage(words);
-    const meta=loadMeta();if(!meta.activity)meta.activity={};const t=todayStr();if(!meta.activity[t])meta.activity[t]={reviews:0,correct:0};meta.activity[t].reviews++;if(correct)meta.activity[t].correct++;saveMeta(meta);
-  }
-  llMarkQuizWordUsed(ref);if(correct)q.correct++;q.index++;q.revealed=false;llSave();llRenderLeagueQuiz();
+  const q=lexLeague.quiz;if(!q||!q.revealed||q.answerBusy)return;
+  const answerIndex=Number(q.index)||0,ref=q.queue?.[answerIndex];if(!ref)return;
+  q.answerBusy=true;
+  // Cevabı önce sınav durumuna işle. Kelime/istatistik depolamasındaki ikincil bir hata
+  // kullanıcının "Bildim" düğmesini kilitleyip aynı soruda bırakmamalı.
+  if(correct)q.correct=(Number(q.correct)||0)+1;
+  q.index=answerIndex+1;q.revealed=false;
+  llQuizDiagnostic('quiz_answer_clicked',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct});
+  try{llPersistQuizWordRating(ref,q,!!correct);}catch(error){llQuizDiagnostic('quiz_answer_unexpected_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}
+  try{llSave();}catch(error){llQuizDiagnostic('quiz_answer_career_save_error',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});}
+  q.answerBusy=false;
+  try{llRenderLeagueQuiz();}catch(error){q.answerBusy=false;llQuizDiagnostic('quiz_answer_render_error',{question:answerIndex+1,message:String(error?.message||error)});throw error;}
 }
 function llFinishLeagueQuiz(){
   const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
@@ -5932,7 +5964,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260807-europe-calendar-guard-1"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260726-2"></script>
+<script src="diagnostics.js?v=20260807-quiz-input-1"></script>
 <script src="trophy-cinematic.js?v=20260802-1"></script>
 <script src="competition-consistency.js?v=20260801-2"></script>
 <script src="indexeddb-storage.js?v=20260801-1"></script>
@@ -5945,9 +5977,9 @@ renderPreStart();
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20260807-achievement-audit-1"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
-<script src="board-confidence-reputation.js?v=20260807-3"></script>
+<script src="board-confidence-reputation.js?v=20260807-quiz-input-1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
-<script src="legend-call.js?v=20260807-1"></script>
+<script src="legend-call.js?v=20260807-quiz-input-1"></script>
 </body>
 </html>
 
