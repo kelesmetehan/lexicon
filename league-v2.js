@@ -320,7 +320,7 @@ function llTeamLogo(teamOrName,variant=''){
   const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onload="this.parentElement.classList.add('has-logo')" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.remove('has-logo')">${fallback}</span>`;
 }
 function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
 function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
