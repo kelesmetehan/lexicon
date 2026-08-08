@@ -2611,9 +2611,10 @@ function llTeamLogo(teamOrName,variant=''){
   const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
   const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
   const label=llEscape(String(team.name||team.short||'Takım'));
+  const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
-  if(!team.logo)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${team.logo}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
+  if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
 }
 function llTeamState(name){ return lexLeague.state?.teams?.[name]; }
 function llCard(id){ return id ? LL_CARD_MAP[id] : null; }
@@ -5961,7 +5962,8 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260808-mobile-logo-1"></script>
+<script src="team-logo-manifest.js?v=20260808-local-logos-1"></script>
+<script src="league-v2.js?v=20260808-local-logos-1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260806-2"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
