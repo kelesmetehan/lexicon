@@ -6,7 +6,10 @@ const VERSION=3;
 const REPUTATION_SYSTEM_VERSION=3;
 const DISMISSAL_REPUTATION_PENALTY=5;
 const STARTING_CONFIDENCE=75;
+
 const PRESS_WORD_COUNT=5;
+const PRESS_MAX_OFFERS_PER_SEASON=4;
+const PRESS_MIN_OFFICIAL_MATCH_GAP=3;
 const INTERIM_EVERY=5;
 const REGULAR_PACK_SURCHARGE_RATE=.20;
 const MARKET_REP_MODIFIERS={strong:5,danger:-10,dismissal:-15};
@@ -295,13 +298,23 @@ function showBoardMeeting(force=false){
 globalThis.llShowBoardMeeting=showBoardMeeting;
 globalThis.llCloseBoardMeeting=function(){document.getElementById('ll-board-meeting')?.remove();document.body.classList.remove('ll-cinematic-open');};
 
+function pressState(state){
+  const board=ensureBoard(state);if(!board)return {offers:0,lastOfferMatch:-PRESS_MIN_OFFICIAL_MATCH_GAP};
+  if(!board.pressConference||typeof board.pressConference!=='object'||Array.isArray(board.pressConference))board.pressConference={offers:0,lastOfferMatch:-PRESS_MIN_OFFICIAL_MATCH_GAP};
+  const press=board.pressConference;press.offers=Math.max(0,num(press.offers));press.lastOfferMatch=num(press.lastOfferMatch,-PRESS_MIN_OFFICIAL_MATCH_GAP);
+  return press;
+}
 function pressEligible(state,quiz){
-  const info=criticalMatchInfo(fixtureNow(),state),answered=num(quiz?.totalAnswered,quiz?.index);
-  return !!(info.critical&&!quiz?.skipped&&answered>=10&&quiz?.queue?.length>=10);
+  const info=criticalMatchInfo(fixtureNow(),state),answered=num(quiz?.totalAnswered,quiz?.index),board=ensureBoard(state),press=pressState(state);
+  const enoughGap=num(board?.matchCount)-num(press.lastOfferMatch)>=PRESS_MIN_OFFICIAL_MATCH_GAP;
+  return !!(info.critical&&!quiz?.skipped&&answered>=10&&quiz?.queue?.length>=10&&press.offers<PRESS_MAX_OFFERS_PER_SEASON&&enoughGap);
 }
 function showPressOffer(normalPlusPos){
   const state=stateNow(),q=globalThis.lexLeague?.quiz,info=criticalMatchInfo(fixtureNow(),state);if(!state||!q||!info.critical){startMatchBase?.(normalPlusPos);return;}
-  q.normalPlusPos=normalPlusPos||null;q.pressConferenceOffered=true;
+  const board=ensureBoard(state),press=pressState(state);
+  // Teklif kabul/ret fark etmeksizin sayılır: aynı beş ek kelime ekranı art arda gelmez.
+  press.offers++;press.lastOfferMatch=num(board?.matchCount);q.normalPlusPos=normalPlusPos||null;q.pressConferenceOffered=true;
+  if(typeof globalThis.llSave==='function')llSave();
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div class="ll-press-icon">🎙️</div><span class="ll-rarity">ÇOK ÖNEMLİ MAÇ</span><div class="quiz-start-title" style="margin-top:8px">Basın <em>Toplantısı</em></div><div class="ll-sub">${esc(info.label)}</div><div class="ll-press-offer"><b>Bu maç çok kritik.</b><span>Basın toplantısına katılırsan normal 10 kelimelik döngünün devamındaki 5 kelime sorulur.</span><ul><li>5/5 doğru: Seçtiğin mevkinin zar üst sınırı bu maç için +1.</li><li>4/5 veya altı: Bonus yok; kelimeler öğrenilmiş sayılır.</li><li>Boost maç sonunda tamamen silinir.</li></ul></div><div class="ll-actions" style="justify-content:center;margin-top:18px"><button class="ll-btn gold" onclick="llStartPressConferenceQuiz()">Katıl · 5 Ek Kelime</button><button class="ll-btn" onclick="llSkipPressConference()">Geç · Normal Maça Devam</button></div></div></div>`;
 }
 function startPressQuiz(){

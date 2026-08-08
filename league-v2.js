@@ -315,8 +315,13 @@ function llTeamDef(name){
 }
 function llTeamLogo(teamOrName,variant=''){
   const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
-  if(!team.logo)return `<span class="ll-team-logo-fallback" style="display:inline-flex">${team.icon||'⚽'}</span>`;
-  return `<img class="ll-team-logo ${variant}" src="${team.logo}" alt="${llEscape(team.name)} logosu" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="ll-team-logo-fallback">${team.icon||'⚽'}</span>`;
+  // Transfermarkt görselleri mobil ağlarda veya içerik engelleyicilerde zaman zaman
+  // yüklenemiyor. Görsel yüklenirken de hata alırsa da takım kimliği kaybolmasın.
+  const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
+  const label=llEscape(String(team.name||team.short||'Takım'));
+  const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
+  if(!team.logo)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${team.logo}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
 }
 function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
 function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
