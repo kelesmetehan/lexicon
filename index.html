@@ -512,12 +512,19 @@
   .ll-topbar { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
   .ll-brand { display:flex; align-items:center; gap:12px; }
   .ll-brand-mark { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; font-size:25px; background:linear-gradient(135deg,rgba(14,116,144,.35),rgba(22,101,52,.35)); border:1px solid rgba(94,234,212,.22); }
-  .ll-team-logo { width:30px; height:30px; object-fit:contain; display:inline-block; vertical-align:middle; filter:drop-shadow(0 3px 6px rgba(0,0,0,.28)); }
-  .ll-team-logo.brand { width:40px; height:40px; }
-  .ll-team-logo.match { width:56px; height:56px; }
-  .ll-team-logo.table { width:24px; height:24px; margin-right:7px; }
-  .ll-team-logo.compact { width:32px; height:32px; }
-  .ll-team-logo-fallback { display:none; align-items:center; justify-content:center; font-size:28px; }
+  /* Logo CDN'si mobil ağda yanıt vermezse bile her takımın okunur bir arma yedeği kalır. */
+  .ll-team-logo-wrap { width:30px; height:30px; display:inline-grid; place-items:center; position:relative; vertical-align:middle; flex:0 0 30px; }
+  .ll-team-logo-wrap.brand { width:40px; height:40px; flex-basis:40px; }
+  .ll-team-logo-wrap.match { width:56px; height:56px; flex-basis:56px; }
+  .ll-team-logo-wrap.table { width:24px; height:24px; margin-right:7px; flex-basis:24px; }
+  .ll-team-logo-wrap.compact { width:32px; height:32px; flex-basis:32px; }
+  .ll-team-logo { width:100%; height:100%; object-fit:contain; display:block; position:relative; z-index:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.28)); }
+  .ll-team-logo.is-failed { display:none; }
+  .ll-team-logo-fallback { width:100%; height:100%; display:inline-flex; align-items:center; justify-content:center; position:absolute; inset:0; border:1px solid rgba(94,234,212,.55); border-radius:5px 5px 10px 10px; clip-path:polygon(10% 0,90% 0,100% 22%,87% 84%,50% 100%,13% 84%,0 22%); background:linear-gradient(145deg,#164e63,#0f766e 55%,#083344); color:#ecfeff; font:900 9px/1 'DM Sans',sans-serif; letter-spacing:-.25px; text-shadow:0 1px 2px #000; box-shadow:inset 0 0 0 1px rgba(255,255,255,.13); }
+  .ll-team-logo-fallback.brand { font-size:11px; }
+  .ll-team-logo-fallback.match { font-size:15px; }
+  .ll-team-logo-fallback.table { font-size:8px; }
+  .ll-team-logo-fallback.compact { font-size:9px; }
   .ll-team-name.team-with-logo { display:flex; align-items:center; gap:8px; }
   .ll-title { font-family:'Cormorant Garamond',serif; font-size:34px; line-height:1; font-weight:400; }
   .ll-title em { color:#5eead4; font-style:italic; }
@@ -2601,9 +2608,12 @@ if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
 function llArea(){ return document.getElementById('flashcard-area'); }
 function llTeamDef(name){ return LL_TEAMS.find(t=>t.name===name); }
 function llTeamLogo(teamOrName,variant=''){
-  const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;
-  if(!team)return '';
-  return `<img class="ll-team-logo ${variant}" src="${team.logo}" alt="${llEscape(team.name)} logosu" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="ll-team-logo-fallback">${team.icon}</span>`;
+  const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
+  const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
+  const label=llEscape(String(team.name||team.short||'Takım'));
+  const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
+  if(!team.logo)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${team.logo}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
 }
 function llTeamState(name){ return lexLeague.state?.teams?.[name]; }
 function llCard(id){ return id ? LL_CARD_MAP[id] : null; }
@@ -5951,7 +5961,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260807-europe-calendar-guard-1"></script>
+<script src="league-v2.js?v=20260808-mobile-logo-1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260806-2"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -5977,7 +5987,7 @@ renderPreStart();
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20260807-achievement-audit-1"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
-<script src="board-confidence-reputation.js?v=20260807-quiz-input-1"></script>
+<script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
 <script src="legend-call.js?v=20260807-quiz-input-1"></script>
 </body>
