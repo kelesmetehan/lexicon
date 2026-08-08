@@ -174,6 +174,18 @@ const LL_V14_RECONCILIATION_RESERVES=[
 ];
 LL_V14_SUPPLEMENTAL_TEAMS.forEach(team=>{LL_V14_EURO_META[team.name]=team;});
 Object.values(LL_V14_EURO_META).forEach(team=>{if(team.logoId)LL_EURO_LOGO_IDS[team.name]=team.logoId;});
+// Avrupa havuzundaki armalar artık dış CDN'den çağrılmaz. Mobil tarayıcılar
+// uzak görsel isteğini engellese bile her takımın gerçek arması GitHub Pages
+// üzerinden aynı origin'den yüklenir.
+const LL_V14_LOCAL_LOGO_DIRECTORY='assets/team-logos/europe/official';
+// Bazı açık kaynak sağlayıcılar armanın özgün biçimini WebP/JPEG döndürür.
+// Uzantıyı doğru tutmak, GitHub Pages'in yanlış image/png üstbilgisi vermesini
+// önler; geri kalan tüm yerel armalar PNG'dir.
+const LL_V14_LOCAL_LOGO_EXTENSIONS={11:'jpg',1025:'jpg',2728:'webp',31614:'webp',3258:'webp',3700:'webp'};
+globalThis.LL_LOCAL_TEAM_LOGOS=globalThis.LL_LOCAL_TEAM_LOGOS||{};
+Object.values(LL_V14_EURO_META).forEach(team=>{
+  if(team.logoId){const extension=LL_V14_LOCAL_LOGO_EXTENSIONS[team.logoId]||'png';globalThis.LL_LOCAL_TEAM_LOGOS[team.name]=`${LL_V14_LOCAL_LOGO_DIRECTORY}/${team.logoId}.${extension}`;}
+});
 function llV14EuroPool(type){return (LL_V14_EURO_POOLS[type]||[]).map(team=>team.name);}
 const llV14TeamDefBase=llTeamDef;
 llTeamDef=function(name){
@@ -181,7 +193,8 @@ llTeamDef=function(name){
   if(domestic)return domestic;
   const team=LL_V14_EURO_META[name];
   if(!team)return llV14TeamDefBase(name);
-  return {name:team.name,short:team.short,stars:team.stars,icon:team.flag,logo:team.logoId?`https://tmssl.akamaized.net/images/wappen/head/${team.logoId}.png`:''};
+  const extension=LL_V14_LOCAL_LOGO_EXTENSIONS[team.logoId]||'png';
+  return {name:team.name,short:team.short,stars:team.stars,icon:team.flag,logo:team.logoId?`${LL_V14_LOCAL_LOGO_DIRECTORY}/${team.logoId}.${extension}`:''};
 };
 function llV14CurrentEuropeResults(state,type,userOnly=false){
   return (state.results||[]).filter(result=>Number(result.season)===Number(state.season)&&result.competition===type&&result.league==='euro-table'&&(!userOnly||result.userMatch));
