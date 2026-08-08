@@ -520,6 +520,8 @@
   .ll-team-logo-wrap.compact { width:32px; height:32px; flex-basis:32px; }
   .ll-team-logo { width:100%; height:100%; object-fit:contain; display:block; position:relative; z-index:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.28)); }
   .ll-team-logo.is-failed { display:none; }
+  /* Gerçek arma yüklendiğinde alttaki eski kısaltma kalkanı tamamen kalkar. */
+  .ll-team-logo-wrap.has-logo .ll-team-logo-fallback { display:none; }
   .ll-team-logo-fallback { width:100%; height:100%; display:inline-flex; align-items:center; justify-content:center; position:absolute; inset:0; border:1px solid rgba(94,234,212,.55); border-radius:5px 5px 10px 10px; clip-path:polygon(10% 0,90% 0,100% 22%,87% 84%,50% 100%,13% 84%,0 22%); background:linear-gradient(145deg,#164e63,#0f766e 55%,#083344); color:#ecfeff; font:900 9px/1 'DM Sans',sans-serif; letter-spacing:-.25px; text-shadow:0 1px 2px #000; box-shadow:inset 0 0 0 1px rgba(255,255,255,.13); }
   .ll-team-logo-fallback.brand { font-size:11px; }
   .ll-team-logo-fallback.match { font-size:15px; }
@@ -2614,7 +2616,7 @@ function llTeamLogo(teamOrName,variant=''){
   const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant}">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true')">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onload="this.parentElement.classList.add('has-logo')" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.remove('has-logo')">${fallback}</span>`;
 }
 function llTeamState(name){ return lexLeague.state?.teams?.[name]; }
 function llCard(id){ return id ? LL_CARD_MAP[id] : null; }
