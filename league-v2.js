@@ -320,7 +320,7 @@ function llTeamLogo(teamOrName,variant=''){
   const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant} logo-missing">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
 }
 function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
 function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
@@ -375,8 +375,8 @@ function llHeldCardIds(){const ids=new Set();Object.values(lexLeague.state.teams
 
 function llSortTable(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){return Object.values(lexLeague.state.standings[key]).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team,'tr'));}
 function llUpdateStanding(team,gf,ga){const key=llTeamLeague(team),r=lexLeague.state.standings[key][team];r.P++;r.GF+=gf;r.GA+=ga;r.GD=r.GF-r.GA;if(gf>ga){r.W++;r.Pts+=3;}else if(gf===ga){r.D++;r.Pts++;}else r.L++;const ts=llTeamState(team);ts.lastResults.push(gf>ga?'W':gf===ga?'D':'L');ts.lastResults=ts.lastResults.slice(-5);if(gf>ga)ts.wins++;}
-function llPlayerFixture(){const s=lexLeague.state;if(!s)return null;if(s.pendingFixture)return s.pendingFixture;const key=llTeamLeague(s.playerTeam),round=s.schedules[key][s.week-1]||[];const f=round.find(x=>x.home===s.playerTeam||x.away===s.playerTeam);return f?{...f,competition:'league',league:key,roundLabel:`${s.week}. Hafta`}:null;}
-function llCurrentRound(key=llTeamLeague(lexLeague.state.playerTeam)){return lexLeague.state.schedules[key]?.[lexLeague.state.week-1]||[];}
+function llPlayerFixture(){const s=lexLeague?.state;if(!s?.playerTeam)return null;if(s.pendingFixture)return s.pendingFixture;const key=llTeamLeague(s.playerTeam),round=s.schedules?.[key]?.[s.week-1]||[];const f=round.find(x=>x.home===s.playerTeam||x.away===s.playerTeam);return f?{...f,competition:'league',league:key,roundLabel:`${s.week}. Hafta`}:null;}
+function llCurrentRound(key=null){const s=lexLeague?.state,league=key||llTeamLeague(s?.playerTeam);return s?.schedules?.[league]?.[s.week-1]||[];}
 function llTableHtml(key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
   const rows=llSortTable(key),qualifications=key==='super'?llV2Qualifications(rows,lexLeague.state.cup?.winner):null;
   const euroZones=qualifications?{ucl:new Set(qualifications.ucl),uel:new Set(qualifications.uel),uecl:new Set(qualifications.uecl)}:null;
@@ -1225,4 +1225,3 @@ const llSaveSlotDashboardBase=llRenderDashboard;
 llRenderDashboard=function(){llSaveSlotDashboardBase();const actions=llArea()?.querySelector('.ll-topbar .ll-actions');if(actions&&!actions.querySelector('[data-save-manager]'))actions.insertAdjacentHTML('beforeend','<button class="ll-btn" data-save-manager onclick="renderLexiconLeagueLanding()">Kariyerler / Yedek</button>');};
 
 /* Initialization is performed by save-backup-hardening.js. */
-
