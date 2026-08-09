@@ -32,6 +32,10 @@
   }
   function isBlocked(){
     if(globalThis.llPenaltySequenceActive)return true;
+    /* Club-choice flow schedules its cinematic on the next frame.  Treat that
+       short hand-off as blocked too; otherwise an achievement can appear in
+       the gap and overlap the signing screen. */
+    if(globalThis.llManagerSigningPending)return true;
     return !!document.querySelector('#ll-penalty-shootout,#ll-trophy-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,.ll-relegation-cinematic');
   }
   function retryLater(){

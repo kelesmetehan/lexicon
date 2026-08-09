@@ -104,6 +104,23 @@ llRenderCompetitionCenter=function(tab='league',key=llTeamLeague(lexLeague.state
   if(panel)panel.insertAdjacentHTML('beforeend',`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">TFF 1. Lig · Yükselme Play-Off Eşleşmeleri</div>${body}</div>`);
 };
 
+/* The original bracket is Turkish-only. Localize its header after it is rendered. */
+var llCCLocalizedCompetitionCenter=llRenderCompetitionCenter;
+llRenderCompetitionCenter=function(tab='league',key=llTeamLeague(lexLeague.state.playerTeam)||'first'){
+  llCCLocalizedCompetitionCenter(tab,key);
+  if(tab!=='league')return;
+  var state=lexLeague.state,hasPlayoff=(state?.results||[]).some(function(result){
+    return result.competition==='playoff'&&Number(result.season)===Number(state.season);
+  });
+  if(!hasPlayoff)return;
+  var country=state.playerCountry||'TUR';
+  var lowerLeague=typeof llMLLeagueLabel==='function'?llMLLeagueLabel(country,'tier2'):'1. Lig';
+  var cards=[...llArea().querySelectorAll('.ll-card')];
+  var bracket=cards.reverse().find(function(card){return card.querySelector('.ll-fixture-list');});
+  var title=bracket?.querySelector('.ll-card-title');
+  if(title)title.textContent=lowerLeague+' \u00b7 Y\u00fckselme Play-Off E\u015fle\u015fmeleri';
+};
+
 /* The season summary tells the truth: the 90-minute card result was a draw, the tournament decision came via penalties. */
 const llCCBaseRoundSummary=llRenderRoundSummary;
 llRenderRoundSummary=function(completedWeek,lp,pg,og,competition='league',advanced=false){
@@ -116,6 +133,30 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,competition='league',advanc
   if(title)title.innerHTML=`${competition==='cup'?'Türkiye Kupası':'Play-Off'} · ${advanced?'Penaltılarda Galibiyet':'Penaltılarda Elenme'} <em>${score}</em>`;
   const detail=llArea().querySelector('.quiz-bonus');
   if(detail)detail.insertAdjacentHTML('beforeend',`<br><b>90 dakika:</b> ${pg}-${og} · <b>Penaltılar:</b> ${score} · ${advanced?'Tur atladın':'Elendin'} · LP ${record.lpDecision==='penalties'?'karara göre hesaplandı':'bilgisi kaydedildi'}`);
+};
+
+/* Country-aware wording for domestic cup penalty summaries. The original
+   Turkish-only summary otherwise labels every country's cup as Türkiye Kupası. */
+var llCCLocalizedRoundSummary=llRenderRoundSummary;
+llRenderRoundSummary=function(completedWeek,lp,pg,og,competition='league',advanced=false){
+  llCCLocalizedRoundSummary(completedWeek,lp,pg,og,competition,advanced);
+  if(!['cup','playoff'].includes(competition)||Number(pg)!==Number(og))return;
+  var state=lexLeague.state,record=[...(state?.results||[])].reverse().find(function(result){
+    return result.userMatch&&result.competition===competition&&result.penaltyShootout;
+  });
+  if(!record)return;
+  var country=state?.playerCountry||'TUR',score=String(record.penaltyShootout.scoreA)+'-'+String(record.penaltyShootout.scoreB);
+  var competitionName=competition==='cup'
+    ?(typeof llDomesticCupLabel==='function'?llDomesticCupLabel(country):'Yerel Kupa')
+    :((typeof llMLLeagueLabel==='function'?llMLLeagueLabel(country,'tier2'):'Lig')+' Play-Off');
+  var outcome=advanced?'Penalt\u0131larda Galibiyet':'Penalt\u0131larda Elenme';
+  var title=llArea().querySelector('.quiz-start-title');
+  if(title)title.innerHTML=llEscape(competitionName)+' \u00b7 '+outcome+' <em>'+score+'</em>';
+  var detail=llArea().querySelector('.quiz-bonus');
+  if(detail){
+    detail.querySelectorAll('.ll-country-penalty-detail').forEach(function(node){node.remove();});
+    detail.insertAdjacentHTML('beforeend','<span class="ll-country-penalty-detail"><br><b>90 dakika:</b> '+Number(pg)+'-'+Number(og)+' \u00b7 <b>Penalt\u0131lar:</b> '+score+' \u00b7 '+(advanced?'Tur atlad\u0131n':'Elendin')+'</span>');
+  }
 };
 
 /* European elimination and multi-country derbies/big races are visible on the next-match card. */

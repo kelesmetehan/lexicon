@@ -7,22 +7,34 @@
   function llBadgeEnsure(state){
     if(!state)return [];
     if(!Array.isArray(state.competitionDiceBadges))state.competitionDiceBadges=[];
+    /* v2 migration: title badges are a club reward, never a manager reward.
+       Recover the winning club for old saves before filtering expired items. */
+    state.competitionDiceBadges.forEach(badge=>{
+      if(!badge||badge.ownerTeam)return;
+      const history=Array.isArray(state.managerProfile?.history)?state.managerProfile.history:[];
+      const transfer=[...history].reverse().find(item=>item?.to===state.playerTeam&&Number(item?.season)>=Number(badge.awardedSeason||0));
+      const summaryOwner=Number(state.lastSeasonSummary?.season)===Number(badge.awardedSeason)
+        ?state.lastSeasonSummary?.playerTeam:null;
+      badge.ownerTeam=badge.awardedTeam||summaryOwner||transfer?.from||state.playerTeam||null;
+      badge.ownerMigrated=true;
+    });
     state.competitionDiceBadges=state.competitionDiceBadges.filter(badge=>badge&&Number(badge.activeSeason||0)>=Number(state.season||1));
     return state.competitionDiceBadges;
   }
-  function llBadgeKey(season,competition){return `${Number(season)||0}:${competition}`;}
+  function llBadgeKey(season,competition,team){return `${Number(season)||0}:${competition}:${team||''}`;}
   function llBadgeAward(state,competition){
     if(!state||!['league','cup',...LL_BADGE_EURO_TYPES].includes(competition))return null;
-    const badges=llBadgeEnsure(state),key=llBadgeKey(state.season,competition);
+    const ownerTeam=state.playerTeam||'';
+    const badges=llBadgeEnsure(state),key=llBadgeKey(state.season,competition,ownerTeam);
     if(badges.some(badge=>badge.key===key))return null;
-    const badge={key,sourceCompetition:competition,targetCompetition:competition,scope:LL_BADGE_EURO_TYPES.includes(competition)?'europe':'exact',role:null,awardedSeason:Number(state.season||1),activeSeason:Number(state.season||1)+1,homeOnly:true};
+    const badge={key,ownerTeam,sourceCompetition:competition,targetCompetition:competition,scope:LL_BADGE_EURO_TYPES.includes(competition)?'europe':'exact',role:null,awardedSeason:Number(state.season||1),activeSeason:Number(state.season||1)+1,homeOnly:true};
     badges.push(badge);state.competitionDiceBadges=badges;return badge;
   }
   function llBadgeCurrentFixture(){return lexLeague?.match?.fixture||llPlayerFixture?.()||null;}
   function llBadgeForFixture(state,fixture,position){
     if(!state||!fixture||!LL_BADGE_POSITIONS.includes(position))return null;
     const competition=fixture.competition||'league';
-    return llBadgeEnsure(state).find(badge=>Number(badge.activeSeason)===Number(state.season)&&badge.role===position&&badge.targetCompetition===competition)||null;
+    return llBadgeEnsure(state).find(badge=>badge.ownerTeam===state.playerTeam&&Number(badge.activeSeason)===Number(state.season)&&badge.role===position&&badge.targetCompetition===competition)||null;
   }
   function llBadgeIsActive(teamName,position){
     const state=lexLeague?.state,match=lexLeague?.match,fixture=llBadgeCurrentFixture();
@@ -44,16 +56,21 @@
   }
   function llBadgePrepareNewSeason(state){
     llBadgeEnsure(state).forEach(badge=>{
-      if(Number(badge.activeSeason)===Number(state.season))badge.targetCompetition=llBadgeCompetitionForNextSeason(state,badge);
+      if(badge.ownerTeam===state.playerTeam&&Number(badge.activeSeason)===Number(state.season))badge.targetCompetition=llBadgeCompetitionForNextSeason(state,badge);
     });
   }
-  function llBadgePending(state){return llBadgeEnsure(state).filter(badge=>Number(badge.activeSeason)===Number(state.season)&&!LL_BADGE_POSITIONS.includes(badge.role));}
+  function llBadgePending(state){return llBadgeEnsure(state).filter(badge=>{
+    if(badge.ownerTeam!==state.playerTeam||Number(badge.activeSeason)!==Number(state.season)||LL_BADGE_POSITIONS.includes(badge.role))return false;
+    /* A European-title badge may follow its owner into a different European
+       competition, but it is not selectable in a season with no Europe. */
+    return badge.scope!=='europe'||LL_BADGE_EURO_TYPES.includes(state.europe?.type);
+  });}
   function llBadgeSelectionHtml(badge){
     const target=llBadgeText(badge.targetCompetition);
     return `<div class="ll-card-title">\uD83C\uDFC5 Rozetli Zar \u00d6d\u00fcl\u00fc</div><div class="ll-sub" style="margin:8px 0 14px"><b>${llEscape(target)}</b> zaferi i\u00e7in bir rol se\u00e7. Bu rol, Sezon ${Number(badge.activeSeason)} boyunca yaln\u0131zca ${llEscape(target)} i\u00e7 saha ma\u00e7lar\u0131nda normal tavan\u0131 yerine <b>7</b> atabilir.</div><div class="ll-save-grid">${LL_BADGE_POSITIONS.map(position=>`<button class="ll-team-option" onclick="llChooseCompetitionBadgeRole('${llEscape(badge.key)}','${llEscape(position)}')"><b>${LL_POSITION_ICONS[position]} ${llEscape(position)}</b><div class="ll-range">Rozetli aral\u0131k: normal taban \u2192 7</div></button>`).join('')}</div>`;
   }
   window.llChooseCompetitionBadgeRole=function(key,position){
-    const state=lexLeague?.state,badge=llBadgeEnsure(state).find(item=>item.key===key);
+    const state=lexLeague?.state,badge=llBadgeEnsure(state).find(item=>item.key===key&&item.ownerTeam===state?.playerTeam);
     if(!badge||!LL_BADGE_POSITIONS.includes(position))return;
     badge.role=position;badge.selectedAt=new Date().toISOString();
     if(typeof llSave==='function')llSave();
@@ -68,7 +85,7 @@
   function llBadgeAwardNotice(badge){
     if(!badge)return;
     const state=lexLeague?.state;
-    state.badgeAwardNotice=`${llBadgeText(badge.sourceCompetition)} zaferi: sonraki sezon Rozetli Zar Odulu hazir.`;
+    state.badgeAwardNotice=`${badge.ownerTeam} · ${llBadgeText(badge.sourceCompetition)} zaferi: sonraki sezon Rozetli Zar Odulu hazir.`;
     if(typeof llSave==='function')llSave();
   }
   const llBadgeRollValueBase=llRollValue;

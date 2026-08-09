@@ -42,6 +42,7 @@ function llChooseManagerOffer(teamName){
   const state=lexLeague.state,market=llEnsureManagerMarket(state);if(!market||market.status!=='pending')return;const staying=teamName===market.fromTeam,offer=market.offers.find(item=>item.team===teamName);if((staying&&!market.canStay)||(!staying&&!offer))return;const target=staying?llManagerOffer(state,state.lastSeasonSummary,teamName,'stay'):offer,fromTeam=market.fromTeam,refundPreview=llV2StarUpgradeRefundPreview(state,fromTeam),refundText=!staying&&refundPreview.refundLp?` Ayrılık nedeniyle ${refundPreview.refundableSpentLp} LP yıldız yatırımının yarısı olan ${refundPreview.refundLp} LP iade edilecek.`:'';
   if(!confirm(staying?`${teamName} takımında kalmak istiyor musun? Yıldız yatırımı iade edilmez ve kulüpte açık kalır.`:`${teamName} teklifini kabul etmek istiyor musun? Takım ${target.stars} yıldız ve mevcut kartlarıyla devralınacak.${refundText}`))return;
   const refund=staying?{refundableSpentLp:refundPreview.refundableSpentLp,refundLp:0,settled:false}:llV2SettleStarUpgradeRefund(state,fromTeam,teamName);
+  globalThis.llManagerSigningPending=true;
   market.status='chosen';market.selectedTeam=teamName;market.switched=!staying;market.selectedKind=target.kind;market.chosenAt=new Date().toISOString();market.starUpgradeRefundLp=refund.refundLp||0;market.starUpgradeRefundSpentLp=refund.refundableSpentLp||0;const profile=llManagerProfile(state);profile.history.push({season:market.season,from:market.fromTeam,to:teamName,kind:target.kind,fired:market.fired,winRate:market.winRate,reputation:profile.reputation,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=teamName;state.lastSeasonSummary.nextManagerTeam=teamName;state.playerTeam=teamName;llSave();llRenderSeasonEnd();requestAnimationFrame(()=>llShowManagerSigning({...target,starUpgradeRefundLp:market.starUpgradeRefundLp},staying,fromTeam));
 }
 function llManagerFixArchivePlayer(html,entry){if(!entry?.playerTeam||typeof document==='undefined')return html;const template=document.createElement('template');template.innerHTML=html;[...template.content.querySelectorAll('tbody tr')].forEach(row=>{row.classList.remove('player');if((row.cells?.[1]?.textContent||'').includes(entry.playerTeam))row.classList.add('player');});return template.innerHTML;}
@@ -63,3 +64,31 @@ llRenderShop=function(){const state=lexLeague.state,market=state?.seasonEnded?ll
 function llShowManagerSigning(target,staying,fromTeam){if(!target?.team)return;llCloseManagerSigning();document.body.classList.add('ll-cinematic-open');const detail=staying?`Kulüp yönetimi sözleşmeni yeniledi. ${llEscape(target.nextLeagueLabel)} · Yönetim hedefi: ${llEscape(target.targetLabel)} · ${llEscape(target.europe)}`:`${llEscape(fromTeam)} → ${llEscape(target.team)} · Geçen sezon: ${llEscape(target.lastLeagueLabel)} ${target.position?target.position+'. sıra':'—'} · Yeni sezon: ${llEscape(target.nextLeagueLabel)} · Hedef: ${llEscape(target.targetLabel)} · ${llEscape(target.europe)}${target.starUpgradeRefundLp?` · Yıldız yatırımı iadesi: +${target.starUpgradeRefundLp} LP`:''}`;document.body.insertAdjacentHTML('beforeend',`<div id="ll-manager-signing" class="ll-signing-cinematic ${staying?'stay':'elite'}" role="dialog" aria-modal="true" aria-label="${staying?'Sözleşme yenileme':'Yeni teknik direktör imzası'}"><div class="ll-pack-particles"></div><button class="ll-pack-skip" type="button" onclick="llSkipManagerSigningAnimation()">Animasyonu Geç</button><div class="ll-signing-stage"><div class="ll-signing-kicker">${staying?'Mevcut kulüp · Yeni sözleşme':'Teknik direktörlük anlaşması'}</div><div class="ll-signing-crest">${llTeamLogo(target.team,'match')}</div><div class="ll-signing-team"><h2>${llEscape(target.team)}</h2><p>TEKNİK DİREKTÖR · ${llStars(target.stars)}</p></div><div class="ll-signing-stamp">${staying?'SÖZLEŞME YENİLENDİ':'İMZALANDI'}</div><div class="ll-signing-detail">${detail}</div><div class="ll-signing-actions"><button class="ll-btn ${staying?'primary':'gold'}" type="button" onclick="llCloseManagerSigning()">Sezon Sonu Ekranına Dön</button></div></div></div>`);const root=document.getElementById('ll-manager-signing');requestAnimationFrame(()=>root?.classList.add('play'));llSpawnCinematicParticles(root,staying?42:74,staying?['#5eead4','#60a5fa','#f8fafc']:['#fde68a','#facc15','#60a5fa']);setTimeout(()=>{if(document.getElementById('ll-manager-signing')&&typeof navigator.vibrate==='function')navigator.vibrate([25,35,55]);},1180);if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)llSkipManagerSigningAnimation();}
 function llSkipManagerSigningAnimation(){const root=document.getElementById('ll-manager-signing');if(!root)return;root.querySelectorAll('.ll-signing-crest,.ll-signing-team,.ll-signing-stamp,.ll-signing-detail,.ll-signing-actions').forEach(node=>{node.style.animation='none';node.style.opacity='1';node.style.transform='none';});const skip=root.querySelector('.ll-pack-skip');if(skip)skip.hidden=true;}
 function llCloseManagerSigning(){document.getElementById('ll-manager-signing')?.remove();document.body?.classList.remove('ll-cinematic-open');}
+
+/* Keep all full-screen presentations strictly serial.  The base function
+   intentionally creates the signing screen on demand; this wrapper also
+   reserves the hand-off period before it is inserted into the DOM. */
+(()=>{
+  const baseShow=llShowManagerSigning,baseClose=llCloseManagerSigning;
+  llShowManagerSigning=function(...args){
+    const blockers='#ll-achievement-cinematic,#ll-trophy-cinematic,#ll-penalty-shootout,#ll-pack-cinematic,.ll-relegation-cinematic';
+    if(document.querySelector(blockers)){
+      globalThis.llManagerSigningPending=true;
+      window.setTimeout(()=>llShowManagerSigning(...args),220);
+      return;
+    }
+    const result=baseShow(...args);
+    globalThis.llManagerSigningPending=false;
+    return result;
+  };
+  llCloseManagerSigning=function(...args){
+    const hadSigning=!!document.getElementById('ll-manager-signing');
+    const result=baseClose(...args);
+    globalThis.llManagerSigningPending=false;
+    if(hadSigning)window.setTimeout(()=>{
+      if(typeof globalThis.llTryShowQueuedTrophyAnimation==='function'&&globalThis.llTryShowQueuedTrophyAnimation())return;
+      if(typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
+    },180);
+    return result;
+  };
+})();

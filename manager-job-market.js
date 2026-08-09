@@ -5,7 +5,9 @@
  * Existing incoming offers remain guaranteed; vacancies require an application.
  */
 (function(){
-  var LL_MANAGER_JOB_MARKET_VERSION=2;
+  /* Version bump refreshes saved vacancy cards whose labels were created with
+     Türkiye-only target text before country-aware localization existed. */
+  var LL_MANAGER_JOB_MARKET_VERSION=3;
   var LL_MANAGER_JOB_SECURITY_VERSION=2;
   var LL_JOB_VACANCY_THRESHOLD=65;
   var LL_JOB_REPUTATION_REQUIREMENTS={1:28,2:36,3:46,4:58,5:70,6:82};
@@ -33,6 +35,12 @@
   function leagueLabel(country,tier){
     if(typeof globalThis.llMLLeagueLabel==='function')return llMLLeagueLabel(country,tier);
     return tier==='tier1'?'1. Lig':'2. Lig';
+  }
+  function localizedTargetLabel(state,summary,team,country,tier){
+    if(typeof globalThis.llManagerProjectedTarget!=='function')return 'Yeni sezon hedefi belirlenecek';
+    var target=llManagerProjectedTarget(state,summary,team);
+    if(typeof globalThis.llMLLocalizeGoal==='function')return llMLLocalizeGoal(target,country,tier)?.label||'Yeni sezon hedefi belirlenecek';
+    return target?.label||'Yeni sezon hedefi belirlenecek';
   }
   function teamLogo(name){
     try{return typeof globalThis.llTeamLogo==='function'?llTeamLogo(name,'match'):'<span class="ll-job-logo-fallback">'+escapeHtml(String(name||'').slice(0,2).toUpperCase())+'</span>';}
@@ -168,7 +176,7 @@
             expectedPosition:expected,expectedLabel:expectedLabel(stars,tier,expected,teamCount,info),failedTargetStreak:consecutive,
             securityScore:securityScore,securityThreshold:threshold,reasonCode:primary.code,reason:primary.label,reasonDetail:primary.detail,
             factors:factors.filter(function(item){return item.points!==0;}),nextLeague:nextLeague,nextTier:nextLeague==='super'?'tier1':'tier2',
-            nextLeagueLabel:leagueLabel(country,nextLeague==='super'?'tier1':'tier2'),targetLabel:typeof globalThis.llManagerProjectedTarget==='function'?llManagerProjectedTarget(state,{...summary,country:country,promoted:info.promoted||[],relegated:info.relegated||[],superRows:info.tier1Rows||[],firstRows:info.tier2Rows||[]},team).label:'Yeni sezon hedefi belirlenecek'
+            nextLeagueLabel:leagueLabel(country,nextLeague==='super'?'tier1':'tier2'),targetLabel:localizedTargetLabel(state,{...summary,country:country,promoted:info.promoted||[],relegated:info.relegated||[],superRows:info.tier1Rows||[],firstRows:info.tier2Rows||[]},team,country,nextLeague==='super'?'tier1':'tier2')
           });
         });
       });
@@ -314,6 +322,7 @@
     market.status='chosen';market.selectedTeam=team;market.switched=team!==fromTeam;market.selectedKind='application';market.chosenAt=new Date().toISOString();market.starUpgradeRefundLp=refund.refundLp||0;market.starUpgradeRefundSpentLp=refund.refundableSpentLp||0;market.selectedApplicationScore=application.totalScore;
     var profile=typeof globalThis.llManagerProfile==='function'?llManagerProfile(state):(state.managerProfile||{history:[]});if(!Array.isArray(profile.history))profile.history=[];
     profile.history.push({season:market.season,from:fromTeam,to:team,kind:'application',fired:market.fired,winRate:market.winRate,reputation:profile.reputation,applicationScore:application.totalScore,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=team;
+    globalThis.llManagerSigningPending=true;
     state.lastSeasonSummary.nextManagerTeam=team;state.playerTeam=team;
     if(team!==fromTeam&&typeof globalThis.llAchievementRecordTeamChange==='function')globalThis.llAchievementRecordTeamChange(fromTeam,team,state);
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(team,state)||state.playerCountry;
