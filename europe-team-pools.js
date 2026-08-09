@@ -173,7 +173,11 @@ const LL_V14_RECONCILIATION_RESERVES=[
   'Molde FK','Rosenborg BK','FK Partizan Belgrade','Grasshopper Club Zürich'
 ];
 LL_V14_SUPPLEMENTAL_TEAMS.forEach(team=>{LL_V14_EURO_META[team.name]=team;});
-Object.values(LL_V14_EURO_META).forEach(team=>{if(team.logoId)LL_EURO_LOGO_IDS[team.name]=team.logoId;});
+// This registry is optional metadata used by the logo resolver.  Keep it on
+// globalThis so loading this pool never aborts before local crest paths are
+// registered (an undefined registry previously caused exactly that failure).
+globalThis.LL_EURO_LOGO_IDS=globalThis.LL_EURO_LOGO_IDS||{};
+Object.values(LL_V14_EURO_META).forEach(team=>{if(team.logoId)globalThis.LL_EURO_LOGO_IDS[team.name]=team.logoId;});
 // Avrupa havuzundaki armalar artık dış CDN'den çağrılmaz. Mobil tarayıcılar
 // uzak görsel isteğini engellese bile her takımın gerçek arması GitHub Pages
 // üzerinden aynı origin'den yüklenir.
