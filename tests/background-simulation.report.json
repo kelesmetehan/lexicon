@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-08-08T22:20:27.813Z",
+  "passed": 4,
+  "failed": 0,
+  "checks": [
+    "all six non-player countries play both tiers in week one",
+    "background simulation creates country-tagged data only",
+    "background simulation never renders DOM",
+    "one parallel week stays below 100ms"
+  ],
+  "failures": [],
+  "durationMs": 23.67,
+  "engineDurationMs": 23.6,
+  "results": 115
+}

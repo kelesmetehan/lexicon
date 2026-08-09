@@ -1,0 +1,247 @@
+﻿[
+    {
+        "Test":  "achievement-regular-pack-reward.js",
+        "ExitCode":  0,
+        "Output":  "Achievement regular-pack reward tests passed."
+    },
+    {
+        "Test":  "ai-opponent-strategy.js",
+        "ExitCode":  0,
+        "Output":  "AI opponent strategy tests passed: 18 assertions."
+    },
+    {
+        "Test":  "background-simulation.js",
+        "ExitCode":  0,
+        "Output":  "background-simulation: 4 checks passed."
+    },
+    {
+        "Test":  "card-performance-son-perde.js",
+        "ExitCode":  0,
+        "Output":  "Son Perde performance chain: 5 checks passed."
+    },
+    {
+        "Test":  "card-upgrade-system.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(htmlSource.includes(\u0027${llCardUpgradeBadgeHtml(card)}\u003cspan style=\"display:block\"\u003e\u0027))\nSystem.Management.Automation.RemoteException\n    at C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\card-upgrade-system.js:229:3\n    at check (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\card-upgrade-system.js:118:3)\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\card-upgrade-system.js:220:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "career-start-tier-restriction.js",
+        "ExitCode":  0,
+        "Output":  "career-start-tier-restriction: 16 checks passed."
+    },
+    {
+        "Test":  "competition-consistency.js",
+        "ExitCode":  1,
+        "Output":  "evalmachine.\u003canonymous\u003e:234\nconst llCCManagerMarketWithSeasonEndCountries=llRenderManagerMarket;\n                                              ^\nSystem.Management.Automation.RemoteException\nReferenceError: llRenderManagerMarket is not defined\n    at evalmachine.\u003canonymous\u003e:234:47\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\competition-consistency.js:32:4)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "country-observer-live.js",
+        "ExitCode":  0,
+        "Output":  "country observer live: 5 checks passed."
+    },
+    {
+        "Test":  "dashboard-turkish-text.js",
+        "ExitCode":  0,
+        "Output":  "Dashboard Turkish text integrity: 7 checks passed."
+    },
+    {
+        "Test":  "dashboard-week-fixtures.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\u0027competition-consistency.js?v=20260731-6\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\dashboard-week-fixtures.js:10:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "derby-achievements.test.js",
+        "ExitCode":  0,
+        "Output":  "derby-achievements.test.js: PASS"
+    },
+    {
+        "Test":  "diagnostics.js",
+        "ExitCode":  0,
+        "Output":  ""
+    },
+    {
+        "Test":  "die-progression-runtime.js",
+        "ExitCode":  0,
+        "Output":  "Die progression runtime: 10 checks passed."
+    },
+    {
+        "Test":  "die-progression-system.js",
+        "ExitCode":  0,
+        "Output":  "Die progression system tests passed."
+    },
+    {
+        "Test":  "europe-cross-competition-integrity.js",
+        "ExitCode":  0,
+        "Output":  "Europe cross-competition participant integrity: 4 checks passed."
+    },
+    {
+        "Test":  "europe-dynamic-domestic-qualification.js",
+        "ExitCode":  0,
+        "Output":  "Dynamic domestic / fixed foreign Europe pool: 5 checks passed."
+    },
+    {
+        "Test":  "europe-final-summary.js",
+        "ExitCode":  0,
+        "Output":  "Europe final summary: 4/4 passed"
+    },
+    {
+        "Test":  "europe-first-season-qualification.js",
+        "ExitCode":  0,
+        "Output":  "europe-first-season-qualification: 7 checks passed."
+    },
+    {
+        "Test":  "europe-fixed-pools-and-qualification.js",
+        "ExitCode":  0,
+        "Output":  "European fixed pools and domestic qualification: all checks passed."
+    },
+    {
+        "Test":  "europe-goal-and-star-refund.js",
+        "ExitCode":  1,
+        "Output":  "node:assert:152\n  throw new AssertionError(obj);\n  ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\nSystem.Management.Automation.RemoteException\n+ \u0027Sarıyerspor\u0027\n- \u0027Antalyaspor\u0027\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\europe-goal-and-star-refund.js:50:8)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: \u0027Sarıyerspor\u0027,\n  expected: \u0027Antalyaspor\u0027,\n  operator: \u0027strictEqual\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "europe-knockout-center.js",
+        "ExitCode":  0,
+        "Output":  "Europe knockout center: 9 checks passed."
+    },
+    {
+        "Test":  "europe-knockout-runtime.js",
+        "ExitCode":  0,
+        "Output":  "Europe knockout runtime: 8 checks passed."
+    },
+    {
+        "Test":  "europe-knockout-tiebreak.js",
+        "ExitCode":  0,
+        "Output":  "Europe knockout tiebreak: 11 checks passed."
+    },
+    {
+        "Test":  "europe-second-leg-context.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(source.includes(\u002790 dakika sonunda e?it kal?rsa penalt?lar at?l?r.\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\europe-second-leg-context.js:7:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "europe-team-pools.js",
+        "ExitCode":  0,
+        "Output":  "European team pools: distinct 36-team fields and domestic qualification passed."
+    },
+    {
+        "Test":  "full-system-audit.js",
+        "ExitCode":  0,
+        "Output":  "full-system-audit: 10 passed, 0 failed; 1001 country-seasons, 733590 league matches, 50000 AI rerolls."
+    },
+    {
+        "Test":  "last-champions.test.js",
+        "ExitCode":  0,
+        "Output":  "last champions tests passed"
+    },
+    {
+        "Test":  "manager-market-cross-league.js",
+        "ExitCode":  1,
+        "Output":  "manager-market-cross-league: 3 failed"
+    },
+    {
+        "Test":  "market-discount-visibility.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\"function llShopCost(){const team=llTeamState(lexLeague.state.playerTeam);return team?.clubCards?.market===\u0027RBU04\u0027?100:150;}\"))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\market-discount-visibility.js:4:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "mobile-logo-and-press-cooldown.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: mobile-safe logo request policy missing\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\mobile-logo-and-press-cooldown.js:7:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: false,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "multi-league-data-integrity.js",
+        "ExitCode":  0,
+        "Output":  "multi-league-data-integrity: 17 checks passed."
+    },
+    {
+        "Test":  "multi-league-engine-simulation.js",
+        "ExitCode":  0,
+        "Output":  "multi-league-engine-simulation: 16 checks passed."
+    },
+    {
+        "Test":  "multi-league-test-helpers.js",
+        "ExitCode":  0,
+        "Output":  ""
+    },
+    {
+        "Test":  "netherlands-eredivisie-2026.js",
+        "ExitCode":  0,
+        "Output":  "Netherlands Eredivisie 2026: 4 checks passed."
+    },
+    {
+        "Test":  "penalty-shootout-animation.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\u0027penalty-shootout-animation.js?v=20260731-2\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\penalty-shootout-animation.js:65:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "presentation-flows.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: Script cache versions must be current.\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\presentation-flows.js:28:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: false,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "save-backup-deep-audit.js",
+        "ExitCode":  0,
+        "Output":  "save/backup deep audit: 57 checks passed"
+    },
+    {
+        "Test":  "save-migration-legacy-format.js",
+        "ExitCode":  0,
+        "Output":  "save-migration-legacy-format: 6 checks passed."
+    },
+    {
+        "Test":  "save-slots-and-backup.js",
+        "ExitCode":  0,
+        "Output":  "save slots and backup: 17 checks passed"
+    },
+    {
+        "Test":  "season-end-country-standings.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\u0027competition-consistency.js?v=20260731-6\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\season-end-country-standings.js:14:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "season-opening-country-data.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\u0027competition-consistency.js?v=20260731-6\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\season-opening-country-data.js:14:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "storage-migration-and-compaction.js",
+        "ExitCode":  0,
+        "Output":  "Storage migration and compaction checks passed."
+    },
+    {
+        "Test":  "taktik-tahtasi-market.js",
+        "ExitCode":  0,
+        "Output":  "Taktik Tahtasi market offer: 8 checks passed."
+    },
+    {
+        "Test":  "targets-and-diagnostics.js",
+        "ExitCode":  1,
+        "Output":  "node:internal/assert/utils:77\n    throw err;\n    ^\nSystem.Management.Automation.RemoteException\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\nSystem.Management.Automation.RemoteException\n  assert(html.includes(\u0027diagnostics.js?v=20260726-2\u0027))\nSystem.Management.Automation.RemoteException\n    at Object.\u003canonymous\u003e (C:\\Users\\keles\\Documents\\Codex\\2026-07-12\\oyu\\tests\\targets-and-diagnostics.js:51:1)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10)\n    at Module.load (node:internal/modules/cjs/loader:1533:32)\n    at Module._load (node:internal/modules/cjs/loader:1335:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  generatedMessage: true,\n  code: \u0027ERR_ASSERTION\u0027,\n  actual: false,\n  expected: true,\n  operator: \u0027==\u0027,\n  diff: \u0027simple\u0027\n}\nSystem.Management.Automation.RemoteException\nNode.js v24.14.1"
+    },
+    {
+        "Test":  "team-star-rebalance.js",
+        "ExitCode":  0,
+        "Output":  "team-star-rebalance: all checks passed"
+    },
+    {
+        "Test":  "trophy-cinematic.js",
+        "ExitCode":  0,
+        "Output":  "trophy-cinematic: all checks passed"
+    },
+    {
+        "Test":  "vocabulary-diagnose-bug.js",
+        "ExitCode":  0,
+        "Output":  "Kelime düzeltmesi ve kayıt taşıması: 3 kontrol geçti."
+    },
+    {
+        "Test":  "vocabulary-integrity.js",
+        "ExitCode":  0,
+        "Output":  "Vocabulary integrity: 448 words, aligned translations, new batch passed."
+    },
+    {
+        "Test":  "word-encoding-repair.js",
+        "ExitCode":  0,
+        "Output":  "Stored word encoding repair: 4/4 passed"
+    }
+]

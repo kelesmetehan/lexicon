@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('assert');
+const vm=require('vm');
+const {loadRuntime,reportRunner}=require('./multi-league-test-helpers');
+const {api,context}=loadRuntime();const run=reportRunner('save-migration-legacy-format');
+const modern=api.llNewState('Ümraniyespor');api.lexLeague.state=modern;const serialized=JSON.parse(JSON.stringify(modern)),legacy={...serialized,leagues:{super:serialized.leagues.TUR.tier1,first:serialized.leagues.TUR.tier2},standings:{super:serialized.standings.TUR.tier1,first:serialized.standings.TUR.tier2},schedules:{super:serialized.schedules.TUR.tier1,first:serialized.schedules.TUR.tier2},cup:serialized.cups.TUR};delete legacy.cups;delete legacy.playerCountry;delete legacy.multiLeagueVersion;
+function validateInRealm(value){context.__candidate=JSON.stringify(value);return vm.runInContext('llValidateImportedCareer(JSON.parse(__candidate))',context);}
+run.check('legacy super/first save migrates without losing Turkey teams',()=>{const repaired=api.llV2RepairState(legacy);assert(repaired.leagues.TUR.tier1.includes('Galatasaray'));assert(repaired.leagues.TUR.tier2.includes('Ümraniyespor'));assert(repaired.cups.TUR);assert.strictEqual(repaired.playerCountry,'TUR');assert(!Object.keys(repaired.leagues).includes('super'));});
+run.check('migrated save contains all seven countries and runtime aliases',()=>{assert.strictEqual(Object.keys(legacy.leagues).length,7);assert.strictEqual(legacy.leagues.super,legacy.leagues.TUR.tier1);assert.strictEqual(legacy.standings.first,legacy.standings.TUR.tier2);assert.strictEqual(legacy.cup,legacy.cups.TUR);});
+run.check('hardening validator accepts legacy format before migration',()=>{const oldAgain=JSON.parse(JSON.stringify(serialized));oldAgain.leagues={super:serialized.leagues.TUR.tier1,first:serialized.leagues.TUR.tier2};oldAgain.standings={super:serialized.standings.TUR.tier1,first:serialized.standings.TUR.tier2};oldAgain.schedules={super:serialized.schedules.TUR.tier1,first:serialized.schedules.TUR.tier2};assert.strictEqual(validateInRealm(oldAgain),true);});
+run.check('hardening validator accepts new nested format',()=>assert.strictEqual(validateInRealm(serialized),true));
+run.check('hardening validator still rejects malformed saves',()=>assert.throws(()=>validateInRealm({...serialized,leagues:{ENG:{tier1:[],tier2:[]}}}),/Lig|lig/));
+run.check('critical league lookups work after migration',()=>{api.lexLeague.state=legacy;assert.strictEqual(api.llTeamLeague('Ümraniyespor'),'first');assert.strictEqual(api.llLeagueLabel('first'),'TFF 1. Lig');assert.doesNotThrow(()=>api.llRenderDashboard());});
+run.finish({legacyCountriesAfterMigration:Object.keys(legacy.leagues).length});

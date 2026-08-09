@@ -41,6 +41,6 @@ assert(source.includes("result.league==='euro-knockout'"),'Knockout reads must r
 assert(source.includes('result.euroStage=stage')&&source.includes('result.euroLeg=leg'),'New knockout results must store stage and leg metadata.');
 assert(source.includes('Eleme Aşaması · Tüm Takımlar'),'The competition center must display every knockout pairing.');
 assert(source.includes("label.textContent='Lig Aşaması'"),'The 8/8 metric must be labelled as league phase, not all tournament rounds.');
-assert(html.indexOf('europe-knockout-center.js?v=20260723-1')>html.indexOf('manager-market.js?v=20260719-1'),'The knockout correction layer must load after the existing game layers.');
+assert(html.indexOf('europe-knockout-center.js')>html.indexOf('manager-market.js'),'The knockout correction layer must load after the existing game layers.');
 
 console.log('Europe knockout center: 9 checks passed.');

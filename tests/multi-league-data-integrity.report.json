@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-08-08T22:21:11.837Z",
+  "passed": 17,
+  "failed": 0,
+  "checks": [
+    "TUR tier1 roster, stars and logos",
+    "TUR tier2 roster, stars and logos",
+    "ENG tier1 roster, stars and logos",
+    "ENG tier2 roster, stars and logos",
+    "GER tier1 roster, stars and logos",
+    "GER tier2 roster, stars and logos",
+    "ESP tier1 roster, stars and logos",
+    "ESP tier2 roster, stars and logos",
+    "FRA tier1 roster, stars and logos",
+    "FRA tier2 roster, stars and logos",
+    "ITA tier1 roster, stars and logos",
+    "ITA tier2 roster, stars and logos",
+    "NED tier1 roster, stars and logos",
+    "NED tier2 roster, stars and logos",
+    "all domestic names are globally unique",
+    "every country has a domestic cup name",
+    "domestic definitions override overlapping Europe templates"
+  ],
+  "failures": [],
+  "countries": 7,
+  "domesticClubs": 274
+}

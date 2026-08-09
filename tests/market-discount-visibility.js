@@ -1,0 +1,12 @@
+const fs=require('fs'),assert=require('assert');
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+const runtime=fs.readFileSync('outputs/competition-consistency.js','utf8');
+assert(html.includes('function llShopCost(){return 150;}'));
+assert(html.includes("id:'RBU04'"));
+assert(html.includes('clubCard:true'));
+assert(runtime.includes('function llCCMarketDiscountCard'));
+assert(runtime.includes("card?.id==='RBU04'"));
+assert(runtime.includes('150 AP'));
+assert(runtime.includes('data-market-discount-note'));
+assert(/competition-consistency\.js\?v=/.test(html));
+console.log('Market discount visibility: 8 checks passed.');

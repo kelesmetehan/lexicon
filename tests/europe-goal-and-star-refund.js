@@ -4,7 +4,7 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 const root=path.resolve(__dirname,'..');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const html=fs.readFileSync(path.join(root,'outputs','lexicon-fixed.html'),'utf8');
 const inline=[...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(match=>match[1]).find(source=>source.includes('LL_BALANCED_CARD_POOL'));
 if(!inline)throw new Error('Main inline runtime not found.');
 const storage=new Map();
@@ -15,11 +15,11 @@ context.window=context;context.globalThis=context;
 vm.createContext(context);
 vm.runInContext(inline.replace(/initDatabase\(\);\s*renderPreStart\(\);\s*$/,''),context,{filename:'index-inline.js',timeout:20000});
 for(const file of ['league-v2.js','manager-market.js','europe-team-pools.js','european-leagues-pools.js','ai-opponent-strategy.js','multi-league-engine.js']){
-  vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file,timeout:20000});
+  vm.runInContext(fs.readFileSync(path.join(root,'outputs',file),'utf8'),context,{filename:file,timeout:20000});
 }
 vm.runInContext(`llSave=function(){};llRenderDashboard=function(){};llRenderSeasonEnd=function(){};llShowManagerSigning=function(){};`,context);
 
-const api=vm.runInContext(`({lexLeague,LL_TIER2_POOLS,LL_MANAGER_MARKET_VERSION,llNewState,llV2RepairState,llV2CreateSeasonGoals,llV2EuropeGoalForTeam,llV2GoalStatus,llUpgradeStars,llV2StarUpgradeRefundPreview,llV2SettleStarUpgradeRefund,llChooseManagerOffer})`,context);
+const api=vm.runInContext(`({lexLeague,LL_TIER2_POOLS,LL_MANAGER_MARKET_VERSION,LL_ML_FOREIGN_OFFER_RULES_VERSION,llNewState,llV2RepairState,llV2CreateSeasonGoals,llV2EuropeGoalForTeam,llV2GoalStatus,llUpgradeStars,llV2StarUpgradeRefundPreview,llV2SettleStarUpgradeRefund,llChooseManagerOffer})`,context);
 const starter=api.LL_TIER2_POOLS.TUR.find(team=>team.stars===1)||api.LL_TIER2_POOLS.TUR[0];
 const other=api.LL_TIER2_POOLS.TUR.find(team=>team.name!==starter.name)||api.LL_TIER2_POOLS.TUR[1];
 let state=api.llNewState(starter.name);api.lexLeague.state=state;
@@ -45,7 +45,7 @@ assert.strictEqual(state.teams[starter.name].stars,3);
 assert.strictEqual(state.lp,7800); // 800 + 1400
 let preview=api.llV2StarUpgradeRefundPreview(state,starter.name);
 assert.strictEqual(preview.refundableSpentLp,2200);assert.strictEqual(preview.refundLp,1100);
-state.seasonEnded=true;state.lastSeasonSummary={season:1,nextManagerTeam:null};state.managerMarket={version:api.LL_MANAGER_MARKET_VERSION+1,season:1,fromTeam:starter.name,fromStars:3,status:'pending',canStay:true,offers:[{team:other.name,kind:'safe',stars:other.stars,lastLeague:'first',lastLeagueLabel:'Lig',position:5,nextLeague:'first',nextLeagueLabel:'Lig',movement:'Liginde kaldı',targetLabel:'Hedef',europe:'Avrupa bileti yok'}],fired:false,winRate:60,primaryAchieved:true,goalsDone:4,goalsTotal:4};
+state.seasonEnded=true;state.lastSeasonSummary={season:1,nextManagerTeam:null};state.managerMarket={version:api.LL_MANAGER_MARKET_VERSION+1,foreignOfferRulesVersion:api.LL_ML_FOREIGN_OFFER_RULES_VERSION,season:1,fromTeam:starter.name,fromStars:3,status:'pending',canStay:true,offers:[{team:other.name,kind:'safe',stars:other.stars,lastLeague:'first',lastLeagueLabel:'Lig',position:5,nextLeague:'first',nextLeagueLabel:'Lig',movement:'Liginde kaldı',targetLabel:'Hedef',europe:'Avrupa bileti yok'}],fired:false,winRate:60,primaryAchieved:true,goalsDone:4,goalsTotal:4};
 api.llChooseManagerOffer(other.name);
 assert.strictEqual(state.playerTeam,other.name);assert.strictEqual(state.lp,8900);assert.strictEqual(state.managerMarket.starUpgradeRefundLp,1100);
 preview=api.llV2StarUpgradeRefundPreview(state,starter.name);assert.strictEqual(preview.refundLp,0);

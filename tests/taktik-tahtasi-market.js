@@ -1,0 +1,13 @@
+const fs=require('fs');
+const assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(source.includes("const LL_TACTIC_BOARD_ID='RBU04'"),'missing Taktik Tahtasi id');
+assert(source.includes('function llBuyTacticBoard()'),'missing direct purchase action');
+assert(source.includes("team.clubCards.market=card.id"),'purchase does not assign the club slot');
+assert(source.includes('state.ap-=LL_TACTIC_BOARD_COST'),'purchase does not deduct AP');
+assert(source.includes('filter(card=>!card?.clubCard)'),'club card still leaks into role-card offers');
+assert(source.includes('data-tactic-board-market'),'special offer UI is missing');
+assert(source.includes('Aktif indirim:'),'owned-card explanation is missing');
+assert(html.includes('competition-consistency.js?v=20260801-2'),'cache version not updated');
+console.log('Taktik Tahtasi market offer: 8 checks passed.');

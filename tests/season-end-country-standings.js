@@ -1,0 +1,15 @@
+const fs=require('fs'),assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');
+assert(source.includes('function llCCSeasonEndCountrySummaries'));
+assert(source.includes("typeof LL_COUNTRY_CODES!=='undefined'"));
+assert(!source.includes('globalThis.LL_COUNTRY_CODES'));
+assert(source.includes('function llCCSeasonEndCountryStandingsHtml'));
+assert(source.includes('function llCCInjectSeasonEndCountryStandings'));
+assert(source.includes('function llCCSelectSeasonEndStandings'));
+assert(source.includes('llMLArchiveSummary(entry,code)'));
+assert(source.includes('llMLArchivedTableHtml(summary,country,tier)'));
+assert(source.includes('llMLLeagueLabel(country,tier)'));
+assert(source.includes('llRenderManagerMarket=function'));
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(/competition-consistency\.js\?v=/.test(html));
+console.log('Season-end multi-country standings: 11 checks passed.');

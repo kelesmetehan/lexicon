@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-08-08T22:20:29.210Z",
+  "passed": 16,
+  "failed": 0,
+  "checks": [
+    "TUR selection exposes only eligible tier2 clubs",
+    "ENG selection exposes only eligible tier2 clubs",
+    "GER selection exposes only eligible tier2 clubs",
+    "ESP selection exposes only eligible tier2 clubs",
+    "FRA selection exposes only eligible tier2 clubs",
+    "ITA selection exposes only eligible tier2 clubs",
+    "NED selection exposes only eligible tier2 clubs",
+    "country screen contains all seven countries",
+    "TUR tier2 club can start a career",
+    "ENG tier2 club can start a career",
+    "GER tier2 club can start a career",
+    "ESP tier2 club can start a career",
+    "FRA tier2 club can start a career",
+    "ITA tier2 club can start a career",
+    "NED tier2 club can start a career",
+    "direct tier1 career start is rejected"
+  ],
+  "failures": [],
+  "countries": 7
+}

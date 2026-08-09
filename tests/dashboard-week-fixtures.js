@@ -1,0 +1,11 @@
+const fs=require('fs'),assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');
+assert(source.includes('function llCCDashboardWeekFixturesHtml'));
+assert(source.includes("fixture.competition!=='league'"));
+assert(source.includes("llV2FixtureResult(fixture.home,fixture.away,'league',week)"));
+assert(source.includes('data-dashboard-week-fixtures'));
+assert(source.includes("column.insertAdjacentHTML('beforeend',html)"));
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(html.includes('.ll-dashboard-fixtures'));
+assert(/competition-consistency\.js\?v=/.test(html));
+console.log('Dashboard current-week fixtures: 7 checks passed.');

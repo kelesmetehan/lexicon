@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('fs');
+const vm=require('vm');
+const assert=require('assert');
+const source=fs.readFileSync('outputs/country-browser.js','utf8');
+let html='';
+const state={season:2,playerCountry:'TUR',playerTeam:'Trabzonspor',teams:{Arsenal:{stars:5},Chelsea:{stars:4},Leeds:{stars:3},Sunderland:{stars:2}},standings:{ENG:{tier1:{Arsenal:{team:'Arsenal',P:8,W:6,D:1,L:1,GF:18,GA:7,GD:11,Pts:19},Chelsea:{team:'Chelsea',P:8,W:5,D:1,L:2,GF:14,GA:8,GD:6,Pts:16}},tier2:{Leeds:{team:'Leeds',P:8,W:4,D:2,L:2,GF:12,GA:9,GD:3,Pts:14}}}},cups:{ENG:{country:'ENG',name:'FA Cup',round:1,field:['Arsenal','Chelsea'],winner:null,history:{0:['Arsenal','Chelsea']}}},results:[{season:2,competition:'cup',country:'ENG',cupRound:0,home:'Arsenal',away:'Chelsea',homeGoals:1,awayGoals:1,knockoutWinner:'Arsenal',penaltyShootout:{scoreA:5,scoreB:4}}],seasonHistory:[{season:1,countrySummaries:{ENG:{cupWinner:'Manchester City'}}}]};
+const area={set innerHTML(value){html=value;},get innerHTML(){return html;},querySelector:()=>null};
+const context={console,window:null,lexLeague:{state},LL_COUNTRY_CODES:['TUR','ENG'],LL_COUNTRY_META:{ENG:{country:'İngiltere',flag:'🏴',tier1Label:'Premier League',tier2Label:'Championship',cupName:'FA Cup'}},LL_DOMESTIC_CUP_NAMES:{ENG:'FA Cup'},llEscape:value=>String(value??''),llStars:n=>'★'.repeat(n),llTeamLogo:name=>`[${name}]`,llMLLeagueLabel:(_,tier)=>tier==='tier1'?'Premier League':'Championship',llArea:()=>area,llRenderCompetitionCenter:()=>{},renderLexiconLeagueLanding:()=>{},document:{createElement:()=>({style:{},className:'',innerHTML:'',appendChild:()=>{}})},globalThis:null};
+context.window=context;context.globalThis=context;vm.createContext(context);vm.runInContext(source,context);
+context.llCBRenderCountryBrowse('ENG','league','tier1');
+assert(html.includes('Canlı Puan Durumu'),'observer must show live standings');
+assert(html.includes('Arsenal')&&html.includes('19'),'standings rows must be rendered');
+context.llCBRenderCountryBrowse('ENG','cup','tier1');
+assert(html.includes('FA Cup · Turlar ve Eşleşmeler'),'observer must show domestic cup bracket');
+assert(html.includes('Penaltılar 5-4'),'observer must show stored shootout score');
+assert(html.includes('Manchester City'),'observer must show last cup champion');
+console.log('country observer live: 5 checks passed.');

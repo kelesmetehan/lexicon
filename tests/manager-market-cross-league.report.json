@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-08-08T22:21:11.451Z",
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    "1-star manager receives three credible, diverse offers",
+    "3-star manager receives three credible, diverse offers",
+    "6-star manager receives three credible, diverse offers",
+    "promotion star cap never offers a stronger club",
+    "cross-country team has league, target and Europe details"
+  ],
+  "failures": [],
+  "offerCount": 5
+}

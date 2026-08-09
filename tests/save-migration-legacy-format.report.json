@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-08-08T22:21:13.773Z",
+  "passed": 6,
+  "failed": 0,
+  "checks": [
+    "legacy super/first save migrates without losing Turkey teams",
+    "migrated save contains all seven countries and runtime aliases",
+    "hardening validator accepts legacy format before migration",
+    "hardening validator accepts new nested format",
+    "hardening validator still rejects malformed saves",
+    "critical league lookups work after migration"
+  ],
+  "failures": [],
+  "legacyCountriesAfterMigration": 7
+}

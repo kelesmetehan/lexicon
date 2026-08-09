@@ -2,7 +2,7 @@
 const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
-const source=fs.readFileSync(require('path').join(__dirname,'..','trophy-cinematic.js'),'utf8');
+const source=fs.readFileSync(require('path').join(__dirname,'..','outputs','trophy-cinematic.js'),'utf8');
 
 function contextFor(state){
   const context={

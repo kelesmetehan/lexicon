@@ -1,0 +1,15 @@
+const fs=require('fs'),assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');
+assert(source.includes('function llCCOpeningArchiveStar'));
+assert(source.includes('function llCCOpeningStarChanges'));
+assert(source.includes('function llCCPatchSeasonOpeningCountryData'));
+assert(source.includes("llMLArchiveSummary(latest,country)"));
+assert(source.includes("llMLLeagueLabel(country,'tier1')"));
+assert(source.includes("llMLLeagueLabel(country,'tier2')"));
+assert(source.includes("summary.qualifications||{ucl:[],uel:[],uecl:[]}"));
+assert(source.includes("countryMeta.country)} Avrupa Temsilcileri"));
+assert(source.includes('llMLTeamCompetition(state.playerTeam,state)?.tier'));
+assert(source.includes('llRenderSeasonOpening=function'));
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(/competition-consistency\.js\?v=/.test(html));
+console.log('Season-opening country data: 11 checks passed.');

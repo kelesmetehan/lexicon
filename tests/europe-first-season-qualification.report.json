@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-08-08T22:20:31.475Z",
+  "passed": 7,
+  "failed": 0,
+  "checks": [
+    "TUR first season has 36 unique clubs per European competition",
+    "ENG first season has 36 unique clubs per European competition",
+    "GER first season has 36 unique clubs per European competition",
+    "ESP first season has 36 unique clubs per European competition",
+    "FRA first season has 36 unique clubs per European competition",
+    "ITA first season has 36 unique clubs per European competition",
+    "NED first season has 36 unique clubs per European competition"
+  ],
+  "failures": [],
+  "countries": 7
+}

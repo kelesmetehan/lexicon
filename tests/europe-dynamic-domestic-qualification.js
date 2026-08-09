@@ -1,0 +1,13 @@
+const fs=require('fs');
+const source=fs.readFileSync('outputs/europe-team-pools.js','utf8');
+const fail=message=>{throw new Error(message)};
+const start=source.indexOf('function llV14ForeignTeams');
+const end=source.indexOf('function llV14PinPlayerFixtures',start);
+if(start<0||end<0)fail('llV14ForeignTeams missing.');
+const body=source.slice(start,end).replace(/\s+/g,'');
+if(!body.includes("typeofLL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES)"))fail('Playable country fallback missing.');
+if(!body.includes('dynamicCountries=newSet(dynamicCountryCodes)'))fail('Playable country set is not created.');
+if(!body.includes('if(dynamicCountries.has(llV14TeamCountry(name))||blocked.has(key))continue;'))fail('Static pool does not exclude playable countries.');
+if(!body.includes('if(!name||blocked.has(key)||dynamicCountries.has(llV14TeamCountry(name)))continue;'))fail('Supplemental static pool does not exclude playable countries.');
+if(!body.includes('constneeded=Math.max(0,36-qualifiers.length)'))fail('Static pool quota is not calculated from domestic qualifiers.');
+console.log('Dynamic domestic / fixed foreign Europe pool: 5 checks passed.');

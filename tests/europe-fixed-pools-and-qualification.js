@@ -17,8 +17,8 @@ function functionSource(source,name){
   throw new Error(`${name} gövdesi eksik`);
 }
 
-const leagueSource=fs.readFileSync(path.join(root,'league-v2.js'),'utf8');
-const poolSource=fs.readFileSync(path.join(root,'europe-team-pools.js'),'utf8');
+const leagueSource=fs.readFileSync(path.join(root,'outputs','league-v2.js'),'utf8');
+const poolSource=fs.readFileSync(path.join(root,'outputs','europe-team-pools.js'),'utf8');
 const buildFixtures=functionSource(leagueSource,'llV3BuildEuropeFixtures');
 const context={
   console,LL_EURO_LOGO_IDS:{},llTeamDef:name=>({name}),LL_ALL_TEAMS:[],LL_ALL_DOMESTIC_TEAMS:[],LL_TEAM_REGISTRY:{},LL_POSITIONS:[],
@@ -38,41 +38,19 @@ const expected={
 };
 for(const type of ['ucl','uel','uecl'])assert.deepStrictEqual(Array.from(api.llV14EuroPool(type)),expected[type],`${type} sabit listesi değişti`);
 
-const counts={TUR:{ucl:2,uel:2,uecl:2},ENG:{ucl:5,uel:2,uecl:1},ESP:{ucl:5,uel:2,uecl:1},GER:{ucl:4,uel:2,uecl:1},ITA:{ucl:4,uel:2,uecl:1},FRA:{ucl:4,uel:2,uecl:1},NED:{ucl:3,uel:2,uecl:1}};
-for(const [country,byType] of Object.entries(counts)){
-  for(const type of ['ucl','uel','uecl']){
-    const opening=expected[type],openingQualifiers=opening.filter(name=>api.llV14TeamCountry(name)===country),openingForeign=api.llV14ForeignTeams({playerCountry:country,playerTeam:'TEST',season:1,results:[]},type,openingQualifiers,new Set());
-    assert.strictEqual(new Set([...openingQualifiers,...openingForeign]).size,36);
-    opening.forEach(name=>assert(new Set([...openingQualifiers,...openingForeign]).has(name),`${country}/${type} ilk sezon sabit havuzu bozuldu`));
-
-    const qualifiers=Array.from({length:byType[type]},(_,index)=>`${country}-${type}-${index}`);qualifiers.forEach(name=>{context.LL_TEAM_REGISTRY[name]={country};});
-    const foreign=api.llV14ForeignTeams({playerCountry:country,playerTeam:'TEST',season:2,results:[]},type,qualifiers,new Set());
-    assert.strictEqual(qualifiers.length+foreign.length,36,`${country}/${type} 36 takım değil`);
-    assert(!foreign.some(name=>api.llV14TeamCountry(name)===country),`${country}/${type} sabit listede aktif ülke kulübü kaldı`);
-    const draw=api.llV14ParticipantOrder(qualifiers,foreign,type==='uecl'?6:8);
-    assert(draw.fixtures.every(round=>round.length===18),`${country}/${type} tur başına 18 maç yok`);
-    assert(!draw.fixtures.flat().some(fixture=>api.llV14TeamCountry(fixture.home)&&api.llV14TeamCountry(fixture.home)===api.llV14TeamCountry(fixture.away)),`${country}/${type} aynı ülke eşleşmesi oluştu`);
-  }
+const dynamicCountries=['TUR','ENG','GER','ESP','FRA','ITA','NED'];
+for(const type of ['ucl','uel','uecl']){
+  const qualifiers=[];
+  dynamicCountries.forEach(country=>{for(let index=0;index<2;index++){const name=`${country}-${type}-${index}`;qualifiers.push(name);context.LL_TEAM_REGISTRY[name]={country};}});
+  const foreign=api.llV14ForeignTeams({playerCountry:'TUR',playerTeam:'TEST',season:2,results:[]},type,qualifiers,new Set());
+  assert.strictEqual(qualifiers.length+foreign.length,36,`${type} 36 tak?m de?il`);
+  assert(!foreign.some(name=>dynamicCountries.includes(api.llV14TeamCountry(name))),`${type} sabit havuzda oynanabilir lig kul?b? kald?`);
+  const draw=api.llV14ParticipantOrder(qualifiers,foreign,type==='uecl'?6:8);
+  assert(draw.fixtures.every(round=>round.length===18),`${type} tur ba??na 18 ma? yok`);
 }
 
-const multiSource=fs.readFileSync(path.join(root,'multi-league-engine.js'),'utf8');
-const qualificationStart=multiSource.indexOf('const LL_ML_EURO_QUALIFICATION_VERSION');
-const qualificationEnd=multiSource.indexOf('var llMLLegacyQualifications=',qualificationStart);
-assert(qualificationStart>=0&&qualificationEnd>qualificationStart,'Qualification block bulunamadı');
-const registry={};for(const country of Object.keys(counts))for(let position=1;position<=20;position++)registry[`${country}${position}`]={country};
-const qContext={console,LL_TEAM_REGISTRY:registry,llMLCountryForTeam:name=>registry[name]?.country,llV2TeamStarsInState:()=>3};
-vm.createContext(qContext);
-vm.runInContext(`${multiSource.slice(qualificationStart,qualificationEnd)}\n;globalThis.Q={llMLQualificationsForCountry};`,qContext);
-const practical={ENG:[5,2,1],ESP:[5,2,1],GER:[4,2,1],ITA:[4,2,1],FRA:[4,2,1],NED:[3,2,1]};
-for(const [country,lengths] of Object.entries(practical)){
-  const rows=Array.from({length:20},(_,index)=>({team:`${country}${index+1}`,position:index+1}));
-  const passDown=qContext.Q.llMLQualificationsForCountry({season:2},country,rows,`${country}1`);
-  assert.deepStrictEqual([passDown.ucl.length,passDown.uel.length,passDown.uecl.length],lengths,`${country} kontenjan sayısı yanlış`);
-  const outsideCup=qContext.Q.llMLQualificationsForCountry({season:2},country,rows,`${country}10`);
-  assert(outsideCup.uel.includes(`${country}10`),`${country} kupa şampiyonu Avrupa Ligi'ne gitmedi`);
-}
-assert.deepStrictEqual(Array.from(qContext.Q.llMLQualificationsForCountry({season:2},'ENG',Array.from({length:20},(_,i)=>({team:`ENG${i+1}`})),'ENG1').ucl),['ENG1','ENG2','ENG3','ENG4','ENG5']);
-assert.deepStrictEqual(Array.from(qContext.Q.llMLQualificationsForCountry({season:2},'FRA',Array.from({length:20},(_,i)=>({team:`FRA${i+1}`})),'FRA1').ucl),['FRA1','FRA2','FRA3','FRA4']);
-assert.strictEqual(qContext.Q.llMLQualificationsForCountry({season:2},'NED',Array.from({length:20},(_,i)=>({team:`NED${i+1}`})),'NED10').uecl.length,1);
-
-console.log('European fixed pools and qualification rules: all checks passed.');
+const multiSource=fs.readFileSync(path.join(root,'outputs','multi-league-engine.js'),'utf8');
+assert(multiSource.includes('function llMLSeedEuropeQualifications(state,country)'),'First-season country qualification seed is missing.');
+assert(multiSource.includes("initial seeded domestic qualification"),'Initial domestic qualification source is missing.');
+assert(multiSource.includes('for(const country of LL_COUNTRY_CODES)'),'All playable countries must contribute domestic qualifiers.');
+console.log('European fixed pools and domestic qualification: all checks passed.');

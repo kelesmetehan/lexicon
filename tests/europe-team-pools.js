@@ -1,0 +1,12 @@
+﻿const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('outputs/europe-team-pools.js','utf8');
+const countries=['TUR','ENG','GER','ESP','FRA','ITA','NED'];
+const qualifiers=Object.fromEntries(['ucl','uel','uecl'].map(type=>[type,countries.flatMap(country=>[0,1].map(index=>`${country}-${type}-${index}`))]));
+const registry={};for(const type of Object.keys(qualifiers))for(const name of qualifiers[type])registry[name]={country:name.slice(0,3)};
+const context={console,llV2EuroLabel:type=>type,LL_COUNTRY_CODES:countries,LL_EURO_FORMAT_VERSION:3,LL_EURO_LOGO_IDS:{},LL_EURO_LEAGUE_WEEKS:{ucl:[4,7,10,13,16,19,22,25],uel:[4,7,10,13,16,19,22,25],uecl:[4,7,10,13,16,19]},LL_ALL_TEAMS:[],LL_TEAM_REGISTRY:registry,llCanonicalTeamName:name=>name,llTeamDef:name=>({name,stars:3}),llDeep:value=>JSON.parse(JSON.stringify(value)),llBlankStandings:names=>Object.fromEntries(names.map(team=>[team,{team,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}])),llV3ResolveEuropeQualifications:state=>state.europeQualifications,llV3BuildEuropeFixtures:(teams,rounds)=>Array.from({length:rounds},()=>Array.from({length:18},(_,index)=>({home:teams[index],away:teams[35-index]}))),llV2ApplyEuropeStanding:()=>{},llV2SimpleEuropeScore:()=>({homeGoals:1,awayGoals:0}),llV4EnsureEuropeTeams:()=>{},llV2EnsureEuropeStandings:state=>state.europeStandings,llV2RepairState:state=>state};
+vm.createContext(context);vm.runInContext(source,context);const pools=vm.runInContext('LL_V14_EURO_POOLS',context);
+for(const type of ['ucl','uel','uecl'])assert.strictEqual(pools[type].length,36);
+const state={season:2,week:1,playerTeam:'TUR-ucl-0',playerCountry:'TUR',teams:{},results:[],europe:null,pendingFixture:null,europeKnockouts:null,europeQualifications:qualifiers};context.llV14RebuildEuropeStandings(state,false);
+const all=[];for(const type of ['ucl','uel','uecl']){const table=state.europeStandings[type];assert.strictEqual(table.teams.length,36);assert.strictEqual(table.fixtures.length,type==='uecl'?6:8);assert(table.fixtures.every(round=>round.length===18));assert(qualifiers[type].every(team=>table.teams.includes(team)));assert(!table.teams.filter(team=>!qualifiers[type].includes(team)).some(team=>countries.includes(context.llV14TeamCountry(team))));all.push(...table.teams);}
+assert.strictEqual(new Set(all).size,108,'Each European competition must have a separate club field.');
+console.log('European team pools: distinct 36-team fields and domestic qualification passed.');

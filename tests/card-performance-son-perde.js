@@ -1,0 +1,15 @@
+﻿const fs=require('fs');
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+const fail=(message)=>{throw new Error(message)};
+const requireText=(needle,message)=>{if(!html.includes(needle))fail(message)};
+const start=html.indexOf("const sonPerdeA=ba==='Son Perde'");
+const end=html.indexOf('const varA=sideHasBase',start);
+if(start<0||end<0)fail('Son Perde solution block missing.');
+const block=html.slice(start,end);
+requireText("if(sonPerdeA){multA=llEffectAmount(ca,2);log(`${aName}: Son Perde",'Son Perde A preparation is not recorded.');
+requireText("if(sonPerdeB){multB=llEffectAmount(cb,2);log(`${bName}: Son Perde",'Son Perde B preparation is not recorded.');
+if(block.indexOf('i\u00e7in haz\u0131r')<block.indexOf('if(sonPerdeA)'))fail('Preparation must be logged after multiplier preparation.');
+requireText("if(/i\u00e7in haz\u0131r|haz\u0131rland\u0131/i.test(last)){outcomes[card.id]={state:'prepared',conditionMet:true,applied:false",'Prepared card condition is not sent to performance.');
+requireText('const conditionMetCardIds={a:Object.entries(cardOutcomes.a).filter(([,outcome])=>outcome.conditionMet).map(([id])=>id)', 'Condition data is not sent to result.');
+requireText('if(conditionMet.has(id)){stat.triggers++;', 'Condition data is not counted in card performance.');
+console.log('Son Perde performance chain: 5 checks passed.');

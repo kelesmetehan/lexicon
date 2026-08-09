@@ -3,8 +3,8 @@ const path=require('path');
 const assert=require('assert');
 const vm=require('vm');
 const root=path.resolve(__dirname,'..');
-const league=fs.readFileSync(path.join(root,'league-v2.js'),'utf8');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const league=fs.readFileSync(path.join(root,'outputs','league-v2.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'outputs','lexicon-fixed.html'),'utf8');
 
 new Function(league);
 for(const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)){
@@ -17,9 +17,11 @@ assert(league.includes('state.sealedRegularPacks++'));
 assert(!league.includes('state.sealedPremiumPacks++'));
 assert(!league.includes('Bir ücretsiz Elit Rol Paketi kazandın'));
 assert(league.includes('Yönetim hedeflerini tamamlamak tek başına paket vermez'));
-assert(html.includes("source='paid'")&&html.includes("source==='achievement'"));
+assert(league.includes("llOpenShopPack('${pos}','achievement')"));
+assert(html.includes("function llOpenShopPack(pos,source='paid')"));
 assert(html.includes('if(achievement)s.sealedRegularPacks--;else s.ap-=cost;'));
-assert(html.includes("llShowPackOpening('regular',pending.offers,{cost:pending.cost,source:pending.source})"));
+assert(html.includes("source:achievement?'achievement':'paid'"));
+assert(html.includes("llShowPackOpening('regular',pending.offers,{cost:achievement?0:cost,source:pending.source})"));
 assert(league.includes("llOpenShopPack('${pos}','achievement')"));
 
 const blockStart=league.indexOf('const LL_PREMIUM_PACK_COST=900;');

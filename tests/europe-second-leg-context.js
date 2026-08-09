@@ -1,0 +1,11 @@
+const fs=require('fs'),assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');
+assert(source.includes('function llCCEuropeFirstLegContextHtml'));
+assert(source.includes("fixture?.league!=='euro-knockout'"));
+assert(source.includes("Number(e?.tie?.leg)!==2"));
+assert(source.includes('result.home===opponent&&result.away===player'));
+assert(source.includes('Toplam skor e\\u015fit'));
+const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(html.includes('ll-euro-leg-context'));
+assert(/competition-consistency\.js\?v=/.test(html));
+console.log('Europe second-leg first-match context: 7 checks passed.');

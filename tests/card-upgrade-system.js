@@ -226,7 +226,7 @@ check('upgradeable and upgraded cards have consistent badges and plus rarity lab
   assert(!api.llCardDisplayRarity(base).endsWith('+'));
   const htmlSource = fs.readFileSync(HTML_PATH, 'utf8');
   const leagueSource = fs.readFileSync(LEAGUE_PATH, 'utf8');
-  assert(htmlSource.includes('${llCardUpgradeBadgeHtml(card)}<span style="display:block">'));
+  assert(htmlSource.includes('${llCardUpgradeBadgeHtml(card)}<span style="display:block;line-height:1.45">'));
   assert(htmlSource.includes('${llCardDisplayRarity(c)}</div>${llCardUpgradeBadgeHtml(c)}<div class="ll-team-name"'));
   assert(htmlSource.includes('${llEscape(c.name)}${llCardUpgradeBadgeHtml(c)}'));
   assert(htmlSource.includes('${llEscape(x.card.name)}</b>${llCardUpgradeBadgeHtml(x.card)}'));
@@ -317,4 +317,3 @@ const report = {
 };
 fs.writeFileSync(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 console.log(`Card upgrade system: ${checks.length} checks passed.`);
-

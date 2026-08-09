@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('assert');
+const vm=require('vm');
+const {loadRuntime,reportRunner}=require('./multi-league-test-helpers');
+const {context,api}=loadRuntime();const run=reportRunner('multi-league-data-integrity');
+const logo=/^https:\/\/tmssl\.akamaized\.net\/images\/wappen\/head\/\d+\.png$/;
+for(const country of api.LL_COUNTRY_CODES)for(const tier of ['tier1','tier2'])run.check(`${country} ${tier} roster, stars and logos`,()=>{const pool=tier==='tier1'?api.LL_TIER1_POOLS[country]:api.LL_TIER2_POOLS[country];assert(pool.length>=18&&pool.length<=24,`${pool.length} teams`);const names=new Set();for(const team of pool){assert(!names.has(team.name),team.name);names.add(team.name);assert(team.stars>=1&&team.stars<=6);assert(country==='TUR'?Boolean(team.logo):logo.test(team.logo),`${team.name}: ${team.logo}`);if(tier==='tier1'&&country!=='TUR')assert(team.stars>=3);if(tier==='tier2')assert(team.stars<=4);}});
+run.check('all domestic names are globally unique',()=>{const seen=new Map();for(const team of api.LL_ALL_DOMESTIC_TEAMS){assert(!seen.has(team.name),`${team.name}: ${seen.get(team.name)} and ${team.country}`);seen.set(team.name,team.country);}});
+run.check('every country has a domestic cup name',()=>{for(const country of api.LL_COUNTRY_CODES)assert(String(api.LL_DOMESTIC_CUP_NAMES[country]||'').trim());});
+run.check('domestic definitions override overlapping Europe templates',()=>{const overlaps=vm.runInContext(`Object.keys(LL_V14_EURO_META).filter(name=>LL_TEAM_REGISTRY[name]?.source==='domestic')`,context);assert(overlaps.length>=10);for(const name of overlaps){const resolved=api.llTeamDef(name),domestic=api.LL_TEAM_REGISTRY[name];assert.strictEqual(resolved.stars,domestic.stars,name);assert.strictEqual(resolved.logo,domestic.logo,name);assert.strictEqual(resolved.source,'domestic',name);}});
+run.finish({countries:api.LL_COUNTRY_CODES.length,domesticClubs:api.LL_ALL_DOMESTIC_TEAMS.length});

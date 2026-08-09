@@ -67,7 +67,7 @@ function loadGameRuntime() {
     timeout: 15000
   });
   vm.runInContext(
-    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llResolvedForecastStatus,llBaseName,llCard,lexLeague,llEnsureTeamContracts,llRecordPlayerCardPerformance,llCardPerformance};',
+    'globalThis.__matrixApi={LL_CARD_POOL,llResolveBattle,llPrepareScouting,llResolvedForecastStatus,llBaseName,llCard,llResolvePlanBRerollValue,llPlayerFixture,lexLeague,llEnsureTeamContracts,llRecordPlayerCardPerformance,llCardPerformance};',
     context
   );
   return context.__matrixApi;
@@ -93,7 +93,16 @@ function auditCardPerformanceTracking() {
   if (stat.matches !== 5) throw new Error('Stored card match count was discarded while reading performance.');
   api.lexLeague.state = previousState;
 }
+function auditPrestartPlayerFixture() {
+  const previousState = api.lexLeague.state;
+  api.lexLeague.state = null;
+  if (api.llPlayerFixture() !== null) throw new Error('Pre-start player fixture must be empty without a career state.');
+  api.lexLeague.state = { ...previousState, playerTeam: null };
+  if (api.llPlayerFixture() !== null) throw new Error('Pre-start player fixture must be empty without a selected team.');
+  api.lexLeague.state = previousState;
+}
 auditCardPerformanceTracking();
+auditPrestartPlayerFixture();
 const families = [...new Set(cards.map(family))].sort((a, b) => a.localeCompare(b, 'tr'));
 const variants = cards.flatMap(card =>
   (card.clubCard ? [] : card.position === 'Evrensel' ? POSITIONS : [card.position]).map(slot => ({ card, slot }))
@@ -448,7 +457,7 @@ const capAndMultiplierConflict=resolve(
   [7,4,5],[3,5,3],{label:'regression:cap-auto-win-multiplier'}
 );
 if(capAndMultiplierConflict.scoreA!==1||capAndMultiplierConflict.scoreB!==2)throw new Error(`Conflict regression score mismatch: ${capAndMultiplierConflict.scoreA}-${capAndMultiplierConflict.scoreB}`);
-if(!capAndMultiplierConflict.events.some(event=>/Kalenin Efendisi.*4 tavanı yeniden uygulandı.*→4/.test(event)))throw new Error('Re-applied keeper cap is missing from the event log.');
+if(!capAndMultiplierConflict.events.some(event=>/Kalenin Efendisi.*4 tavanından sonra 4 sayıldı/.test(event)))throw new Error('Keeper cap applied after the opposing boost is missing from the event log.');
 if(!capAndMultiplierConflict.events.some(event=>/Golcü İçgüdüsü.*otomatik düello galibiyeti.*x3 uygulanmadı/i.test(event)))throw new Error('Canceled Golcü İçgüdüsü multiplier is missing from the event log.');
 const canceledMultiplierStatus=api.llResolvedForecastStatus(api.llCard('RBF02'),{state:'active',reason:'Ham şart sağlandı.'},capAndMultiplierConflict,'a','A');
 if(canceledMultiplierStatus.state!=='canceled'||!/ETKİ UYGULANMADI/.test(canceledMultiplierStatus.label))throw new Error(`Canceled multiplier status is misleading: ${canceledMultiplierStatus.label}`);
@@ -458,6 +467,13 @@ if(!appliedMultiplier.events.some(event=>/Golcü İçgüdüsü.*SKOR ÇARPANI x3
 
 const canceledLastShot=resolve({Forvet:'RBF03'},{Forvet:'RBF14'},[5,3,4],[3,5,3],{label:'regression:last-shot-auto-win'});
 if(!canceledLastShot.events.some(event=>/Son Vuruş.*otomatik düello galibiyeti.*x2 uygulanmadı/i.test(event)))throw new Error('Canceled Son Vuruş multiplier is missing from the event log.');
+const planB=firstCard('Plan B');
+const planBProtected=api.llResolvePlanBRerollValue(planB.id,'Forvet',6,2);
+const planBKept=api.llResolvePlanBRerollValue(planB.id,'Forvet',4,6);
+const planBWrongRole=api.llResolvePlanBRerollValue(planB.id,'Kaleci',6,2);
+if(!planBProtected.protected||planBProtected.value!==6||planBKept.protected||planBKept.value!==6||planBWrongRole.protected||planBWrongRole.value!==2)throw new Error('Plan B reroll protection does not preserve only a lower Forvet reroll result.');
+triggeredFamilies.add('Plan B');
+triggeredCardIds.add(planB.id);
 const battleExemptFamilies = new Set(['Taktik Tahtası']);
 const uncoveredFamilies = families.filter(name => !triggeredFamilies.has(name) && !battleExemptFamilies.has(name));
 const uncoveredCards = cards

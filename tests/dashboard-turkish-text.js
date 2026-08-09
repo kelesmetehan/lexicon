@@ -1,0 +1,10 @@
+const fs=require('fs');const assert=require('assert');
+const source=fs.readFileSync('outputs/competition-consistency.js','utf8');const html=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+assert(!source.includes('? E?le?meler'),'broken dashboard fixture heading remains');
+assert(!source.includes('oynand?'),'broken dashboard played label remains');
+assert(!source.includes('e?it kal?rsa'),'broken European-leg text remains');
+assert(source.includes(String.raw`E\u015fle\u015fmeleri`),'correct dashboard fixture heading missing');
+assert(source.includes(String.raw`oynand\u0131`),'correct played label missing');
+assert(source.includes(String.raw`\u0130LK MA\u00c7`),'correct first-leg label missing');
+assert(html.includes('competition-consistency.js?v=20260801-2'),'cache-busting reference missing');
+console.log('Dashboard Turkish text integrity: 7 checks passed.');

@@ -1,0 +1,10 @@
+﻿const fs=require('fs'); const vm=require('vm'); const assert=require('assert');
+const src=fs.readFileSync('outputs/lexicon-fixed.html','utf8');
+const start=src.indexOf('function llMojibakeScore'); const end=src.indexOf('function initDatabase',start);
+assert.ok(start>=0&&end>start,'repair helpers missing');
+const box={TextDecoder,Uint8Array,Object,String,Array}; vm.createContext(box); vm.runInContext(src.slice(start,end),box);
+assert.strictEqual(box.llRepairMojibakeText('bana g\u00c3\u0192\u00c2\u00b6re'),'bana g\u00f6re');
+assert.strictEqual(box.llRepairMojibakeText('as far as I\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2m concerned'),'as far as I\u2019m concerned');
+assert.strictEqual(box.llRepairMojibakeText('normal text'),'normal text');
+assert.strictEqual(box.llRepairMojibakeText('T\u00fcrk\u00e7e'),'T\u00fcrk\u00e7e');
+console.log('Stored word encoding repair: 4/4 passed');

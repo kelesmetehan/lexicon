@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-08T22:21:12.904Z",
+  "passed": 16,
+  "failed": 0,
+  "checks": [
+    "five parallel seasons preserve metadata-driven promotion/relegation and league sizes",
+    "TUR cup bracket is valid and resolves to a domestic winner",
+    "ENG cup bracket is valid and resolves to a domestic winner",
+    "GER cup bracket is valid and resolves to a domestic winner",
+    "ESP cup bracket is valid and resolves to a domestic winner",
+    "FRA cup bracket is valid and resolves to a domestic winner",
+    "ITA cup bracket is valid and resolves to a domestic winner",
+    "NED cup bracket is valid and resolves to a domestic winner",
+    "season position thresholds scale by real team count",
+    "repair preserves a non-player club star development",
+    "season archive persists every country summary and table",
+    "Europe participants come from all previous domestic seasons without cross-cup duplicates",
+    "promotion and relegation counts are read from league metadata",
+    "career-loss boundary is country metadata driven",
+    "archive resolver returns each saved country without live-state recomputation",
+    "promoted and relegated clubs receive country-aware contextual targets"
+  ],
+  "failures": [],
+  "seasons": 5,
+  "countries": 7
+}

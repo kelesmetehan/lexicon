@@ -5,7 +5,7 @@ const vm=require('vm');
 const assert=require('assert');
 const path=require('path');
 const root=path.join(__dirname,'..');
-const source=fs.readFileSync(path.join(root,'team-star-rebalance.js'),'utf8');
+const source=fs.readFileSync(path.join(root,'outputs','team-star-rebalance.js'),'utf8');
 
 function extractLiteral(text,marker){
   const start=text.indexOf(marker);
@@ -47,10 +47,10 @@ function parseEuroMeta(text){
   return sandbox.__euroMeta;
 }
 
-const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const leagueSource=fs.readFileSync(path.join(root,'league-v2.js'),'utf8');
-const leaguePoolsSource=fs.readFileSync(path.join(root,'european-leagues-pools.js'),'utf8');
-const euroPoolsSource=fs.readFileSync(path.join(root,'europe-team-pools.js'),'utf8');
+const indexSource=fs.readFileSync(path.join(root,'outputs','lexicon-fixed.html'),'utf8');
+const leagueSource=fs.readFileSync(path.join(root,'outputs','league-v2.js'),'utf8');
+const leaguePoolsSource=fs.readFileSync(path.join(root,'outputs','european-leagues-pools.js'),'utf8');
+const euroPoolsSource=fs.readFileSync(path.join(root,'outputs','europe-team-pools.js'),'utf8');
 
 const tier1=evaluateLiteral(leaguePoolsSource,'const LL_TIER1_POOLS=');
 const tier2=evaluateLiteral(leaguePoolsSource,'const LL_TIER2_POOLS=');
