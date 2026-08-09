@@ -104,7 +104,11 @@ function llV15ContinueAfterPenaltyAnimation(){
   document.getElementById('ll-penalty-shootout')?.remove();
   llV15UnlockPenaltyActions(runtime);
   llV15PenaltyRuntime=null;
-  if(typeof llTryShowQueuedTrophyAnimation==='function')window.setTimeout(()=>llTryShowQueuedTrophyAnimation(),60);
+  globalThis.llPenaltySequenceActive=false;
+  window.setTimeout(()=>{
+    const trophyShown=typeof llTryShowQueuedTrophyAnimation==='function'&&llTryShowQueuedTrophyAnimation();
+    if(!trophyShown&&typeof llTryShowQueuedAchievements==='function')llTryShowQueuedAchievements();
+  },60);
   return true;
 }
 
@@ -171,19 +175,32 @@ const llV15RenderRoundSummaryBase=llRenderRoundSummary;
 llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=false){
   llV15StopPenaltyAnimation();
   llV15PenaltyRuntime=null;
+  /* Lock every other cinematic before the base result renderer can queue one. */
+  const preResult=[...(lexLeague?.state?.results||[])].reverse().find(item=>item.userMatch&&item.competition===comp);
+  const isPenaltyResult=['cup','playoff','ucl','uel','uecl'].includes(comp)&&Array.isArray(preResult?.penaltyShootout?.kicks)&&preResult.penaltyShootout.kicks.length>0;
+  globalThis.llPenaltySequenceActive=isPenaltyResult;
   llV15RenderRoundSummaryBase(completedWeek,lp,pg,og,comp,advanced);
-  if(!['cup','playoff','ucl','uel','uecl'].includes(comp))return;
+  if(!['cup','playoff','ucl','uel','uecl'].includes(comp)){
+    globalThis.llPenaltySequenceActive=false;
+    return;
+  }
 
   const state=lexLeague.state;
   const result=[...(state.results||[])].reverse().find(item=>item.userMatch&&item.competition===comp);
   const shootout=result?.penaltyShootout;
-  if(!shootout||!Array.isArray(shootout.kicks)||!shootout.kicks.length)return;
+  if(!shootout||!Array.isArray(shootout.kicks)||!shootout.kicks.length){
+    globalThis.llPenaltySequenceActive=false;
+    return;
+  }
 
   const root=llArea();
   const notice=root?.querySelector('.ll-notice');
   const buttons=[...(root?.querySelectorAll('.ll-panel .ll-btn')||[])];
   const actions=buttons.length?buttons[buttons.length-1].parentElement:null;
-  if(!notice||!actions)return;
+  if(!notice||!actions){
+    globalThis.llPenaltySequenceActive=false;
+    return;
+  }
 
   const isEurope=['ucl','uel','uecl'].includes(comp);
   const cupName=state.cup?.name||LL_DOMESTIC_CUP_NAMES?.[state.playerCountry]||'Yerel Kupa';

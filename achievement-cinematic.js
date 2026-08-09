@@ -3,6 +3,7 @@
   'use strict';
   let queue=[];
   let showing=false;
+  let retryTimer=null;
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[ch]));
   function rewardText(a){
     const ap=Number(a?.reward?.ap)||0,lp=Number(a?.reward?.lp)||0;
@@ -29,9 +30,19 @@
       return `<i class="ll-ac-particle" style="--x:${x.toFixed(0)}px;--y:${y.toFixed(0)}px;--p:${colors[i%colors.length]};--d:${(1.25+Math.random()*.8).toFixed(2)}s;--delay:${(Math.random()*.18).toFixed(2)}s"></i>`;
     }).join('');
   }
+  function isBlocked(){
+    if(globalThis.llPenaltySequenceActive)return true;
+    return !!document.querySelector('#ll-penalty-shootout,#ll-trophy-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,.ll-relegation-cinematic');
+  }
+  function retryLater(){
+    if(retryTimer||!queue.length)return;
+    retryTimer=window.setTimeout(()=>{retryTimer=null;next();},240);
+  }
   function next(){
+    if(showing)return false;
+    if(!queue.length){showing=false;return false;}
+    if(isBlocked()){retryLater();return false;}
     const a=queue.shift();
-    if(!a){showing=false;return;}
     showing=true;installStyle();
     document.getElementById('ll-achievement-cinematic')?.remove();
     const overlay=document.createElement('div');
@@ -40,13 +51,21 @@
     overlay.innerHTML=`<div class="ll-ac-rays"></div>${particles()}<section class="ll-ac-card" role="dialog" aria-modal="true" aria-label="Başarım kilidi açıldı"><i class="ll-ac-ring"></i><i class="ll-ac-ring r2"></i><div class="ll-ac-badge">🏆</div><div class="ll-ac-kicker">BAŞARIM KİLİDİ AÇILDI</div><div class="ll-ac-name">${escapeHtml(a.name)}</div><p class="ll-ac-desc">${escapeHtml(a.description)}</p><div class="ll-ac-reward">${escapeHtml(rewardText(a))} kariyer hanene işlendi</div><br><button class="ll-ac-button" type="button">Devam Et</button></section>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(()=>overlay.classList.add('show'));
-    const close=()=>{overlay.classList.remove('show');setTimeout(()=>{overlay.remove();next();},260);};
+    const close=()=>{overlay.classList.remove('show');setTimeout(()=>{
+      overlay.remove();
+      showing=false;
+      /* A trophy queued while this achievement was visible takes priority. */
+      if(typeof globalThis.llTryShowQueuedTrophyAnimation==='function'&&globalThis.llTryShowQueuedTrophyAnimation())return;
+      next();
+    },260);};
     overlay.querySelector('.ll-ac-button').addEventListener('click',close);
     overlay.addEventListener('click',event=>{if(event.target===overlay)close();});
   }
   globalThis.llAchievementCinematic=function(items){
     const incoming=Array.isArray(items)?items:[items];
     queue.push(...incoming.filter(Boolean));
-    if(!showing)next();
+    next();
   };
+  /* Called by the penalty and trophy flows once their explicit Continue action ends. */
+  globalThis.llTryShowQueuedAchievements=function(){return next();};
 })();

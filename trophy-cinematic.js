@@ -60,7 +60,7 @@ function llQueueTrophyAnimation(event){
 
 function llTrophyOtherCinematicOpen(){
   if(typeof document==='undefined')return true;
-  return !!document.querySelector('#ll-trophy-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-penalty-shootout');
+  return !!globalThis.llPenaltySequenceActive||!!document.querySelector('#ll-trophy-cinematic,#ll-achievement-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-relegation-cinematic,#ll-penalty-shootout');
 }
 
 function llTrophySpawnParticles(root,count,colors){
@@ -109,7 +109,10 @@ function llShowTrophyAnimation(trophyName,options={}){
 function llCloseTrophyAnimation(){
   document.getElementById('ll-trophy-cinematic')?.remove();
   document.body?.classList.remove('ll-cinematic-open');
-  window.setTimeout(llTryShowQueuedTrophyAnimation,180);
+  window.setTimeout(()=>{
+    const trophyShown=llTryShowQueuedTrophyAnimation();
+    if(!trophyShown&&typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
+  },180);
 }
 
 function llTryShowQueuedTrophyAnimation(){
