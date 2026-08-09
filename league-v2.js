@@ -297,7 +297,10 @@ function llV2SeasonGoalsHtml(final=false){
   const s=lexLeague.state,goals=llV2EnsureSeasonGoals(s),items=final&&goals.evaluated?goals.results:goals.items.map(g=>({...g,...llV2GoalStatus(s,g)}));
   return `<div class="ll-card"><div class="ll-card-title">${final?'Yönetim Hedefleri · Sezon Sonu':'Sezonluk Yönetim Hedefleri'}</div><div class="ll-muted" style="margin-bottom:10px">${llStars(goals.stars||llV2TeamStarsInState(s,s.playerTeam))} ${llEscape(llLeagueLabel(goals.league))} beklentileri · kulübün gücüne göre belirlendi</div><div class="ll-goals">${items.map(g=>`<div class="ll-goal ${final?(g.achieved?'success':'fail'):''}"><div><div class="ll-goal-title">${final?(g.achieved?'✓':'✕'):'◆'} ${llEscape(g.label)}</div><div class="ll-goal-progress">${llEscape(g.progress)}</div></div><div class="ll-goal-reward">${llV2RewardText(g,final?g.achieved:true)}</div></div>`).join('')}</div>${final?`<div class="ll-notice" style="margin-top:12px"><b>Hedef ödülleri:</b> +${goals.earnedAp} AP · +${goals.earnedLp} LP${goals.promotionSupportAp?`<br><b>Yükselme desteği:</b> +${goals.promotionSupportAp} AP`:''}${goals.badge?`<br><b>Kulüp rozeti:</b> 🏅 ${llEscape(goals.badge)}`:''}</div>`:`<div class="ll-muted" style="margin-top:10px">Hedefler sezon başında sabitlenir. Yıldızın sezon içinde yükselirse mevcut hedef değişmez; daha güçlü hedefler sonraki sezon başlar. Başarılmayan hedef 0 puan verir.</div>`}</div>`;
 }
-function llIsTransferWindow(week=lexLeague.state?.week){const s=lexLeague.state,n=Number(week);return !!s?.seasonEnded||(n>=1&&n<=3)||[10,18,30].includes(n);}
+// One shared calendar keeps player and AI market access aligned.
+// Week 24 splits the otherwise very long 18–30 run, especially for clubs alive in Europe.
+const LL_TRANSFER_WEEKS=[10,18,24,30];
+function llIsTransferWindow(week=lexLeague.state?.week){const s=lexLeague.state,n=Number(week);return !!s?.seasonEnded||(n>=1&&n<=3)||LL_TRANSFER_WEEKS.includes(n);}
 function llV2MatchImportance(f,key){
   const s=lexLeague.state,comp=f.competition||'league',pair=[f.home,f.away].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),derbies=new Set([['Galatasaray','Fenerbahçe'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Galatasaray','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|'),['Fenerbahçe','Beşiktaş'].sort((a,b)=>a.localeCompare(b,'tr')).join('|')]);
   if(comp==='cup'&&/Final/i.test(f.roundLabel||''))return '🏆 TÜRKİYE KUPASI FİNALİ';
@@ -845,7 +848,8 @@ function llStartCareer(teamName){if(localStorage.getItem(LL_V2_SAVE_KEY)&&!confi
 /* Card contracts, active-slot chemistry and full European AI squads. */
 const LL_CARD_CONTRACT_VERSION=1;
 const LL_CARD_CONTRACT_RULES={common:{matches:18,renewLp:40},rare:{matches:16,renewLp:60},epic:{matches:14,renewLp:90},legendary:{matches:12,renewLp:130}};
-const LL_AI_TRANSFER_WEEKS=[1,10,20,30];
+// Player and AI transfer windows must use the same season calendar.
+const LL_AI_TRANSFER_WEEKS=[1,...LL_TRANSFER_WEEKS];
 function llCardContractRule(cardOrId){const card=typeof cardOrId==='string'?llCard(cardOrId):cardOrId;return LL_CARD_CONTRACT_RULES[card?.rarity]||LL_CARD_CONTRACT_RULES.common;}
 function llEnsureTeamContracts(team){if(!team)return team;if(!team.cardContracts||typeof team.cardContracts!=='object')team.cardContracts={};if(!Number.isFinite(team.aiLp))team.aiLp=0;LL_POSITIONS.forEach(pos=>{const cardId=team.cards?.[pos]||null,current=team.cardContracts[pos];if(!cardId){delete team.cardContracts[pos];return;}const rule=llCardContractRule(cardId);if(!current||current.cardId!==cardId)team.cardContracts[pos]={cardId,remaining:rule.matches,total:rule.matches};else{current.total=rule.matches;current.remaining=Math.max(0,Math.min(rule.matches,Number.isFinite(Number(current.remaining))?Number(current.remaining):rule.matches));}});return team;}
 function llResetCardContract(team,pos,cardId=team?.cards?.[pos]){if(!team||!cardId)return null;if(!team.cardContracts||typeof team.cardContracts!=='object')team.cardContracts={};const rule=llCardContractRule(cardId);return team.cardContracts[pos]={cardId,remaining:rule.matches,total:rule.matches};}
