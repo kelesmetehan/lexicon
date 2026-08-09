@@ -1064,7 +1064,8 @@
 </div>
 
 <!-- Yerel arma eşlemesi, ilk ekran çizilmeden önce hazır olmalı. -->
-<script src="team-logo-manifest.js?v=20260808-local-logos-3"></script>
+<script src="team-logo-manifest.js?v=20260809-logo-coverage-1"></script>
+<script src="team-logo-domestic-complete.js?v=20260809-logo-coverage-1"></script>
 <script>
 const DB_KEY = 'lexicon_words';
 const META_KEY = 'lexicon_meta';
@@ -2615,7 +2616,12 @@ function llTeamLogo(teamOrName,variant=''){
   const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
   const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
   const label=llEscape(String(team.name||team.short||'Takım'));
-  const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
+  // Prefer a checked-in local crest.  Source logo IDs are stable across
+  // diacritic/name variants and are also recoverable from older save URLs.
+  const savedLogoId=String(team.logo||'').match(/\/head\/(\d+)\.(?:png|jpg|webp)(?:\?|$)/i)?.[1];
+  const logoId=Number(team.logoId||savedLogoId||0);
+  const domesticPath=globalThis.LL_DOMESTIC_COMPLETE_LOGO_FILES?.[logoId]||(globalThis.LL_DOMESTIC_COMPLETE_LOGO_IDS?.has(logoId)?`assets/team-logos/domestic-complete/${logoId}.png`:'');
+  const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||domesticPath||team.logo;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant} logo-missing">${fallback}</span>`;
   return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
@@ -5976,7 +5982,7 @@ renderPreStart();
 <script src="manager-market.js?v=20260806-2"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
 <script src="europe-knockout-tiebreak.js?v=20260723-1"></script>
-<script src="europe-team-pools.js?v=20260809-local-europe-logos-1"></script>
+<script src="europe-team-pools.js?v=20260809-local-europe-logos-2"></script>
 <script src="european-leagues-pools.js?v=20260731-2"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260802-1"></script>
