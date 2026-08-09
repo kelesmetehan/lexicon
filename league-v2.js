@@ -32,7 +32,7 @@ const LL_EURO_ROUNDS=['Son 32','Son 16','Çeyrek Final','Yarı Final','Final'];
 const LL_EURO_LOGO_IDS={
   'Paris Saint-Germain':583,'Real Madrid':418,'Manchester City':281,'Bayern München':27,Liverpool:31,Inter:46,Chelsea:631,'Borussia Dortmund':16,Barcelona:131,Arsenal:11,'Bayer Leverkusen':15,'Atlético Madrid':13,Benfica:294,Atalanta:800,Villarreal:1050,Juventus:506,'Eintracht Frankfurt':24,'Club Brugge':2282,'Tottenham Hotspur':148,'PSV Eindhoven':383,Ajax:610,Napoli:6195,'Sporting CP':336,Olympiacos:683,Marseille:244,Copenhagen:190,Monaco:162,Galatasaray:141,'Union Saint-Gilloise':3948,'Qarabağ':10625,'Athletic Club':621,'Newcastle United':762,'Bodø/Glimt':2619,'Slavia Praha':62,Pafos:20401,'Kairat Almaty':10470
 };
-const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=7,LL_TEAM_TARGET_VERSION=4,LL_SEASON_HISTORY_VERSION=1;
+const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=8,LL_TEAM_TARGET_VERSION=4,LL_SEASON_HISTORY_VERSION=1;
 function llV2PlayerLeagueInState(state){return state?.leagues?.super?.includes(state.playerTeam)?'super':'first';}
 function llV2TeamStarsInState(state,name){return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||LL_ALL_TEAMS.find(t=>t.name===name)?.stars||1)));}
 function llV2TeamTargetOptions(league,stars){
@@ -225,7 +225,18 @@ function llV2RepairState(state){
   Object.values(state.teams||{}).forEach(team=>{if(!Array.isArray(team.usedCardFamilies))team.usedCardFamilies=[];Object.values(team.cards||{}).forEach(id=>{const family=llCardFamilyName(llCard(id));if(family&&!team.usedCardFamilies.includes(family))team.usedCardFamilies.push(family);});});
   llV2EnsureEuropeStandings(state);
   llV2EnsureTeamSeasonTargets(state);
-  if(!state.seasonGoals||state.seasonGoals.season!==state.season||(!state.seasonGoals.evaluated&&state.seasonGoals.version!==LL_SEASON_GOAL_VERSION))state.seasonGoals=llV2CreateSeasonGoals(state);
+  const existingGoalVersion=Number(state.seasonGoals?.version||0);
+  if(!state.seasonGoals||state.seasonGoals.season!==state.season||(!state.seasonGoals.evaluated&&existingGoalVersion<7))state.seasonGoals=llV2CreateSeasonGoals(state);
+  // Older active careers may already have league/cup objectives but predate the
+  // Europe objective. Add exactly one without changing their chosen season goals.
+  if(!state.seasonGoals.evaluated){
+    const goalList=Array.isArray(state.seasonGoals.items)?state.seasonGoals.items:(state.seasonGoals.items=[]);
+    const existingIndex=goalList.findIndex(goal=>goal?.id==='europe_expectation');
+    const expectedEuropeGoal=llV2EuropeGoalForTeam(state,Number(state.seasonGoals.stars)||llV2TeamStarsInState(state,state.playerTeam));
+    if(expectedEuropeGoal&&existingIndex<0)goalList.splice(Math.min(2,goalList.length),0,expectedEuropeGoal);
+    else if(!expectedEuropeGoal&&existingIndex>=0)goalList.splice(existingIndex,1);
+    state.seasonGoals.version=LL_SEASON_GOAL_VERSION;
+  }
   llV2EnsureStarUpgradeInvestments(state);
   return state;
 }
