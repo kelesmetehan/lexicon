@@ -161,6 +161,31 @@
       @keyframes llHellQuizEmber{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.35)}10%{opacity:.90}64%{opacity:.68}100%{opacity:0;transform:translateX(calc(-50% + var(--dx))) translateY(var(--dy)) scale(.18) rotate(150deg)}}
       @keyframes llHellQuizFlame{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.13) rotate(3deg)}}
       @media (prefers-reduced-motion:reduce){.ll-hell-quiz-theme .ll-panel:before,.ll-hell-quiz-theme .ll-panel:after,.ll-hell-quiz-flame,.ll-hell-quiz-embers i{animation:none}.ll-hell-quiz-embers i{opacity:.35;transform:translateX(-50%) translateY(-48px)}}
+
+      /* Cehennemi YaÅŸat: supplied artwork is used directly, not recreated in CSS.
+         The translucent layers only keep the live question and score readable. */
+      .ll-hell-quiz-theme{
+        background:#120c0d url('assets/special-quiz-themes/cehennemi-yasat-question.png') center/cover no-repeat;
+        box-shadow:0 0 0 1px rgba(255,105,54,.7),0 28px 72px rgba(0,0,0,.62),0 0 70px rgba(255,83,27,.22);
+      }
+      .ll-hell-quiz-theme .ll-panel{
+        min-height:540px;
+        background:
+          linear-gradient(135deg,rgba(28,12,13,.66),rgba(49,15,15,.49) 55%,rgba(10,18,19,.67)),
+          url('assets/special-quiz-themes/cehennemi-yasat-question.png') center/cover no-repeat;
+        background-blend-mode:normal;
+        border-color:rgba(255,112,58,.94);
+      }
+      .ll-hell-quiz-theme .ll-panel:before,
+      .ll-hell-quiz-theme .ll-panel:after{display:none}
+      .ll-hell-quiz-theme .ll-question{
+        background:
+          linear-gradient(135deg,rgba(28,24,20,.86),rgba(10,22,24,.89)),
+          url('assets/special-quiz-themes/cehennemi-yasat-question.png') center 62%/cover no-repeat;
+        box-shadow:-9px 0 24px rgba(240,65,20,.22),9px 0 26px rgba(29,234,229,.20),inset 0 0 42px rgba(0,0,0,.42);
+      }
+      .ll-hell-quiz-embers{display:none!important}
+      .ll-hell-quiz-flame{animation:none}
     `;
     document.head.appendChild(style);
   }
@@ -209,22 +234,6 @@
     if (!Array.isArray(state.recentQuizWords)) state.recentQuizWords = [];
     state.recentQuizWords.push(ref.id); state.recentQuizWords = state.recentQuizWords.slice(-30);
   }
-  function addQuizEmbers(root) {
-    if (!root || root.querySelector('.ll-hell-quiz-embers')) return;
-    const layer = document.createElement('div');
-    layer.className = 'll-hell-quiz-embers'; layer.setAttribute('aria-hidden', 'true');
-    for (let i = 0; i < 34; i++) {
-      const ember = document.createElement('i');
-      ember.style.setProperty('--x', `${3 + Math.random() * 94}%`);
-      ember.style.setProperty('--size', `${3 + Math.random() * 5}px`);
-      ember.style.setProperty('--dx', `${-40 + Math.random() * 80}px`);
-      ember.style.setProperty('--dy', `${-120 - Math.random() * 260}px`);
-      ember.style.setProperty('--duration', `${2.7 + Math.random() * 3.2}s`);
-      ember.style.setProperty('--delay', `${-Math.random() * 5}s`);
-      layer.appendChild(ember);
-    }
-    root.appendChild(layer);
-  }
   function renderQuiz(event) {
     const quiz = event?.quiz;
     if (!event || !quiz) return;
@@ -251,7 +260,6 @@
     const flame = document.createElement('span');
     flame.className = 'll-hell-quiz-flame'; flame.textContent = '🔥';
     quizRoot?.querySelector('.ll-title')?.appendChild(flame);
-    addQuizEmbers(quizRoot);
     try { if (typeof globalThis.markNewWordFrame === 'function') markNewWordFrame(word, area().querySelector('.ll-question')); } catch {}
   }
   function startQuiz(event) {
