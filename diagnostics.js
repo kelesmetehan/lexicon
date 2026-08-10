@@ -77,8 +77,6 @@ function llInstallDiagnosticButton(){
 if(typeof window!=='undefined'){
   window.addEventListener('error',event=>llDiagnosticEvent('runtime_error',{message:event.message,source:(event.filename||'').split('/').pop(),line:event.lineno,column:event.colno,stack:String(event.error?.stack||'').slice(0,1500)}));
   window.addEventListener('unhandledrejection',event=>llDiagnosticEvent('unhandled_rejection',{message:String(event.reason?.message||event.reason||'Bilinmeyen promise hatası'),stack:String(event.reason?.stack||'').slice(0,1500)}));
-  document.addEventListener('pointerdown',event=>{const button=event.target?.closest?.('[data-quiz-answer]');if(button)llDiagnosticEvent('quiz_answer_pointerdown',{answer:button.dataset.quizAnswer||null,disabled:!!button.disabled});},true);
-  document.addEventListener('click',event=>{const button=event.target?.closest?.('[data-quiz-answer]');if(button)llDiagnosticEvent('quiz_answer_dom_click',{answer:button.dataset.quizAnswer||null,disabled:!!button.disabled});},true);
 }
 if(typeof globalThis.renderPreStart==='function'){
   const llDiagnosticRenderPreStartBase=globalThis.renderPreStart;globalThis.renderPreStart=function(){const result=llDiagnosticRenderPreStartBase.apply(this,arguments);llInstallDiagnosticButton();return result;};
