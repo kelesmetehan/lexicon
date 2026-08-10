@@ -128,6 +128,15 @@
     style.textContent = `
       .ll-hell-banner{--hell:#d43a2f;--hell2:#ff5a3c;--ember:#ff8a3d;position:relative;overflow:hidden;margin-top:13px;padding:16px;border:1px solid rgba(255,110,75,.64);border-radius:15px;background:radial-gradient(circle at 85% 0,rgba(255,78,42,.26),transparent 38%),linear-gradient(135deg,#241011,#3b1516 52%,#1b1111);box-shadow:0 12px 32px rgba(120,15,12,.26),inset 0 0 26px rgba(255,102,42,.08);animation:llHellBannerIn .55s cubic-bezier(.18,.92,.28,1.1) both}.ll-hell-banner:before{content:'';position:absolute;inset:0;background:linear-gradient(108deg,transparent 22%,rgba(255,206,128,.16) 48%,transparent 72%);transform:translateX(-125%);animation:llHellSheen 4s linear infinite}.ll-hell-banner>*{position:relative;z-index:1}.ll-hell-tag{display:flex;gap:8px;align-items:center;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#ffd7b6}.ll-hell-tag b{padding:4px 8px;border-radius:999px;color:#210c0c;background:linear-gradient(135deg,#ffb052,#ff693f);font-size:9px}.ll-hell-title{margin-top:6px;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:29px;line-height:1;color:#ffe2bc;text-shadow:0 0 19px rgba(255,90,50,.32)}.ll-hell-title span{display:inline-block;animation:llHellFlame 1.8s ease-in-out infinite}.ll-hell-copy{max-width:700px;margin-top:7px;color:#d9b5ab;font-size:12px;line-height:1.55}.ll-hell-copy strong{color:#fff3dd}.ll-hell-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.ll-hell-actions .ll-btn{flex:1;min-width:170px}.ll-hell-accept{background:linear-gradient(135deg,#d93b2e,#ff8843)!important;color:#fff8eb!important;border-color:rgba(255,221,177,.44)!important}.ll-hell-cine{--hell:#d43a2f;position:relative;isolation:isolate;max-width:740px;min-height:430px;margin:0 auto;overflow:hidden;padding:37px 23px 29px;text-align:center;border:1px solid rgba(255,123,72,.55);border-radius:22px;background:radial-gradient(ellipse at 50% 20%,rgba(196,38,25,.33),transparent 54%),linear-gradient(180deg,#251111,#100e12 88%);box-shadow:0 24px 65px rgba(0,0,0,.55),0 0 45px rgba(189,32,22,.15)}.ll-hell-cine:before{content:'';position:absolute;inset:-30%;z-index:-1;background:repeating-conic-gradient(from 0deg at 50% 48%,rgba(255,122,61,.10) 0deg 1deg,transparent 1.6deg 13deg);opacity:.68;animation:llHellRays 16s linear infinite}.ll-hell-embers{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}.ll-hell-embers i{position:absolute;left:var(--x);top:var(--y);width:var(--size);height:var(--size);border-radius:50% 50% 50% 0;background:radial-gradient(circle at 32% 28%,#fff6c7 0 15%,#ffce59 33%,#ff6035 64%,rgba(255,53,28,0) 74%);box-shadow:0 0 10px #ff5d33;opacity:0;animation:llHellEmber var(--duration) cubic-bezier(.17,.74,.31,1) var(--delay) infinite}.ll-hell-score{font-size:11px;letter-spacing:.14em;color:#dda9a1;text-transform:uppercase}.ll-hell-score b{font-size:17px;color:#ffca9b}.ll-hell-icon{margin:16px 0 4px;font-size:58px;filter:drop-shadow(0 0 18px rgba(255,78,36,.7));animation:llHellPop .65s cubic-bezier(.2,1.45,.3,1) .15s both}.ll-hell-result-title{font-family:'Cormorant Garamond',serif;font-size:38px;line-height:1.03;font-weight:700;color:#ffe0bc;text-shadow:0 0 22px rgba(255,76,32,.42);animation:llHellRise .55s ease .28s both}.ll-hell-quote{margin:9px auto 18px;max-width:530px;color:#d7aaa3;font-size:13px;font-style:italic;animation:llHellRise .55s ease .42s both}.ll-hell-reward{display:inline-block;min-width:min(430px,100%);padding:13px 18px;border:1px solid rgba(255,135,75,.38);border-radius:13px;background:rgba(255,93,48,.12);color:#f7d2bb;font-size:13px;animation:llHellRise .55s ease .56s both}.ll-hell-reward b{display:block;margin-bottom:3px;color:#ffb47c;font-family:'Cormorant Garamond',serif;font-size:20px}.ll-hell-choice{margin-top:21px;animation:llHellRise .55s ease .7s both}.ll-hell-choice .ll-card-title{margin-bottom:9px;color:#ffd7ae}.ll-hell-match-badge{margin:12px 0;padding:11px 13px;border:1px solid rgba(255,119,64,.54);border-radius:11px;background:linear-gradient(135deg,rgba(190,34,23,.19),rgba(255,123,54,.08));font-size:12px}.ll-hell-match-badge b{color:#ffcca4}@keyframes llHellBannerIn{from{opacity:0;transform:translateY(15px) scale(.97)}to{opacity:1;transform:none}}@keyframes llHellSheen{to{transform:translateX(135%)}}@keyframes llHellFlame{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.12) rotate(3deg)}}@keyframes llHellRays{to{transform:rotate(1turn)}}@keyframes llHellEmber{0%,8%{opacity:0;transform:translate(-50%,-50%) scale(.25)}14%{opacity:.96}58%{opacity:.7}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.7) rotate(170deg)}}@keyframes llHellPop{from{opacity:0;transform:scale(.35) rotate(-16deg)}to{opacity:1;transform:none}}@keyframes llHellRise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}@media(max-width:650px){.ll-hell-actions{flex-direction:column}.ll-hell-cine{min-height:400px;padding:30px 14px 24px}.ll-hell-result-title{font-size:32px}}
     `;
+    // The offer card uses the same rising ember language as the supplied preview.
+    // Keep this layer behind its content, but above the banner background.
+    style.textContent += `
+      .ll-hell-banner{isolation:isolate}
+      .ll-hell-banner>.ll-hell-banner-embers{z-index:0;opacity:1}
+      .ll-hell-banner>.ll-hell-banner-embers i{bottom:-12px;top:auto;width:var(--size);height:calc(var(--size) * 1.45);border-radius:50% 50% 50% 0;background:radial-gradient(circle at 32% 25%,#fff8cd 0 15%,#ffce59 33%,#ff6436 63%,rgba(255,53,28,0) 75%);box-shadow:0 0 10px rgba(255,93,51,.95);animation:llHellBannerEmber var(--duration) linear var(--delay) infinite}
+      @keyframes llHellBannerEmber{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.4)}10%{opacity:.92}62%{opacity:.72}100%{opacity:0;transform:translateX(calc(-50% + var(--dx))) translateY(var(--dy)) scale(.18) rotate(150deg)}}
+      @media (prefers-reduced-motion:reduce){.ll-hell-banner>.ll-hell-banner-embers i{animation:none;opacity:.42;transform:translateX(-50%) translateY(-42px)}}
+    `;
     document.head.appendChild(style);
   }
   function bannerHtml(event, state) {
@@ -152,6 +161,14 @@
     if (next) next.insertAdjacentHTML('beforebegin', html);
     else if (card) card.insertAdjacentHTML('beforeend', html);
     else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', html);
+    const banner = root.querySelector('[data-welcome-to-hell]');
+    if (banner && !banner.querySelector('.ll-hell-banner-embers')) {
+      const embers = document.createElement('div');
+      embers.className = 'll-hell-embers ll-hell-banner-embers';
+      embers.setAttribute('aria-hidden', 'true');
+      banner.prepend(embers);
+      setTimeout(createEmbers, 20);
+    }
     save();
   }
   function markWordUsed(ref, state) {
@@ -228,19 +245,23 @@
     save(); renderOutcome(event);
   }
   function createEmbers() {
-    const host = document.querySelector('.ll-hell-embers');
-    if (!host) return;
-    for (let i = 0; i < 34; i++) {
-      const ember = document.createElement('i');
-      ember.style.setProperty('--x', `${32 + Math.random() * 36}%`);
-      ember.style.setProperty('--y', `${74 + Math.random() * 18}%`);
-      ember.style.setProperty('--dx', `${(Math.random() - .5) * 240}px`);
-      ember.style.setProperty('--dy', `${-(80 + Math.random() * 210)}px`);
-      ember.style.setProperty('--size', `${3 + Math.random() * 5}px`);
-      ember.style.setProperty('--duration', `${1.8 + Math.random() * 1.7}s`);
-      ember.style.setProperty('--delay', `${-Math.random() * 3.1}s`);
-      host.appendChild(ember);
-    }
+    document.querySelectorAll('.ll-hell-embers').forEach(host => {
+      if (host.dataset.embersReady === '1') return;
+      host.dataset.embersReady = '1';
+      const isBanner = host.classList.contains('ll-hell-banner-embers');
+      const count = isBanner ? 20 : 34;
+      for (let i = 0; i < count; i++) {
+        const ember = document.createElement('i');
+        ember.style.setProperty('--x', `${isBanner ? 3 + Math.random() * 94 : 32 + Math.random() * 36}%`);
+        ember.style.setProperty('--y', `${74 + Math.random() * 18}%`);
+        ember.style.setProperty('--dx', `${(Math.random() - .5) * (isBanner ? 110 : 240)}px`);
+        ember.style.setProperty('--dy', `${-(isBanner ? 115 + Math.random() * 105 : 80 + Math.random() * 210)}px`);
+        ember.style.setProperty('--size', `${isBanner ? 2.5 + Math.random() * 3.5 : 3 + Math.random() * 5}px`);
+        ember.style.setProperty('--duration', `${isBanner ? 1.6 + Math.random() * 1.8 : 1.8 + Math.random() * 1.7}s`);
+        ember.style.setProperty('--delay', `${-Math.random() * 3.1}s`);
+        host.appendChild(ember);
+      }
+    });
   }
   function renderOutcome(event) {
     const quiz = event.quiz, outcome = outcomeForCorrect(quiz.correct), needsChoice = !!outcome.range && !event.reward?.position;
