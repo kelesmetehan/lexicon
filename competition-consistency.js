@@ -172,6 +172,14 @@ const LL_CC_DERBIES={
 const llCCBaseImportance=llV2MatchImportance;
 llV2MatchImportance=function(fixture,key){
   const competition=fixture?.competition||'league';
+  if(competition==='cup'){
+    const state=lexLeague.state,round=String(fixture?.roundLabel||'').trim();
+    let country=state?.playerCountry||'TUR';
+    try{country=llMLTeamCompetition(fixture?.home,state)?.country||country;}catch(e){}
+    const cupName=typeof llDomesticCupLabel==='function'?llDomesticCupLabel(country):'Yerel Kupa';
+    if(/yar[ıi]\s*final|semi[- ]?final/i.test(round))return '🏆 '+String(cupName).toLocaleUpperCase('tr-TR')+' YARI FİNALİ';
+    if(/^(final|finali)$/i.test(round))return '🏆 '+String(cupName).toLocaleUpperCase('tr-TR')+' FİNALİ';
+  }
   if(['ucl','uel','uecl'].includes(competition)){
     const label=String(fixture.roundLabel||'');
     const knockout=Number(fixture.euroLeg)>0||/(Eleme|Son 16|Çeyrek|Yarı|Final)/i.test(label);
