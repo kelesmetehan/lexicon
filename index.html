@@ -3017,18 +3017,25 @@ function llPersistQuizWordRating(ref,q,correct,{markUsed=true}={}){
 globalThis.llQuizDiagnostic=llQuizDiagnostic;
 globalThis.llPersistQuizWordRating=llPersistQuizWordRating;
 function llRateLeagueQuiz(correct){
-  const q=lexLeague.quiz;if(!q||!q.revealed||q.answerBusy)return;
-  const answerIndex=Number(q.index)||0,ref=q.queue?.[answerIndex];if(!ref)return;
+  const diagId=typeof llDiagnosticQuizAnswerStart==='function'?llDiagnosticQuizAnswerStart(!!correct):null;
+  const q=lexLeague.quiz;
+  if(!q){if(typeof llDiagnosticQuizIgnored==='function')llDiagnosticQuizIgnored(diagId,'no_quiz',!!correct,q);return;}
+  if(!q.revealed){if(typeof llDiagnosticQuizIgnored==='function')llDiagnosticQuizIgnored(diagId,'not_revealed',!!correct,q);return;}
+  if(q.answerBusy){if(typeof llDiagnosticQuizIgnored==='function')llDiagnosticQuizIgnored(diagId,'answer_busy',!!correct,q);return;}
+  const answerIndex=Number(q.index)||0,ref=q.queue?.[answerIndex];
+  if(!ref){if(typeof llDiagnosticQuizIgnored==='function')llDiagnosticQuizIgnored(diagId,'missing_question_ref',!!correct,q);return;}
   q.answerBusy=true;
+  if(typeof llDiagnosticQuizBusy==='function')llDiagnosticQuizBusy(diagId,true,q);
   // Cevabı önce sınav durumuna işle. Kelime/istatistik depolamasındaki ikincil bir hata
   // kullanıcının "Bildim" düğmesini kilitleyip aynı soruda bırakmamalı.
   if(correct)q.correct=(Number(q.correct)||0)+1;
   q.index=answerIndex+1;q.revealed=false;
   llQuizDiagnostic('quiz_answer_clicked',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct});
   try{llPersistQuizWordRating(ref,q,!!correct);}catch(error){llQuizDiagnostic('quiz_answer_unexpected_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}
-  try{llSave();}catch(error){llQuizDiagnostic('quiz_answer_career_save_error',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});}
+  try{if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'start',{scope:'league_quiz_answer',question:answerIndex+1,wordId:ref.id||null});llSave();if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'completed',{scope:'league_quiz_answer'});}catch(error){llQuizDiagnostic('quiz_answer_career_save_error',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'error',{scope:'league_quiz_answer',message:String(error?.message||error)});}
   q.answerBusy=false;
-  try{llRenderLeagueQuiz();}catch(error){q.answerBusy=false;llQuizDiagnostic('quiz_answer_render_error',{question:answerIndex+1,message:String(error?.message||error)});throw error;}
+  if(typeof llDiagnosticQuizBusy==='function')llDiagnosticQuizBusy(diagId,false,q);
+  try{if(typeof llDiagnosticRenderStarted==='function')llDiagnosticRenderStarted(diagId,'llRenderLeagueQuiz');llRenderLeagueQuiz();if(typeof llDiagnosticRenderEnded==='function')llDiagnosticRenderEnded(diagId,'llRenderLeagueQuiz');if(typeof llDiagnosticQuizCompleted==='function')llDiagnosticQuizCompleted(diagId,{question:answerIndex+1,wordId:ref.id||null,correct:!!correct});}catch(error){q.answerBusy=false;llQuizDiagnostic('quiz_answer_render_error',{question:answerIndex+1,message:String(error?.message||error)});if(typeof llDiagnosticRenderError==='function')llDiagnosticRenderError(diagId,'llRenderLeagueQuiz',error);if(typeof llDiagnosticHandlerEnded==='function')llDiagnosticHandlerEnded(diagId,'ERROR',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});throw error;}
 }
 function llFinishLeagueQuiz(){
   const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
@@ -5990,7 +5997,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260807-quiz-input-1"></script>
+<script src="diagnostics.js?v=20260810-diagnostic-trail-v2"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260801-1"></script>
