@@ -203,7 +203,9 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   }
 
   const isEurope=['ucl','uel','uecl'].includes(comp);
-  const cupName=state.cup?.name||LL_DOMESTIC_CUP_NAMES?.[state.playerCountry]||'Yerel Kupa';
+  const cupName=typeof llDomesticCupLabelForFixture==='function'
+    ?llDomesticCupLabelForFixture(lexLeague.match?.fixture,state)
+    :(state.cup?.name||LL_DOMESTIC_CUP_NAMES?.[state.playerCountry]||'Yerel Kupa');
   const stage=isEurope?llV11EuroStageLabel(result.euroStage):comp==='cup'?(result.roundLabel||LL_CUP_ROUNDS?.[Number(result.cupRound)||0]||cupName):'Yükselme Play-Off';
   const competitionName=isEurope?llV2EuroLabel(comp):comp==='cup'?cupName:'Play-Off';
   const won=shootout.winner===state.playerTeam;

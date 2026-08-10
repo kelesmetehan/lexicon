@@ -145,9 +145,9 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,competition='league',advanc
     return result.userMatch&&result.competition===competition&&result.penaltyShootout;
   });
   if(!record)return;
-  var country=state?.playerCountry||'TUR',score=String(record.penaltyShootout.scoreA)+'-'+String(record.penaltyShootout.scoreB);
+  var country=typeof llDomesticCupCountryFor==='function'?llDomesticCupCountryFor(null,state):(state?.playerCountry||'TUR'),score=String(record.penaltyShootout.scoreA)+'-'+String(record.penaltyShootout.scoreB);
   var competitionName=competition==='cup'
-    ?(typeof llDomesticCupLabel==='function'?llDomesticCupLabel(country):'Yerel Kupa')
+    ?(typeof llDomesticCupLabelForFixture==='function'?llDomesticCupLabelForFixture(null,state):(typeof llDomesticCupLabel==='function'?llDomesticCupLabel(country):'Yerel Kupa'))
     :((typeof llMLLeagueLabel==='function'?llMLLeagueLabel(country,'tier2'):'Lig')+' Play-Off');
   var outcome=advanced?'Penalt\u0131larda Galibiyet':'Penalt\u0131larda Elenme';
   var title=llArea().querySelector('.quiz-start-title');
@@ -174,9 +174,7 @@ llV2MatchImportance=function(fixture,key){
   const competition=fixture?.competition||'league';
   if(competition==='cup'){
     const state=lexLeague.state,round=String(fixture?.roundLabel||'').trim();
-    let country=state?.playerCountry||'TUR';
-    try{country=llMLTeamCompetition(fixture?.home,state)?.country||country;}catch(e){}
-    const cupName=typeof llDomesticCupLabel==='function'?llDomesticCupLabel(country):'Yerel Kupa';
+    const cupName=typeof llDomesticCupLabelForFixture==='function'?llDomesticCupLabelForFixture(fixture,state):'Yerel Kupa';
     if(/yar[ıi]\s*final|semi[- ]?final/i.test(round))return '🏆 '+String(cupName).toLocaleUpperCase('tr-TR')+' YARI FİNALİ';
     if(/^(final|finali)$/i.test(round))return '🏆 '+String(cupName).toLocaleUpperCase('tr-TR')+' FİNALİ';
   }

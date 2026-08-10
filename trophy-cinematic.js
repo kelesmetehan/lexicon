@@ -131,7 +131,8 @@ function llScheduleTrophyAnimation(delay=70){
 }
 
 function llDomesticCupDisplayName(state){
-  const country=state?.playerCountry||state?.cup?.country||'TUR';
+  if(typeof llDomesticCupLabelForFixture==='function')return llDomesticCupLabelForFixture(null,state);
+  const country=state?.cup?.country||state?.playerCountry||'TUR';
   return state?.cup?.name||((typeof LL_DOMESTIC_CUP_NAMES==='object'&&LL_DOMESTIC_CUP_NAMES[country])||'Yerel Kupa');
 }
 
