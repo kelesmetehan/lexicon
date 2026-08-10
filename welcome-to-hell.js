@@ -139,7 +139,8 @@
     `;
     style.textContent += `
       /* This is scoped to the 12-word Welcome to Hell quiz only. */
-      .ll-hell-quiz-theme .ll-panel{position:relative;isolation:isolate;overflow:hidden;border-color:rgba(255,105,67,.72);background:radial-gradient(circle at 87% 8%,rgba(255,90,42,.22),transparent 31%),radial-gradient(circle at 8% 102%,rgba(183,27,20,.28),transparent 42%),linear-gradient(145deg,#1b1014,#351116 54%,#141014);box-shadow:0 24px 62px rgba(82,12,10,.34),inset 0 0 42px rgba(255,105,55,.08)}
+      .ll-hell-quiz-theme{position:relative;isolation:isolate;overflow:hidden;border-radius:24px;background:radial-gradient(ellipse at 6% 92%,rgba(191,42,21,.30),transparent 37%),radial-gradient(ellipse at 92% 10%,rgba(255,112,38,.15),transparent 38%),#100d0f;box-shadow:0 0 0 1px rgba(255,105,67,.22),0 30px 74px rgba(0,0,0,.52),0 0 78px rgba(198,50,20,.14)}
+      .ll-hell-quiz-theme .ll-panel{position:relative;isolation:isolate;overflow:hidden;border:1px solid rgba(255,108,61,.82);border-radius:24px;background:radial-gradient(circle at 87% 8%,rgba(255,90,42,.26),transparent 31%),radial-gradient(circle at 8% 102%,rgba(183,27,20,.35),transparent 42%),linear-gradient(145deg,rgba(30,16,18,.96),rgba(52,17,19,.94) 54%,rgba(20,16,19,.97));box-shadow:inset 0 0 0 1px rgba(255,183,116,.08),0 0 28px rgba(238,63,25,.18),inset 0 0 55px rgba(255,105,55,.10)}
       .ll-hell-quiz-theme .ll-panel:before{content:'';position:absolute;inset:-35%;z-index:0;background:repeating-conic-gradient(from 200deg at 54% 106%,rgba(255,117,54,.12) 0deg 1deg,transparent 1.8deg 13deg);opacity:.58;animation:llHellQuizRays 18s linear infinite}
       .ll-hell-quiz-theme .ll-panel:after{content:'';position:absolute;left:-12%;right:-12%;bottom:-16px;height:112px;z-index:0;background:radial-gradient(ellipse at 18% 96%,rgba(255,72,34,.34),transparent 38%),radial-gradient(ellipse at 52% 100%,rgba(255,155,65,.2),transparent 36%),radial-gradient(ellipse at 84% 94%,rgba(220,40,26,.28),transparent 42%);filter:blur(7px);animation:llHellQuizGlow 2.8s ease-in-out infinite}
       .ll-hell-quiz-theme .ll-panel>*{position:relative;z-index:1}
@@ -148,14 +149,18 @@
       .ll-hell-quiz-theme .ll-stars{color:#ffca93}
       .ll-hell-quiz-theme .ll-progress{background:rgba(255,173,116,.14)}
       .ll-hell-quiz-theme .ll-progress>div{background:linear-gradient(90deg,#d7372f,#ff7542,#ffd16d);box-shadow:0 0 14px rgba(255,105,59,.58)}
-      .ll-hell-quiz-theme .ll-question{border-color:rgba(255,123,72,.44);background:linear-gradient(145deg,rgba(61,20,23,.62),rgba(20,16,23,.76));box-shadow:inset 0 0 28px rgba(255,92,43,.06)}
+      .ll-hell-quiz-theme .ll-question{border:2px solid transparent;border-left-color:rgba(255,109,44,.92);border-bottom-color:rgba(255,109,44,.86);border-top-color:rgba(255,154,83,.55);border-right-color:rgba(58,245,239,.90);background:radial-gradient(circle at 93% 4%,rgba(44,225,225,.12),transparent 25%),radial-gradient(circle at 10% 99%,rgba(244,72,26,.17),transparent 34%),repeating-linear-gradient(137deg,rgba(255,205,155,.035) 0 1px,transparent 1px 13px),linear-gradient(145deg,rgba(39,29,27,.96),rgba(16,22,24,.97));box-shadow:-8px 0 22px rgba(240,65,20,.16),8px 0 25px rgba(29,234,229,.15),inset 0 0 42px rgba(0,0,0,.40)}
       .ll-hell-quiz-theme .ll-question-word,.ll-hell-quiz-theme .ll-answer{color:#ffe2c3}
       .ll-hell-quiz-theme .ll-position{color:#f3a171}
       .ll-hell-quiz-theme .ll-btn.primary{background:linear-gradient(135deg,#c9302b,#ff7a43)!important;border-color:rgba(255,225,184,.42)!important;color:#fff8ec!important}
       .ll-hell-quiz-theme .ll-btn.danger{border-color:rgba(255,104,84,.35)!important;background:rgba(80,20,24,.45)!important}
+      .ll-hell-quiz-flame{display:inline-block;margin-left:7px;filter:drop-shadow(0 0 11px rgba(255,93,42,.85));animation:llHellQuizFlame 1.7s ease-in-out infinite}
+      .ll-hell-quiz-embers{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}.ll-hell-quiz-embers i{position:absolute;left:var(--x);bottom:-18px;width:var(--size);height:calc(var(--size)*1.38);border-radius:50% 50% 50% 0;background:radial-gradient(circle at 30% 25%,#fff9d1 0 14%,#ffcd57 31%,#ff6333 61%,rgba(255,61,27,0) 76%);box-shadow:0 0 11px rgba(255,91,39,.9);opacity:0;animation:llHellQuizEmber var(--duration) linear var(--delay) infinite}
       @keyframes llHellQuizRays{to{transform:rotate(1turn)}}
       @keyframes llHellQuizGlow{0%,100%{opacity:.6;transform:translateY(0) scale(.94)}50%{opacity:1;transform:translateY(-7px) scale(1.05)}}
-      @media (prefers-reduced-motion:reduce){.ll-hell-quiz-theme .ll-panel:before,.ll-hell-quiz-theme .ll-panel:after{animation:none}}
+      @keyframes llHellQuizEmber{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.35)}10%{opacity:.90}64%{opacity:.68}100%{opacity:0;transform:translateX(calc(-50% + var(--dx))) translateY(var(--dy)) scale(.18) rotate(150deg)}}
+      @keyframes llHellQuizFlame{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.13) rotate(3deg)}}
+      @media (prefers-reduced-motion:reduce){.ll-hell-quiz-theme .ll-panel:before,.ll-hell-quiz-theme .ll-panel:after,.ll-hell-quiz-flame,.ll-hell-quiz-embers i{animation:none}.ll-hell-quiz-embers i{opacity:.35;transform:translateX(-50%) translateY(-48px)}}
     `;
     document.head.appendChild(style);
   }
@@ -204,6 +209,22 @@
     if (!Array.isArray(state.recentQuizWords)) state.recentQuizWords = [];
     state.recentQuizWords.push(ref.id); state.recentQuizWords = state.recentQuizWords.slice(-30);
   }
+  function addQuizEmbers(root) {
+    if (!root || root.querySelector('.ll-hell-quiz-embers')) return;
+    const layer = document.createElement('div');
+    layer.className = 'll-hell-quiz-embers'; layer.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 34; i++) {
+      const ember = document.createElement('i');
+      ember.style.setProperty('--x', `${3 + Math.random() * 94}%`);
+      ember.style.setProperty('--size', `${3 + Math.random() * 5}px`);
+      ember.style.setProperty('--dx', `${-40 + Math.random() * 80}px`);
+      ember.style.setProperty('--dy', `${-120 - Math.random() * 260}px`);
+      ember.style.setProperty('--duration', `${2.7 + Math.random() * 3.2}s`);
+      ember.style.setProperty('--delay', `${-Math.random() * 5}s`);
+      layer.appendChild(ember);
+    }
+    root.appendChild(layer);
+  }
   function renderQuiz(event) {
     const quiz = event?.quiz;
     if (!event || !quiz) return;
@@ -225,7 +246,12 @@
     const answerHtml = askTrToEn ? spoken(answer) : esc(answer);
     const pct = (quiz.index / WORD_COUNT) * 100;
     area().innerHTML = `<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Cehennemi <em>Yaşat</em></div><div class="ll-muted">Ev sahibi özel sınavı · ${quiz.index + 1}/${WORD_COUNT} · Her doğru normal maç AP'si kazandırır · sonra normal 10 kelimelik sınav</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llHellReveal()"><div><div class="ll-position">${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed ? `<div class="ll-answer">${answerHtml}</div>` : '<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed ? '' : 'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llHellRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llHellRate(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llHellFinishEarly()">Burada Bırak · Şu anki ${quiz.correct} doğru üzerinden sonucu al</button></div></div>`;
-    area().querySelector('.ll-shell.ll-quiz-card')?.classList.add('ll-hell-quiz-theme');
+    const quizRoot = area().querySelector('.ll-shell.ll-quiz-card');
+    quizRoot?.classList.add('ll-hell-quiz-theme');
+    const flame = document.createElement('span');
+    flame.className = 'll-hell-quiz-flame'; flame.textContent = '🔥';
+    quizRoot?.querySelector('.ll-title')?.appendChild(flame);
+    addQuizEmbers(quizRoot);
     try { if (typeof globalThis.markNewWordFrame === 'function') markNewWordFrame(word, area().querySelector('.ll-question')); } catch {}
   }
   function startQuiz(event) {
