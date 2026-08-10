@@ -137,6 +137,26 @@
       @keyframes llHellBannerEmber{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.4)}10%{opacity:.92}62%{opacity:.72}100%{opacity:0;transform:translateX(calc(-50% + var(--dx))) translateY(var(--dy)) scale(.18) rotate(150deg)}}
       @media (prefers-reduced-motion:reduce){.ll-hell-banner>.ll-hell-banner-embers i{animation:none;opacity:.42;transform:translateX(-50%) translateY(-42px)}}
     `;
+    style.textContent += `
+      /* This is scoped to the 12-word Welcome to Hell quiz only. */
+      .ll-hell-quiz-theme .ll-panel{position:relative;isolation:isolate;overflow:hidden;border-color:rgba(255,105,67,.72);background:radial-gradient(circle at 87% 8%,rgba(255,90,42,.22),transparent 31%),radial-gradient(circle at 8% 102%,rgba(183,27,20,.28),transparent 42%),linear-gradient(145deg,#1b1014,#351116 54%,#141014);box-shadow:0 24px 62px rgba(82,12,10,.34),inset 0 0 42px rgba(255,105,55,.08)}
+      .ll-hell-quiz-theme .ll-panel:before{content:'';position:absolute;inset:-35%;z-index:0;background:repeating-conic-gradient(from 200deg at 54% 106%,rgba(255,117,54,.12) 0deg 1deg,transparent 1.8deg 13deg);opacity:.58;animation:llHellQuizRays 18s linear infinite}
+      .ll-hell-quiz-theme .ll-panel:after{content:'';position:absolute;left:-12%;right:-12%;bottom:-16px;height:112px;z-index:0;background:radial-gradient(ellipse at 18% 96%,rgba(255,72,34,.34),transparent 38%),radial-gradient(ellipse at 52% 100%,rgba(255,155,65,.2),transparent 36%),radial-gradient(ellipse at 84% 94%,rgba(220,40,26,.28),transparent 42%);filter:blur(7px);animation:llHellQuizGlow 2.8s ease-in-out infinite}
+      .ll-hell-quiz-theme .ll-panel>*{position:relative;z-index:1}
+      .ll-hell-quiz-theme .ll-topbar{border-bottom-color:rgba(255,130,83,.18)}
+      .ll-hell-quiz-theme .ll-title em{color:#ff8e58;text-shadow:0 0 16px rgba(255,95,45,.48)}
+      .ll-hell-quiz-theme .ll-stars{color:#ffca93}
+      .ll-hell-quiz-theme .ll-progress{background:rgba(255,173,116,.14)}
+      .ll-hell-quiz-theme .ll-progress>div{background:linear-gradient(90deg,#d7372f,#ff7542,#ffd16d);box-shadow:0 0 14px rgba(255,105,59,.58)}
+      .ll-hell-quiz-theme .ll-question{border-color:rgba(255,123,72,.44);background:linear-gradient(145deg,rgba(61,20,23,.62),rgba(20,16,23,.76));box-shadow:inset 0 0 28px rgba(255,92,43,.06)}
+      .ll-hell-quiz-theme .ll-question-word,.ll-hell-quiz-theme .ll-answer{color:#ffe2c3}
+      .ll-hell-quiz-theme .ll-position{color:#f3a171}
+      .ll-hell-quiz-theme .ll-btn.primary{background:linear-gradient(135deg,#c9302b,#ff7a43)!important;border-color:rgba(255,225,184,.42)!important;color:#fff8ec!important}
+      .ll-hell-quiz-theme .ll-btn.danger{border-color:rgba(255,104,84,.35)!important;background:rgba(80,20,24,.45)!important}
+      @keyframes llHellQuizRays{to{transform:rotate(1turn)}}
+      @keyframes llHellQuizGlow{0%,100%{opacity:.6;transform:translateY(0) scale(.94)}50%{opacity:1;transform:translateY(-7px) scale(1.05)}}
+      @media (prefers-reduced-motion:reduce){.ll-hell-quiz-theme .ll-panel:before,.ll-hell-quiz-theme .ll-panel:after{animation:none}}
+    `;
     document.head.appendChild(style);
   }
   function bannerHtml(event, state) {
@@ -205,6 +225,7 @@
     const answerHtml = askTrToEn ? spoken(answer) : esc(answer);
     const pct = (quiz.index / WORD_COUNT) * 100;
     area().innerHTML = `<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Cehennemi <em>Yaşat</em></div><div class="ll-muted">Ev sahibi özel sınavı · ${quiz.index + 1}/${WORD_COUNT} · Her doğru normal maç AP'si kazandırır · sonra normal 10 kelimelik sınav</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llHellReveal()"><div><div class="ll-position">${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed ? `<div class="ll-answer">${answerHtml}</div>` : '<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed ? '' : 'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llHellRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llHellRate(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llHellFinishEarly()">Burada Bırak · Şu anki ${quiz.correct} doğru üzerinden sonucu al</button></div></div>`;
+    area().querySelector('.ll-shell.ll-quiz-card')?.classList.add('ll-hell-quiz-theme');
     try { if (typeof globalThis.markNewWordFrame === 'function') markNewWordFrame(word, area().querySelector('.ll-question')); } catch {}
   }
   function startQuiz(event) {
