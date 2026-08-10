@@ -537,7 +537,11 @@ function llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName=''){
 }
 
 function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=false){
-  const state=lexLeague.state,isEurope=['ucl','uel','uecl'].includes(comp),label=comp==='league'?llLeagueLabel(key):comp==='cup'?llDomesticCupLabelForFixture(lexLeague.match?.fixture,state):comp==='playoff'?`${llLeagueLabel('first')} Play-Off`:isEurope?llV2EuroLabel(comp):comp.toUpperCase(),result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet',e=state.europe;
+  const state=lexLeague.state;
+  // Bu ekran maç kaydedildikten sonra da çalışır. Dashboard'daki yerel `key`
+  // değişkeni burada yoktur; ligi doğrudan kaydedilen fikstürden çözmeliyiz.
+  const fixtureLeague=lexLeague.match?.fixture?.league||llTeamLeague(state?.playerTeam)||'super';
+  const isEurope=['ucl','uel','uecl'].includes(comp),label=comp==='league'?llLeagueLabel(fixtureLeague):comp==='cup'?llDomesticCupLabelForFixture(lexLeague.match?.fixture,state):comp==='playoff'?`${llLeagueLabel('first')} Play-Off`:isEurope?llV2EuroLabel(comp):comp.toUpperCase(),result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet',e=state.europe;
   const completedRound=isEurope?Math.max(0,Math.min(LL_EURO_ROUNDS.length-1,advanced?Number(e?.round||1)-1:Number(e?.round||0))):null,stageName=isEurope?LL_EURO_ROUNDS[completedRound]:'',nextStage=isEurope?llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName):'';
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel" style="text-align:center"><div class="quiz-start-title">${label} · ${result} <em>${pg}-${og}</em></div><div class="ll-notice">+${lp} LP${comp!=='league'&&pg===og?` · Penaltılar: ${advanced?'Tur atladın':'Elendin'}`:''}${isEurope?`<br><b>${stageName}:</b> ${llEscape(nextStage)}`:''}</div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">${isEurope?`<button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${comp}')">Avrupa Tur Yolunu Gör</button>`:''}<button class="ll-btn primary" onclick="llRenderDashboard()">Devam Et</button></div></div></div>`;
 }
