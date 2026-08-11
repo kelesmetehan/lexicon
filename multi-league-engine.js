@@ -220,7 +220,55 @@ llV2ArchiveSeason=function(state,summary){
 function llMLActivePromotedTeams(active,country,playoffWinner){const meta=llMLLeagueMeta(country,'tier2'),directCount=Math.max(0,Number(active?.rules?.directCount??meta.promoteDirect)||0),playoffCount=Math.max(0,Number(active?.rules?.playoffCount??meta.promotePlayoff)||0),direct=(active?.tier2Rows||[]).slice(0,directCount).map(row=>row.team),winner=playoffWinner||active?.playoffWinner||null;return [...direct,...(playoffCount&&winner?[winner]:[])];}
 llV2FinalizeSeason=function(playoffWinner){const state=lexLeague.state,prepared=llMLPrepareAllCountrySummaries(state);llMLFinalizeBase(playoffWinner);const summary=state.lastSeasonSummary;if(!summary)return;const active=prepared.countrySummaries[state.playerCountry];active.promoted=llMLActivePromotedTeams(active,state.playerCountry,playoffWinner);active.playoffWinner=active.promoted.includes(playoffWinner)?playoffWinner:(active.playoffWinner||null);summary.leagueRows=prepared.leagueRows;summary.countrySummaries=prepared.countrySummaries;summary.country=state.playerCountry;summary.superRows=active.tier1Rows;summary.firstRows=active.tier2Rows;summary.tier1Rows=active.tier1Rows;summary.tier2Rows=active.tier2Rows;summary.relegated=[...(active.relegated||[])];summary.promoted=[...(active.promoted||[])];summary.playoffWinner=active.playoffWinner;summary.cupWinner=active.cupWinner;summary.qualifications=llDeep(active.qualifications||{ucl:[],uel:[],uecl:[]});summary.countrySummaries[state.playerCountry]={...active};summary.leagueRows[state.playerCountry]={tier1:active.tier1Rows,tier2:active.tier2Rows};delete state.__mlFinalRows;state.managerMarket=null;if(typeof llEnsureManagerMarket==='function')llEnsureManagerMarket(state);llV2ArchiveSeason(state,summary);llSave();};
 function llMLApplyMovements(state,summary){for(const country of LL_COUNTRY_CODES){const info=summary.countrySummaries?.[country];if(!info)continue;const tier1=new Set(state.leagues[country].tier1),tier2=new Set(state.leagues[country].tier2);for(const name of info.relegated||[]){tier1.delete(name);tier2.add(name);}for(const name of info.promoted||[]){tier2.delete(name);tier1.add(name);if(name!==state.playerTeam)llAiGrantPromotionReward?.(state,name,summary.season);}state.leagues[country]={tier1:[...tier1],tier2:[...tier2]};}}
-llStartNextSeason=function(){const state=lexLeague.state;if(!state)return;if(state.careerEnded){renderLexiconLeagueLanding();return;}const market=state.seasonEnded&&typeof llEnsureManagerMarket==='function'?llEnsureManagerMarket(state):null;if(market?.status==='pending'){llRenderManagerMarket('super');return;}const summary=state.lastSeasonSummary;if(!summary)return;llMLApplyMovements(state,summary);state.playerCountry=llMLCountryForTeam(state.playerTeam,state)||state.playerCountry;state.season++;state.week=1;state.seasonEnded=false;state.standings={};state.schedules={};state.cups={};for(const country of LL_COUNTRY_CODES){state.standings[country]={};state.schedules[country]={};for(const tier of ['tier1','tier2']){state.standings[country][tier]=llBlankStandings(state.leagues[country][tier]);state.schedules[country][tier]=llGenerateSchedule(state.leagues[country][tier]);}state.cups[country]=llMLCreateCup(state,country);}state.pendingFixture=null;state.playoff=null;state.results=[];state.europeStandings=null;state.aiTransferWindows={};state.aiContractWindows={};state.teamSeasonTargets=null;state.seasonGoals=null;state.managerMarket=null;Object.values(state.teams).forEach(team=>{team.lastResults=[];team.wins=0;team.lockedDice={};});const active=summary.countrySummaries?.[state.playerCountry],q=active?.qualifications||{ucl:[],uel:[],uecl:[]},type=q.ucl.includes(state.playerTeam)?'ucl':q.uel.includes(state.playerTeam)?'uel':q.uecl.includes(state.playerTeam)?'uecl':null;state.europeQualifications=llDeep(q);state.europe=type?{type,phase:'league',round:0,alive:true,pending:null,winner:null,usedOpponents:[],status:'Lig aşaması başlamadı'}:null;llV2RepairState(state);if(typeof llManagerProfile==='function')llManagerProfile(state).currentTeam=state.playerTeam;llSave();llRenderDashboard();};
+llStartNextSeason=function(){
+  const state=lexLeague.state;if(!state)return;
+  if(state.careerEnded){renderLexiconLeagueLanding();return;}
+  const market=state.seasonEnded&&typeof llEnsureManagerMarket==='function'?llEnsureManagerMarket(state):null;
+  if(market?.status==='pending'){llRenderManagerMarket('super');return;}
+  const summary=state.lastSeasonSummary;if(!summary)return;
+  const selectedTeam=market?.status==='chosen'&&market.selectedTeam?market.selectedTeam:state.playerTeam;
+  if(!selectedTeam||!state.teams?.[selectedTeam]){alert('Yeni sezon başlatılamadı: seçilen kulüp kariyer verisinde bulunamadı.');return;}
+  const snapshot=typeof llDeep==='function'?llDeep(state):JSON.parse(JSON.stringify(state));
+  try{
+    state.playerTeam=selectedTeam;
+    if(summary)summary.nextManagerTeam=selectedTeam;
+    llMLApplyMovements(state,summary);
+    state.playerCountry=llMLCountryForTeam(state.playerTeam,state)||state.playerCountry;
+    state.season++;
+    state.week=1;
+    state.seasonEnded=false;
+    state.standings={};state.schedules={};state.cups={};
+    for(const country of LL_COUNTRY_CODES){
+      if(!state.leagues?.[country]?.tier1||!state.leagues?.[country]?.tier2)throw new Error(`Lig yapısı eksik: ${country}`);
+      state.standings[country]={};state.schedules[country]={};
+      for(const tier of ['tier1','tier2']){
+        state.standings[country][tier]=llBlankStandings(state.leagues[country][tier]);
+        state.schedules[country][tier]=llGenerateSchedule(state.leagues[country][tier]);
+      }
+      state.cups[country]=llMLCreateCup(state,country);
+    }
+    state.pendingFixture=null;state.playoff=null;state.results=[];state.europeStandings=null;
+    state.aiTransferWindows={};state.aiContractWindows={};state.teamSeasonTargets=null;state.seasonGoals=null;
+    Object.values(state.teams).forEach(team=>{team.lastResults=[];team.wins=0;team.lockedDice={};});
+    const active=summary.countrySummaries?.[state.playerCountry];
+    const rawQ=active?.qualifications||{};
+    const q={ucl:Array.isArray(rawQ.ucl)?[...rawQ.ucl]:[],uel:Array.isArray(rawQ.uel)?[...rawQ.uel]:[],uecl:Array.isArray(rawQ.uecl)?[...rawQ.uecl]:[]};
+    const type=q.ucl.includes(state.playerTeam)?'ucl':q.uel.includes(state.playerTeam)?'uel':q.uecl.includes(state.playerTeam)?'uecl':null;
+    state.europeQualifications=llDeep(q);
+    state.europe=type?{type,phase:'league',round:0,alive:true,pending:null,winner:null,usedOpponents:[],status:'Lig aşaması başlamadı'}:null;
+    llV2RepairState(state);
+    if(typeof llManagerProfile==='function')llManagerProfile(state).currentTeam=state.playerTeam;
+    state.managerMarket=null;
+    llSave();
+    llRenderDashboard();
+  }catch(error){
+    console.error('[Yeni Sezon] Sezon geçişi başarısız; önceki state geri yüklendi.',error);
+    Object.keys(state).forEach(key=>delete state[key]);Object.assign(state,snapshot);
+    if(typeof llSave==='function')llSave();
+    alert('Yeni sezon başlatılırken bir hata oluştu. Kariyer kaydı korunarak sezon sonu ekranına geri dönüldü.');
+    if(typeof llRenderSeasonEnd==='function')llRenderSeasonEnd();
+  }
+};
 
 llManagerSeasonRow=function(summary,team){for(const country of LL_COUNTRY_CODES)for(const tier of ['tier1','tier2']){const rows=summary?.leagueRows?.[country]?.[tier]||[],index=rows.findIndex(row=>row.team===team);if(index>=0)return {row:rows[index],country,tier,league:tier==='tier1'?'super':'first',position:index+1};}const superIndex=(summary?.superRows||[]).findIndex(row=>row.team===team);if(superIndex>=0)return {row:summary.superRows[superIndex],country:summary.country||'TUR',tier:'tier1',league:'super',position:superIndex+1};const firstIndex=(summary?.firstRows||[]).findIndex(row=>row.team===team);return firstIndex>=0?{row:summary.firstRows[firstIndex],country:summary.country||'TUR',tier:'tier2',league:'first',position:firstIndex+1}:{row:null,country:null,tier:null,league:null,position:0};};
 llManagerNextLeague=function(summary,team){const current=llManagerSeasonRow(summary,team),info=summary?.countrySummaries?.[current.country];if((info?.promoted||[]).includes(team))return 'super';if((info?.relegated||[]).includes(team))return 'first';return current.league||'first';};
