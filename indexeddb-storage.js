@@ -12,6 +12,15 @@
   var llIdbInitPromise=null;
   var llIdbWriteChain=Promise.resolve();
   var llIdbLastError=null;
+  globalThis.llStorageBootEvents=Array.isArray(globalThis.llStorageBootEvents)?globalThis.llStorageBootEvents:[];
+  function llIdbBootEvent(type,details){
+    globalThis.llStorageBootEvents.push({at:new Date().toISOString(),type:type,details:details||{}});
+    if(globalThis.llStorageBootEvents.length>40)globalThis.llStorageBootEvents.splice(0,globalThis.llStorageBootEvents.length-40);
+    if(typeof globalThis.llDiagnosticEvent==='function')globalThis.llDiagnosticEvent(type,details||{});
+  }
+  globalThis.llStorageBootStatus=function(){
+    return {ready:llIdbReady,unavailable:llIdbUnavailable,hasCache:!!llIdbCache,hasCareer:llIdbHasCareer(llIdbCache),activeSlot:llIdbCache?.activeSlot||null,lastError:llIdbLastError||null,events:globalThis.llStorageBootEvents.slice(-40)};
+  };
   var llIdbBaseEnsure=typeof llEnsureSaveSlots==='function'?llEnsureSaveSlots:null;
   var llIdbBasePersist=typeof llPersistStoreAndMirror==='function'?llPersistStoreAndMirror:null;
   var llIdbBaseMirror=typeof llMirrorActiveCareer==='function'?llMirrorActiveCareer:null;
@@ -69,11 +78,13 @@
     if(llIdbReady||llIdbUnavailable)return llIdbReady;
     if(llIdbInitPromise)return llIdbInitPromise;
     llIdbInitPromise=(async function(){
+      llIdbBootEvent('IDB_BOOT_STARTED',{});
       try{
         var stored=await llIdbRead(LL_IDB_KEY);
         if(stored&&llIdbStoreLooksValid(stored.store)){
           llIdbCache=llIdbNormalizeStore(stored.store);
           llIdbReady=true;
+          llIdbBootEvent('IDB_BOOT_READY',{source:'indexeddb',hasCareer:llIdbHasCareer(llIdbCache),activeSlot:llIdbCache.activeSlot});
           return true;
         }
         var legacy=llIdbLegacyStore();
@@ -84,6 +95,7 @@
         if(!verify||!llIdbStoreLooksValid(verify.store))throw new Error('Taşınan kariyer doğrulanamadı.');
         llIdbCache=llIdbNormalizeStore(verify.store);
         llIdbReady=true;
+        llIdbBootEvent('IDB_BOOT_READY',{source:'legacy-migration',hasCareer:llIdbHasCareer(llIdbCache),activeSlot:llIdbCache.activeSlot});
         if(llIdbHasCareer(legacy))llIdbClearMovedLegacy();
         return true;
       }catch(error){llIdbUnavailable=true;llIdbError(error,'Kariyer taşıma');return false;}
@@ -142,6 +154,34 @@
     if(llIdbReady)return true;
     return llIdbBaseMirror?llIdbBaseMirror():true;
   };
+  function llIdbRunAfterReady(action,args,label){
+    if(llIdbReady||llIdbUnavailable)return action.apply(globalThis,args);
+  llIdbBootEvent('IDB_ACTION_QUEUED',{action:label});
+  llIdbInitialize().then(function(ready){
+    if(!ready&&label==='llContinueGame'&&!llIdbHasCareer(llIdbLegacyStore())){
+      llIdbBootEvent('IDB_ACTION_BLOCKED',{action:label,reason:'no-career-after-storage-boot'});
+      alert('Kariyer kaydı açılamadı; güvenlik için yeni/boş kariyer oluşturulmadı. Hata Kaydını İndir düğmesinden raporu gönder.');
+      if(typeof globalThis.llRenderLanding==='function')llRenderLanding();
+      return;
+    }
+    llIdbBootEvent(ready?'IDB_ACTION_RESUMED':'IDB_ACTION_FALLBACK',{action:label});
+    action.apply(globalThis,args);
+    }).catch(function(error){
+      llIdbBootEvent('IDB_ACTION_FAILED',{action:label,message:String(error&&error.message||error)});
+      alert('Kariyer kaydı henüz hazırlanamadı. Lütfen birkaç saniye sonra tekrar dene.');
+    });
+    return undefined;
+  }
+  function llIdbGateAction(name){
+    var base=globalThis[name];
+    if(typeof base!=='function'||base.__llIdbGated)return;
+    var gated=function(){return llIdbRunAfterReady(base,arguments,name);};
+    gated.__llIdbGated=true;
+    globalThis[name]=gated;
+  }
+  llIdbGateAction('llContinueGame');
+  llIdbGateAction('llStartCareer');
+  llIdbGateAction('llSetActiveSaveSlot');
 
   if(llIdbBaseApplyCareer){
     llApplyCareerImport=async function(slot){
@@ -238,5 +278,5 @@
     if(panel&&!panel.querySelector('#ll-storage-health-launcher'))panel.insertAdjacentHTML('beforeend','<div id="ll-storage-health-launcher" class="ll-notice" style="margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><span><b>Depolama Sağlığı:</b> Kariyer kaydının boyutunu, kota durumunu ve eski kopyaları gör.</span><button class="ll-btn" onclick="llOpenStorageHealth()">Depolama Sağlığı</button></div>');
   };
   globalThis.addEventListener('pagehide',function(){if(llIdbReady)llIdbFlush();});
-  llIdbInitialize();
+  globalThis.llStorageBootReady=llIdbInitialize();
 })();

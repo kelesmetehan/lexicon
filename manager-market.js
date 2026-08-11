@@ -107,13 +107,23 @@ function llCompleteManagerSigning(){
   globalThis.llManagerSeasonTransitioning=true;
   llCloseManagerSigning();
   try{
+    const seasonBefore=Number(state.season)||0;
     state.playerTeam=market.selectedTeam;
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(state.playerTeam,state)||state.playerCountry;
+    if(typeof globalThis.llMLAttachLegacyAliases==='function')llMLAttachLegacyAliases(state);
     if(typeof globalThis.llSave==='function')llSave();
     if(typeof globalThis.llStartNextSeason==='function')llStartNextSeason();
+    if(globalThis.lexLeague?.state?.seasonEnded||Number(globalThis.lexLeague?.state?.season)===seasonBefore){
+      throw new Error('Yeni sezon takvimi oluşturulamadı; sezon geçişi tamamlanmadı.');
+    }
+    globalThis.llLastSeasonTransitionError=null;
+    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_COMPLETED',{team:market.selectedTeam,season:globalThis.lexLeague?.state?.season});
   }catch(error){
     console.error('Manager signing season transition failed',error);
+    globalThis.llLastSeasonTransitionError={message:String(error?.message||error),team:market.selectedTeam,season:state.season,at:new Date().toISOString()};
+    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_FAILED',globalThis.llLastSeasonTransitionError);
     if(typeof globalThis.llRenderSeasonEnd==='function')llRenderSeasonEnd();
+    alert('Yeni sezon başlatılamadı. Kariyerin korunuyor; sezon sonu ekranına döndün. Hata Kaydını İndir düğmesinden raporu gönderebilirsin.');
   }finally{
     window.setTimeout(()=>{globalThis.llManagerSeasonTransitioning=false;},400);
   }
