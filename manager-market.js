@@ -43,7 +43,7 @@ function llChooseManagerOffer(teamName){
   if(!confirm(staying?`${teamName} takımında kalmak istiyor musun? Yıldız yatırımı iade edilmez ve kulüpte açık kalır.`:`${teamName} teklifini kabul etmek istiyor musun? Takım ${target.stars} yıldız ve mevcut kartlarıyla devralınacak.${refundText}`))return;
   const refund=staying?{refundableSpentLp:refundPreview.refundableSpentLp,refundLp:0,settled:false}:llV2SettleStarUpgradeRefund(state,fromTeam,teamName);
   globalThis.llManagerSigningPending=true;
-  market.status='chosen';market.selectedTeam=teamName;market.switched=!staying;market.selectedKind=target.kind;market.chosenAt=new Date().toISOString();market.starUpgradeRefundLp=refund.refundLp||0;market.starUpgradeRefundSpentLp=refund.refundableSpentLp||0;const profile=llManagerProfile(state);profile.history.push({season:market.season,from:market.fromTeam,to:teamName,kind:target.kind,fired:market.fired,winRate:market.winRate,reputation:profile.reputation,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=teamName;state.lastSeasonSummary.nextManagerTeam=teamName;state.playerTeam=teamName;llSave();llRenderSeasonEnd();requestAnimationFrame(()=>llShowManagerSigning({...target,starUpgradeRefundLp:market.starUpgradeRefundLp},staying,fromTeam));
+  market.status='chosen';market.selectedTeam=teamName;market.switched=!staying;market.selectedKind=target.kind;market.chosenAt=new Date().toISOString();market.starUpgradeRefundLp=refund.refundLp||0;market.starUpgradeRefundSpentLp=refund.refundableSpentLp||0;const profile=llManagerProfile(state);profile.history.push({season:market.season,from:market.fromTeam,to:teamName,kind:target.kind,fired:market.fired,winRate:market.winRate,reputation:profile.reputation,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=teamName;state.lastSeasonSummary.nextManagerTeam=teamName;state.playerTeam=teamName;state.pendingManagerSigning={team:teamName,fromTeam:fromTeam,season:Number(state.season),marketSeason:Number(market.season),selectedAt:market.chosenAt,staying:staying,kind:target.kind};llManagerTransitionTrace(state,'TEAM_SELECTED',{team:teamName,fromTeam:fromTeam,season:Number(state.season),staying:staying});llSave();llRenderSeasonEnd();requestAnimationFrame(()=>llShowManagerSigning({...target,starUpgradeRefundLp:market.starUpgradeRefundLp},staying,fromTeam));
 }
 function llManagerFixArchivePlayer(html,entry){if(!entry?.playerTeam||typeof document==='undefined')return html;const template=document.createElement('template');template.innerHTML=html;[...template.content.querySelectorAll('tbody tr')].forEach(row=>{row.classList.remove('player');if((row.cells?.[1]?.textContent||'').includes(entry.playerTeam))row.classList.add('player');});return template.innerHTML;}
 const llManagerRepairBase=llV2RepairState;
@@ -97,33 +97,68 @@ function llCloseManagerSigning(){document.getElementById('ll-manager-signing')?.
    this could leave the player on a stale screen with no usable transition
    action. Completing a signature now has one explicit, idempotent path into
    the already-selected club's next season. */
+function llManagerTransitionTrace(state,stage,details){
+  if(!state)return;
+  if(!Array.isArray(state.managerTransitionTrace))state.managerTransitionTrace=[];
+  state.managerTransitionTrace.push({at:new Date().toISOString(),stage:String(stage||'UNKNOWN'),details:details||{}});
+  if(state.managerTransitionTrace.length>24)state.managerTransitionTrace.splice(0,state.managerTransitionTrace.length-24);
+}
+function llManagerTransitionFailure(state,message,details){
+  const failure={message:String(message||'Bilinmeyen sezon gecisi hatasi'),team:details?.team||state?.pendingManagerSigning?.team||state?.managerMarket?.selectedTeam||null,season:Number(state?.season)||null,at:new Date().toISOString(),details:details||{}};
+  globalThis.llLastSeasonTransitionError=failure;
+  if(state){state.managerTransitionError=failure;llManagerTransitionTrace(state,'FAILED',failure);}
+  if(typeof globalThis.llSave==='function')llSave();
+  globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_FAILED',failure);
+  return failure;
+}
 function llCompleteManagerSigning(){
   if(globalThis.llManagerSeasonTransitioning)return;
-  const state=globalThis.lexLeague?.state,market=state?.managerMarket;
-  if(!state||!state.seasonEnded||!market?.selectedTeam){
-    llCloseManagerSigning();
+  const state=globalThis.lexLeague?.state,market=state?.managerMarket,pending=state?.pendingManagerSigning;
+  const selectedTeam=market?.selectedTeam||pending?.team||null;
+  globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_ENTERED',{hasState:!!state,seasonEnded:!!state?.seasonEnded,hasSummary:!!state?.lastSeasonSummary,marketStatus:market?.status||null,selectedTeam:selectedTeam});
+  if(!state||!selectedTeam){
+    const failure=llManagerTransitionFailure(state,'Imza secimi bulunamadi; yeni sezon baslatilmadi.',{reason:'missing-selected-team'});
+    alert('Imza secimi bulunamadi. Kariyerin korunuyor; Hata Kaydini Indir ile raporu gonderebilirsin.');
+    return;
+  }
+  if(!state.lastSeasonSummary){
+    llManagerTransitionFailure(state,'Sezon ozeti bulunamadi; yeni sezon takvimi olusturulamadi.',{reason:'missing-season-summary',team:selectedTeam});
+    alert('Sezon ozeti bulunamadi. Kariyerin korunuyor; Hata Kaydini Indir ile raporu gonderebilirsin.');
     return;
   }
   globalThis.llManagerSeasonTransitioning=true;
-  llCloseManagerSigning();
   try{
     const seasonBefore=Number(state.season)||0;
-    state.playerTeam=market.selectedTeam;
+    llManagerTransitionTrace(state,'TRANSITION_PREPARED',{team:selectedTeam,season:seasonBefore,marketStatus:market?.status||null,usedPendingFallback:!market?.selectedTeam&&!!pending?.team});
+    if(!state.seasonEnded){
+      state.seasonEnded=true;
+      llManagerTransitionTrace(state,'SEASON_END_MARKER_RESTORED',{team:selectedTeam,season:seasonBefore});
+    }
+    if(!state.managerMarket||state.managerMarket.status!=='chosen'){
+      state.managerMarket=Object.assign({},state.managerMarket||{},{version:LL_MANAGER_MARKET_VERSION+1,season:Number(state.season),fromTeam:pending?.fromTeam||state.playerTeam,offers:[],status:'chosen',selectedTeam:selectedTeam,chosenAt:pending?.selectedAt||new Date().toISOString()});
+      llManagerTransitionTrace(state,'MARKET_SELECTION_RESTORED',{team:selectedTeam,season:seasonBefore});
+    }
+    state.playerTeam=selectedTeam;
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(state.playerTeam,state)||state.playerCountry;
     if(typeof globalThis.llMLAttachLegacyAliases==='function')llMLAttachLegacyAliases(state);
+    state.managerTransitionError=null;
     if(typeof globalThis.llSave==='function')llSave();
-    if(typeof globalThis.llStartNextSeason==='function')llStartNextSeason();
-    if(globalThis.lexLeague?.state?.seasonEnded||Number(globalThis.lexLeague?.state?.season)===seasonBefore){
-      throw new Error('Yeni sezon takvimi oluşturulamadı; sezon geçişi tamamlanmadı.');
-    }
+    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_STARTED',{team:selectedTeam,season:seasonBefore});
+    if(typeof globalThis.llStartNextSeason!=='function')throw new Error('Sezon gecis fonksiyonu yuklenemedi.');
+    globalThis.llStartNextSeason();
+    const nextState=globalThis.lexLeague?.state;
+    if(!nextState||nextState.seasonEnded||Number(nextState.season)===seasonBefore)throw new Error('Yeni sezon takvimi olusturulamadi; sezon gecisi tamamlanmadi.');
+    delete nextState.pendingManagerSigning;
+    nextState.managerTransitionError=null;
+    llManagerTransitionTrace(nextState,'COMPLETED',{team:selectedTeam,fromSeason:seasonBefore,toSeason:Number(nextState.season)});
     globalThis.llLastSeasonTransitionError=null;
-    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_COMPLETED',{team:market.selectedTeam,season:globalThis.lexLeague?.state?.season});
+    if(typeof globalThis.llSave==='function')llSave();
+    llCloseManagerSigning();
+    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_COMPLETED',{team:selectedTeam,season:nextState.season});
   }catch(error){
     console.error('Manager signing season transition failed',error);
-    globalThis.llLastSeasonTransitionError={message:String(error?.message||error),team:market.selectedTeam,season:state.season,at:new Date().toISOString()};
-    globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_FAILED',globalThis.llLastSeasonTransitionError);
-    if(typeof globalThis.llRenderSeasonEnd==='function')llRenderSeasonEnd();
-    alert('Yeni sezon başlatılamadı. Kariyerin korunuyor; sezon sonu ekranına döndün. Hata Kaydını İndir düğmesinden raporu gönderebilirsin.');
+    llManagerTransitionFailure(state,String(error?.message||error),{reason:'transition-exception',team:selectedTeam});
+    alert('Yeni sezon baslatilamadi. Imza ekrani acik tutuldu ve kariyerin korunuyor. Hata Kaydini Indir ile raporu gonderebilirsin.');
   }finally{
     window.setTimeout(()=>{globalThis.llManagerSeasonTransitioning=false;},400);
   }

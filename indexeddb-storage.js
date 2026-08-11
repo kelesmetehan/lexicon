@@ -21,6 +21,11 @@
   globalThis.llStorageBootStatus=function(){
     return {ready:llIdbReady,unavailable:llIdbUnavailable,hasCache:!!llIdbCache,hasCareer:llIdbHasCareer(llIdbCache),activeSlot:llIdbCache?.activeSlot||null,lastError:llIdbLastError||null,events:globalThis.llStorageBootEvents.slice(-40)};
   };
+  globalThis.llStorageActiveCareerSummary=function(){
+    var store=llIdbReady?llIdbCache:null,slot=store&&store.slots?store.slots[String(store.activeSlot||1)]:null,state=slot&&slot.state;
+    if(!state)return null;
+    return {slot:Number(store.activeSlot)||1,playerTeam:state.playerTeam||null,season:Number(state.season)||null,week:Number(state.week)||null,seasonEnded:!!state.seasonEnded,hasSeasonSummary:!!state.lastSeasonSummary,managerMarketStatus:state.managerMarket?.status||null,managerSelectedTeam:state.managerMarket?.selectedTeam||state.pendingManagerSigning?.team||null,pendingManagerSigning:state.pendingManagerSigning||null,managerTransitionError:state.managerTransitionError||null,managerTransitionTrace:Array.isArray(state.managerTransitionTrace)?state.managerTransitionTrace.slice(-12):[]};
+  };
   var llIdbBaseEnsure=typeof llEnsureSaveSlots==='function'?llEnsureSaveSlots:null;
   var llIdbBasePersist=typeof llPersistStoreAndMirror==='function'?llPersistStoreAndMirror:null;
   var llIdbBaseMirror=typeof llMirrorActiveCareer==='function'?llMirrorActiveCareer:null;
