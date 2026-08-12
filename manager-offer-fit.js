@@ -1,7 +1,7 @@
 /* Manager market fit v1: offers are scored, never padded to an arbitrary count. */
 (function(){
   'use strict';
-  const VERSION=2;
+  const VERSION=3;
   const number=(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fallback;
   const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
   /* Reads legacy double-encoded UI values without changing valid text. */
@@ -72,6 +72,14 @@
     const baseRep=number(profile?.reputation,50);
     let effective=baseRep;
     try{if(typeof globalThis.effectiveReputation==='function')effective=number(effectiveReputation(state,baseRep),baseRep);}catch{}
+    /* Technical-director development belongs to the career, not the club.
+       Its small +0..6 contribution complements, never replaces, results and reputation. */
+    const boardAdjustedReputation=effective;
+    let developmentLevel=number(state?.clubFacility?.level,0);
+    try{if(typeof globalThis.llFacilityLevel==='function')developmentLevel=number(llFacilityLevel(state),developmentLevel);}catch{}
+    developmentLevel=clamp(Math.floor(developmentLevel),0,6);
+    const developmentBonus=developmentLevel;
+    effective=clamp(boardAdjustedReputation+developmentBonus,0,100);
     const score=clamp(
       (number(performance.winRate)-40)*.7+
       (performance.primaryAchieved?9:0)+
@@ -88,7 +96,8 @@
     else if(performance.europeSuccess)reasons.push('Avrupa’da yarı final/final');
     if(number(performance.winRate)>=55)reasons.push(`%${Math.round(number(performance.winRate))} lig galibiyet oranı`);
     if(performance.primaryAchieved)reasons.push('Ana kulüp hedefi başarısı');
-    return {country,cupChampion,effective,score,reasons};
+    if(developmentLevel>0)reasons.push(`Teknik Direktör Gelişimi Sv. ${developmentLevel}/6 (+${developmentBonus} teklif profili)`);
+    return {country,cupChampion,effective,score,reasons,baseReputation:baseRep,boardAdjustedReputation,developmentLevel,developmentBonus};
   }
   function collectCandidates(state,summary,performance){
     const out=[];
@@ -167,7 +176,8 @@
       offers.push(offerFrom(state,summary,item,kind,manager));countryCounts.set(item.country,count+1);
     }
     return {offers,progression:offers.some(item=>item.kind==='progress'||item.kind==='prestige'),prestige:offers.some(item=>item.kind==='prestige'),promotionStarCap:false,
-      offerCountTarget:maxOffers,offerCountActual:offers.length,effectiveReputation:manager.effective,baseReputation:number(profile?.reputation,50),managerFitVersion:VERSION};
+      offerCountTarget:maxOffers,offerCountActual:offers.length,effectiveReputation:manager.effective,baseReputation:manager.baseReputation,boardAdjustedReputation:manager.boardAdjustedReputation,
+      developmentLevel:manager.developmentLevel,developmentBonus:manager.developmentBonus,managerFitVersion:VERSION};
   }
   function installOfferRenderer(){
     const base=globalThis.llManagerOfferHtml;
@@ -261,7 +271,9 @@
       if(oldNotice){
         const actual=number(market.offerCountActual,market.offers?.length||0);
         const possible=number(market.offerCountTarget,actual);
-        const cleanMarketNotice=`<b>Teklif havuzu:</b> Bu sezon profilin ve kul\u00fcplerin durumu ile uyumlu <b>${actual}</b> teklif bulundu (en fazla ${possible}). Say\u0131y\u0131 doldurmak i\u00e7in alakas\u0131z kul\u00fcp eklenmez.<br><span class="ll-muted">Kul\u00fcpler; son lig s\u0131ras\u0131, hedef bask\u0131s\u0131, Avrupa bileti, y\u0131ld\u0131z dengesi, itibar\u0131n ve ba\u015far\u0131lar\u0131n \u00fczerinden karar verir.</span>`;
+        const level=clamp(number(market.developmentLevel),0,6),bonus=clamp(number(market.developmentBonus),0,6),before=number(market.boardAdjustedReputation,number(market.baseReputation,50)),after=number(market.effectiveReputation,before+bonus);
+        const developmentLine=`<br><span class="ll-muted"><b>Teknik Direktör Gelişimi:</b> Sv. ${level}/6 → teklif profiline <b>+${bonus}</b> katkı (${before} → ${after} etkin itibar). Tek başına büyük kulüp eşiğini garanti etmez; başarı, form ve itibarla birlikte değerlendirilir.</span>`;
+        const cleanMarketNotice=`<b>Teklif havuzu:</b> Bu sezon profilin ve kul\u00fcplerin durumu ile uyumlu <b>${actual}</b> teklif bulundu (en fazla ${possible}). Say\u0131y\u0131 doldurmak i\u00e7in alakas\u0131z kul\u00fcp eklenmez.<br><span class="ll-muted">Kul\u00fcpler; son lig s\u0131ras\u0131, hedef bask\u0131s\u0131, Avrupa bileti, y\u0131ld\u0131z dengesi, itibar\u0131n ve ba\u015far\u0131lar\u0131n \u00fczerinden karar verir.</span>${developmentLine}`;
         oldNotice.innerHTML=cleanMarketNotice;
       }
       return result;
