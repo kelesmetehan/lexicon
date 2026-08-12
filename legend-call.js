@@ -177,6 +177,7 @@ function rateSpecial(correct){
   const state=stateNow(),event=currentEvent(state),q=event?.quiz;if(!state||!event||!q||!q.revealed||q.completed||q.answerBusy)return;
   const answerIndex=num(q.index),ref=q.queue?.[answerIndex];if(!ref)return;
   q.answerBusy=true;if(correct)q.correct=num(q.correct)+1;q.index=answerIndex+1;q.shown=num(q.shown)+1;q.revealed=false;
+  try{globalThis.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:fixtureNow(),quiz:q,answerIndex,eventType:'legend'});}catch(error){try{globalThis.llQuizDiagnostic?.('legend_season_vocabulary_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}catch{}}
   try{
     if(typeof globalThis.llPersistQuizWordRating==='function')llPersistQuizWordRating(ref,q,!!correct,{markUsed:false});
   }catch(error){try{globalThis.llQuizDiagnostic?.('legend_quiz_answer_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}catch{}}

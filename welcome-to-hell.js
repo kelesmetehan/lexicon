@@ -279,6 +279,7 @@
     quiz.answerBusy = true;
     if (correct) quiz.correct++;
     quiz.index = index + 1; quiz.shown = num(quiz.shown) + 1; quiz.revealed = false;
+    try { globalThis.llRecordSeasonVocabularyAnswer?.({ correct: !!correct, fixture: fixtureNow(), quiz, answerIndex: index, eventType: 'hell' }); } catch (error) { try { globalThis.llQuizDiagnostic?.('hell_season_vocabulary_error', { wordId: ref.id || null, message: String(error?.message || error) }); } catch {} }
     try { if (typeof globalThis.llPersistQuizWordRating === 'function') llPersistQuizWordRating(ref, quiz, !!correct, { markUsed: false }); } catch (error) { try { globalThis.llQuizDiagnostic?.('hell_quiz_answer_error', { wordId: ref.id || null, message: String(error?.message || error) }); } catch {} }
     try { markWordUsed(ref, state); } catch {}
     quiz.answerBusy = false; save();
