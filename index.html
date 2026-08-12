@@ -3031,6 +3031,7 @@ function llRateLeagueQuiz(correct){
   if(correct)q.correct=(Number(q.correct)||0)+1;
   q.index=answerIndex+1;q.revealed=false;
   llQuizDiagnostic('quiz_answer_clicked',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct});
+  try{globalThis.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:q.fixture,quiz:q,answerIndex,eventType:'match'});}catch(error){llQuizDiagnostic('season_vocabulary_answer_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}
   try{llPersistQuizWordRating(ref,q,!!correct);}catch(error){llQuizDiagnostic('quiz_answer_unexpected_error',{question:answerIndex+1,wordId:ref.id||null,correct:!!correct,message:String(error?.message||error)});}
   try{if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'start',{scope:'league_quiz_answer',question:answerIndex+1,wordId:ref.id||null});llSave();if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'completed',{scope:'league_quiz_answer'});}catch(error){llQuizDiagnostic('quiz_answer_career_save_error',{question:answerIndex+1,wordId:ref.id||null,message:String(error?.message||error)});if(typeof llDiagnosticSaveEvent==='function')llDiagnosticSaveEvent(diagId,'error',{scope:'league_quiz_answer',message:String(error?.message||error)});}
   q.answerBusy=false;
@@ -6012,9 +6013,10 @@ renderPreStart();
 <script src="manager-job-market.js?v=20260810-cinematic-queue-1"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
 <script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
-<script src="manager-offer-fit.js?v=20260811-fit-v5"></script>
+<script src="manager-offer-fit.js?v=20260812-facility-offers-v1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
 <script src="legend-call.js?v=20260810-legend-quiz-theme-3"></script>
 <script src="welcome-to-hell.js?v=20260810-hell-quiz-image-5"></script>
+<script src="season-vocabulary-stats.js?v=20260812-1"></script>
 </body>
 </html>
