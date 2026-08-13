@@ -145,23 +145,25 @@
     var revealed = !!quiz.revealed;
     var prompt = esc(current.sentence).replace('______', '<strong class="ll-relative-blank">______</strong>');
     var answer = revealed ? (
-      '<div class="ll-quiz-answer"><b>' + esc(current.answer) + '</b><div>' + esc(current.full) + '</div>' +
+      '<div class="ll-answer"><b>' + esc(current.answer) + '</b><div>' + esc(current.full) + '</div>' +
       '<small>' + esc(current.explanation) + '</small></div>'
-    ) : '<div class="ll-quiz-hint">Cevab\u0131 a\u00e7mak i\u00e7in karta t\u0131kla</div>';
+    ) : '<div class="ll-muted" style="margin-top:25px">Cevab\u0131 a\u00e7mak i\u00e7in karta t\u0131kla</div>';
     global.llArea().innerHTML =
-      '<section class="ll-shell ll-quiz-card ll-relative-quiz">' +
-      '<div class="ll-quiz-top"><div><h1>Relative Clause <em>Ma\u00e7\u0131</em></h1>' +
-      '<p>' + (quiz.index + 1) + '/8 \u00b7 Her do\u011fru 7 AP \u00b7 7/8: reroll \u00b7 8/8: reroll + ma\u00e7l\u0131k +1</p></div>' +
-      '<b>Do\u011fru: ' + quiz.correct + '/8</b></div>' +
-      '<div class="ll-quiz-progress"><i style="width:' + (((quiz.index + (revealed ? 1 : 0)) / QUESTION_COUNT) * 100) + '%"></i></div>' +
-      '<button class="ll-quiz-word ll-relative-word" onclick="llRevealQuiz()">' +
-      '<span>RELATIVE CLAUSE</span><strong>' + prompt + '</strong>' + answer +
-      (history.wrong && !revealed ? '<small class="ll-relative-retry">Daha \u00f6nce yanl\u0131\u015f: bu kez do\u011fru bilirsen +4 AP geri kazan\u0131rs\u0131n.</small>' : '') +
-      '</button>' +
-      '<div class="ll-quiz-actions"><button class="bad" onclick="llRateLeagueQuiz(false)" ' + (revealed ? '' : 'disabled') + '>\u2715 Bilmiyorum</button>' +
-      '<button class="good" onclick="llRateLeagueQuiz(true)" ' + (revealed ? '' : 'disabled') + '>\u2713 Bildim</button></div>' +
-      '<button class="ll-btn secondary ll-quiz-skip" onclick="llSkipLeagueQuiz()">Burada B\u0131rak \u00b7 \u015eu anki ' + quiz.correct + ' do\u011fru \u00fczerinden sonu\u00e7 al</button>' +
-      '</section>';
+      '<div class="ll-shell ll-quiz-card ll-relative-quiz"><div class="ll-panel">' +
+      '<div class="ll-topbar"><div><div class="ll-title">Relative Clause <em>Ma\u00e7\u0131</em></div>' +
+      '<div class="ll-muted">' + (quiz.index + 1) + '/8 \u00b7 Her do\u011fru 7 AP \u00b7 7/8: reroll \u00b7 8/8: reroll + ma\u00e7l\u0131k +1</div></div>' +
+      '<div class="ll-stars">Do\u011fru: ' + quiz.correct + '/8' + (quiz.recoveredQuestions ? ' \u00b7 Geri kazan\u0131m: ' + quiz.recoveredQuestions : '') + '</div></div>' +
+      '<div class="ll-progress"><div style="width:' + ((quiz.index / QUESTION_COUNT) * 100) + '%"></div></div>' +
+      '<div class="ll-question" onclick="llRevealQuiz()"><div>' +
+      '<div class="ll-position">RELATIVE CLAUSE</div>' +
+      '<div class="ll-question-word">' + prompt + '</div>' + answer +
+      (history.wrong && !revealed ? '<div class="ll-notice" style="margin-top:16px;text-align:left">Daha \u00f6nce yanl\u0131\u015f: bu kez do\u011fru bilirsen +4 AP geri kazan\u0131rs\u0131n.</div>' : '') +
+      '</div></div>' +
+      '<div class="ll-quiz-actions" style="' + (revealed ? '' : 'opacity:.35;pointer-events:none') + '">' +
+      '<button type="button" class="ll-btn danger" onclick="llRateLeagueQuiz(false)">\u2715 Bilmiyorum</button>' +
+      '<button type="button" class="ll-btn primary" onclick="llRateLeagueQuiz(true)">\u2713 Bildim</button></div>' +
+      '<button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Ge\u00e7 \u00b7 ' + quiz.index + ' cevap \u00fczerinden puan\u0131 al ve ma\u00e7a devam et</button>' +
+      '</div></div>';
     return true;
   }
   function revealRelativeQuiz() {
