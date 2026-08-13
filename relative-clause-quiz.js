@@ -4,6 +4,32 @@
 
   var QUESTION_COUNT = 8;
   var OFFICIAL = { league: true, cup: true, playoff: true, ucl: true, uel: true, uecl: true };
+  // Soru ipucu vermemesi icin Ingilizce kalir; cevap acildiginda
+  // ayni gramer kurali Turkce olarak da gosterilir. Unicode kacis dizileri,
+  // Windows/GitHub kodlama farklarinda Turkce metnin bozulmasini engeller.
+  var TURKISH_RULES = {
+    'Use who for a person.': 'Ki\u015filer i\u00e7in "who" kullan\u0131l\u0131r.',
+    'Use who for people.': '\u0130nsanlar i\u00e7in "who" kullan\u0131l\u0131r.',
+    'Use which or that for a club or thing.': 'Kul\u00fcp veya nesneler i\u00e7in "which" ya da "that" kullan\u0131l\u0131r.',
+    'Use which or that for a thing.': 'Nesneler i\u00e7in "which" ya da "that" kullan\u0131l\u0131r.',
+    'That or who is possible as the object; that is the preferred answer.': 'Nesne g\u00f6revinde "that" veya "who" kullan\u0131labilir; bu soruda beklenen cevap "that"t\u0131r.',
+    'Who, whom, or that can be used as the object; who is the preferred answer.': 'Nesne g\u00f6revinde "who", "whom" veya "that" kullan\u0131labilir; bu soruda beklenen cevap "who"dur.',
+    'Use whose for possession.': 'Sahiplik belirtmek i\u00e7in "whose" kullan\u0131l\u0131r.',
+    'Use where for a place.': 'Yer bildiren yap\u0131larda "where" kullan\u0131l\u0131r.',
+    'Use when for time.': 'Zaman bildiren yap\u0131larda "when" kullan\u0131l\u0131r.',
+    'Use why after reason.': '"Reason" kelimesinden sonra neden belirtmek i\u00e7in "why" kullan\u0131l\u0131r.',
+    'A non-defining clause uses which, not that.': 'Virg\u00fclle ayr\u0131lan ek bilgi c\u00fcmleci\u011finde "that" de\u011fil, "which" kullan\u0131l\u0131r.',
+    'A non-defining clause about a thing uses which.': 'Nesne hakk\u0131nda virg\u00fclle ayr\u0131lan ek bilgi c\u00fcmleci\u011finde "which" kullan\u0131l\u0131r.',
+    'A non-defining clause about a person uses who.': 'Ki\u015fi hakk\u0131nda virg\u00fclle ayr\u0131lan ek bilgi c\u00fcmleci\u011finde "who" kullan\u0131l\u0131r.',
+    'Combine the two sentences with who.': '\u0130ki c\u00fcmleyi "who" kullanarak tek c\u00fcmlede birle\u015ftir.',
+    'Use which after the formal preposition from.': 'Resm\u00ee kullan\u0131mdaki "from" edat\u0131ndan sonra "which" kullan\u0131l\u0131r.',
+    'After a formal preposition, use whom.': 'Resm\u00ee kullan\u0131mdaki bir edattan sonra ki\u015fi i\u00e7in "whom" kullan\u0131l\u0131r.',
+    'In which means where in this formal structure.': 'Bu resm\u00ee yap\u0131da "in which", "where" yerine ge\u00e7er.',
+    'On which means when in this formal structure.': 'Bu resm\u00ee yap\u0131da "on which", zaman belirten "when" yerine ge\u00e7er.'
+  };
+  function turkishExplanation(question) {
+    return TURKISH_RULES[question.explanation] || ('Bu c\u00fcmlede do\u011fru Relative Clause yap\u0131s\u0131 "' + question.answer + '" olur.');
+  }
   var BANK_ROWS = [
     ['RC001','The player ______ scored the winning goal in the 89th minute was named man of the match.','who',null,'Use who for a person.'],
     ['RC002','Galatasaray is the club ______ has won the most Super Lig titles in history.','which',null,'Use which or that for a club or thing.'],
@@ -63,7 +89,9 @@
     ['RC056','The club, ______ fans are known as the most passionate, sold out every home game.','whose',null,'Use whose for possession.']
   ];
   var BANK = BANK_ROWS.map(function (row) {
-    return { id: row[0], sentence: row[1], answer: row[2], full: row[3] || row[1].replace('______', row[2]), explanation: row[4] };
+    var question = { id: row[0], sentence: row[1], answer: row[2], full: row[3] || row[1].replace('______', row[2]), explanation: row[4] };
+    question.explanationTr = turkishExplanation(question);
+    return question;
   });
 
   function stateNow() { return global.lexLeague && global.lexLeague.state; }
@@ -146,7 +174,8 @@
     var prompt = esc(current.sentence).replace('______', '<strong class="ll-relative-blank">______</strong>');
     var answer = revealed ? (
       '<div class="ll-answer"><b>' + esc(current.answer) + '</b><div>' + esc(current.full) + '</div>' +
-      '<small>' + esc(current.explanation) + '</small></div>'
+      '<small class="ll-relative-rule-en">' + esc(current.explanation) + '</small>' +
+      '<small class="ll-relative-rule-tr"><b>T\u00fcrk\u00e7e a\u00e7\u0131klama:</b> ' + esc(current.explanationTr) + '</small></div>'
     ) : '<div class="ll-muted" style="margin-top:25px">Cevab\u0131 a\u00e7mak i\u00e7in karta t\u0131kla</div>';
     global.llArea().innerHTML =
       '<div class="ll-shell ll-quiz-card ll-relative-quiz"><div class="ll-panel">' +
@@ -237,20 +266,53 @@
   function renderRelativeReward() {
     var quiz = global.lexLeague && global.lexLeague.quiz;
     if (!quiz || !quiz.relativeClause || !quiz.committed || !global.llArea) return false;
-    var extra = quiz.recoveryBonus ? ' + ' + quiz.recoveryBonus + ' AP hata geri kazan\u0131m\u0131' : '';
-    var next = '';
-    if (quiz.reward === 'perfect') {
-      var roles = [['Kaleci','\ud83e\udde4 Kaleci'],['Orta Saha','\u2699\ufe0f Orta Saha'],['Forvet','\u26bd Forvet']];
-      next = '<p>8/8: 1 reroll ve se\u00e7ece\u011fin mevkiye bu ma\u00e7 i\u00e7in +1 kazand\u0131n.</p><div class="ll-reward-choices">' +
-        roles.map(function (role) { return '<button class="ll-btn" onclick="llBeginMatch(\'' + role[0] + '\')">' + role[1] + ' +1 ile ma\u00e7a gir</button>'; }).join('') + '</div>';
+    var answered = Math.max(0, Math.min(QUESTION_COUNT, Number(quiz.index || 0)));
+    var recoveryAp = Number(quiz.recoveryBonus || 0);
+    var rerollReady = quiz.reward === 'reroll' || quiz.reward === 'perfect';
+    var icon = quiz.reward === 'perfect' ? '\ud83c\udfc6' : quiz.reward === 'reroll' ? '\ud83c\udfaf' : quiz.skipped ? '\u23ed\ufe0f' : '\ud83d\udcda';
+    var metricsColumns = recoveryAp > 0 ? 'repeat(3,1fr)' : '1fr 1fr';
+    var metricsWidth = recoveryAp > 0 ? '600px' : '420px';
+    var notice;
+    var action;
+
+    if (quiz.skipped) {
+      notice = answered + ' Relative Clause cevab\u0131n\u0131n AP \u00f6d\u00fcl\u00fc hesab\u0131na i\u015flendi. Cevaplanmayan sorular sonraki Relative Clause ma\u00e7lar\u0131nda yeniden gelebilir.';
+    } else if (quiz.reward === 'perfect') {
+      notice = 'Kusursuz 8/8! 1 reroll ve se\u00e7ece\u011fin mevkiye bu ma\u00e7 i\u00e7in +1 kazand\u0131n.';
     } else if (quiz.reward === 'reroll') {
-      next = '<p>7/8: Bu ma\u00e7 i\u00e7in 1 reroll kazand\u0131n.</p><button class="ll-btn" onclick="llBeginMatch()">Ma\u00e7a Gir</button>';
+      notice = '7/8 do\u011fru ile bu ma\u00e7 i\u00e7in 1 reroll kazand\u0131n.';
     } else {
-      next = '<p>Reroll \u00f6d\u00fcl\u00fc i\u00e7in 7 do\u011fru gerekiyordu. Kazand\u0131\u011f\u0131n AP ile ma\u00e7a devam edebilirsin.</p><button class="ll-btn" onclick="llBeginMatch()">Ma\u00e7a Gir</button>';
+      notice = 'Reroll \u00f6d\u00fcl\u00fc i\u00e7in 7 do\u011fru gerekiyordu. Kazand\u0131\u011f\u0131n AP hesab\u0131na i\u015flendi.';
     }
+    if (recoveryAp > 0) notice += ' Daha \u00f6nce yanl\u0131\u015f bildi\u011fin sorular\u0131 d\u00fczeltti\u011fin i\u00e7in +' + recoveryAp + ' AP geri kazan\u0131m ald\u0131n.';
+
+    if (quiz.reward === 'perfect') {
+      var roles = [
+        ['Kaleci', '\ud83e\udde4 Kaleci'],
+        ['Orta Saha', '\u2699\ufe0f Orta Saha'],
+        ['Forvet', '\u26bd Forvet']
+      ];
+      action = '<div class="ll-card-title" style="margin-top:20px">+1 Uygulanacak Zar\u0131 Se\u00e7</div><div class="ll-squad">' +
+        roles.map(function (role) {
+          return '<button type="button" class="ll-team-option" onclick="llBeginMatch(\'' + role[0] + '\')">' +
+            '<div class="ll-team-name">' + role[1] + '</div>' +
+            '<div class="ll-range">Bu ma\u00e7 zar sonucuna +1 \u00b7 1 reroll ayr\u0131ca haz\u0131r</div>' +
+            '</button>';
+        }).join('') + '</div>';
+    } else {
+      action = '<button type="button" class="ll-btn primary" style="margin-top:18px" onclick="llBeginMatch(null)">Zar D\u00fcellosuna Ge\u00e7</button>';
+    }
+
     global.llArea().innerHTML =
-      '<section class="ll-shell ll-reward"><h1>Relative Clause <em>Sonucu</em></h1>' +
-      '<div class="ll-result-score">' + quiz.correct + '/8</div><b>+' + quiz.apEarned + ' AP' + esc(extra) + '</b>' + next + '</section>';
+      '<div class="ll-shell ll-quiz-card ll-relative-quiz"><div class="ll-panel" style="text-align:center">' +
+      '<div style="font-size:52px">' + icon + '</div>' +
+      '<div class="quiz-start-title" style="margin-top:8px">' + quiz.correct + '/' + answered + ' <em>Do\u011fru</em></div>' +
+      '<div class="ll-metrics" style="grid-template-columns:' + metricsColumns + ';max-width:' + metricsWidth + ';margin:18px auto">' +
+      '<div class="ll-metric"><strong>+' + Number(quiz.apEarned || 0) + '</strong><span>Toplam AP</span></div>' +
+      (recoveryAp > 0 ? '<div class="ll-metric"><strong>+' + recoveryAp + '</strong><span>Hata Geri Kazan\u0131m AP</span></div>' : '') +
+      '<div class="ll-metric"><strong>' + (rerollReady ? '1' : '0') + '</strong><span>Reroll</span></div></div>' +
+      '<div class="ll-notice" style="text-align:left">' + notice + '</div>' + action +
+      '</div></div>';
     return true;
   }
 
