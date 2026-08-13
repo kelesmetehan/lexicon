@@ -858,23 +858,24 @@
   .ll-pack-particle{position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;background:var(--particle,var(--pack-accent));box-shadow:0 0 7px var(--particle,var(--pack-accent));animation:llPackParticle var(--duration,1.2s) ease-out var(--delay,0s) forwards}
   .ll-signing-cinematic{position:fixed;inset:0;z-index:13000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(30,64,175,.27),rgba(2,6,23,.97) 65%,#000);overflow:hidden;text-align:center}
   .ll-signing-cinematic.stay{background:radial-gradient(circle at 50% 40%,rgba(13,148,136,.24),rgba(2,6,23,.97) 65%,#000)}
-  .ll-signing-stage{position:relative;width:min(620px,100%);padding:25px 18px}
+  .ll-signing-stage{position:relative;width:min(620px,100%);padding:25px 18px;display:flex;flex-direction:column;align-items:center;isolation:isolate}
   .ll-signing-kicker{color:#93c5fd;font-size:10px;font-weight:950;letter-spacing:2px;text-transform:uppercase}
   .stay .ll-signing-kicker{color:#99f6e4}
-  .ll-signing-crest{width:160px;height:160px;margin:22px auto 16px;padding:20px;border:3px solid rgba(147,197,253,.52);border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#172554,#080f20);box-shadow:0 0 55px rgba(96,165,250,.38);opacity:0;transform:scale(.3) rotate(-24deg)}
+  .ll-signing-crest{width:160px;height:160px;margin:22px auto 16px;padding:20px;border:3px solid rgba(147,197,253,.52);border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(145deg,#172554,#080f20);box-shadow:0 0 55px rgba(96,165,250,.38);opacity:0;transform:scale(.3) rotate(-24deg)}
   .stay .ll-signing-crest{border-color:rgba(94,234,212,.5);box-shadow:0 0 55px rgba(45,212,191,.3)}
   .ll-signing-cinematic.play .ll-signing-crest{animation:llSigningCrest .9s cubic-bezier(.18,.85,.24,1.2) forwards}
+  .ll-signing-crest .ll-team-logo-wrap.match{width:105px;height:105px;flex-basis:105px;display:grid;place-items:center}
   .ll-signing-crest .ll-team-logo{width:105px!important;height:105px!important;margin:0!important}
-  .ll-signing-team{opacity:0;transform:translateY(12px)}
+  .ll-signing-team{position:relative;z-index:1;width:100%;flex:0 0 auto;opacity:0;transform:translateY(12px)}
   .ll-signing-cinematic.play .ll-signing-team{animation:llSigningText .55s ease .55s forwards}
   .ll-signing-team h2{margin:0;color:#fff;font-family:'Cormorant Garamond',serif;font-size:clamp(34px,8vw,54px)}
   .ll-signing-team p{margin:5px 0 0;color:#93a4bf;font-size:11px;line-height:1.6}
-  .ll-signing-stamp{display:inline-block;margin-top:22px;padding:9px 24px;border:3px solid #facc15;border-radius:8px;color:#facc15;font-size:22px;font-weight:950;letter-spacing:3px;opacity:0;transform:scale(3) rotate(-7deg)}
+  .ll-signing-stamp{position:relative;z-index:1;display:inline-block;flex:0 0 auto;margin-top:22px;padding:9px 24px;border:3px solid #facc15;border-radius:8px;color:#facc15;font-size:22px;font-weight:950;letter-spacing:3px;opacity:0;transform:scale(3) rotate(-7deg)}
   .stay .ll-signing-stamp{border-color:#5eead4;color:#5eead4}
   .ll-signing-cinematic.play .ll-signing-stamp{animation:llSigningStamp .35s ease-out 1.18s forwards}
-  .ll-signing-detail{margin:18px auto 0;max-width:520px;color:#cbd5e1;font-size:11px;line-height:1.65;opacity:0}
+  .ll-signing-detail{position:relative;z-index:1;width:100%;margin:18px auto 0;max-width:520px;color:#cbd5e1;font-size:11px;line-height:1.65;opacity:0}
   .ll-signing-cinematic.play .ll-signing-detail{animation:llSigningText .5s ease 1.58s forwards}
-  .ll-signing-actions{margin-top:20px;opacity:0}
+  .ll-signing-actions{position:relative;z-index:1;margin-top:20px;opacity:0}
   .ll-signing-cinematic.play .ll-signing-actions{animation:llSigningText .45s ease 1.9s forwards}
   @keyframes llPackIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(1deg)}}
   @keyframes llPackShake{0%,100%{transform:translateX(0) scale(1.04)}25%{transform:translateX(-7px) rotate(-1.5deg) scale(1.07)}50%{transform:translateX(7px) rotate(1.5deg) scale(1.09)}75%{transform:translateX(-4px) rotate(-1deg) scale(1.1)}}
@@ -2970,20 +2971,31 @@ function llRenderStandings(){
 
 // ------------------------- KELİME SINAVI -------------------------
 function llPickQuizWords(count=10){
-  let words=loadUserWords(); if(!words.length)return [];
-  const target=Math.min(count,words.length),used=new Set(lexLeague.state.usedWords);
-  const remaining=llShuffle(words.filter(w=>!used.has(w.id)));
-  const closing=remaining.slice(0,target),queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false}));
+  const words=loadUserWords();if(!words.length)return [];
+  const target=Math.min(count,words.length),state=lexLeague.state;
+  if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
+  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-12));
+  const choose=(pool,blocked,allowCooldownFallback=false)=>{
+    const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,target);
+    if(fresh.length>=target||!allowCooldownFallback)return fresh;
+    const freshIds=new Set(fresh.map(w=>w.id));
+    return [...fresh,...llShuffle(pool.filter(w=>!blocked.has(w.id)&&!freshIds.has(w.id))).slice(0,target-fresh.length)];
+  };
+  const closing=choose(words.filter(w=>!used.has(w.id)),new Set(),true);
+  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false}));
   if(queue.length<target){
-    const closingIds=new Set(closing.map(w=>w.id));
-    const nextCycle=llShuffle(words.filter(w=>!closingIds.has(w.id))).slice(0,target-queue.length);
-    nextCycle.forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
+    const chosenIds=new Set(queue.map(ref=>ref.id));
+    let nextCycle=choose(words,chosenIds,false);
+    if(nextCycle.length<target-queue.length)nextCycle=choose(words,chosenIds,true);
+    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
   }
   return queue;
 }
 function llMarkQuizWordUsed(ref){
   const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
   const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
+  const recent=Array.isArray(lexLeague.state.recentQuizWords)?lexLeague.state.recentQuizWords:[];
+  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-12);
 }
 function llStartMatchPreparation(){
   fcQueue=[];
@@ -4460,8 +4472,6 @@ function startDiceCupMatchWords() {
     alert('Zar Kupası için en az bir kelime gerekiyor.');
     return;
   }
-  const unusedCount = words.filter(w => !diceCup.usedWords.includes(w.id)).length;
-  if (unusedCount < Math.min(diceCup.wordCount, words.length)) diceCup.usedWords = [];
   startFlashcard(false, diceCup.wordCount);
 }
 
@@ -4619,15 +4629,7 @@ function renderDiceCupBattle(isRolling = false) {
 }
 
 function getUnusedDiceCupWords(count) {
-  let pool = loadUserWords().filter(w => !diceCup.usedWords.includes(w.id));
-  if (pool.length < count) {
-    diceCup.usedWords = [];
-    pool = loadUserWords();
-  }
-  pool.sort(() => Math.random() - 0.5);
-  const chosen = pool.slice(0, Math.min(count, pool.length));
-  chosen.forEach(w => { if (!diceCup.usedWords.includes(w.id)) diceCup.usedWords.push(w.id); });
-  return chosen;
+  return llTakeSpacedLoopWords(loadUserWords(), count, diceCup);
 }
 
 function startDiceCupReroll() {
@@ -5069,8 +5071,6 @@ function startDiceUclMatchWords() {
     alert('Zar Şampiyonlar Ligi için en az bir kelime gerekiyor.');
     return;
   }
-  const unusedCount = words.filter(w => !diceUcl.usedWords.includes(w.id)).length;
-  if (unusedCount < Math.min(diceUcl.wordCount, words.length)) diceUcl.usedWords = [];
   startFlashcard(false, diceUcl.wordCount);
 }
 
@@ -5187,15 +5187,7 @@ function renderDiceUclBattle(isRolling = false) {
 }
 
 function getUnusedDiceUclWords(count) {
-  let pool = loadUserWords().filter(w => !diceUcl.usedWords.includes(w.id));
-  if (pool.length < count) {
-    diceUcl.usedWords = [];
-    pool = loadUserWords();
-  }
-  pool = shuffleArray(pool);
-  const chosen = pool.slice(0, Math.min(count, pool.length));
-  chosen.forEach(w => { if (!diceUcl.usedWords.includes(w.id)) diceUcl.usedWords.push(w.id); });
-  return chosen;
+  return llTakeSpacedLoopWords(loadUserWords(), count, diceUcl);
 }
 
 function startDiceUclReroll() {
@@ -5796,33 +5788,68 @@ function showWCSummary() {
 // CORE KELİME MOTORU ENTEGRASYONU
 // ----------------------------------------------------
 
+// Ayrı oyun modları için de döngü kapanmadan tekrar etmeyen, 12 kelimelik
+// soğuma mesafeli seçim. Havuz 12'den küçükse zorunlu tekrar en sona bırakılır.
+function llTakeSpacedLoopWords(words, count, loopState, options = {}) {
+  const pool = (Array.isArray(words) ? words : []).filter(word => word && word.id);
+  const target = Math.min(Math.max(0, Number(count) || 0), pool.length);
+  if (!target || !loopState) return [];
+  if (!Array.isArray(loopState.usedWords)) loopState.usedWords = [];
+  if (!Array.isArray(loopState.recentQuizWords)) loopState.recentQuizWords = [];
+  const used = new Set(loopState.usedWords);
+  const recent = new Set(loopState.recentQuizWords.slice(-12));
+  const shuffle = list => typeof llShuffle === 'function' ? llShuffle(list) : list.slice().sort(() => Math.random() - 0.5);
+  const take = (candidates, needed, blocked = new Set()) => {
+    const fresh = shuffle(candidates.filter(word => !blocked.has(word.id) && !recent.has(word.id)));
+    const picked = fresh.slice(0, needed);
+    if (picked.length < needed) {
+      const pickedIds = new Set(picked.map(word => word.id));
+      picked.push(...shuffle(candidates.filter(word => !blocked.has(word.id) && !pickedIds.has(word.id))).slice(0, needed - picked.length));
+    }
+    return picked;
+  };
+  const closing = take(pool.filter(word => !used.has(word.id)), target);
+  const queue = closing.slice();
+  let crossedCycle = false;
+  if (queue.length < target) {
+    crossedCycle = true;
+    queue.push(...take(pool, target - queue.length, new Set(queue.map(word => word.id))));
+  }
+  const selectedIds = queue.map(word => word.id);
+  const nextUsed = crossedCycle ? selectedIds.slice(closing.length) : [...used, ...selectedIds];
+  let nextRecent = loopState.recentQuizWords.slice(-12);
+  queue.forEach(word => { nextRecent = [...nextRecent.filter(id => id !== word.id), word.id].slice(-12); });
+
+  // Ana sınav yarıda bırakılabilir: yalnızca ekranda gerçekten görülen kelimeyi
+  // tüketilmiş saymak için seçimi gösterim anına kadar kaydetmiyoruz.
+  if (options.deferCommit) {
+    return queue.map((word, index) => ({
+      ...word,
+      __llSpacedLoopRef: true,
+      __llCycleStart: crossedCycle && index === closing.length
+    }));
+  }
+
+  loopState.usedWords = nextUsed;
+  loopState.recentQuizWords = nextRecent;
+  return queue;
+}
+
+function llMarkSpacedLoopWordShown(card, loopState) {
+  if (!card || !card.__llSpacedLoopRef || card.__llShownRecorded || !loopState) return;
+  card.__llShownRecorded = true;
+  if (!Array.isArray(loopState.usedWords)) loopState.usedWords = [];
+  if (!Array.isArray(loopState.recentQuizWords)) loopState.recentQuizWords = [];
+  const used = new Set(card.__llCycleStart ? [] : loopState.usedWords);
+  used.add(card.id);
+  loopState.usedWords = [...used];
+  loopState.recentQuizWords = [...loopState.recentQuizWords.filter(id => id !== card.id), card.id].slice(-12);
+}
+
 function startFlashcard(onlyMistakes = false, limitOverride = null) {
   let pool = loadUserWords();
 
-  if (wc.active) {
-    let unusedPool = pool.filter(w => !wc.usedWords.includes(w.id));
-    if (unusedPool.length === 0) {
-      wc.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  } else if (diceCup.active) {
-    let unusedPool = pool.filter(w => !diceCup.usedWords.includes(w.id));
-    const requested = limitOverride || 0;
-    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
-      diceCup.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  } else if (diceUcl.active) {
-    let unusedPool = pool.filter(w => !diceUcl.usedWords.includes(w.id));
-    const requested = limitOverride || 0;
-    if (unusedPool.length === 0 || (requested > 0 && unusedPool.length < Math.min(requested, pool.length))) {
-      diceUcl.usedWords = [];
-      unusedPool = pool;
-    }
-    pool = unusedPool;
-  }
+  const loopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
   
   if (onlyMistakes) {
     pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
@@ -5833,7 +5860,6 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   }
 
   // --- SORUNUN ÇÖZÜLDÜĞÜ YER: Tamamen rastgele karıştırma ---
-  pool.sort(() => Math.random() - 0.5); 
 
   let numLimit = limitOverride;
   if (!limitOverride) {
@@ -5844,20 +5870,10 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   
   if (pool.length < numLimit) numLimit = pool.length;
 
-  fcQueue = pool.slice(0, numLimit);
-  
-  if (wc.active) {
-    fcQueue.forEach(card => {
-      if (!wc.usedWords.includes(card.id)) wc.usedWords.push(card.id);
-    });
-  } else if (diceCup.active) {
-    fcQueue.forEach(card => {
-      if (!diceCup.usedWords.includes(card.id)) diceCup.usedWords.push(card.id);
-    });
-  } else if (diceUcl.active) {
-    fcQueue.forEach(card => {
-      if (!diceUcl.usedWords.includes(card.id)) diceUcl.usedWords.push(card.id);
-    });
+  if (loopState && !onlyMistakes) fcQueue = llTakeSpacedLoopWords(pool, numLimit, loopState, { deferCommit: true });
+  else {
+    pool.sort(() => Math.random() - 0.5);
+    fcQueue = pool.slice(0, numLimit);
   }
 
   fcIndex = 0;
@@ -5887,6 +5903,8 @@ function showNextFlashcard() {
   }
 
   const card = fcQueue[fcIndex];
+  const activeLoopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
+  llMarkSpacedLoopWordShown(card, activeLoopState);
   fcRevealed = false;
   const progress = (fcIndex / fcTotal * 100).toFixed(1);
 
@@ -6036,7 +6054,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260811-storage-boot-v4"></script>
+<script src="diagnostics.js?v=20260813-word-cycle-v1"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
@@ -6053,8 +6071,8 @@ renderPreStart();
 <script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
 <script src="manager-offer-fit.js?v=20260812-facility-offers-v1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
-<script src="legend-call.js?v=20260810-legend-quiz-theme-3"></script>
-<script src="welcome-to-hell.js?v=20260810-hell-quiz-image-5"></script>
+<script src="legend-call.js?v=20260813-word-cycle-v1"></script>
+<script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 </body>
 </html>
