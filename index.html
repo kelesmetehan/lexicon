@@ -721,6 +721,11 @@
   .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
   .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
   .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
+  /* Relative Clause cevabindaki kurallar, buyuk cevap metninden ayri okunur. */
+  .ll-relative-rule-en, .ll-relative-rule-tr { display:block; max-width:720px; margin:10px auto 0; font-family:'DM Sans',sans-serif; font-size:clamp(12px,2.9vw,15px); line-height:1.55; overflow-wrap:anywhere; word-break:normal; }
+  .ll-relative-rule-en { color:var(--text2); font-style:italic; }
+  .ll-relative-rule-tr { color:#d8fff6; padding:9px 11px; border-left:3px solid #35d5c0; border-radius:0 8px 8px 0; background:rgba(53,213,192,.08); text-align:left; }
+  .ll-relative-rule-tr b { color:#69f1dd; }
   .ll-quiz-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; position:relative; z-index:8; }
   .ll-quiz-actions .ll-btn { min-height:46px; position:relative; z-index:1; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
   .ll-quiz-actions .ll-btn:hover { transform:none; }
@@ -1536,7 +1541,7 @@ const NATIVE_USER_DATA = [
   {en:"take part", tr:"kat\u0131lmak", example:"More than a hundred students took part in the event.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"be into something", tr:"bir \u015feye \u00e7ok ilgili olmak", example:"He is really into documentary films.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"care about", tr:"\u00f6nemsemek / de\u011fer vermek", example:"She cares deeply about animal welfare.", pos:"pv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"it's fair to say", tr:"\u015funu s\u00f6ylemek makul olur", example:"It is fair to say the project changed the company.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"it's fair to say", tr:"\u015funu s\u00f6ylemek makul olur", example:"It's fair to say the project changed the company.", exampleTr:"Projenin \u015firketi de\u011fi\u015ftirdi\u011fini s\u00f6ylemek makul olur.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"divisive", tr:"g\u00f6r\u00fc\u015f ayr\u0131l\u0131\u011f\u0131 yaratan / kutupla\u015ft\u0131r\u0131c\u0131", example:"The proposal became a divisive issue.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"cross the line", tr:"s\u0131n\u0131r\u0131 a\u015fmak / kabul edilemez hale gelmek", example:"His comment crossed the line.", pos:"idiom", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"set a bad example", tr:"k\u00f6t\u00fc \u00f6rnek olmak", example:"Public figures should not set a bad example.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
@@ -2066,7 +2071,7 @@ function llInferWordPos(word){
   if(/(able|ible|al|ful|ic|ical|ive|less|ous|y)$/.test(en))return 'adj';
   return 'n';
 }
-NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
+NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=word.exampleTr||NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
 NATIVE_USER_DATA.forEach(word=>{word.pos=llInferWordPos(word);});
 
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
@@ -6073,6 +6078,7 @@ renderPreStart();
 <script src="derby-achievements.js?v=20260810-achievement-runtime-2"></script>
 <script src="achievement-cinematic.js?v=20260810-cinematic-queue-1"></script>
 <script src="competition-achievements.js?v=20260810-competition-titles-1"></script>
+<script src="super-cup.js?v=20260814-1"></script>
 <script src="team-star-decline.js?v=20260804-2"></script>
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20260810-cinematic-queue-1"></script>
@@ -6083,6 +6089,6 @@ renderPreStart();
 <script src="legend-call.js?v=20260813-word-cycle-v1"></script>
 <script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
-<script src="relative-clause-quiz.js?v=20260813-relative-clause-v2"></script>
+<script src="relative-clause-quiz.js?v=20260814-relative-tr-v1"></script>
 </body>
 </html>
