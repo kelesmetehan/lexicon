@@ -34,7 +34,11 @@ const LL_EURO_LOGO_IDS={
 };
 const LL_RECOVERY_AP=3,LL_PROMOTION_SUPPORT_AP=300,LL_SEASON_GOAL_VERSION=8,LL_TEAM_TARGET_VERSION=4,LL_SEASON_HISTORY_VERSION=1;
 function llV2PlayerLeagueInState(state){return state?.leagues?.super?.includes(state.playerTeam)?'super':'first';}
-function llV2TeamStarsInState(state,name){return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||LL_ALL_TEAMS.find(t=>t.name===name)?.stars||1)));}
+function llV2TeamStarsInState(state,name){
+  const registered=LL_ALL_TEAMS.find(t=>t.name===name)?.stars;
+  const resolved=typeof llTeamDef==='function'?llTeamDef(name)?.stars:null;
+  return Math.max(1,Math.min(6,Number(state?.teams?.[name]?.stars||registered||resolved||3)));
+}
 function llV2TeamTargetOptions(league,stars){
   if(league==='first'){
     if(stars>=3)return [
@@ -873,6 +877,29 @@ llV2EuropeFixturesHtml=function(type){
   const s=lexLeague.state,table=llV2EnsureEuropeStandings(s)[type],results=(s.results||[]).filter(result=>result.competition===type&&result.league==='euro-table'),resultMap=new Map(results.map(r=>[`${r.home}|${r.away}`,r]));
   return table.fixtures.map((round,index)=>`<details ${index===Math.min(table.playedRounds,table.fixtures.length-1)?'open':''} style="margin:8px 0"><summary class="ll-btn" style="cursor:pointer">Lig Aşaması ${index+1}/${table.fixtures.length} · ${LL_EURO_LEAGUE_WEEKS[type][index]}. hafta</summary><div class="ll-cup-list">${round.map(f=>{const r=resultMap.get(`${f.home}|${f.away}`),score=r?`${r.homeGoals}-${r.awayGoals}`:'VS';return `<div class="ll-cup-row"><span>${llTeamLogo(f.home,'table')}${llEscape(f.home)}</span><b>${score}</b><span>${llTeamLogo(f.away,'table')}${llEscape(f.away)}</span></div>`;}).join('')}</div></details>`).join('');
 };
+/* Avrupa tablolarında da yerel liglerdeki gibi takım yıldızı gösterilir. */
+llV2EuropeTableHtml=function(type){
+  const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam;
+  const qualifications=llV3ResolveEuropeQualifications(lexLeague.state);
+  const turkishTeams=new Set(qualifications[type]||[]);
+  const teamStars=(team)=>llV2TeamStarsInState(lexLeague.state,team);
+  return `<div class="ll-europe-table-wrap"><h4>${llEscape(LL_EUROPE[type].label)} · Puan Durumu</h4><table class="ll-standings ll-europe-standings"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>`<tr class="${row.team===player?'player ':''}${index<8?'champion-zone ':index<24?'playoff-zone ':'relegation-zone '}"><td>${index+1}</td><td><span class="ll-standing-team">${llTeamLogo(row.team,'table')}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars" title="${teamStars(row.team)} yıldız">${teamStars(row.team)}★</span>${turkishTeams.has(row.team)?'<span title="Türkiye temsilcisi">&#127481;&#127479;</span>':''}</span></td><td>${row.P}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td><td>${row.GF}</td><td>${row.GA}</td><td>${row.GF-row.GA}</td><td><b>${row.pts}</b></td></tr>`).join('')}</tbody></table><div class="ll-zone-legend"><span class="champion-dot"></span> 1–8: Doğrudan Son 16 <span class="playoff-dot"></span> 9–24: Play-Off <span class="relegation-dot"></span> 25–36: Elenir</div></div>`;
+};
+
+/* Avrupa tabloları: yerel lig biçimini koru; her takımın yıldızını da göster. */
+llV2EuropeTableHtml=function(type){
+  const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam;
+  const qualifications=llV3ResolveEuropeQualifications(lexLeague.state);
+  const turkishTeams=new Set(qualifications[type]||[]);
+  const teamStars=(team)=>llV2TeamStarsInState(lexLeague.state,team);
+  const rowHtml=rows.map((row,index)=>{
+    const zone=index<8?'champion-zone ':index<24?'playoff-zone ':'relegation-zone ';
+    const isPlayer=row.team===player?'player ':'';
+    return `<tr class="${isPlayer}${zone}"><td>${index+1}</td><td><span class="ll-standing-team">${llTeamLogo(row.team,'table')}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars" title="${teamStars(row.team)} yıldız">${teamStars(row.team)}★</span>${turkishTeams.has(row.team)?'<span title="Türkiye temsilcisi">&#127481;&#127479;</span>':''}</span></td><td>${row.P}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td><td>${row.GF}</td><td>${row.GA}</td><td>${row.GD??(row.GF-row.GA)}</td><td><b>${row.Pts}</b></td></tr>`;
+  }).join('');
+  return `<div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-compact-standings-table ll-europe-standings"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rowHtml}</tbody></table></div><div class="ll-zone-legend"><span><i class="ll-zone-dot direct"></i> 1–8: Doğrudan Son 16</span><span><i class="ll-zone-dot playoff"></i> 9–24: Play-Off</span><span><i class="ll-zone-dot eliminated"></i> 25–36: Elenir</span></div>`;
+};
+
 const llV3RenderCompetitionCenterBase=llRenderCompetitionCenter;
 llRenderCompetitionCenter=function(tab='league',key=null){llV3RenderCompetitionCenterBase(tab,key);if(tab!=='europe')return;const s=lexLeague.state,type=['ucl','uel','uecl'].includes(key)?key:(s.europe?.type||'ucl'),table=llV2EnsureEuropeStandings(s)[type],metrics=llArea().querySelectorAll('.ll-cup-status .ll-metric strong');if(metrics[2])metrics[2].textContent=`${table.playedRounds}/${LL_EURO_LEAGUE_WEEKS[type].length}`;const notice=llArea().querySelector('.ll-notice');if(notice)notice.innerHTML=`<b>36 takımlı lig aşaması:</b> ${type==='uecl'?'6 farklı rakip · 3 iç saha / 3 deplasman':'8 farklı rakip · 4 iç saha / 4 deplasman'}. Galibiyet 3, beraberlik 1 puan. İlk 8 doğrudan Son 16'ya, 9–24 play-off'a gider; 25–36 elenir ve alt kupaya düşmez.${s.europe?.type===type?`<br><b>Senin durumun:</b> ${llEscape(s.europe.status||`Lig aşaması ${Math.min((s.europe.round||0)+1,LL_EURO_LEAGUE_WEEKS[type].length)}/${LL_EURO_LEAGUE_WEEKS[type].length}`)}`:''}`;};
 const llV3StartNextSeasonBase=llStartNextSeason;
