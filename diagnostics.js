@@ -3,7 +3,10 @@
  * This module is deliberately fail-open: a diagnostic failure must never stop
  * a save, match, quiz, render, or normal button handler.
  */
-const LL_RECENT_QUIZ_WORD_LIMIT=30;
+// Aynı kelime, yönü tersine dönse bile son 12 farklı kelime içinde yeniden
+// sorulmaz. Bu sayı "tercih" değil, yeterli kelime olduğunda zorunlu soğuma
+// mesafesidir.
+const LL_RECENT_QUIZ_WORD_LIMIT=12;
 const LL_DIAGNOSTIC_LOG_VERSION=2;
 const LL_DIAGNOSTIC_STORAGE_KEY='lexiconLeagueDiagnosticRollingV2';
 const LL_DIAGNOSTIC_MAX_EVENTS=1000;
@@ -162,20 +165,49 @@ function llDiagnosticQuizIgnored(interactionId,reason,correct,q){llDiagnosticHan
 function llDiagnosticQuizBusy(interactionId,value,q){llDiagnosticEvent('QUIZ_BUSY_CHANGED',{value:!!value,quiz:{index:Number(q?.index)||0,wordId:q?.queue?.[Number(q?.index)||0]?.id||null}},{level:'DEBUG',interactionId,action:'quiz_answer'});if(value){setTimeout(()=>{if(q?.answerBusy)llDiagnosticEvent('QUIZ_BUSY_STUCK',{timeoutMs:LL_DIAGNOSTIC_BUSY_TIMEOUT,quiz:{index:Number(q?.index)||0,wordId:q?.queue?.[Number(q?.index)||0]?.id||null}},{level:'WARN',interactionId,action:'quiz_answer'});},LL_DIAGNOSTIC_BUSY_TIMEOUT);}}
 function llDiagnosticQuizCompleted(interactionId,details={}){llDiagnosticHandlerEnded(interactionId,'SUCCESS',details);}
 function llDiagnosticShuffle(items){if(typeof llShuffle==='function')return llShuffle(items);const result=[...items];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}return result;}
-function llOrderQuizCandidates(pool,recentIds){const recent=recentIds instanceof Set?recentIds:new Set(recentIds||[]),shuffled=llDiagnosticShuffle(pool);return [...shuffled.filter(word=>!recent.has(word.id)),...shuffled.filter(word=>recent.has(word.id))];}
+function llOrderQuizCandidates(pool,recentIds,blockedIds){
+  const recent=recentIds instanceof Set?recentIds:new Set(recentIds||[]);
+  const blocked=blockedIds instanceof Set?blockedIds:new Set(blockedIds||[]);
+  return llDiagnosticShuffle(pool.filter(word=>!blocked.has(word.id)&&!recent.has(word.id)));
+}
+function llTakeQuizCandidates(pool,count,recent,blocked,{allowCooldownFallback=false}={}){
+  const selected=llOrderQuizCandidates(pool,recent,blocked).slice(0,count);
+  if(selected.length>=count||!allowCooldownFallback)return selected;
+  const selectedIds=new Set(selected.map(word=>word.id));
+  const fallback=llDiagnosticShuffle(pool.filter(word=>!blocked.has(word.id)&&!selectedIds.has(word.id))).slice(0,count-selected.length);
+  if(fallback.length){
+    llDiagnosticEvent('QUIZ_COOLDOWN_RELAXED',{requested:count,selectedBeforeFallback:selected.length,fallbackIds:fallback.map(word=>word.id),reason:'current_cycle_must_finish_or_word_pool_is_too_small'},{level:'WARN'});
+  }
+  return [...selected,...fallback];
+}
 globalThis.llPickQuizWords=function(count=10){
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
   const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   const target=Math.min(Math.max(0,Number(count)||0),words.length),used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT));
-  const remaining=llOrderQuizCandidates(words.filter(word=>!used.has(word.id)),recent),closing=remaining.slice(0,target),queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false}));
-  if(queue.length<target){const closingIds=new Set(closing.map(word=>word.id)),nextCycle=llOrderQuizCandidates(words.filter(word=>!closingIds.has(word.id)),recent).slice(0,target-queue.length);nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));}
+  // Mevcut döngüde henüz kullanılmamış kelimeler önce tamamlanır. Soğuma
+  // yalnızca bu mevcut döngüyü terk ettirmemeli; aksi halde kelimeler
+  // atlanmış olur. Bu yüzden zorunlu fallback sadece bu dar durumda açıktır.
+  const closing=llTakeQuizCandidates(words.filter(word=>!used.has(word.id)),target,recent,new Set(),{allowCooldownFallback:true});
+  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false}));
+  if(queue.length<target){
+    const chosenIds=new Set(queue.map(ref=>ref.id));
+    let nextCycle=llTakeQuizCandidates(words,target-queue.length,recent,chosenIds);
+    // 12 kelimelik havuzdan daha küçük özel test/kariyer kayıtlarında döngü
+    // kilitlenmesin; yalnızca yeterli yeni kelime yoksa kural gevşetilir.
+    if(nextCycle.length<target-queue.length)nextCycle=llTakeQuizCandidates(words,target-queue.length,recent,chosenIds,{allowCooldownFallback:true});
+    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
+  }
   llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),ids:queue.map(ref=>ref.id)});return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
   const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
-  if(!Array.isArray(q.shownWordIds))q.shownWordIds=[];if(q.shownWordIds.includes(ref.id))return;q.shownWordIds.push(ref.id);
-  if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];state.recentQuizWords.push(ref.id);state.recentQuizWords=state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT);
+  if(!Array.isArray(q.shownWordRefs))q.shownWordRefs=[];const shownKey=`${Number(q.index)||0}:${ref.id}`;
+  if(q.shownWordRefs.includes(shownKey))return;q.shownWordRefs.push(shownKey);
+  // Aynı kelime ileride yeniden gelirse onu tekrar listenin sonuna taşır;
+  // bu, yön değişse bile yeni 12 kelimelik mesafeyi yeniden başlatır.
+  if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
+  state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-LL_RECENT_QUIZ_WORD_LIMIT);
   llDiagnosticEvent('QUIZ_WORD_SHOWN',{id:ref.id,question:Number(q.index)+1,cycleStart:!!ref.cycleStart});if(typeof llSave==='function')llSave();
 };
 function llDiagnosticRepeatDistances(ids){const last=new Map(),repeats=[];(ids||[]).forEach((id,index)=>{if(last.has(id))repeats.push({id,previousIndex:last.get(id),index,distance:index-last.get(id)});last.set(id,index);});return repeats;}
@@ -194,7 +226,7 @@ function llDiagnosticEventSummary(){const counts={DEBUG:0,INFO:0,WARN:0,ERROR:0,
 function llBuildDiagnosticReport(){
   const league=llDiagnosticLeagueContext(),state=league?.state||null,q=league?.quiz||null,recent=Array.isArray(state?.recentQuizWords)?state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT):[],used=Array.isArray(state?.usedWords)?state.usedWords:[],queue=Array.isArray(q?.queue)?q.queue:[];
   const scripts=typeof document==='undefined'?[]:[...document.scripts].map(script=>script.getAttribute('src')).filter(Boolean);
-  return {app:'lexicon-league',type:'diagnostic',diagnosticVersion:LL_DIAGNOSTIC_LOG_VERSION,eventCount:LL_DIAGNOSTIC_EVENTS.length,maxEvents:LL_DIAGNOSTIC_MAX_EVENTS,maxStorageBytes:LL_DIAGNOSTIC_MAX_STORAGE_BYTES,approxStorageBytes:LL_DIAGNOSTIC_APPROX_BYTES,exportedAt:llDiagnosticNow(),page:{origin:typeof location==='undefined'?null:location.origin,path:typeof location==='undefined'?null:location.pathname,scripts},device:{userAgent:typeof navigator==='undefined'?null:navigator.userAgent,language:typeof navigator==='undefined'?null:navigator.language,online:typeof navigator==='undefined'?null:navigator.onLine,viewport:typeof window==='undefined'?null:{width:window.innerWidth,height:window.innerHeight,pixelRatio:window.devicePixelRatio}},activeSlot:typeof llGetActiveSaveSlot==='function'?llGetActiveSaveSlot():null,career:llDiagnosticCareerSummary(state),storedCareer:typeof globalThis.llStorageActiveCareerSummary==='function'?globalThis.llStorageActiveCareerSummary():null,storageBoot:typeof globalThis.llStorageBootStatus==='function'?globalThis.llStorageBootStatus():{available:false,events:Array.isArray(globalThis.llStorageBootEvents)?globalThis.llStorageBootEvents.slice(-40):[]},seasonTransitionError:globalThis.llLastSeasonTransitionError||null,wordCycle:{totalWords:typeof loadUserWords==='function'?loadUserWords().length:0,usedInCurrentCycle:used.length,usedIds:used.slice(-100),recentLimit:LL_RECENT_QUIZ_WORD_LIMIT,recentShownIds:recent,recentRepeats:llDiagnosticRepeatDistances(recent),currentQuiz:q?{index:q.index,correct:q.correct,revealed:!!q.revealed,skipped:!!q.skipped,shownWordIds:(q.shownWordIds||[]),queue:queue.map(ref=>({id:ref.id,cycleStart:!!ref.cycleStart,askTrToEn:!!ref.askTrToEn}))}:null},recentOfficialResults:(state?.results||[]).slice(-30).map(llDiagnosticResult),summary:llDiagnosticEventSummary(),suspiciousInteractions:llDiagnosticSuspiciousInteractions(),runtimeEvents:[...LL_DIAGNOSTIC_EVENTS],storage:llDiagnosticStorageSummary()};
+  return {app:'lexicon-league',type:'diagnostic',diagnosticVersion:LL_DIAGNOSTIC_LOG_VERSION,eventCount:LL_DIAGNOSTIC_EVENTS.length,maxEvents:LL_DIAGNOSTIC_MAX_EVENTS,maxStorageBytes:LL_DIAGNOSTIC_MAX_STORAGE_BYTES,approxStorageBytes:LL_DIAGNOSTIC_APPROX_BYTES,exportedAt:llDiagnosticNow(),page:{origin:typeof location==='undefined'?null:location.origin,path:typeof location==='undefined'?null:location.pathname,scripts},device:{userAgent:typeof navigator==='undefined'?null:navigator.userAgent,language:typeof navigator==='undefined'?null:navigator.language,online:typeof navigator==='undefined'?null:navigator.onLine,viewport:typeof window==='undefined'?null:{width:window.innerWidth,height:window.innerHeight,pixelRatio:window.devicePixelRatio}},activeSlot:typeof llGetActiveSaveSlot==='function'?llGetActiveSaveSlot():null,career:llDiagnosticCareerSummary(state),storedCareer:typeof globalThis.llStorageActiveCareerSummary==='function'?globalThis.llStorageActiveCareerSummary():null,storageBoot:typeof globalThis.llStorageBootStatus==='function'?globalThis.llStorageBootStatus():{available:false,events:Array.isArray(globalThis.llStorageBootEvents)?globalThis.llStorageBootEvents.slice(-40):[]},seasonTransitionError:globalThis.llLastSeasonTransitionError||null,wordCycle:{totalWords:typeof loadUserWords==='function'?loadUserWords().length:0,usedInCurrentCycle:used.length,usedIds:used.slice(-100),recentLimit:LL_RECENT_QUIZ_WORD_LIMIT,recentShownIds:recent,recentRepeats:llDiagnosticRepeatDistances(recent),currentQuiz:q?{index:q.index,correct:q.correct,revealed:!!q.revealed,skipped:!!q.skipped,shownWordRefs:(q.shownWordRefs||[]),queue:queue.map(ref=>({id:ref.id,cycleStart:!!ref.cycleStart,askTrToEn:!!ref.askTrToEn}))}:null},recentOfficialResults:(state?.results||[]).slice(-30).map(llDiagnosticResult),summary:llDiagnosticEventSummary(),suspiciousInteractions:llDiagnosticSuspiciousInteractions(),runtimeEvents:[...LL_DIAGNOSTIC_EVENTS],storage:llDiagnosticStorageSummary()};
 }
 function llDiagnosticFileStamp(){return new Date().toISOString().replace(/[:.]/g,'-');}
 globalThis.llDownloadDiagnosticLog=function(){

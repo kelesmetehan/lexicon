@@ -55,6 +55,26 @@ ACH.push(
   {id:'domestic_cup_titles_10',name:'Kupa Hanedani',description:'Yerel kupayi 10 kez kazan.',reward:{ap:600,lp:750},check:s=>n(s.expansion?.cupTitles)>=10,progress:s=>`${n(s.expansion?.cupTitles)}/10 kupa`},
   {id:'league_loyalty_10',name:'Trouwe Hond · Loyal Dog',description:'Ayni ulkede ayni lig seviyesinde art arda 10 sezon tamamla.',reward:{ap:150,lp:200},check:s=>n(s.expansion?.leagueTenure?.best)>=10,progress:s=>`${n(s.expansion?.leagueTenure?.best)}/10 sezon`}
 );
+// Basarim ekraninda yabanci baslik veya aciklama kalmasin: mevcut kariyerlerde
+// ID ayni kaldigi icin daha once acilmis rozetlerin gecmisi de korunur.
+const TURKISH_ACHIEVEMENT_COPY={
+  flying_start_5:{name:'H\u0131zl\u0131 Ba\u015flang\u0131\u00e7',description:'Kariyerde toplam 5 resm\u00ee ma\u00e7 kazan.'},
+  first_season_complete:{name:'\u0130lk Sezon',description:'\u0130lk sezonunu tamamla.'},
+  first_club_target:{name:'\u0130lk Ba\u015far\u0131',description:'\u0130lk kez ana kul\u00fcp hedefini tamamla.'},
+  cup_debut_win:{name:'Kupa Ba\u015flang\u0131c\u0131',description:'Yerel kupada ilk ma\u00e7 galibiyetini al.'},
+  clean_sheet_first:{name:'Gol Yemeden',description:'Bir resm\u00ee ma\u00e7ta gol yeme.'},
+  clean_sheet_10:{name:'\u00c7in Seddi',description:'Toplam 10 resm\u00ee ma\u00e7ta gol yeme.'},
+  one_on_one_3:{name:'Bire Bir',description:'Yapay zek\u00e2 teknik direkt\u00f6rlerine kar\u015f\u0131 3 resm\u00ee ma\u00e7 oyna.'},
+  unbeaten_20:{name:'Yenilmez Seri',description:'Art arda 20 resm\u00ee ma\u00e7ta yenilme.'},
+  challenger_100:{name:'Meydan Okuyan',description:'Yapay zek\u00e2 teknik direkt\u00f6rlerine kar\u015f\u0131 100 resm\u00ee ma\u00e7 oyna.'},
+  provocateur_1000:{name:'K\u0131\u015fk\u0131rt\u0131c\u0131',description:'Yapay zek\u00e2 teknik direkt\u00f6rlerine kar\u015f\u0131 1.000 resm\u00ee ma\u00e7 oyna.'},
+  season_invincible:{name:'Yenilgisiz Sezon',description:'Bir sezon boyunca oynad\u0131\u011f\u0131n resm\u00ee ma\u00e7lar\u0131n hi\u00e7birini kaybetme.'},
+  win_streak_25:{name:'Sars\u0131lmaz',description:'Art arda 25 resm\u00ee ma\u00e7 kazan.'},
+  domestic_cup_titles_3:{name:'Kupa Ustal\u0131\u011f\u0131',description:'Yerel kupay\u0131 3 kez kazan.'},
+  domestic_cup_titles_10:{name:'Kupa Hanedan\u0131',description:'Yerel kupay\u0131 10 kez kazan.'},
+  league_loyalty_10:{name:'Sad\u0131k Teknik Direkt\u00f6r',description:'Ayn\u0131 \u00fclkede, ayn\u0131 lig seviyesinde art arda 10 sezon tamamla.'}
+};
+ACH.forEach(item=>{const copy=TURKISH_ACHIEVEMENT_COPY[item?.id];if(copy)Object.assign(item,copy);});
 function ensure(s){
   if(!s)return null;
   if(!s.achievements||typeof s.achievements!=='object')s.achievements={version:2,unlocked:{},migrationNote:null};

@@ -228,11 +228,12 @@
   }
   function recordWordShown(ref, state, quiz) {
     if (!ref || !state || !quiz) return;
-    if (!Array.isArray(quiz.shownWordIds)) quiz.shownWordIds = [];
-    if (quiz.shownWordIds.includes(ref.id)) return;
-    quiz.shownWordIds.push(ref.id);
+    if (!Array.isArray(quiz.shownWordRefs)) quiz.shownWordRefs = [];
+    const shownKey = `${Number(quiz.index) || 0}:${ref.id}`;
+    if (quiz.shownWordRefs.includes(shownKey)) return;
+    quiz.shownWordRefs.push(shownKey);
     if (!Array.isArray(state.recentQuizWords)) state.recentQuizWords = [];
-    state.recentQuizWords.push(ref.id); state.recentQuizWords = state.recentQuizWords.slice(-30);
+    state.recentQuizWords = [...state.recentQuizWords.filter(id => id !== ref.id), ref.id].slice(-12);
   }
   function renderQuiz(event) {
     const quiz = event?.quiz;

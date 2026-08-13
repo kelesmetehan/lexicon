@@ -150,8 +150,13 @@ function decorateDashboard(){
 }
 function markSpecialWordUsed(ref,state){if(!ref||!state)return;const used=new Set(ref.cycleStart?[]:(state.usedWords||[]));used.add(ref.id);state.usedWords=[...used];}
 function recordSpecialWordShown(ref,state,quiz){
-  if(!ref||!state||!quiz)return;if(!Array.isArray(quiz.shownWordIds))quiz.shownWordIds=[];if(quiz.shownWordIds.includes(ref.id))return;quiz.shownWordIds.push(ref.id);
-  if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];state.recentQuizWords.push(ref.id);state.recentQuizWords=state.recentQuizWords.slice(-30);
+  if(!ref||!state||!quiz)return;
+  if(!Array.isArray(quiz.shownWordRefs))quiz.shownWordRefs=[];
+  const shownKey=`${Number(quiz.index)||0}:${ref.id}`;
+  if(quiz.shownWordRefs.includes(shownKey))return;
+  quiz.shownWordRefs.push(shownKey);
+  if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
+  state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-12);
 }
 function quizWordHtml(event){
   const q=event.quiz;if(!q||q.index>=q.queue.length){finishSpecialQuiz(event);return;}
