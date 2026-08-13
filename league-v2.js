@@ -881,8 +881,8 @@ llV2EuropeFixturesHtml=function(type){
 /* Avrupa tablolarında da yerel liglerdeki gibi takım yıldızı gösterilir. */
 llV2EuropeTableHtml=function(type){
   const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam;
-  const qualifications=llV3ResolveEuropeQualifications(lexLeague.state);
-  const turkishTeams=new Set(qualifications[type]||[]);
+  // Avrupa puan tablosu ülke kısaltması/temsilci etiketi göstermez.
+  const turkishTeams=new Set();
   const teamStars=(team)=>llV2TeamStarsInState(lexLeague.state,team);
   return `<div class="ll-europe-table-wrap"><h4>${llEscape(LL_EUROPE[type].label)} · Puan Durumu</h4><table class="ll-standings ll-europe-standings"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>`<tr class="${row.team===player?'player ':''}${index<8?'champion-zone ':index<24?'playoff-zone ':'relegation-zone '}"><td>${index+1}</td><td><span class="ll-standing-team">${llTeamLogo(row.team,'table')}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars" title="${teamStars(row.team)} yıldız">${teamStars(row.team)}★</span>${turkishTeams.has(row.team)?'<span title="Türkiye temsilcisi">&#127481;&#127479;</span>':''}</span></td><td>${row.P}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td><td>${row.GF}</td><td>${row.GA}</td><td>${row.GF-row.GA}</td><td><b>${row.pts}</b></td></tr>`).join('')}</tbody></table><div class="ll-zone-legend"><span class="champion-dot"></span> 1–8: Doğrudan Son 16 <span class="playoff-dot"></span> 9–24: Play-Off <span class="relegation-dot"></span> 25–36: Elenir</div></div>`;
 };
@@ -890,8 +890,8 @@ llV2EuropeTableHtml=function(type){
 /* Avrupa tabloları: yerel lig biçimini koru; her takımın yıldızını da göster. */
 llV2EuropeTableHtml=function(type){
   const rows=llV2SortEuropeTable(type),player=lexLeague.state.playerTeam;
-  const qualifications=llV3ResolveEuropeQualifications(lexLeague.state);
-  const turkishTeams=new Set(qualifications[type]||[]);
+  // Ülke kodu yalnızca Avrupa tablosuna sızıyordu; yıldız bilgisinin parçası değildir.
+  const turkishTeams=new Set();
   const teamStars=(team)=>llV2TeamStarsInState(lexLeague.state,team);
   const rowHtml=rows.map((row,index)=>{
     const zone=index<8?'champion-zone ':index<24?'playoff-zone ':'relegation-zone ';
