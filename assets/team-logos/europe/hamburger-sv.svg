@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hamburger SV">
+  <title>Hamburger SV</title>
+  <rect x="26" y="110" width="460" height="292" rx="3" fill="#005ca9"/>
+  <path d="M256 135 411 256 256 377 101 256Z" fill="#fff"/>
+  <path d="M256 174 361 256 256 338 151 256Z" fill="#171717"/>
+  <path d="M256 228 292 256 256 284 220 256Z" fill="#fff"/>
+</svg>
