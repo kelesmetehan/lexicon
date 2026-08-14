@@ -83,6 +83,9 @@
     if(!confirm(message))return false;
     state.ap-=cost.ap;state.lp-=cost.lp;facility.level=cost.nextLevel;
     facility.history.push({season:Number(state.season)||1,week:Number(state.week)||1,level:facility.level,spentAp:cost.ap,spentLp:cost.lp,team:state.playerTeam,stars:cost.stars,band:cost.band,at:new Date().toISOString()});
+    if(typeof globalThis.llAchievementRecordManagerDevelopmentUpgrade==='function'){
+      globalThis.llAchievementRecordManagerDevelopmentUpgrade(facility.level,state);
+    }
     if(typeof llSave==='function')llSave();
     if(typeof llRenderDashboard==='function')llRenderDashboard();
     return true;
