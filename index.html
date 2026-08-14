@@ -1081,8 +1081,9 @@
 </div>
 
 <!-- Yerel arma eşlemesi, ilk ekran çizilmeden önce hazır olmalı. -->
-<script src="team-logo-manifest.js?v=20260809-logo-coverage-1"></script>
-<script src="team-logo-domestic-complete.js?v=20260809-logo-coverage-1"></script>
+<script src="team-logo-manifest.js?v=20260814-logo-integrity-4"></script>
+<script src="team-logo-domestic-complete.js?v=20260814-logo-integrity-4"></script>
+<script src="team-logo-europe-official.js?v=20260814-logo-integrity-4"></script>
 <script>
 const DB_KEY = 'lexicon_words';
 const META_KEY = 'lexicon_meta';
@@ -2674,6 +2675,33 @@ if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
 }
 function llArea(){ return document.getElementById('flashcard-area'); }
 function llTeamDef(name){ return LL_TEAMS.find(t=>t.name===name); }
+// Older save files and an early logo manifest were written with a UTF-8/Latin-1
+// conversion error (for example, "KÃ¶ln" instead of "Köln").  Keep the asset
+// lookup tolerant so a correct crest is still chosen instead of the initials badge.
+const llLogoNameCache=new Map();
+function llRepairLogoName(value){
+  const text=String(value||'');
+  if(!/[ÃÂâ]/.test(text))return text;
+  try{
+    const bytes=Uint8Array.from(text,character=>character.charCodeAt(0));
+    const repaired=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+    return repaired||text;
+  }catch(_error){ return text; }
+}
+function llLogoNameKey(value){
+  return llRepairLogoName(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N}]/gu,'').toLocaleLowerCase('tr-TR');
+}
+function llLocalTeamLogo(teamName){
+  const name=String(teamName||'');
+  const manifest=globalThis.LL_LOCAL_TEAM_LOGOS||{};
+  if(manifest[name])return manifest[name];
+  if(llLogoNameCache.has(name))return llLogoNameCache.get(name);
+  const desired=llLogoNameKey(name);
+  const matched=Object.keys(manifest).find(candidate=>llLogoNameKey(candidate)===desired);
+  const resolved=matched?manifest[matched]:'';
+  llLogoNameCache.set(name,resolved);
+  return resolved;
+}
 function llTeamLogo(teamOrName,variant=''){
   const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
   const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
@@ -2683,10 +2711,12 @@ function llTeamLogo(teamOrName,variant=''){
   const savedLogoId=String(team.logo||'').match(/\/head\/(\d+)\.(?:png|jpg|webp)(?:\?|$)/i)?.[1];
   const logoId=Number(team.logoId||savedLogoId||0);
   const domesticPath=globalThis.LL_DOMESTIC_COMPLETE_LOGO_FILES?.[logoId]||(globalThis.LL_DOMESTIC_COMPLETE_LOGO_IDS?.has(logoId)?`assets/team-logos/domestic-complete/${logoId}.png`:'');
-  const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||domesticPath||team.logo;
+  const officialEuropePath=globalThis.LL_EUROPE_OFFICIAL_LOGO_FILES?.[logoId]||'';
+  const logoSrc=llLocalTeamLogo(team.name)||domesticPath||officialEuropePath||team.logo;
+  const cacheSafeSrc=/^assets\//.test(logoSrc||'')?`${logoSrc}${logoSrc.includes('?')?'&':'?'}v=20260814-logo-integrity-4`:logoSrc;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant} logo-missing">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${cacheSafeSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
 }
 function llTeamState(name){ return lexLeague.state?.teams?.[name]; }
 function llCard(id){ return id ? LL_CARD_MAP[id] : null; }
