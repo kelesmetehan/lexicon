@@ -4,6 +4,9 @@
 
   const LL_SUPER_CUP_NAME = 'UEFA Süper Kupa';
   const LL_SUPER_CUP_ACHIEVEMENT = 'uefa-super-cup';
+  // Süper Kupa, Avrupa sezonunun en seçkin tek maç ödülüdür.
+  // Toplam ödülü Şampiyonlar Ligi başarımından da yüksektir.
+  const LL_SUPER_CUP_REWARD = Object.freeze({ ap: 650, lp: 700 });
 
   function stateOf() {
     return globalThis.lexLeague && globalThis.lexLeague.state;
@@ -11,6 +14,22 @@
 
   function escape(value) {
     return typeof globalThis.llEscape === 'function' ? globalThis.llEscape(value) : String(value == null ? '' : value);
+  }
+
+  // Eski sürümde açılan başarımlar 100 AP / 120 LP veriyordu. Yeni değere
+  // geçerken yalnızca bir kez farkı tamamla; ekranı tekrar açmak çift ödül vermez.
+  function migrateAchievementReward(state) {
+    if (!state || !state.superCupAchievements || typeof state.superCupAchievements !== 'object') return false;
+    const achievement = state.superCupAchievements[LL_SUPER_CUP_ACHIEVEMENT];
+    if (!achievement || Number(achievement.rewardVersion || 0) >= 2) return false;
+    const paidAp = Number(achievement.ap || 100);
+    const paidLp = Number(achievement.lp || 120);
+    state.ap = Number(state.ap || 0) + Math.max(0, LL_SUPER_CUP_REWARD.ap - paidAp);
+    state.lp = Number(state.lp || 0) + Math.max(0, LL_SUPER_CUP_REWARD.lp - paidLp);
+    achievement.ap = LL_SUPER_CUP_REWARD.ap;
+    achievement.lp = LL_SUPER_CUP_REWARD.lp;
+    achievement.rewardVersion = 2;
+    return true;
   }
 
   function standingsChampion(state, competition, excluded) {
@@ -69,11 +88,12 @@
     if (!state.superCupAchievements || typeof state.superCupAchievements !== 'object') state.superCupAchievements = {};
     if (state.superCupAchievements[LL_SUPER_CUP_ACHIEVEMENT]) return;
 
-    const reward = { ap: 100, lp: 120 };
+    const reward = LL_SUPER_CUP_REWARD;
     state.superCupAchievements[LL_SUPER_CUP_ACHIEVEMENT] = {
       season: Number(state.season),
       team: state.playerTeam,
-      ...reward
+      ...reward,
+      rewardVersion: 2
     };
     state.ap = Number(state.ap || 0) + reward.ap;
     state.lp = Number(state.lp || 0) + reward.lp;
@@ -192,6 +212,18 @@
     };
   }
 
+  function superCupAchievementCard(unlock) {
+    const progress = unlock
+      ? `Açıldı · S${escape(unlock.season)}${unlock.team ? ` · ${escape(unlock.team)}` : ''}`
+      : 'Yalnızca yeni sezondaki canlı şampiyonlukla açılır';
+    return `<div class="ll-achievement-card ${unlock ? 'done' : ''}" data-supercup-achievement>
+      <div class="ll-achievement-card-head"><span>${unlock ? '🏆' : '🔒'}</span><b>UEFA Süper Kupa Şampiyonu</b></div>
+      <div class="ll-sub">UEFA Süper Kupa'yı kazan.</div>
+      <div class="ll-achievement-progress">${progress}</div>
+      <div class="ll-achievement-reward">+${LL_SUPER_CUP_REWARD.ap} AP · +${LL_SUPER_CUP_REWARD.lp} LP</div>
+    </div>`;
+  }
+
   function attachAchievementScreen() {
     if (typeof globalThis.llRenderAchievements !== 'function') return;
     const original = globalThis.llRenderAchievements;
@@ -199,8 +231,15 @@
       const value = original.apply(this, arguments);
       const state = stateOf();
       const area = typeof globalThis.llArea === 'function' ? globalThis.llArea() : null;
+      if (migrateAchievementReward(state) && typeof globalThis.llSave === 'function') globalThis.llSave();
       if (!state || !area || area.querySelector('[data-supercup-achievement]')) return value;
+      const titleBlock = area.querySelector('[data-competition-title-achievements]');
+      const grids = titleBlock ? titleBlock.querySelectorAll('.ll-achievement-grid') : [];
+      const europeGrid = grids.length ? grids[grids.length - 1] : null;
+      if (!europeGrid) return value;
       const unlock = state.superCupAchievements && state.superCupAchievements[LL_SUPER_CUP_ACHIEVEMENT];
+      europeGrid.insertAdjacentHTML('beforeend', superCupAchievementCard(unlock));
+      return value;
       const panel = area.querySelector('.ll-panel:last-child') || area.querySelector('.ll-shell');
       if (panel) panel.insertAdjacentHTML('beforeend', `<section class="ll-panel" data-supercup-achievement><h3>UEFA SÜPER KUPA</h3><div class="ll-achievement ${unlock ? 'unlocked' : ''}"><div class="ll-achievement-icon">🏆</div><div><strong>Süper Kupa Ustası</strong><p>UEFA Süper Kupa'yı kazan.</p>${unlock ? `<small>Açıldı · S${escape(unlock.season)} · ${escape(unlock.team)}</small>` : '<small>Henüz kazanılmadı</small>'}<b>+100 AP · +120 LP</b></div></div></section>`);
       return value;
@@ -224,6 +263,7 @@
   globalThis.llEnsureSuperCupAtSeasonEnd = ensureSuperCupAtSeasonEnd;
   globalThis.llFinishSuperCup = finishSuperCup;
   globalThis.llRenderSuperCupArchive = renderSuperCupArchive;
+  globalThis.llMigrateSuperCupAchievementReward = migrateAchievementReward;
   attachArchivePersistence();
   attachToSeasonArchive();
   attachAchievementScreen();
