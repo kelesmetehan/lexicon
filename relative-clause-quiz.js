@@ -139,7 +139,7 @@
     for (var index = 0; index < QUESTION_COUNT; index += 1) output.push(BANK[(start + index) % BANK.length]);
     return output;
   }
-  function beginRelativeQuiz(fixture) {
+function beginRelativeQuiz(fixture) {
     var state = stateNow();
     if (!state || !fixture) return false;
     ensure(state);
@@ -161,10 +161,22 @@
     state.relativeClausePending = false;
     save();
     global.llRenderLeagueQuiz();
-    return true;
-  }
+  return true;
+}
 
-  function renderRelativeQuiz() {
+/* Relative Clause is rendered through the same narrow quiz shell at every
+ * stage.  Keeping question and reward inside this one helper prevents the
+ * result view from inheriting a wide match/table layout. */
+function renderRelativeCard(content, extraClass) {
+  if (typeof global.llSetWide === 'function') global.llSetWide(false);
+  global.llArea().innerHTML =
+    '<div class="ll-shell ll-quiz-card ll-relative-quiz ' + (extraClass || '') + '">' +
+      '<div class="ll-panel ll-relative-quiz-panel">' + content + '</div>' +
+    '</div>';
+  return true;
+}
+
+function renderRelativeQuiz() {
     var quiz = global.lexLeague && global.lexLeague.quiz;
     if (!quiz || !quiz.relativeClause || !global.llArea) return false;
     var current = quiz.queue[quiz.index];
@@ -177,9 +189,8 @@
       '<small class="ll-relative-rule-en">' + esc(current.explanation) + '</small>' +
       '<small class="ll-relative-rule-tr"><b>T\u00fcrk\u00e7e a\u00e7\u0131klama:</b> ' + esc(current.explanationTr) + '</small></div>'
     ) : '<div class="ll-muted" style="margin-top:25px">Cevab\u0131 a\u00e7mak i\u00e7in karta t\u0131kla</div>';
-    global.llArea().innerHTML =
-      '<div class="ll-shell ll-quiz-card ll-relative-quiz"><div class="ll-panel">' +
-      '<div class="ll-topbar"><div><div class="ll-title">Relative Clause <em>Ma\u00e7\u0131</em></div>' +
+  var questionHtml =
+    '<div class="ll-topbar"><div><div class="ll-title">Relative Clause <em>Ma\u00e7\u0131</em></div>' +
       '<div class="ll-muted">' + (quiz.index + 1) + '/8 \u00b7 Her do\u011fru 7 AP \u00b7 7/8: reroll \u00b7 8/8: reroll + ma\u00e7l\u0131k +1</div></div>' +
       '<div class="ll-stars">Do\u011fru: ' + quiz.correct + '/8' + (quiz.recoveredQuestions ? ' \u00b7 Geri kazan\u0131m: ' + quiz.recoveredQuestions : '') + '</div></div>' +
       '<div class="ll-progress"><div style="width:' + ((quiz.index / QUESTION_COUNT) * 100) + '%"></div></div>' +
@@ -191,10 +202,10 @@
       '<div class="ll-quiz-actions" style="' + (revealed ? '' : 'opacity:.35;pointer-events:none') + '">' +
       '<button type="button" class="ll-btn danger" onclick="llRateLeagueQuiz(false)">\u2715 Bilmiyorum</button>' +
       '<button type="button" class="ll-btn primary" onclick="llRateLeagueQuiz(true)">\u2713 Bildim</button></div>' +
-      '<button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Ge\u00e7 \u00b7 ' + quiz.index + ' cevap \u00fczerinden puan\u0131 al ve ma\u00e7a devam et</button>' +
-      '</div></div>';
-    return true;
-  }
+    '<button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Ge\u00e7 \u00b7 ' + quiz.index + ' cevap \u00fczerinden puan\u0131 al ve ma\u00e7a devam et</button>' +
+    '</div>';
+  return renderRelativeCard(questionHtml, 'll-relative-question-card');
+}
   function revealRelativeQuiz() {
     var quiz = global.lexLeague && global.lexLeague.quiz;
     if (!quiz || !quiz.relativeClause) return false;
@@ -303,18 +314,17 @@
       action = '<button type="button" class="ll-btn primary" style="margin-top:18px" onclick="llBeginMatch(null)">Zar D\u00fcellosuna Ge\u00e7</button>';
     }
 
-    global.llArea().innerHTML =
-      '<div class="ll-shell ll-quiz-card ll-relative-quiz"><div class="ll-panel" style="text-align:center">' +
-      '<div style="font-size:52px">' + icon + '</div>' +
+  var rewardHtml =
+    '<div style="font-size:52px">' + icon + '</div>' +
       '<div class="quiz-start-title" style="margin-top:8px">' + quiz.correct + '/' + answered + ' <em>Do\u011fru</em></div>' +
       '<div class="ll-metrics" style="grid-template-columns:' + metricsColumns + ';max-width:' + metricsWidth + ';margin:18px auto">' +
       '<div class="ll-metric"><strong>+' + Number(quiz.apEarned || 0) + '</strong><span>Toplam AP</span></div>' +
       (recoveryAp > 0 ? '<div class="ll-metric"><strong>+' + recoveryAp + '</strong><span>Hata Geri Kazan\u0131m AP</span></div>' : '') +
       '<div class="ll-metric"><strong>' + (rerollReady ? '1' : '0') + '</strong><span>Reroll</span></div></div>' +
-      '<div class="ll-notice" style="text-align:left">' + notice + '</div>' + action +
-      '</div></div>';
-    return true;
-  }
+    '<div class="ll-notice" style="text-align:left">' + notice + '</div>' +
+    '<div class="ll-relative-result-actions">' + action + '</div>';
+  return renderRelativeCard(rewardHtml, 'll-relative-result-card');
+}
 
   function wrap(name, replacement) {
     var base = global[name];
