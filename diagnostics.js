@@ -189,31 +189,43 @@ globalThis.llPickQuizWords=function(count=10){
   const orderPending=list=>typeof globalThis.llPriorityIntroductionOrder==='function'?llPriorityIntroductionOrder(list):list.slice().sort((a,b)=>String(b?.addedAt||'').localeCompare(String(a?.addedAt||''))||String(a?.en||'').localeCompare(String(b?.en||''),'en'));
   const pending=target===10?orderPending(words.filter(needsIntro)):[];
   const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
-  // Yerleşik havuzda 10 soruluk ana sınava yalnızca 1 ilk-tanıtım kelimesi
-  // enjekte edilir. Fresh kurulumda 9 normal kelime yoksa sınav kilitlenmez.
-  const priority=target===10&&pending.length&&introduced.length>=target-1?pending[0]:null;
-  const selectable=priority?[...introduced,priority]:words;
+  // 10 soruluk normal sınavın kontrollü hedefi: 7 normal + NET 3 yeni kelime.
+  // En son eklenen bekleyen kelimeler önceliklidir. 3'ten az bekleyen varsa aynı
+  // kelimeyi tekrarlamayız; mevcutların tamamını kullanırız. Fresh havuzda yeterli
+  // normal kelime yoksa sınav kilitlenmesin diye genel seçim davranışı korunur.
+  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
+  const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
+  const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
+  const priorityIds=new Set(priorities.map(word=>word.id));
+  const selectable=priorities.length?[...introduced,...priorities]:words;
   const closingPool=selectable.filter(word=>!used.has(word.id));
   let closing=[];
-  if(priority&&closingPool.some(word=>word.id===priority.id)){
-    const normalClosing=llTakeQuizCandidates(closingPool.filter(word=>word.id!==priority.id),target-1,recent,new Set(),{allowCooldownFallback:true});
-    const insertAt=Math.min(normalClosing.length,Math.max(1,Math.floor(Math.random()*3)+1));
-    closing=[...normalClosing.slice(0,insertAt),priority,...normalClosing.slice(insertAt)];
+  if(priorities.length){
+    const normalClosing=llTakeQuizCandidates(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,recent,new Set(),{allowCooldownFallback:true});
+    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
+    let normalIndex=0,introIndex=0;
+    for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
+      if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
+      else if(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+      else if(introIndex<priorities.length)closing.push(priorities[introIndex++]);
+    }
+    while(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+    while(introIndex<priorities.length)closing.push(priorities[introIndex++]);
   }else{
     // Mevcut döngüde henüz kullanılmamış kelimeler önce tamamlanır. Soğuma
     // yalnızca bu mevcut döngüyü terk ettirmemeli; aksi halde kelimeler atlanır.
     closing=llTakeQuizCandidates(closingPool,target,recent,new Set(),{allowCooldownFallback:true});
   }
-  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:!!(priority&&word.id===priority.id)}));
+  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:priorityIds.has(word.id)}));
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
     let nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds);
     // 12 kelimelik havuzdan daha küçük özel test/kariyer kayıtlarında döngü
     // kilitlenmesin; yalnızca yeterli alternatif yoksa kural gevşetilir.
     if(nextCycle.length<target-queue.length)nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds,{allowCooldownFallback:true});
-    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:!!(priority&&word.id===priority.id)}));
+    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(word.id)}));
   }
-  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityId:priority?.id||null,pendingFirstExposure:pending.length,ids:queue.map(ref=>ref.id)});return queue;
+  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,pendingFirstExposure:pending.length,ids:queue.map(ref=>ref.id)});return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
   const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
