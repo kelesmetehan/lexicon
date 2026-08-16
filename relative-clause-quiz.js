@@ -27,6 +27,64 @@
     'In which means where in this formal structure.': 'Bu resm\u00ee yap\u0131da "in which", "where" yerine ge\u00e7er.',
     'On which means when in this formal structure.': 'Bu resm\u00ee yap\u0131da "on which", zaman belirten "when" yerine ge\u00e7er.'
   };
+  var TURKISH_SENTENCES = {
+    'RC001': "89. dakikada galibiyet gol\u00fcn\u00fc atan oyuncu ma\u00e7\u0131n adam\u0131 se\u00e7ildi.",
+    'RC002': "Galatasaray, tarihte en \u00e7ok S\u00fcper Lig \u015fampiyonlu\u011fu kazanan kul\u00fcpt\u00fcr.",
+    'RC003': "Teknik direkt\u00f6r\u00fcn ge\u00e7en yaz transfer etti\u011fi forvet \u015fimdiden 12 gol att\u0131.",
+    'RC004': "Messi'nin 30 metreden kulland\u0131\u011f\u0131 serbest vuru\u015f do\u011frudan doksana gitti.",
+    'RC005': "Tak\u0131m\u0131 \u015fampiyonlu\u011fa ta\u015f\u0131yan teknik direkt\u00f6r iki hafta sonra istifa etti.",
+    'RC006': "Herkesin hakk\u0131nda konu\u015ftu\u011fu gen\u00e7 yetenek sadece 17 ya\u015f\u0131nda.",
+    'RC007': "Ge\u00e7en sezon kald\u0131rd\u0131\u011f\u0131m\u0131z kupa art\u0131k kul\u00fcp m\u00fczesinde.",
+    'RC008': "Hatas\u0131 ma\u00e7\u0131 kaybetmemize neden olan savunma oyuncusu ma\u00e7tan sonra \u00f6z\u00fcr diledi.",
+    'RC009': "Penisilini ke\u015ffeden bilim insan\u0131 t\u0131bb\u0131n gidi\u015fat\u0131n\u0131 de\u011fi\u015ftirdi.",
+    'RC010': "Her ak\u015fam keman \u00e7alan bir kom\u015fum var.",
+    'RC011': "D\u00fcn tan\u0131\u015ft\u0131\u011f\u0131n adam benim amcam.",
+    'RC012': "Ge\u00e7en y\u0131l yazd\u0131\u011f\u0131 roman \u00e7ok satanlar aras\u0131na girdi.",
+    'RC013': "Buras\u0131 \u015fehirdeki en iyi deniz \u00fcr\u00fcnlerini servis eden restoran.",
+    'RC014': "Erken bitiren \u00f6\u011frenciler s\u0131n\u0131ftan \u00e7\u0131kabilir.",
+    'RC015': "\u0130ki y\u0131l \u00f6nce ald\u0131\u011f\u0131m diz\u00fcst\u00fc bilgisayar\u0131m h\u00e2l\u00e2 kusursuz \u00e7al\u0131\u015f\u0131yor.",
+    'RC016': "\u0130ki k\u0131tay\u0131 birbirine ba\u011flayan \u0130stanbul, tarih dolu bir \u015fehirdir.",
+    'RC017': "Almanya'da ya\u015fayan erkek karde\u015fim gelecek ay bizi ziyarete geliyor.",
+    'RC018': "Hakemin 90. dakikada verdi\u011fi karar oyunu de\u011fi\u015ftirdi.",
+    'RC019': "Vizyonu ve pas menzili inan\u0131lmaz olan orta saha oyuncusu tak\u0131m\u0131n kalbidir.",
+    'RC020': "Frans\u0131zca yaz\u0131lm\u0131\u015f olan mektubu anlamak zordu.",
+    'RC021': "S\u00f6zle\u015fmesi haziranda sona erecek oyuncu \u015fimdiden Avrupa'dan ilgi \u00e7ekti.",
+    'RC022': "Tak\u0131m\u0131n her sabah antrenman yapt\u0131\u011f\u0131 saha buras\u0131.",
+    'RC023': "2005, \u0130stanbul'un futbol d\u00fcnyas\u0131n\u0131n merkezi h\u00e2line geldi\u011fi y\u0131ld\u0131.",
+    'RC024': "Finalin oynanaca\u011f\u0131 \u015fehir muhte\u015fem bir atmosfer haz\u0131rlad\u0131.",
+    'RC025': "Refleksleri bug\u00fcn bizi kurtaran kaleci ligin en iyilerinden biri.",
+    'RC026': "Hakemin son d\u00fcd\u00fc\u011f\u00fc \u00e7ald\u0131\u011f\u0131 an\u0131 h\u00e2l\u00e2 hat\u0131rl\u0131yorum.",
+    'RC027': "Altyap\u0131s\u0131 bu kadar \u00e7ok mill\u00ee tak\u0131m oyuncusu yeti\u015ftiren kul\u00fcp ger\u00e7ekten \u00f6zel.",
+    'RC028': "Buras\u0131 b\u00fcy\u00fckannemin do\u011fdu\u011fu k\u00f6y.",
+    'RC029': "\u0130lk kez bulu\u015ftu\u011fumuz kafe kapand\u0131.",
+    'RC030': "Mezun oldu\u011fumuz g\u00fcn\u00fc h\u00e2l\u00e2 hat\u0131rl\u0131yorum.",
+    'RC031': "Yaz, turistlerin bu \u015fehre ak\u0131n etti\u011fi mevsimdir.",
+    'RC032': "Kimse onun neden bu kadar aniden ayr\u0131ld\u0131\u011f\u0131n\u0131 bilmiyor.",
+    'RC033': "Eserleri burada sergilenen sanat\u00e7\u0131 Paris'te ya\u015f\u0131yor.",
+    'RC034': "Babas\u0131 \u00fcnl\u00fc bir y\u00f6netmen olan bir k\u0131z tan\u0131yorum.",
+    'RC035': "Pencerenin yan\u0131nda duran adam benim patronum.",
+    'RC036': "Ge\u00e7en hafta hat-trick yapan kanat oyuncusu \u00e7ok h\u0131zl\u0131.",
+    'RC037': "Bu, Ronaldo'nun finalde giydi\u011fi forma.",
+    'RC038': "Teknik direkt\u00f6r, antrenmana ge\u00e7 gelen oyuncuya k\u0131zg\u0131nd\u0131.",
+    'RC039': "2005 \u015eampiyonlar Ligi finalinin oynand\u0131\u011f\u0131 stadyumu ziyaret ettik.",
+    'RC040': "Liderli\u011fi t\u00fcm tak\u0131ma ilham veren kaptan kupay\u0131 kald\u0131rd\u0131.",
+    'RC041': "Her \u015feyin de\u011fi\u015fti\u011fi ma\u00e7 oydu.",
+    'RC042': "Performanslar\u0131 ola\u011fan\u00fcst\u00fc olan gen\u00e7 bek sadece 18 ya\u015f\u0131nda.",
+    'RC043': "Bu, galibiyet gol\u00fcn\u00fc haz\u0131rlayan pas.",
+    'RC044': "Televizyonda g\u00f6rd\u00fc\u011f\u00fcn kad\u0131n \u00fcnl\u00fc bir gazeteci.",
+    'RC045': "Erkek karde\u015fi Barcelona'da oynayan bir arkada\u015f\u0131m var.",
+    'RC046': "Ge\u00e7en yaz kald\u0131\u011f\u0131m\u0131z otel buras\u0131.",
+    'RC047': "D\u00fcn ald\u0131\u011f\u0131m kitap masan\u0131n \u00fczerinde.",
+    'RC048': "Bana \u00e7ok yard\u0131mc\u0131 olan \u00f6\u011fretmen \u00e7ok nazikti.",
+    'RC049': "Serbest vuru\u015fun verildi\u011fi oyuncu, o vuru\u015ftan do\u011frudan gol att\u0131.",
+    'RC050': "Daha \u00f6nce hi\u00e7 \u015fampiyonluk kazanmam\u0131\u015f olan teknik direkt\u00f6r sonunda kupay\u0131 kald\u0131rd\u0131.",
+    'RC051': "Finalin oynand\u0131\u011f\u0131 stadyum 75.000'den fazla ki\u015fi kapasitelidir.",
+    'RC052': "Eskiden birlikte oynad\u0131\u011f\u0131m forvet art\u0131k bir \u015eampiyonlar Ligi kul\u00fcb\u00fcnde.",
+    'RC053': "\u00c7al\u0131\u015fkanl\u0131\u011f\u0131yla tan\u0131nan favori oyuncum ko\u015fmay\u0131 hi\u00e7 b\u0131rakmaz.",
+    'RC054': "Bu kadar \u00e7ok y\u0131ld\u0131z\u0131n yeti\u015fti\u011fi altyap\u0131 d\u00fcnyaca \u00fcnl\u00fcd\u00fcr.",
+    'RC055': "Ligi kazand\u0131\u011f\u0131m\u0131z gece asla unutulmayacak.",
+    'RC056': "Taraftarlar\u0131 en tutkulular aras\u0131nda g\u00f6sterilen kul\u00fcp her i\u00e7 saha ma\u00e7\u0131nda stad\u0131 tamamen doldurdu."
+  };
   function turkishExplanation(question) {
     return TURKISH_RULES[question.explanation] || ('Bu c\u00fcmlede do\u011fru Relative Clause yap\u0131s\u0131 "' + question.answer + '" olur.');
   }
@@ -90,6 +148,7 @@
   ];
   var BANK = BANK_ROWS.map(function (row) {
     var question = { id: row[0], sentence: row[1], answer: row[2], full: row[3] || row[1].replace('______', row[2]), explanation: row[4] };
+    question.fullTr = TURKISH_SENTENCES[question.id] || question.full;
     question.explanationTr = turkishExplanation(question);
     return question;
   });
@@ -185,7 +244,7 @@ function renderRelativeQuiz() {
     var revealed = !!quiz.revealed;
     var prompt = esc(current.sentence).replace('______', '<strong class="ll-relative-blank">______</strong>');
     var answer = revealed ? (
-      '<div class="ll-answer"><b>' + esc(current.answer) + '</b><div>' + esc(current.full) + '</div>' +
+      '<div class="ll-answer"><b>' + esc(current.answer) + '</b><div>' + esc(current.fullTr || current.full) + '</div>' +
       '<small class="ll-relative-rule-en">' + esc(current.explanation) + '</small>' +
       '<small class="ll-relative-rule-tr"><b>T\u00fcrk\u00e7e a\u00e7\u0131klama:</b> ' + esc(current.explanationTr) + '</small></div>'
     ) : '<div class="ll-muted" style="margin-top:25px">Cevab\u0131 a\u00e7mak i\u00e7in karta t\u0131kla</div>';
