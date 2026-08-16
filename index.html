@@ -3045,24 +3045,61 @@ function llRenderStandings(){
 }
 
 // ------------------------- KELİME SINAVI -------------------------
+// Yeni eklenen / henüz hiç görülmemiş kelimeler normal kelime döngüsünün dışında
+// küçük bir "tanıtım kuyruğu" gibi davranır. 10 soruluk ana sınavda yeterli
+// normal kelime varsa en fazla 1 tanesi kontrollü biçimde öne alınır.
+function llNeedsPriorityIntroduction(word){
+  return !!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
+}
+function llPriorityIntroductionOrder(words){
+  return (Array.isArray(words)?words:[]).slice().sort((a,b)=>{
+    const dateCompare=String(b?.addedAt||'').localeCompare(String(a?.addedAt||''));
+    if(dateCompare)return dateCompare;
+    return String(a?.en||'').localeCompare(String(b?.en||''),'en');
+  });
+}
+function llMarkFirstExposure(word){
+  if(!llNeedsPriorityIntroduction(word))return false;
+  const stamp=new Date().toISOString();
+  word.firstExposureAt=stamp;
+  try{
+    const words=loadUserWords(),stored=words.find(item=>item.id===word.id);
+    if(stored&&!stored.firstExposureAt){stored.firstExposureAt=stamp;saveWordsToStorage(words);}
+  }catch(error){try{globalThis.llQuizDiagnostic?.('first_exposure_save_error',{wordId:word.id||null,message:String(error?.message||error)});}catch{}}
+  return true;
+}
 function llPickQuizWords(count=10){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-12));
-  const choose=(pool,blocked,allowCooldownFallback=false)=>{
-    const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,target);
-    if(fresh.length>=target||!allowCooldownFallback)return fresh;
+  const choose=(pool,needed,blocked,allowCooldownFallback=false)=>{
+    const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,needed);
+    if(fresh.length>=needed||!allowCooldownFallback)return fresh;
     const freshIds=new Set(fresh.map(w=>w.id));
-    return [...fresh,...llShuffle(pool.filter(w=>!blocked.has(w.id)&&!freshIds.has(w.id))).slice(0,target-fresh.length)];
+    return [...fresh,...llShuffle(pool.filter(w=>!blocked.has(w.id)&&!freshIds.has(w.id))).slice(0,needed-fresh.length)];
   };
-  const closing=choose(words.filter(w=>!used.has(w.id)),new Set(),true);
-  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false}));
+
+  const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
+  const introduced=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
+  // Yeni/fresh kurulumda 9 normal kelime yoksa sınavı kilitlememek için eski
+  // davranış korunur. Yerleşik bir havuzda ise 10 soruda en fazla 1 yeni kelime.
+  const priority=target===10&&pending.length&&introduced.length>=target-1?pending[0]:null;
+  const selectable=priority?[...introduced,priority]:words;
+  const closingPool=selectable.filter(w=>!used.has(w.id));
+  let closing=[];
+  if(priority&&closingPool.some(word=>word.id===priority.id)){
+    const normalClosing=choose(closingPool.filter(word=>word.id!==priority.id),target-1,new Set(),true);
+    const insertAt=Math.min(normalClosing.length,Math.max(1,Math.floor(Math.random()*3)+1));
+    closing=[...normalClosing.slice(0,insertAt),priority,...normalClosing.slice(insertAt)];
+  }else closing=choose(closingPool,target,new Set(),true);
+
+  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:!!(priority&&w.id===priority.id)}));
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
-    let nextCycle=choose(words,chosenIds,false);
-    if(nextCycle.length<target-queue.length)nextCycle=choose(words,chosenIds,true);
-    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
+    let nextCycle=choose(selectable,target-queue.length,chosenIds,false);
+    if(nextCycle.length<target-queue.length)nextCycle=choose(selectable,target-queue.length,chosenIds,true);
+    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:!!(priority&&w.id===priority.id)}));
   }
   return queue;
 }
@@ -4246,7 +4283,7 @@ function loadUserWords() {
   }
   if (LL_RUNTIME_WORD_FALLBACK.length < 10) LL_RUNTIME_WORD_FALLBACK = llBuildRuntimeNativePool();
   return LL_RUNTIME_WORD_FALLBACK;
-}function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);}
+}function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);try{llMarkFirstExposure(word);}catch{}}
 
 function saveWordsToStorage(updatedWords) {
   try {
@@ -6150,7 +6187,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260813-word-cycle-v1"></script>
+<script src="diagnostics.js?v=20260816-new-word-intro-v1"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
