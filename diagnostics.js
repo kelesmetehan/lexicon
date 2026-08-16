@@ -185,20 +185,35 @@ globalThis.llPickQuizWords=function(count=10){
   const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   const target=Math.min(Math.max(0,Number(count)||0),words.length),used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT));
-  // Mevcut döngüde henüz kullanılmamış kelimeler önce tamamlanır. Soğuma
-  // yalnızca bu mevcut döngüyü terk ettirmemeli; aksi halde kelimeler
-  // atlanmış olur. Bu yüzden zorunlu fallback sadece bu dar durumda açıktır.
-  const closing=llTakeQuizCandidates(words.filter(word=>!used.has(word.id)),target,recent,new Set(),{allowCooldownFallback:true});
-  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false}));
+  const needsIntro=word=>typeof globalThis.llNeedsPriorityIntroduction==='function'?llNeedsPriorityIntroduction(word):!!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
+  const orderPending=list=>typeof globalThis.llPriorityIntroductionOrder==='function'?llPriorityIntroductionOrder(list):list.slice().sort((a,b)=>String(b?.addedAt||'').localeCompare(String(a?.addedAt||''))||String(a?.en||'').localeCompare(String(b?.en||''),'en'));
+  const pending=target===10?orderPending(words.filter(needsIntro)):[];
+  const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
+  // Yerleşik havuzda 10 soruluk ana sınava yalnızca 1 ilk-tanıtım kelimesi
+  // enjekte edilir. Fresh kurulumda 9 normal kelime yoksa sınav kilitlenmez.
+  const priority=target===10&&pending.length&&introduced.length>=target-1?pending[0]:null;
+  const selectable=priority?[...introduced,priority]:words;
+  const closingPool=selectable.filter(word=>!used.has(word.id));
+  let closing=[];
+  if(priority&&closingPool.some(word=>word.id===priority.id)){
+    const normalClosing=llTakeQuizCandidates(closingPool.filter(word=>word.id!==priority.id),target-1,recent,new Set(),{allowCooldownFallback:true});
+    const insertAt=Math.min(normalClosing.length,Math.max(1,Math.floor(Math.random()*3)+1));
+    closing=[...normalClosing.slice(0,insertAt),priority,...normalClosing.slice(insertAt)];
+  }else{
+    // Mevcut döngüde henüz kullanılmamış kelimeler önce tamamlanır. Soğuma
+    // yalnızca bu mevcut döngüyü terk ettirmemeli; aksi halde kelimeler atlanır.
+    closing=llTakeQuizCandidates(closingPool,target,recent,new Set(),{allowCooldownFallback:true});
+  }
+  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:!!(priority&&word.id===priority.id)}));
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
-    let nextCycle=llTakeQuizCandidates(words,target-queue.length,recent,chosenIds);
+    let nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds);
     // 12 kelimelik havuzdan daha küçük özel test/kariyer kayıtlarında döngü
-    // kilitlenmesin; yalnızca yeterli yeni kelime yoksa kural gevşetilir.
-    if(nextCycle.length<target-queue.length)nextCycle=llTakeQuizCandidates(words,target-queue.length,recent,chosenIds,{allowCooldownFallback:true});
-    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0}));
+    // kilitlenmesin; yalnızca yeterli alternatif yoksa kural gevşetilir.
+    if(nextCycle.length<target-queue.length)nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds,{allowCooldownFallback:true});
+    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:!!(priority&&word.id===priority.id)}));
   }
-  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),ids:queue.map(ref=>ref.id)});return queue;
+  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityId:priority?.id||null,pendingFirstExposure:pending.length,ids:queue.map(ref=>ref.id)});return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
   const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
