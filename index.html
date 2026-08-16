@@ -3047,7 +3047,7 @@ function llRenderStandings(){
 // ------------------------- KELİME SINAVI -------------------------
 // Yeni eklenen / henüz hiç görülmemiş kelimeler normal kelime döngüsünün dışında
 // küçük bir "tanıtım kuyruğu" gibi davranır. 10 soruluk ana sınavda yeterli
-// normal kelime varsa en fazla 1 tanesi kontrollü biçimde öne alınır.
+// normal kelime varsa en son eklenen 3 tanesi kontrollü biçimde öne alınır.
 function llNeedsPriorityIntroduction(word){
   return !!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
 }
@@ -3082,24 +3082,39 @@ function llPickQuizWords(count=10){
 
   const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
   const introduced=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
-  // Yeni/fresh kurulumda 9 normal kelime yoksa sınavı kilitlememek için eski
-  // davranış korunur. Yerleşik bir havuzda ise 10 soruda en fazla 1 yeni kelime.
-  const priority=target===10&&pending.length&&introduced.length>=target-1?pending[0]:null;
-  const selectable=priority?[...introduced,priority]:words;
+  // Yerleşik havuzda 10 soruluk ana sınavın kontrollü hedefi NET 3 yeni
+  // kelimedir: 7 normal döngü kelimesi + en son eklenen 3 ilk-tanıtım kelimesi.
+  // 3'ten az bekleyen yeni kelime varsa olmayan kelimeyi tekrar ederek doldurmayız;
+  // mevcut bekleyenlerin tamamı kullanılır. Fresh kurulumda yeterli normal havuz
+  // yoksa sınavı kilitlememek için eski genel seçim davranışı korunur.
+  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
+  const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
+  const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
+  const priorityIds=new Set(priorities.map(word=>word.id));
+  const selectable=priorities.length?[...introduced,...priorities]:words;
   const closingPool=selectable.filter(w=>!used.has(w.id));
   let closing=[];
-  if(priority&&closingPool.some(word=>word.id===priority.id)){
-    const normalClosing=choose(closingPool.filter(word=>word.id!==priority.id),target-1,new Set(),true);
-    const insertAt=Math.min(normalClosing.length,Math.max(1,Math.floor(Math.random()*3)+1));
-    closing=[...normalClosing.slice(0,insertAt),priority,...normalClosing.slice(insertAt)];
+  if(priorities.length){
+    const normalClosing=choose(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,new Set(),true);
+    // 3 yeni kelime mevcutsa 2., 5. ve 8. sorulara dağıt. Daha az bekleyen
+    // varsa aynı mantıkla sınav boyunca mümkün olduğunca aralıklı yerleştir.
+    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
+    let normalIndex=0,introIndex=0;
+    for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
+      if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
+      else if(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+      else if(introIndex<priorities.length)closing.push(priorities[introIndex++]);
+    }
+    while(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+    while(introIndex<priorities.length)closing.push(priorities[introIndex++]);
   }else closing=choose(closingPool,target,new Set(),true);
 
-  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:!!(priority&&w.id===priority.id)}));
+  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:priorityIds.has(w.id)}));
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
     let nextCycle=choose(selectable,target-queue.length,chosenIds,false);
     if(nextCycle.length<target-queue.length)nextCycle=choose(selectable,target-queue.length,chosenIds,true);
-    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:!!(priority&&w.id===priority.id)}));
+    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(w.id)}));
   }
   return queue;
 }
@@ -6187,7 +6202,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260816-new-word-intro-v1"></script>
+<script src="diagnostics.js?v=20260816-new-word-intro-v2-3words"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
