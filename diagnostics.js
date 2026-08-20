@@ -189,11 +189,11 @@ globalThis.llPickQuizWords=function(count=10){
   const orderPending=list=>typeof globalThis.llPriorityIntroductionOrder==='function'?llPriorityIntroductionOrder(list):list.slice().sort((a,b)=>String(b?.addedAt||'').localeCompare(String(a?.addedAt||''))||String(a?.en||'').localeCompare(String(b?.en||''),'en'));
   const pending=target===10?orderPending(words.filter(needsIntro)):[];
   const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
-  // 10 soruluk normal sınavın kontrollü hedefi: 7 normal + NET 3 yeni kelime.
-  // En son eklenen bekleyen kelimeler önceliklidir. 3'ten az bekleyen varsa aynı
+  // 10 soruluk normal sınavın kontrollü hedefi: 5 normal + NET 5 yeni kelime.
+  // En son eklenen bekleyen kelimeler önceliklidir. 5'ten az bekleyen varsa aynı
   // kelimeyi tekrarlamayız; mevcutların tamamını kullanırız. Fresh havuzda yeterli
   // normal kelime yoksa sınav kilitlenmesin diye genel seçim davranışı korunur.
-  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
+  const desiredIntroCount=target===10?Math.min(5,pending.length):0;
   const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
   const priorityIds=new Set(priorities.map(word=>word.id));
@@ -202,7 +202,7 @@ globalThis.llPickQuizWords=function(count=10){
   let closing=[];
   if(priorities.length){
     const normalClosing=llTakeQuizCandidates(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,recent,new Set(),{allowCooldownFallback:true});
-    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
+    const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
     let normalIndex=0,introIndex=0;
     for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
       if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
