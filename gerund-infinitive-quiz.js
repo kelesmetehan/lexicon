@@ -87,8 +87,8 @@
     if (!state || !fixture || !isDue(state, fixture) || !global.document) return;
     if (relativeClauseIsDue()) return;
     Array.prototype.forEach.call(global.document.querySelectorAll('button[onclick*="llStartMatchPreparation"]'), function (button) {
-      button.textContent = '8 Gerund & Infinitive - Ma\u00e7a Ba\u015fla';
-      button.setAttribute('aria-label', '8 Gerund & Infinitive - Ma\u00e7a Ba\u015fla');
+      button.textContent = '8 Gerund & Infinitive Testi - Ma\u00e7a Ba\u015fla';
+      button.setAttribute('aria-label', '8 Gerund & Infinitive Testi - Ma\u00e7a Ba\u015fla');
     });
   }
 
