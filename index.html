@@ -3757,6 +3757,7 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   return {aDice,bDice,pairs:pairResults,scoreA,scoreB,events,eventScores,nextLocks,disabled,triggeredCardIds,conditionMetCardIds,appliedCardIds,cardOutcomes};
 }
 function llBeginMatch(plusPos){
+  llSetWide(true);
   const f=lexLeague.quiz?.fixture||llPlayerFixture();if(!f){alert('Maç fikstürü değişti veya geçersizleşti. Dashboarda dönülüyor.');llRenderDashboard();return;}const p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
   const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
   lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,manualCardEvents:[],committed:false};
