@@ -721,6 +721,8 @@
   .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
   .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
   .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
+  .ll-answer-example { display:block; max-width:620px; margin:14px auto 0; padding:10px 12px; border-radius:9px; background:rgba(94,234,212,.07); color:var(--text); font-family:'DM Sans',sans-serif; font-size:clamp(13px,3vw,16px); line-height:1.55; text-align:left; overflow-wrap:anywhere; word-break:normal; }
+  .ll-answer-example-label { display:block; margin-bottom:4px; color:#5eead4; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
   /* Relative Clause cevabindaki kurallar, buyuk cevap metninden ayri okunur. */
   .ll-relative-rule-en, .ll-relative-rule-tr { display:block; max-width:720px; margin:10px auto 0; font-family:'DM Sans',sans-serif; font-size:clamp(12px,2.9vw,15px); line-height:1.55; overflow-wrap:anywhere; word-break:normal; }
   .ll-grammar-full-en, .ll-grammar-translation { display:block; max-width:720px; margin:11px auto 0; font-family:'DM Sans',sans-serif; font-size:clamp(13px,3vw,16px); line-height:1.5; text-align:left; overflow-wrap:anywhere; word-break:normal; }
@@ -3221,9 +3223,14 @@ function llRenderLeagueQuiz(){
   const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
   const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEnglishWordHtml(word,question)}</span>${llPronounceButton(word.en)}</div>`;
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
+  // Normal 10 kelimelik sinavda ornek cumlede cevap gizlenmisse, cevap acilinca
+  // kelimenin cumle icindeki tam Ingilizce kullanimini da goster.
+  const answerExampleHtml=q.revealed&&example.includes('_____')&&word.example
+    ?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(word.example)}”</div>`
+    :'';
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
-  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
+  <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}${answerExampleHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
   markNewWordFrame(word,llArea().querySelector('.ll-question'));
 }
