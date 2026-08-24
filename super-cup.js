@@ -201,6 +201,91 @@
     };
   }
 
+  function superCupScoreText(record) {
+    if (!record || record.homeGoals == null || record.awayGoals == null) return '—';
+    const base = `${Number(record.homeGoals)} - ${Number(record.awayGoals)}`;
+    const penalties = record.penalties;
+    if (!penalties || penalties.home == null || penalties.away == null) return base;
+    return `${base} · Penaltılar ${Number(penalties.home)} - ${Number(penalties.away)}`;
+  }
+
+  function superCupFixtureHtml(home, away, record) {
+    const teamLogo = typeof globalThis.llTeamLogo === 'function'
+      ? globalThis.llTeamLogo
+      : name => `<span>${escape(name || '—')}</span>`;
+    const score = record ? superCupScoreText(record) : 'VS';
+    return `<div class="ll-next-match" style="margin-top:10px">
+      <div class="ll-club"><div class="ll-club-icon">${teamLogo(home, 'match')}</div><b>${escape(home || '—')}</b><span class="ll-muted">Şampiyonlar Ligi şampiyonu</span></div>
+      <div class="ll-vs">${escape(score)}</div>
+      <div class="ll-club"><div class="ll-club-icon">${teamLogo(away, 'match')}</div><b>${escape(away || '—')}</b><span class="ll-muted">Avrupa Ligi şampiyonu</span></div>
+    </div>`;
+  }
+
+  function superCupHistoryTableHtml(state) {
+    const rows = (state.superCupHistory || []).slice().sort((a, b) => Number(b.season) - Number(a.season));
+    if (!rows.length) return '<div class="ll-muted" style="padding:8px 2px">Henüz tamamlanmış bir UEFA Süper Kupa maçı yok.</div>';
+    return `<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>Sezon</th><th>Şampiyonlar Ligi</th><th>Avrupa Ligi</th><th>Skor</th><th>Şampiyon</th></tr></thead><tbody>${rows.map(row => `<tr><td>S${escape(row.season)}</td><td>${escape(row.uclWinner || row.home || '—')}</td><td>${escape(row.uelWinner || row.away || '—')}</td><td>${escape(superCupScoreText(row))}</td><td><b>${escape(row.winner || '—')}</b></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function renderSuperCupCompetitionCenter() {
+    const state = stateOf();
+    if (!state || typeof globalThis.llArea !== 'function') return;
+    if (typeof globalThis.llSetWide === 'function') globalThis.llSetWide(true);
+
+    const current = state.superCup && Number(state.superCup.season) === Number(state.season) ? state.superCup : null;
+    const history = (state.superCupHistory || []).slice().sort((a, b) => Number(b.season) - Number(a.season));
+    const latest = history[0] || (current && current.status === 'completed' ? current : null);
+    const currentRecord = current && current.status === 'completed' ? (recordForSeason(state, state.season) || current) : null;
+    const lastChampion = latest && latest.winner ? latest.winner : '—';
+    const lastSeason = latest ? `S${latest.season}` : '—';
+    const status = current
+      ? current.status === 'completed'
+        ? `Şampiyon: ${current.winner || '—'}`
+        : `${current.uclWinner || '—'} vs ${current.uelWinner || '—'}`
+      : 'Finalistler henüz belli değil';
+
+    const cupLabel = typeof globalThis.llDomesticCupLabelForFixture === 'function'
+      ? globalThis.llDomesticCupLabelForFixture(null, state)
+      : 'Yerel Kupa';
+    const leagueKey = typeof globalThis.llTeamLeague === 'function' ? (globalThis.llTeamLeague(state.playerTeam) || 'first') : 'first';
+
+    const tabs = `<div class="ll-comp-tabs"><button class="ll-comp-tab" onclick="llRenderCompetitionCenter('league','${leagueKey}')">Ligler ve Fikstür</button><button class="ll-comp-tab" onclick="llRenderCompetitionCenter('cup','${leagueKey}')">${escape(cupLabel)}</button><button class="ll-comp-tab active" onclick="llRenderCompetitionCenter('europe','ucl')">Avrupa Kupaları</button></div>`;
+    const subtabs = `<div class="ll-subtabs"><button class="ll-btn" onclick="llRenderCompetitionCenter('europe','ucl')">Şampiyonlar Ligi</button><button class="ll-btn" onclick="llRenderCompetitionCenter('europe','uel')">Avrupa Ligi</button><button class="ll-btn" onclick="llRenderCompetitionCenter('europe','uecl')">Konferans Ligi</button><button class="ll-btn primary" data-supercup-competition-tab onclick="llRenderCompetitionCenter('europe','supercup')">UEFA Süper Kupa</button></div>`;
+
+    let currentHtml;
+    if (current && current.status !== 'completed') {
+      currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div>${superCupFixtureHtml(current.uclWinner, current.uelWinner, null)}<div class="ll-notice" style="margin-top:12px">Şampiyonlar Ligi ve Avrupa Ligi şampiyonları arasındaki tek maç henüz oynanmadı.</div></div>`;
+    } else if (currentRecord) {
+      currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div>${superCupFixtureHtml(currentRecord.home || currentRecord.uclWinner, currentRecord.away || currentRecord.uelWinner, currentRecord)}<div class="ll-notice" style="margin-top:12px"><b>Şampiyon:</b> ${escape(currentRecord.winner || '—')}</div></div>`;
+    } else {
+      currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div><div class="ll-notice">Bu sezonun eşleşmesi, Şampiyonlar Ligi ve Avrupa Ligi şampiyonları belli olduktan sonra sezon sonunda oluşturulur.</div></div>`;
+    }
+
+    const latestHtml = latest
+      ? `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Son Oynanan UEFA Süper Kupa</div>${superCupFixtureHtml(latest.home || latest.uclWinner, latest.away || latest.uelWinner, latest)}<div class="ll-notice" style="margin-top:12px"><b>Son şampiyon:</b> ${escape(latest.winner || '—')} · Sezon ${escape(latest.season)}</div></div>`
+      : '';
+
+    globalThis.llArea().innerHTML = `<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Müsabaka <em>Merkezi</em></div><div class="ll-muted">Sezon ${escape(state.season)} · Avrupa kupaları ve UEFA Süper Kupa</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${tabs}${subtabs}<div class="ll-cup-status"><div class="ll-metric"><strong>${escape(status)}</strong><span>Bu Sezon</span></div><div class="ll-metric"><strong>${escape(lastChampion)}</strong><span>Son Şampiyon</span></div><div class="ll-metric"><strong>${escape(lastSeason)}</strong><span>Son Oynanan Sezon</span></div></div><div class="ll-notice">UEFA Süper Kupa, Şampiyonlar Ligi şampiyonu ile Avrupa Ligi şampiyonu arasında sezon sonunda tek maç üzerinden oynanır.</div>${currentHtml}${latestHtml}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Geçmiş</div>${superCupHistoryTableHtml(state)}</div></div></div>`;
+  }
+
+  function attachToCompetitionCenter() {
+    if (typeof globalThis.llRenderCompetitionCenter !== 'function') return;
+    const original = globalThis.llRenderCompetitionCenter;
+    globalThis.llRenderCompetitionCenter = function (tab, key) {
+      if (tab === 'europe' && key === 'supercup') {
+        renderSuperCupCompetitionCenter();
+        return;
+      }
+      const value = original.apply(this, arguments);
+      if (tab !== 'europe') return value;
+      const area = typeof globalThis.llArea === 'function' ? globalThis.llArea() : null;
+      if (!area || area.querySelector('[data-supercup-competition-tab]')) return value;
+      const subtabs = area.querySelector('.ll-subtabs');
+      if (subtabs) subtabs.insertAdjacentHTML('beforeend', '<button class="ll-btn" data-supercup-competition-tab onclick="llRenderCompetitionCenter(\'europe\',\'supercup\')">UEFA Süper Kupa</button>');
+      return value;
+    };
+  }
+
   function attachArchivePersistence() {
     if (typeof globalThis.llV2ArchiveSeason !== 'function') return;
     const original = globalThis.llV2ArchiveSeason;
@@ -263,9 +348,11 @@
   globalThis.llEnsureSuperCupAtSeasonEnd = ensureSuperCupAtSeasonEnd;
   globalThis.llFinishSuperCup = finishSuperCup;
   globalThis.llRenderSuperCupArchive = renderSuperCupArchive;
+  globalThis.llRenderSuperCupCompetitionCenter = renderSuperCupCompetitionCenter;
   globalThis.llMigrateSuperCupAchievementReward = migrateAchievementReward;
   attachArchivePersistence();
   attachToSeasonArchive();
+  attachToCompetitionCenter();
   attachAchievementScreen();
   attachSeasonStartReset();
 }());
