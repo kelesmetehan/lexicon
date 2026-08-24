@@ -32,17 +32,115 @@
     return true;
   }
 
-  function standingsChampion(state, competition, excluded) {
-    if (state && state.europe && state.europe.type === competition && state.europe.winner && state.europe.winner !== excluded) {
+  // UEFA Süper Kupa katılımcıları puan tablosundan seçilmez. Kaynak,
+  // Avrupa kupalarının kalıcı şampiyon kaydıdır (last-champions.js).
+  function europeanChampion(state, season, competition, excluded) {
+    if (!state || !['ucl', 'uel'].includes(competition)) return null;
+
+    // Kullanıcının gerçekten kazandığı kupa varsa bunu her şeyin önünde tut.
+    if (Number(season) === Number(state.season) && state.europe &&
+        state.europe.type === competition && state.europe.winner &&
+        state.europe.winner !== excluded) {
       return state.europe.winner;
     }
+
+    // Sezon sonunda last-champions motoru AI kupalarının da şampiyonlarını
+    // tek ve kalıcı kaynağa yazar. Böylece Süper Kupa ve "Son şampiyon"
+    // rozeti hiçbir zaman farklı takımlar göstermez.
     try {
-      const table = typeof globalThis.llV2SortEuropeTable === 'function' ? globalThis.llV2SortEuropeTable(competition) : [];
-      const row = table.find(item => item && item.team && item.team !== excluded);
-      return row ? row.team : null;
+      if (typeof globalThis.llV13CaptureEuropeanChampions === 'function') {
+        const summary = Number(state.lastSeasonSummary?.season) === Number(season) ? state.lastSeasonSummary : null;
+        globalThis.llV13CaptureEuropeanChampions(state, season, summary);
+      } else if (typeof globalThis.llV13EnsureChampionHistory === 'function') {
+        globalThis.llV13EnsureChampionHistory(state);
+      }
     } catch (error) {
-      return null;
+      // Yanlış bir puan-tablosu şampiyonu üretmektense eşleşmeyi beklet.
     }
+
+    const record = (state.competitionChampions || []).find(item =>
+      Number(item?.season) === Number(season) &&
+      item?.competition === competition &&
+      item?.team && item.team !== excluded
+    );
+    if (record) return record.team;
+
+    const archived = (state.seasonHistory || []).find(item => Number(item?.season) === Number(season));
+    const archivedWinner = archived?.champions?.[competition];
+    if (archivedWinner && archivedWinner !== excluded) return archivedWinner;
+
+    const trophy = (state.trophies || []).find(item => {
+      if (Number(item?.season) !== Number(season)) return false;
+      const name = String(item?.name || '').toLocaleLowerCase('tr');
+      return competition === 'ucl' ? name.includes('şampiyonlar') : name.includes('avrupa ligi');
+    });
+    if (trophy?.team && trophy.team !== excluded) return trophy.team;
+    return null;
+  }
+
+  function managerTeamForSeason(state, season) {
+    if (typeof globalThis.llV13ManagerTeamForSeason === 'function') {
+      try { return globalThis.llV13ManagerTeamForSeason(state, season); } catch (error) {}
+    }
+    const archived = (state.seasonHistory || []).find(item => Number(item?.season) === Number(season));
+    return archived?.playerTeam || (Number(season) === Number(state.season) ? state.playerTeam : null);
+  }
+
+  function winnerSide(record) {
+    const home = record.home || record.uclWinner;
+    const away = record.away || record.uelWinner;
+    if (record.winner === home || record.winner === record.uclWinner) return 'home';
+    if (record.winner === away || record.winner === record.uelWinner) return 'away';
+    const hg = Number(record.homeGoals), ag = Number(record.awayGoals);
+    if (Number.isFinite(hg) && Number.isFinite(ag) && hg !== ag) return hg > ag ? 'home' : 'away';
+    const ph = Number(record.penalties?.home), pa = Number(record.penalties?.away);
+    if (Number.isFinite(ph) && Number.isFinite(pa) && ph !== pa) return ph > pa ? 'home' : 'away';
+    return 'home';
+  }
+
+  // Eski sürüm, Süper Kupa finalistlerini Avrupa puan tablosunun ilk
+  // sıralarından seçiyordu. AI-vs-AI geçmiş kayıtlarını kalıcı kupa
+  // şampiyonlarıyla eşleştir; skorun/penaltının hangi tarafı kazandığını
+  // koru. Kullanıcının bizzat oynadığı eski bir maçı otomatik değiştirme.
+  function repairLegacySuperCupHistory(state) {
+    if (!state || !Array.isArray(state.superCupHistory) || !state.superCupHistory.length) return false;
+    if (typeof globalThis.llV13EnsureChampionHistory === 'function') {
+      try { globalThis.llV13EnsureChampionHistory(state); } catch (error) {}
+    }
+    let changed = false;
+    state.superCupHistory.forEach(record => {
+      const season = Number(record?.season);
+      if (!season) return;
+      const uclWinner = europeanChampion(state, season, 'ucl');
+      const uelWinner = europeanChampion(state, season, 'uel', uclWinner);
+      if (!uclWinner || !uelWinner || uclWinner === uelWinner) return;
+      const oldHome = record.home || record.uclWinner;
+      const oldAway = record.away || record.uelWinner;
+      if (oldHome === uclWinner && oldAway === uelWinner &&
+          record.uclWinner === uclWinner && record.uelWinner === uelWinner) return;
+
+      const managerTeam = managerTeamForSeason(state, season);
+      if (managerTeam && [oldHome, oldAway, record.winner].includes(managerTeam)) {
+        record.legacyChampionMismatch = true;
+        return;
+      }
+
+      const side = winnerSide(record);
+      record.uclWinner = uclWinner;
+      record.uelWinner = uelWinner;
+      record.home = uclWinner;
+      record.away = uelWinner;
+      record.winner = side === 'home' ? uclWinner : uelWinner;
+      if (record.penalties && typeof record.penalties === 'object') {
+        record.penalties.winner = record.winner;
+      }
+      record.source = 'champion-history-repair-v2';
+      delete record.legacyChampionMismatch;
+      const archive = (state.seasonHistory || []).find(item => Number(item?.season) === season);
+      if (archive && archive.superCup) archive.superCup = JSON.parse(JSON.stringify(record));
+      changed = true;
+    });
+    return changed;
   }
 
   function fixtureFrom(superCup) {
@@ -147,13 +245,14 @@
 
   function ensureSuperCupAtSeasonEnd(state) {
     if (!state || state.seasonEnded) return false;
+    if (repairLegacySuperCupHistory(state) && typeof globalThis.llSave === 'function') globalThis.llSave();
     const season = Number(state.season);
     if ((state.superCupHistory || []).some(record => Number(record.season) === season)) return false;
 
     let superCup = state.superCup;
     if (!superCup || Number(superCup.season) !== season) {
-      const uclWinner = standingsChampion(state, 'ucl');
-      const uelWinner = standingsChampion(state, 'uel', uclWinner);
+      const uclWinner = europeanChampion(state, season, 'ucl');
+      const uelWinner = europeanChampion(state, season, 'uel', uclWinner);
       if (!uclWinner || !uelWinner || uclWinner === uelWinner) return false;
       superCup = state.superCup = {
         season,
@@ -182,6 +281,7 @@
   function renderSuperCupArchive() {
     const state = stateOf();
     if (!state || typeof globalThis.llArea !== 'function') return;
+    if (repairLegacySuperCupHistory(state) && typeof globalThis.llSave === 'function') globalThis.llSave();
     const rows = (state.superCupHistory || []).slice().sort((a, b) => Number(b.season) - Number(a.season));
     const pending = state.superCup && state.superCup.status !== 'completed' ? state.superCup : null;
     const area = globalThis.llArea();
@@ -230,6 +330,7 @@
   function renderSuperCupCompetitionCenter() {
     const state = stateOf();
     if (!state || typeof globalThis.llArea !== 'function') return;
+    if (repairLegacySuperCupHistory(state) && typeof globalThis.llSave === 'function') globalThis.llSave();
     if (typeof globalThis.llSetWide === 'function') globalThis.llSetWide(true);
 
     const current = state.superCup && Number(state.superCup.season) === Number(state.season) ? state.superCup : null;
@@ -350,6 +451,7 @@
   globalThis.llRenderSuperCupArchive = renderSuperCupArchive;
   globalThis.llRenderSuperCupCompetitionCenter = renderSuperCupCompetitionCenter;
   globalThis.llMigrateSuperCupAchievementReward = migrateAchievementReward;
+  globalThis.llRepairLegacySuperCupHistory = repairLegacySuperCupHistory;
   attachArchivePersistence();
   attachToSeasonArchive();
   attachToCompetitionCenter();
