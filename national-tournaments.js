@@ -79,6 +79,22 @@ function poolFor(type){return Object.values(groupsFor(type)).flat();}
 function starsFor(team){return clamp(num(TEAM_REGISTRY[team]?.stars,1),1,6);}
 function flagFor(team){return TEAM_REGISTRY[team]?.flag||'🌐';}
 function objectiveFor(team){return OBJECTIVES[starsFor(team)]||OBJECTIVES[1];}
+function nationalStageLabel(stage){return STAGE_LABELS[stage]||String(stage||'Turnuva');}
+function nationalFixtureOpponent(rec,match){if(!rec?.selectedTeam||!match)return '';return match.home===rec.selectedTeam?match.away:match.away===rec.selectedTeam?match.home:'';}
+function nationalFixtureDetail(match){if(!match)return '';const parts=[];if(match.played&&Number.isFinite(Number(match.homeGoals))&&Number.isFinite(Number(match.awayGoals)))parts.push(`${num(match.homeGoals)}-${num(match.awayGoals)}`);if(match.penalties)parts.push(`Penaltılar ${num(match.penalties.home)}-${num(match.penalties.away)}`);return parts.join(' · ');}
+function queueNationalOutcomeCinematic(state,rec,outcome,stage,match=null,extraDetail=''){
+  if(!state||!rec?.selectedTeam||typeof global.llQueueTrophyAnimation!=='function')return false;
+  const team=rec.selectedTeam,trophy=typeLabel(rec.type),stageLabel=nationalStageLabel(stage),opponent=nationalFixtureOpponent(rec,match),score=nationalFixtureDetail(match);
+  const detail=[stageLabel,score,extraDetail].filter(Boolean).join(' · '),champion=outcome==='champion';
+  return global.llQueueTrophyAnimation({
+    key:`national|${num(rec.year)}|${rec.type}|${champion?'champion':'elimination'}|${team}|${champion?'title':stage}`,
+    season:num(state.season),kind:champion?'national-tournament-trophy':'national-tournament-elimination',country:'NAT',
+    title:champion?(rec.type==='wc'?'Dünya Şampiyonu':'Avrupa Şampiyonu'):(rec.type==='wc'?"Dünya Kupası'ndan Elendi":"Avrupa Şampiyonası'ndan Elendi"),
+    name:trophy,
+    subtitle:champion?`${team}, ${rec.year} ${trophy} kupasını kaldırdı!`:(stage==='group'?`${team}, grup aşamasında turnuvaya veda etti.`:`${team}, ${stageLabel} aşamasında${opponent?` ${opponent} karşısında`:''} elendi.`),
+    detail:detail||stageLabel,team,icon:champion?'🏆':'💔',theme:champion?'celebration':'elimination'
+  });
+}
 function endYearForState(state){
   if(!state)return 0;
   if(typeof global.llCalendarSeasonStartYear==='function')return num(global.llCalendarSeasonStartYear(state))+1;
@@ -243,7 +259,7 @@ function activeCardsSnapshot(state,clubTeam){const team=state.teams?.[clubTeam]|
 function unlockAchievement(state,id,team){
   const def=ACHIEVEMENTS.find(a=>a.id===id);if(!def)return null;if(!state.achievements||typeof state.achievements!=='object')state.achievements={version:2,unlocked:{}};if(!state.achievements.unlocked||typeof state.achievements.unlocked!=='object')state.achievements.unlocked={};if(state.achievements.unlocked[id])return null;
   const entry={season:num(state.season),team:team||state.playerTeam,at:new Date().toISOString(),source:'national-tournament',reward:{...def.reward}};state.achievements.unlocked[id]=entry;state.ap=num(state.ap)+num(def.reward.ap);state.lp=num(state.lp)+num(def.reward.lp);
-  try{if(typeof global.llAchievementCinematic==='function')global.llAchievementCinematic([{...def,entry}]);}catch(_){}return def;
+  try{if(typeof global.llAchievementCinematic==='function'){const show=()=>global.llAchievementCinematic([{...def,entry}]),nationalTrophyPending=Array.isArray(state.achievementCinematics?.queue)&&state.achievementCinematics.queue.some(item=>String(item?.kind||'').startsWith('national-tournament-'));if(nationalTrophyPending&&typeof global.setTimeout==='function')global.setTimeout(show,220);else show();}}catch(_){}return def;
 }
 function registerAchievements(){const list=global.LL_ACHIEVEMENTS;if(!Array.isArray(list))return;ACHIEVEMENTS.forEach(def=>{if(!list.some(x=>x?.id===def.id))list.push({...def,check:()=>false,progress:()=> 'Milli turnuvada canlı olarak açılır'});});}
 function markReached(state,rec,stage){
@@ -279,7 +295,7 @@ function prepareNextManagedGroupMatch(state,rec){
 }
 function completeManagedGroup(state,rec){
   const ed=rec.edition,g=editionGroupForTeam(rec.type,rec.selectedTeam),ranked=rankGroup(rec.type,ed.tables[g],ed.groupMatches[g]),place=ranked.findIndex(r=>r.team===rec.selectedTeam)+1,best=bestThirds(rec.type,ed,rec.type==='wc'?8:4),qualified=place<=2||(place===3&&best.some(r=>r.team===rec.selectedTeam));
-  if(!qualified){ed.reachedStage='group';simulateRemainingAfterElimination(state,rec);return;}
+  if(!qualified){queueNationalOutcomeCinematic(state,rec,'elimination','group',null,`Grup ${g} · ${place}. sıra`);ed.reachedStage='group';simulateRemainingAfterElimination(state,rec);return;}
   const first=buildInitialKnockout(rec.type,ed),stage=rec.type==='wc'?'r32':'r16';ed.bracket[stage]=first;ed.stage=stage;markReached(state,rec,stage);prepareManagedKnockoutRound(state,rec,stage);
 }
 function prepareManagedKnockoutRound(state,rec,stage){
@@ -288,14 +304,15 @@ function prepareManagedKnockoutRound(state,rec,stage){
   if(!stageContainsTeam(round,rec.selectedTeam)){simulateRemainingAfterElimination(state,rec);return;}
 }
 function advanceAfterKnockoutRound(state,rec,stage){
-  const ed=rec.edition,round=ed.bracket[stage]||[];if(round.some(f=>!f.played))return;const userStill=round.some(f=>f.winner===rec.selectedTeam);
+  const ed=rec.edition,round=ed.bracket[stage]||[];if(round.some(f=>!f.played))return;const userStill=round.some(f=>f.winner===rec.selectedTeam),userFixture=round.find(f=>f.home===rec.selectedTeam||f.away===rec.selectedTeam)||null;
   if(stage==='third'){ed.thirdPlace=round[0]?.winner||null;const final=ed.bracket.final||[];if(final.length&&!final[0].played)simulateKnockoutFixture(state,final[0]);ed.champion=final[0]?.winner||ed.champion;ed.runnerUp=final[0]?(final[0].home===ed.champion?final[0].away:final[0].home):ed.runnerUp;ed.completed=true;ed.stage='completed';finishEdition(state,rec);return;}
   if(stage==='final'){
-    ed.champion=round[0].winner;ed.runnerUp=round[0].home===ed.champion?round[0].away:round[0].home;if(userStill)markReached(state,rec,'champion');
+    ed.champion=round[0].winner;ed.runnerUp=round[0].home===ed.champion?round[0].away:round[0].home;if(userStill){queueNationalOutcomeCinematic(state,rec,'champion','final',userFixture);markReached(state,rec,'champion');}else queueNationalOutcomeCinematic(state,rec,'elimination','final',userFixture);
     if(rec.type==='wc'&&!ed.bracket.third){const sf=ed.bracket.sf||[],losers=sf.map(f=>f.home===f.winner?f.away:f.home),third=fixture('M103',losers[0],losers[1],'third');simulateKnockoutFixture(state,third);ed.bracket.third=[third];ed.thirdPlace=third.winner;}
     ed.completed=true;ed.stage='completed';finishEdition(state,rec);return;
   }
   if(!userStill){
+    queueNationalOutcomeCinematic(state,rec,'elimination',stage,userFixture);
     if(rec.type==='wc'&&stage==='sf'){const final=buildNextRound('wc','sf',round);ed.bracket.final=final;final.forEach(f=>simulateKnockoutFixture(state,f));const losers=round.map(f=>f.home===f.winner?f.away:f.home),third=fixture('M103',losers[0],losers[1],'third');ed.bracket.third=[third];ed.stage='third';if(third.home===rec.selectedTeam||third.away===rec.selectedTeam){ed.pendingFixtureId=third.id;state.pendingFixture={home:third.home,away:third.away,competition:'cup',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · ${STAGE_LABELS.third}`,nationalTournament:true,nationalType:rec.type,nationalStage:'third',nationalFixtureId:third.id};return;}}
     simulateRemainingAfterElimination(state,rec);return;}
   const next=buildNextRound(rec.type,stage,round),nextStage=next[0]?.stage;if(!nextStage){simulateRemainingAfterElimination(state,rec);return;}ed.bracket[nextStage]=next;ed.stage=nextStage;markReached(state,rec,nextStage);prepareManagedKnockoutRound(state,rec,nextStage);
@@ -323,7 +340,7 @@ function commitNationalMatch(){
   state.nationalTournaments.matchHistory=Array.isArray(state.nationalTournaments.matchHistory)?state.nationalTournaments.matchHistory:[];state.nationalTournaments.matchHistory.push({season:state.season,year:rec.year,type:rec.type,team:rec.selectedTeam,home:target.home,away:target.away,homeGoals,awayGoals,penalties:pen,stage:fx.nationalStage,userMatch:true,lpAwarded:lpAward});
   manualGrammarCounterAdvance(state);state.pendingFixture=null;
   if(fx.nationalStage==='group'){rec.edition.groupRound++;if(rec.edition.groupRound>=3)completeManagedGroup(state,rec);else prepareNextManagedGroupMatch(state,rec);}else advanceAfterKnockoutRound(state,rec,fx.nationalStage);
-  save();renderNationalMatchResult(rec,target,userWon,pen);return true;
+  save();renderNationalMatchResult(rec,target,userWon,pen);if(typeof global.llScheduleTrophyAnimation==='function')global.llScheduleTrophyAnimation(90);return true;
 }
 function simulateRejected(state,rec){ensureAllNationalTeams(state);rec.edition=createEdition(rec.type,rec.year,null);simulateEditionToEnd(state,rec.edition);rec.status='completed';rec.completed=true;rec.completedAt=new Date().toISOString();rec.noticeSeen=false;archiveEdition(state,rec);save();}
 function currentOfferRecord(state,create=false){return ensureRecord(state,create);}
@@ -396,6 +413,6 @@ registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboard
 global.llNationalTournamentTestApi={
  version:VERSION,teamRegistry:TEAM_REGISTRY,wcGroups:WC_GROUPS,euroGroups:EURO_GROUPS,euroThirdMap:EURO_THIRD_MAP,wcThirdMapCount:WC_THIRD_MAP.length-1,
  tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,
- wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,initializeManagedEdition,commitNationalMatch,advanceAfterKnockoutRound,ensureRoot,ensureRecord,generateOffers,finishEdition
+ wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
 };
 })(globalThis);
