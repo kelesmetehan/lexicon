@@ -3123,11 +3123,21 @@ function llNeedsPriorityIntroduction(word){
   return !!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
 }
 function llPriorityIntroductionOrder(words){
-  return (Array.isArray(words)?words:[]).slice().sort((a,b)=>{
-    const dateCompare=String(b?.addedAt||'').localeCompare(String(a?.addedAt||''));
+  // Bekleyen ilk-tanıtım kelimelerinde iki hedefi birlikte koru:
+  // 1) gerçekten yeni eklenenler erken görünsün, 2) eski bekleyenler starvation yaşamasın.
+  // Her 5'lik öncelik grubunda 3 en yeni + 2 en eski bekleyen kelime seçilir.
+  // Aynı gün eklenenlerde storage sırası kullanılır; daha sonra eklenen kelime daha yenidir.
+  const newestFirst=(Array.isArray(words)?words:[]).map((word,index)=>({word,index})).sort((a,b)=>{
+    const dateCompare=String(b.word?.addedAt||'').localeCompare(String(a.word?.addedAt||''));
     if(dateCompare)return dateCompare;
-    return String(a?.en||'').localeCompare(String(b?.en||''),'en');
-  });
+    return b.index-a.index;
+  }).map(item=>item.word);
+  const ordered=[];
+  while(newestFirst.length){
+    for(let i=0;i<3&&newestFirst.length;i++)ordered.push(newestFirst.shift());
+    for(let i=0;i<2&&newestFirst.length;i++)ordered.push(newestFirst.pop());
+  }
+  return ordered;
 }
 function llMarkFirstExposure(word){
   if(!llNeedsPriorityIntroduction(word))return false;
@@ -6302,6 +6312,5 @@ renderPreStart();
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
-<script src="national-tournaments.js?v=20260824-national-tournaments-v2-cinematics"></script>
 </body>
 </html>
