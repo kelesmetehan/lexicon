@@ -1,5 +1,5 @@
 /* European team pools v15: cross-competition participant integrity and separate club fields. */
-const LL_V14_EURO_POOL_VERSION=5;
+const LL_V14_EURO_POOL_VERSION=6;
 const LL_V14_COUNTRY_FLAGS={
   ENG:'🇬🇧',GER:'🇩🇪',ESP:'🇪🇸',ITA:'🇮🇹',FRA:'🇫🇷',POR:'🇵🇹',BEL:'🇧🇪',GRE:'🇬🇷',
   AZE:'🇦🇿',NOR:'🇳🇴',DEN:'🇩🇰',NED:'🇳🇱',CZE:'🇨🇿',CYP:'🇨🇾',KAZ:'🇰🇿',TUR:'🇹🇷',
@@ -10,6 +10,22 @@ const LL_V14_COUNTRY_FLAGS={
 };
 function llV14Club(name,country,stars,logoId=null,short=null){
   return {name,short:short||name,country,stars,pot:stars>=6?1:stars===5?2:stars===4?3:4,flag:LL_V14_COUNTRY_FLAGS[country]||'🌍',logoId};
+}
+const LL_V14_LEGACY_TEAM_ALIASES=Object.freeze({
+  'Sporting Lizbon':'Sporting CP',
+  'Sporting Lisbon':'Sporting CP'
+});
+function llV14CanonicalTeamName(name){
+  const legacy=LL_V14_LEGACY_TEAM_ALIASES[name]||name;
+  return typeof llCanonicalTeamName==='function'?llCanonicalTeamName(legacy):legacy;
+}
+function llV14NormalizeLegacyEuropeState(state){
+  if(!state||typeof state!=='object')return state;
+  const normalize=name=>typeof name==='string'?(LL_V14_LEGACY_TEAM_ALIASES[name]||name):name;
+  for(const result of state.results||[]){if(result&&typeof result==='object'){result.home=normalize(result.home);result.away=normalize(result.away);}}
+  if(state.pendingFixture&&typeof state.pendingFixture==='object'){state.pendingFixture.home=normalize(state.pendingFixture.home);state.pendingFixture.away=normalize(state.pendingFixture.away);}
+  if(state.europe?.tie&&typeof state.europe.tie==='object')state.europe.tie.opponent=normalize(state.europe.tie.opponent);
+  return state;
 }
 const LL_V14_EURO_POOLS={
   ucl:[
@@ -29,7 +45,7 @@ const LL_V14_EURO_POOLS={
     llV14Club("Bayer 04 Leverkusen","GER",5,15),
     llV14Club("SSC Napoli","ITA",5,6195),
     llV14Club("Borussia Dortmund","GER",5,16),
-    llV14Club("Sporting Lizbon","POR",5,336),
+    llV14Club("Sporting CP","POR",5,336),
     llV14Club("Atalanta Bergamo","ITA",5,800),
     llV14Club("SL Benfica","POR",5,294),
     llV14Club("AS Monaco","FRA",4,162),
@@ -210,11 +226,11 @@ function llV14PinnedTeams(state,type){
   return [...new Set(teams.filter(Boolean))];
 }
 function llV14TeamCountry(name){
-  const canonical=typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name;
+  const canonical=llV14CanonicalTeamName(name);
   return LL_V14_EURO_META[name]?.country||LL_V14_EURO_META[canonical]?.country||(typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[name]?.country||LL_TEAM_REGISTRY[canonical]?.country:null)||null;
 }
 function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
-  const canonical=name=>typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name;
+  const canonical=llV14CanonicalTeamName;
   const player=canonical(state?.playerTeam),registryCountry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[player]?.country:null;
   // Oynanabilir ligi olan ülkelerin temsilcileri yalnızca kendi sezon sonu
   // kontenjanından gelir. Sabit havuz, oyunda ligi olmayan ülkeler içindir.
@@ -222,7 +238,7 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   const pinned=[];
   for(const name of llV14PinnedTeams(state,type)){
     const key=canonical(name);if(!name||blocked.has(key))continue;
-    blocked.add(key);pinned.push(name);
+    blocked.add(key);pinned.push(key);
   }
   const fixed=[];
   for(const name of llV14EuroPool(type)){
@@ -272,6 +288,7 @@ function llV14ParticipantOrder(qualifiers,foreign,roundCount){
   const fixtures=llV3BuildEuropeFixtures(best,roundCount);if(bestScore)console.warn(`Avrupa kura motoru ${bestScore} aynı ülke eşleşmesini önleyemedi.`);return {teams:best,fixtures};
 }
 function llV14RebuildEuropeStandings(state,preserveCurrent=true){
+  llV14NormalizeLegacyEuropeState(state);
   const types=['ucl','uel','uecl'],qualifications=typeof llMLResolveEuropeParticipants==='function'?llMLResolveEuropeParticipants(state):llV3ResolveEuropeQualifications(state),previous=state.europeStandings;
   const oldRounds=Object.fromEntries(types.map(type=>[type,Number(previous?.[type]?.playedRounds)||0]));
   if(preserveCurrent)state.results=(state.results||[]).filter(result=>!(Number(result.season)===Number(state.season)&&types.includes(result.competition)&&result.league==='euro-table'&&!result.userMatch));
@@ -280,7 +297,7 @@ function llV14RebuildEuropeStandings(state,preserveCurrent=true){
   types.forEach(type=>{
     const rounds=LL_EURO_LEAGUE_WEEKS[type].length,foreign=llV14ForeignTeams(state,type,qualifications[type],reserved),draw=llV14ParticipantOrder(qualifications[type],foreign,rounds),fixtures=llV14PinPlayerFixtures(state,type,draw.fixtures);
     standings[type]={formatVersion:LL_EURO_FORMAT_VERSION,poolVersion:LL_V14_EURO_POOL_VERSION,teams:draw.teams,standings:llBlankStandings(draw.teams),fixtures,playedRounds:Math.min(rounds,oldRounds[type]),leagueMatches:rounds};
-    draw.teams.forEach(name=>reserved.add(typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name));
+    draw.teams.forEach(name=>reserved.add(llV14CanonicalTeamName(name)));
   });
   state.europeStandings=standings;
   types.forEach(type=>llV14CurrentEuropeResults(state,type,true).forEach(result=>{if(standings[type].teams.includes(result.home)&&standings[type].teams.includes(result.away))llV2ApplyEuropeStanding(state,type,result.home,result.homeGoals,result.away,result.awayGoals);}));
@@ -291,9 +308,10 @@ function llV14RebuildEuropeStandings(state,preserveCurrent=true){
 llV2CreateEuropeStandings=function(state){return llV14RebuildEuropeStandings(state,false);};
 const llV14EnsureEuropeStandingsBase=llV2EnsureEuropeStandings;
 llV2EnsureEuropeStandings=function(state){
-  const allTypes=['ucl','uel','uecl'],canonical=name=>typeof llCanonicalTeamName==='function'?llCanonicalTeamName(name):name,allTeams=allTypes.flatMap(type=>state?.europeStandings?.[type]?.teams||[]).map(canonical),valid=state?.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&Number(state.europeStandings.poolVersion)===LL_V14_EURO_POOL_VERSION&&new Set(allTeams).size===allTeams.length&&allTypes.every(type=>{const table=state.europeStandings[type],rounds=LL_EURO_LEAGUE_WEEKS[type].length;return Number(table?.poolVersion)===LL_V14_EURO_POOL_VERSION&&table?.teams?.length===36&&table.fixtures?.length===rounds&&table.fixtures.every(round=>round.length===18);});
+  llV14NormalizeLegacyEuropeState(state);
+  const allTypes=['ucl','uel','uecl'],canonical=llV14CanonicalTeamName,allTeams=allTypes.flatMap(type=>state?.europeStandings?.[type]?.teams||[]).map(canonical),valid=state?.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&Number(state.europeStandings.poolVersion)===LL_V14_EURO_POOL_VERSION&&new Set(allTeams).size===allTeams.length&&allTypes.every(type=>{const table=state.europeStandings[type],rounds=LL_EURO_LEAGUE_WEEKS[type].length;return Number(table?.poolVersion)===LL_V14_EURO_POOL_VERSION&&table?.teams?.length===36&&table.fixtures?.length===rounds&&table.fixtures.every(round=>round.length===18);});
   if(!valid)llV14RebuildEuropeStandings(state,true);const tables=llV14EnsureEuropeStandingsBase(state);tables.poolVersion=LL_V14_EURO_POOL_VERSION;
   Object.values(tables).filter(value=>value&&typeof value==='object'&&Array.isArray(value.teams)).forEach(table=>table.poolVersion=LL_V14_EURO_POOL_VERSION);state.europePoolVersion=LL_V14_EURO_POOL_VERSION;return tables;
 };
 const llV14RepairStateBase=llV2RepairState;
-llV2RepairState=function(state){state=llV14RepairStateBase(state);if(state)llV2EnsureEuropeStandings(state);return state;};
+llV2RepairState=function(state){state=llV14NormalizeLegacyEuropeState(state);state=llV14RepairStateBase(state);if(state){llV14NormalizeLegacyEuropeState(state);llV2EnsureEuropeStandings(state);}return state;};
