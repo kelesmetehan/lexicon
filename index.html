@@ -3238,12 +3238,11 @@ function llPickQuizWords(count=10){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-12));
+  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-30));
   const choose=(pool,needed,blocked,allowCooldownFallback=false)=>{
     const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,needed);
-    if(fresh.length>=needed||!allowCooldownFallback)return fresh;
-    const freshIds=new Set(fresh.map(w=>w.id));
-    return [...fresh,...llShuffle(pool.filter(w=>!blocked.has(w.id)&&!freshIds.has(w.id))).slice(0,needed-fresh.length)];
+    // Son 30 kelime sert cooldown: yetersizse recent kelimeyle doldurma yapılmaz.
+    return fresh;
   };
 
   const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
@@ -3279,7 +3278,7 @@ function llPickQuizWords(count=10){
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
     let nextCycle=choose(selectable,target-queue.length,chosenIds,false);
-    if(nextCycle.length<target-queue.length)nextCycle=choose(selectable,target-queue.length,chosenIds,true);
+    // Yeni döngü de son 30 kelimelik sert cooldown'u delmez.
     nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(w.id)}));
   }
   return queue;
@@ -3288,7 +3287,7 @@ function llMarkQuizWordUsed(ref){
   const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
   const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
   const recent=Array.isArray(lexLeague.state.recentQuizWords)?lexLeague.state.recentQuizWords:[];
-  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-12);
+  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-30);
 }
 function llStartMatchPreparation(){
   fcQueue=[];
@@ -6476,7 +6475,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260820-new-word-intro-v3-5words"></script>
+<script src="diagnostics.js?v=20260826-hard-cooldown-30-v1"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
@@ -6494,8 +6493,8 @@ renderPreStart();
 <script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
 <script src="manager-offer-fit.js?v=20260812-facility-offers-v1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
-<script src="legend-call.js?v=20260813-word-cycle-v1"></script>
-<script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
+<script src="legend-call.js?v=20260826-recent-30-v2"></script>
+<script src="welcome-to-hell.js?v=20260826-recent-30-v2"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
