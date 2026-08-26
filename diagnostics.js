@@ -180,11 +180,73 @@ function llTakeQuizCandidates(pool,count,recent,blocked,{allowCooldownFallback=f
   }
   return selected;
 }
+function llSimulatedRecentPush(recentIds,id){
+  const next=(Array.isArray(recentIds)?recentIds:[]).filter(item=>item!==id);
+  next.push(id);
+  return next.slice(-LL_RECENT_QUIZ_WORD_LIMIT);
+}
+function llBuildStrictQuizQueue({normalPool,priorities,target,usedIds,recentIds,introSlots}){
+  const normal=(Array.isArray(normalPool)?normalPool:[]).filter(word=>word&&word.id);
+  const intros=(Array.isArray(priorities)?priorities:[]).filter(word=>word&&word.id);
+  const normalIds=new Set(normal.map(word=>word.id));
+  let simulatedUsed=new Set((Array.isArray(usedIds)?usedIds:[]).filter(id=>normalIds.has(id)));
+  let simulatedRecent=(Array.isArray(recentIds)?recentIds:[]).slice(-LL_RECENT_QUIZ_WORD_LIMIT);
+  const slots=new Set(Array.isArray(introSlots)?introSlots:[]);
+  const queue=[];
+  let introIndex=0;
+  let cycleStartPending=false;
+  let blocked=null;
+
+  const pushIntro=()=>{
+    if(introIndex>=intros.length)return false;
+    const word=intros[introIndex++];
+    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:true});
+    // İlk-tanıtım kelimesi normal loop'u tüketmez; ancak 30 kelimelik yakın
+    // tekrar mesafesinde gerçek bir gösterim olarak hesaba katılır.
+    simulatedRecent=llSimulatedRecentPush(simulatedRecent,word.id);
+    return true;
+  };
+
+  for(let position=0;position<target;position++){
+    if(slots.has(position)&&pushIntro())continue;
+
+    let remaining=normal.filter(word=>!simulatedUsed.has(word.id));
+    if(!remaining.length&&normal.length){
+      // Döngü ancak mevcut normal havuzun TAMAMI tüketildikten sonra sıfırlanır.
+      simulatedUsed=new Set();
+      remaining=normal.slice();
+      cycleStartPending=true;
+    }
+
+    let recentSet=new Set(simulatedRecent);
+    let eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
+    if(!eligible.length){
+      // Bir intro slotunu erkene çekmek 30'luk pencereyi ilerletebiliyorsa bunu
+      // kullan; yine de normal loop'tan kelime atlayıp yeni döngüye geçme.
+      if(pushIntro())continue;
+      blocked={
+        position,
+        remainingInCycle:remaining.length,
+        recentBlocked:remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id).slice(0,40),
+        reason:normal.length?'strict_cycle_waiting_for_recent_cooldown':'no_normal_words'
+      };
+      break;
+    }
+
+    const word=eligible[0];
+    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:cycleStartPending,introPriority:false});
+    cycleStartPending=false;
+    simulatedUsed.add(word.id);
+    simulatedRecent=llSimulatedRecentPush(simulatedRecent,word.id);
+  }
+
+  return {queue,blocked,simulatedUsed:[...simulatedUsed],simulatedRecent};
+}
 globalThis.llPickQuizWords=function(count=10){
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
   const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  const target=Math.min(Math.max(0,Number(count)||0),words.length),used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT));
+  const target=Math.min(Math.max(0,Number(count)||0),words.length),recent=state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT);
   const needsIntro=word=>typeof globalThis.llNeedsPriorityIntroduction==='function'?llNeedsPriorityIntroduction(word):!!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
   const orderPending=list=>{
     if(typeof globalThis.llPriorityIntroductionOrder==='function')return llPriorityIntroductionOrder(list);
@@ -193,42 +255,26 @@ globalThis.llPickQuizWords=function(count=10){
     return ordered;
   };
   const pending=target===10?orderPending(words.filter(needsIntro)):[];
-  const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
-  // 10 soruluk normal sınavın kontrollü hedefi: 5 normal + NET 5 yeni kelime.
-  // 5 slotta 3 en yeni + 2 en eski bekleyen kelime kullanılır. 5'ten az bekleyen varsa aynı
-  // kelimeyi tekrarlamayız; mevcutların tamamını kullanırız. Fresh havuzda yeterli
-  // normal kelime yoksa sınav kilitlenmesin diye genel seçim davranışı korunur.
+  // İlk kez gösterilecek kelimeler normal loop'un dışında tutulur. Normal loop
+  // yalnızca daha önce en az bir kez tanıtılmış kelimelerden oluşur.
+  const normalPool=target===10?words.filter(word=>!needsIntro(word)):words;
   const desiredIntroCount=target===10?Math.min(5,pending.length):0;
-  const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
+  const canInjectIntroductions=target===10&&desiredIntroCount>0&&normalPool.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
-  const priorityIds=new Set(priorities.map(word=>word.id));
-  const selectable=priorities.length?[...introduced,...priorities]:words;
-  const closingPool=selectable.filter(word=>!used.has(word.id));
-  let closing=[];
-  if(priorities.length){
-    const normalClosing=llTakeQuizCandidates(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,recent,new Set(),{allowCooldownFallback:true});
-    const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
-    let normalIndex=0,introIndex=0;
-    for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
-      if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
-      else if(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
-      else if(introIndex<priorities.length)closing.push(priorities[introIndex++]);
-    }
-    while(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
-    while(introIndex<priorities.length)closing.push(priorities[introIndex++]);
-  }else{
-    // Mevcut döngüde henüz kullanılmamış kelimeler önce tamamlanır. Soğuma
-    // yalnızca bu mevcut döngüyü terk ettirmemeli; aksi halde kelimeler atlanır.
-    closing=llTakeQuizCandidates(closingPool,target,recent,new Set(),{allowCooldownFallback:true});
+  const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:priorities.length===1?[3]:[];
+  const built=llBuildStrictQuizQueue({normalPool,priorities,target,usedIds:state.usedWords,recentIds:recent,introSlots});
+  const queue=built.queue;
+  if(built.blocked){
+    llDiagnosticEvent('QUIZ_STRICT_LOOP_BLOCKED',{requested:target,selected:queue.length,...built.blocked},{level:'WARN'});
   }
-  const queue=closing.map(word=>({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:priorityIds.has(word.id)}));
-  if(queue.length<target){
-    const chosenIds=new Set(queue.map(ref=>ref.id));
-    let nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds);
-    // Cooldown serttir: yeni döngüde de son 30 içinden kelime alınmaz.
-    nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(word.id)}));
-  }
-  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,pendingFirstExposure:pending.length,ids:queue.map(ref=>ref.id)});return queue;
+  const usedNormalIds=new Set(state.usedWords.filter(id=>normalPool.some(word=>word.id===id)));
+  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{
+    requested:count,selected:queue.length,totalWords:words.length,normalPool:normalPool.length,
+    usedInCycle:usedNormalIds.size,recentCooldown:recent.length,cycleCrossed:queue.some(ref=>ref.cycleStart),
+    introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,
+    pendingFirstExposure:pending.length,strictLoop:true,ids:queue.map(ref=>ref.id)
+  });
+  return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
   const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
@@ -332,4 +378,4 @@ globalThis.llDiagnosticQuizAnswerStart=llDiagnosticQuizAnswerStart;
 globalThis.llDiagnosticQuizIgnored=llDiagnosticQuizIgnored;
 globalThis.llDiagnosticQuizBusy=llDiagnosticQuizBusy;
 globalThis.llDiagnosticQuizCompleted=llDiagnosticQuizCompleted;
-globalThis.llDiagnosticTestHooks={orderCandidates:llOrderQuizCandidates,repeatDistances:llDiagnosticRepeatDistances,buildReport:llBuildDiagnosticReport,recentLimit:LL_RECENT_QUIZ_WORD_LIMIT,maxEvents:LL_DIAGNOSTIC_MAX_EVENTS,maxStorageBytes:LL_DIAGNOSTIC_MAX_STORAGE_BYTES,events:()=>LL_DIAGNOSTIC_EVENTS,clear:()=>{LL_DIAGNOSTIC_EVENTS.splice(0);LL_DIAGNOSTIC_APPROX_BYTES=0;LL_DIAGNOSTIC_DIRTY=true;},flush:llDiagnosticFlush,load:llDiagnosticLoadRollingLog,event:llDiagnosticEvent,actionForElement:llDiagnosticActionForElement,wrapKnownActions:llDiagnosticInstallKnownActionWrappers,storageKey:LL_DIAGNOSTIC_STORAGE_KEY};
+globalThis.llDiagnosticTestHooks={orderCandidates:llOrderQuizCandidates,buildStrictQuizQueue:llBuildStrictQuizQueue,repeatDistances:llDiagnosticRepeatDistances,buildReport:llBuildDiagnosticReport,recentLimit:LL_RECENT_QUIZ_WORD_LIMIT,maxEvents:LL_DIAGNOSTIC_MAX_EVENTS,maxStorageBytes:LL_DIAGNOSTIC_MAX_STORAGE_BYTES,events:()=>LL_DIAGNOSTIC_EVENTS,clear:()=>{LL_DIAGNOSTIC_EVENTS.splice(0);LL_DIAGNOSTIC_APPROX_BYTES=0;LL_DIAGNOSTIC_DIRTY=true;},flush:llDiagnosticFlush,load:llDiagnosticLoadRollingLog,event:llDiagnosticEvent,actionForElement:llDiagnosticActionForElement,wrapKnownActions:llDiagnosticInstallKnownActionWrappers,storageKey:LL_DIAGNOSTIC_STORAGE_KEY};
