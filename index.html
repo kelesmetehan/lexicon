@@ -1098,6 +1098,8 @@ let fcIndex = 0;
 let fcCorrect = 0;
 let fcTotal = 0;
 let fcRevealed = false;
+let fcReviewSource = 'study';
+let fcExposureSessionId = '';
 
 // KELİME VERİ TABANI
 const NATIVE_USER_DATA = [
@@ -3211,7 +3213,7 @@ function llStartMatchPreparation(){
   if(!fixture){alert('Sıradaki maç bulunamadı. Dashboarda dönüp fikstürün yeniden oluşturulmasını bekle.');return;}
   const queue=llPickQuizWords(10);
   if(queue.length<10){alert(`Maç için en az 10 kelime gerekiyor. Kullanılabilir kelime: ${queue.length}. Ana menüden “Hata Kaydını İndir” dosyasını gönder.`);return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,fixture:{...fixture}};
+  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,exposureSessionId:`league-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,fixture:{...fixture}};
   llRenderLeagueQuiz();
 }
 function llQuizApPerWord(){
@@ -3222,6 +3224,8 @@ function llRenderLeagueQuiz(){
   if(q.index>=q.queue.length){llFinishLeagueQuiz();return;}
   const ref=q.queue[q.index],word=loadUserWords().find(w=>w.id===ref.id);
   if(!word){q.index++;llRenderLeagueQuiz();return;}
+  if(!q.exposureSessionId)q.exposureSessionId=`league-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  llRecordWordExposure(ref.id,'normalMatch',`${q.exposureSessionId}:${q.index}:${ref.id}`);
   if(typeof llRecordQuizWordShown==='function')llRecordQuizWordShown(ref,word);
   const question=ref.askTrToEn?word.tr.split(',')[0].trim():word.en;
   const answer=ref.askTrToEn?word.en:word.tr;
@@ -3261,7 +3265,7 @@ function llPersistQuizWordRating(ref,q,correct,{markUsed=true}={}){
     if(card){
       recovered=!!(correct&&card.isActiveMistake===true);
       try{
-        const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;
+        const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;llRecordWordAnswerSource(card,'normalMatch');
         if(correct)card.isActiveMistake=false;else{card.wrongCount=(Number(card.wrongCount)||0)+1;card.isActiveMistake=true;}
       }catch(error){errors.push({stage:'sm2',message:String(error?.message||error)});}
       if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(Number(q.recoveredWords)||0)+1;q.recoveryBonus=(Number(q.recoveryBonus)||0)+bonus;}
@@ -4339,6 +4343,8 @@ function initDatabase() {
       if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
       llEnsureEnglishExample(word);
       word.pos = llInferWordPos(word);
+      llEnsureWordTracking(word);
+      llNormalizeReviewSchedule(word);
     });
 
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
@@ -4361,6 +4367,7 @@ function initDatabase() {
       const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
       if (!existsInNative && ex.source === 'user') synchronizedPool.push(llEnsureEnglishExample(ex));
     });
+    synchronizedPool.forEach(word => { llEnsureWordTracking(word); llNormalizeReviewSchedule(word); });
 
     LL_RUNTIME_WORD_FALLBACK = synchronizedPool;
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
@@ -4402,6 +4409,85 @@ function saveWordsToStorage(updatedWords) {
 function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
 function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
 
+// Kelime istatistikleri bu sürümden itibaren kaynak bazında tutulur.
+// Eski reviewCount/wrongCount korunur; geçmiş veriler yeni sayaçlara uydurulmaz.
+const LL_WORD_STATS_VERSION = 1;
+const LL_MAX_REVIEW_INTERVAL_DAYS = 365;
+const LL_WORD_ANSWER_COUNTERS = {
+  normalMatch: 'normalMatchCount',
+  mistakeReview: 'mistakeReviewCount',
+  specialQuiz: 'specialQuizCount',
+  reroll: 'rerollCount',
+  study: 'studyReviewCount'
+};
+const LL_WORD_EXPOSURE_COUNTERS = {
+  normalMatch: 'normalMatchExposureCount',
+  mistakeReview: 'mistakeExposureCount',
+  specialQuiz: 'specialQuizExposureCount',
+  reroll: 'rerollExposureCount',
+  study: 'studyExposureCount'
+};
+function llEnsureWordTracking(card) {
+  if (!card || typeof card !== 'object') return card;
+  if (!card.statsTrackingStartedAt) card.statsTrackingStartedAt = new Date().toISOString();
+  card.statsTrackingVersion = LL_WORD_STATS_VERSION;
+  ['normalMatchCount','mistakeReviewCount','specialQuizCount','rerollCount','studyReviewCount',
+   'totalExposureCount','normalMatchExposureCount','mistakeExposureCount','specialQuizExposureCount','rerollExposureCount','studyExposureCount']
+    .forEach(field => { const value=Number(card[field]); card[field]=Number.isFinite(value)&&value>=0?Math.floor(value):0; });
+  return card;
+}
+function llRecordWordAnswerSource(card, source) {
+  if (!card) return;
+  llEnsureWordTracking(card);
+  const field = LL_WORD_ANSWER_COUNTERS[source] || LL_WORD_ANSWER_COUNTERS.study;
+  card[field] = (Number(card[field]) || 0) + 1;
+  card.lastAnswerSource = source || 'study';
+  card.lastAnswerAt = new Date().toISOString();
+}
+function llRecordWordExposure(cardId, source, eventKey) {
+  if (!cardId || !eventKey) return;
+  try {
+    const words=loadUserWords(), card=words.find(word=>word.id===cardId);
+    if (!card) return;
+    llEnsureWordTracking(card);
+    if (card.lastExposureEventKey === eventKey) return;
+    const field = LL_WORD_EXPOSURE_COUNTERS[source] || LL_WORD_EXPOSURE_COUNTERS.study;
+    card.totalExposureCount = (Number(card.totalExposureCount) || 0) + 1;
+    card[field] = (Number(card[field]) || 0) + 1;
+    card.lastExposureSource = source || 'study';
+    card.lastExposureAt = new Date().toISOString();
+    card.lastExposureEventKey = eventKey;
+    saveWordsToStorage(words);
+  } catch (error) {
+    try{globalThis.llQuizDiagnostic?.('word_exposure_save_error',{wordId:cardId,source,message:String(error?.message||error)});}catch{}
+  }
+}
+function llReviewBaseDate(card) {
+  const candidate=String(card?.lastReviewed||'');
+  const parsed=candidate ? new Date(candidate+'T00:00:00') : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+}
+function llDateOnlyLocal(date) {
+  const d=new Date(date); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+function llNormalizeReviewSchedule(card) {
+  if (!card || typeof card !== 'object') return false;
+  let changed=false;
+  let interval=Number(card.interval);
+  if (!Number.isFinite(interval) || interval < 0) interval=0;
+  interval=Math.min(LL_MAX_REVIEW_INTERVAL_DAYS,Math.round(interval));
+  if (Number(card.interval)!==interval) { card.interval=interval; changed=true; }
+  if (!card.nextReview) return changed;
+  const next=new Date(String(card.nextReview)+'T00:00:00');
+  const base=llReviewBaseDate(card); base.setHours(0,0,0,0);
+  const maxDate=new Date(base); maxDate.setDate(maxDate.getDate()+LL_MAX_REVIEW_INTERVAL_DAYS);
+  if (Number.isNaN(next.getTime()) || next.getTime()>maxDate.getTime()) {
+    card.nextReview=llDateOnlyLocal(maxDate); changed=true;
+  }
+  return changed;
+}
+
 function sm2(card, quality) {
   let { interval, repetitions, ef } = card;
   if (!ef) ef = 2.5; if (!interval) interval = 0; if (!repetitions) repetitions = 0;
@@ -4409,6 +4495,7 @@ function sm2(card, quality) {
   if (quality < 3) { repetitions = 0; interval = 1; } 
   else {
     if (repetitions === 0) interval = 1; else if (repetitions === 1) interval = 6; else interval = Math.round(interval * ef);
+    interval = Math.min(LL_MAX_REVIEW_INTERVAL_DAYS, Math.max(1, interval));
     repetitions++;
   }
   ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
@@ -4666,6 +4753,7 @@ function prepareNextDiceCupMatch() {
   diceCup.rerollQueue = [];
   diceCup.rerollIndex = 0;
   diceCup.rerollRevealed = false;
+  diceCup.rerollExposureSessionId = `cup-reroll-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   diceCup.selectedRerollIndex = -1;
   diceCup.rerolledValue = null;
   diceCup.rerolledIndex = -1;
@@ -4894,6 +4982,7 @@ function showNextDiceCupRerollWord() {
   const area = document.getElementById('flashcard-area');
   const card = diceCup.rerollQueue[diceCup.rerollIndex];
   diceCup.rerollRevealed = false;
+  llRecordWordExposure(card.id,'reroll',`${diceCup.rerollExposureSessionId||'cup-reroll'}:${diceCup.rerollIndex}:${card.id}`);
   const askTrToEn = Math.random() > 0.5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
@@ -4954,6 +5043,7 @@ function recordDiceCupWordResult(cardId, quality) {
   card.nextReview = updated.nextReview;
   card.lastReviewed = todayStr();
   card.reviewCount = (card.reviewCount || 0) + 1;
+  llRecordWordAnswerSource(card, 'reroll');
   if (quality < 3) {
     card.wrongCount = (card.wrongCount || 0) + 1;
     card.isActiveMistake = true;
@@ -5268,6 +5358,7 @@ function resetDiceUclMatchState() {
   diceUcl.rerollQueue = [];
   diceUcl.rerollIndex = 0;
   diceUcl.rerollRevealed = false;
+  diceUcl.rerollExposureSessionId = `ucl-reroll-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   diceUcl.selectedRerollIndex = -1;
   diceUcl.rerolledValue = null;
   diceUcl.rerolledIndex = -1;
@@ -5449,6 +5540,7 @@ function showNextDiceUclRerollWord() {
   const area = document.getElementById('flashcard-area');
   const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
   diceUcl.rerollRevealed = false;
+  llRecordWordExposure(card.id,'reroll',`${diceUcl.rerollExposureSessionId||'ucl-reroll'}:${diceUcl.rerollIndex}:${card.id}`);
   const askTrToEn = Math.random() > .5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
@@ -6085,6 +6177,8 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   let pool = loadUserWords();
 
   const loopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
+  fcReviewSource = onlyMistakes ? 'mistakeReview' : (loopState ? 'specialQuiz' : 'study');
+  fcExposureSessionId = `flash-${fcReviewSource}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   
   if (onlyMistakes) {
     pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
@@ -6138,6 +6232,7 @@ function showNextFlashcard() {
   }
 
   const card = fcQueue[fcIndex];
+  llRecordWordExposure(card.id,fcReviewSource,`${fcExposureSessionId}:${fcIndex}:${card.id}`);
   const activeLoopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
   llMarkSpacedLoopWordShown(card, activeLoopState);
   fcRevealed = false;
@@ -6212,6 +6307,7 @@ function rateFlashcard(cardId, quality) {
     card.nextReview = updated.nextReview;
     card.lastReviewed = todayStr();
     card.reviewCount = (card.reviewCount || 0) + 1;
+    llRecordWordAnswerSource(card, fcReviewSource);
     
     if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
     else if (quality >= 4) { card.isActiveMistake = false; }
