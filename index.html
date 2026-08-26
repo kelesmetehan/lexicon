@@ -86,6 +86,54 @@
     body.ll-euro-match-day .ll-quiz-card { max-width:880px; }
   }
 
+  /* National-team tournament match themes. Kept independent from club-Europe themes. */
+  body.ll-national-match-day {
+    --ll-national-accent:#f8d477;
+    --ll-national-border:rgba(248,212,119,.42);
+    background-color:var(--bg);
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    transition:background-color .28s ease;
+  }
+  body.ll-national-match-world-cup {
+    --ll-national-accent:#f5d68a;
+    --ll-national-border:rgba(245,214,138,.48);
+    background-image:
+      radial-gradient(circle at 13% 11%,rgba(45,212,191,.22),transparent 27%),
+      radial-gradient(circle at 88% 16%,rgba(244,63,94,.22),transparent 30%),
+      repeating-linear-gradient(118deg,rgba(255,255,255,.025) 0 1px,transparent 1px 70px),
+      linear-gradient(180deg,rgba(18,5,18,.18),rgba(8,12,24,.80) 76vh,var(--bg) 126vh),
+      linear-gradient(135deg,#2a0717 0%,#071d2b 46%,#171026 100%);
+    background-size:auto,auto,auto,auto,cover;
+    background-position:center top,center top,center top,center top,center top;
+  }
+  body.ll-national-match-euro {
+    --ll-national-accent:#93c5fd;
+    --ll-national-border:rgba(125,211,252,.48);
+    background-image:
+      radial-gradient(circle at 15% 12%,rgba(34,211,238,.22),transparent 28%),
+      radial-gradient(circle at 82% 14%,rgba(168,85,247,.22),transparent 31%),
+      radial-gradient(circle at 50% 0%,rgba(250,204,21,.10),transparent 32%),
+      repeating-linear-gradient(64deg,rgba(255,255,255,.022) 0 1px,transparent 1px 78px),
+      linear-gradient(180deg,rgba(4,17,62,.10),rgba(7,12,27,.80) 76vh,var(--bg) 126vh),
+      linear-gradient(135deg,#071d4e 0%,#17113f 48%,#071b38 100%);
+    background-size:auto,auto,auto,auto,auto,cover;
+    background-position:center top,center top,center top,center top,center top,center top;
+  }
+  body.ll-national-match-day .quiz-start-card,
+  body.ll-national-match-day .ll-panel {
+    background:rgba(10,14,23,.89);
+    border-color:var(--ll-national-border);
+    backdrop-filter:blur(10px);
+  }
+  body.ll-national-match-day .quiz-start-title em,
+  body.ll-national-match-day .ll-title em,
+  body.ll-national-match-day .ll-card-title { color:var(--ll-national-accent); }
+  body.ll-national-match-day .wc-score-box {
+    border-color:var(--ll-national-border);
+    background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(3,7,18,.36));
+  }
+
   .container {
     width: 100%;
     max-width: 620px;
@@ -992,6 +1040,9 @@
     body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
     body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
     body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
+    body.ll-national-match-day{background-attachment:scroll;background-position:center top}
+    body.ll-national-match-world-cup{background-image:radial-gradient(circle at 16% 8%,rgba(45,212,191,.20),transparent 25%),radial-gradient(circle at 86% 14%,rgba(244,63,94,.20),transparent 28%),repeating-linear-gradient(118deg,rgba(255,255,255,.022) 0 1px,transparent 1px 58px),linear-gradient(180deg,rgba(18,5,18,.14),rgba(8,12,24,.82) 70vh,var(--bg) 122vh),linear-gradient(135deg,#2a0717 0%,#071d2b 48%,#171026 100%)}
+    body.ll-national-match-euro{background-image:radial-gradient(circle at 14% 8%,rgba(34,211,238,.20),transparent 26%),radial-gradient(circle at 84% 13%,rgba(168,85,247,.20),transparent 29%),radial-gradient(circle at 50% 0%,rgba(250,204,21,.09),transparent 30%),linear-gradient(180deg,rgba(4,17,62,.08),rgba(7,12,27,.82) 70vh,var(--bg) 122vh),linear-gradient(135deg,#071d4e 0%,#17113f 50%,#071b38 100%)}
   }
 
   .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
@@ -2751,18 +2802,44 @@ function llSetWide(on=true){
   if(container) container.classList.toggle('league-wide',on);
 }
 const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl'];
+const LL_NATIONAL_MATCH_THEME_CLASSES=['ll-national-match-day','ll-national-match-world-cup','ll-national-match-euro'];
 function llSetEuropeMatchTheme(competition=null){
   if(typeof document==='undefined'||!document.body)return;
   document.body.classList.remove(...LL_EURO_MATCH_THEME_CLASSES);
   if(!['ucl','uel','uecl'].includes(competition))return;
   document.body.classList.add('ll-euro-match-day','ll-euro-match-'+competition);
 }
+function llNormalizeNationalThemeCompetition(value){
+  const key=String(value||'').trim().toLowerCase().replace(/[ _]+/g,'-');
+  if(['wc','worldcup','world-cup','fifa-world-cup','fifa-wc'].includes(key))return 'world-cup';
+  if(['euro','euros','euro2032','euro-2032','uefa-euro','uefa-euro-2032','european-championship','uefa-european-championship'].includes(key))return 'euro';
+  return null;
+}
+function llSetNationalMatchTheme(competition=null){
+  if(typeof document==='undefined'||!document.body)return;
+  document.body.classList.remove(...LL_NATIONAL_MATCH_THEME_CLASSES);
+  const normalized=llNormalizeNationalThemeCompetition(competition);
+  if(!normalized)return;
+  document.body.classList.add('ll-national-match-day','ll-national-match-'+normalized);
+}
+function llActiveStandaloneNationalTheme(){
+  try{if(typeof wc!=='undefined'&&wc?.active)return 'world-cup';}catch(_error){}
+  try{if(typeof euro!=='undefined'&&euro?.active)return 'euro';}catch(_error){}
+  try{if(typeof euroCup!=='undefined'&&euroCup?.active)return 'euro';}catch(_error){}
+  return null;
+}
 function llSyncEuropeMatchTheme(){
   const host=typeof llArea==='function'?llArea():null;
   const matchCompetition=lexLeague?.match?.fixture?.competition;
   const fixtureCompetition=lexLeague?.quiz?.fixture?.competition||(typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null);
+  const activeFixtureCompetition=matchCompetition||fixtureCompetition;
   const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
-  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
+  const clubEuropeCompetition=lexLeague?.active&&inMatchFlow&&['ucl','uel','uecl'].includes(activeFixtureCompetition)?activeFixtureCompetition:null;
+  llSetEuropeMatchTheme(clubEuropeCompetition);
+
+  const leagueNationalCompetition=lexLeague?.active&&inMatchFlow?llNormalizeNationalThemeCompetition(activeFixtureCompetition):null;
+  const standaloneNationalCompetition=!lexLeague?.active?llActiveStandaloneNationalTheme():null;
+  llSetNationalMatchTheme(clubEuropeCompetition?null:(leagueNationalCompetition||standaloneNationalCompetition));
 }
 if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
   const llEuropeThemeHost=document.getElementById('flashcard-area');
