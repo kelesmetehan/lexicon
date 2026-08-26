@@ -3,10 +3,10 @@
  * This module is deliberately fail-open: a diagnostic failure must never stop
  * a save, match, quiz, render, or normal button handler.
  */
-// Aynı kelime, yönü tersine dönse bile son 12 farklı kelime içinde yeniden
-// sorulmaz. Bu sayı "tercih" değil, yeterli kelime olduğunda zorunlu soğuma
-// mesafesidir.
-const LL_RECENT_QUIZ_WORD_LIMIT=12;
+// Aynı kelime, yönü tersine dönse bile son 30 farklı kelime içinde yeniden
+// sorulmaz. Bu sayı "tercih" değil, zorunlu soğuma mesafesidir; fallback
+// bu korumayı delmez.
+const LL_RECENT_QUIZ_WORD_LIMIT=30;
 const LL_DIAGNOSTIC_LOG_VERSION=2;
 const LL_DIAGNOSTIC_STORAGE_KEY='lexiconLeagueDiagnosticRollingV2';
 const LL_DIAGNOSTIC_MAX_EVENTS=1000;
@@ -172,13 +172,13 @@ function llOrderQuizCandidates(pool,recentIds,blockedIds){
 }
 function llTakeQuizCandidates(pool,count,recent,blocked,{allowCooldownFallback=false}={}){
   const selected=llOrderQuizCandidates(pool,recent,blocked).slice(0,count);
-  if(selected.length>=count||!allowCooldownFallback)return selected;
-  const selectedIds=new Set(selected.map(word=>word.id));
-  const fallback=llDiagnosticShuffle(pool.filter(word=>!blocked.has(word.id)&&!selectedIds.has(word.id))).slice(0,count-selected.length);
-  if(fallback.length){
-    llDiagnosticEvent('QUIZ_COOLDOWN_RELAXED',{requested:count,selectedBeforeFallback:selected.length,fallbackIds:fallback.map(word=>word.id),reason:'current_cycle_must_finish_or_word_pool_is_too_small'},{level:'WARN'});
+  // 30 kelimelik cooldown artık sert kuraldır. Mevcut döngüde yeterli kelime
+  // kalmadıysa recent kelimeleri geri almak yerine çağıran kod yeni döngüden
+  // güvenli kelimelerle tamamlar. Küçük havuzlarda da recent kuralı delinmez.
+  if(selected.length<count&&allowCooldownFallback){
+    llDiagnosticEvent('QUIZ_COOLDOWN_BLOCKED',{requested:count,selected:selected.length,missing:count-selected.length,reason:'hard_recent_cooldown_30'},{level:'INFO'});
   }
-  return [...selected,...fallback];
+  return selected;
 }
 globalThis.llPickQuizWords=function(count=10){
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
@@ -225,9 +225,7 @@ globalThis.llPickQuizWords=function(count=10){
   if(queue.length<target){
     const chosenIds=new Set(queue.map(ref=>ref.id));
     let nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds);
-    // 12 kelimelik havuzdan daha küçük özel test/kariyer kayıtlarında döngü
-    // kilitlenmesin; yalnızca yeterli alternatif yoksa kural gevşetilir.
-    if(nextCycle.length<target-queue.length)nextCycle=llTakeQuizCandidates(selectable,target-queue.length,recent,chosenIds,{allowCooldownFallback:true});
+    // Cooldown serttir: yeni döngüde de son 30 içinden kelime alınmaz.
     nextCycle.forEach((word,index)=>queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(word.id)}));
   }
   llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,usedInCycle:used.size,recentCooldown:recent.size,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,pendingFirstExposure:pending.length,ids:queue.map(ref=>ref.id)});return queue;
@@ -237,7 +235,7 @@ globalThis.llRecordQuizWordShown=function(ref,word){
   if(!Array.isArray(q.shownWordRefs))q.shownWordRefs=[];const shownKey=`${Number(q.index)||0}:${ref.id}`;
   if(q.shownWordRefs.includes(shownKey))return;q.shownWordRefs.push(shownKey);
   // Aynı kelime ileride yeniden gelirse onu tekrar listenin sonuna taşır;
-  // bu, yön değişse bile yeni 12 kelimelik mesafeyi yeniden başlatır.
+  // bu, yön değişse bile yeni 30 kelimelik mesafeyi yeniden başlatır.
   if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-LL_RECENT_QUIZ_WORD_LIMIT);
   llDiagnosticEvent('QUIZ_WORD_SHOWN',{id:ref.id,question:Number(q.index)+1,cycleStart:!!ref.cycleStart});if(typeof llSave==='function')llSave();

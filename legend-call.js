@@ -156,7 +156,7 @@ function recordSpecialWordShown(ref,state,quiz){
   if(quiz.shownWordRefs.includes(shownKey))return;
   quiz.shownWordRefs.push(shownKey);
   if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-12);
+  state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-30);
 }
 function quizWordHtml(event){
   const q=event.quiz;if(!q||q.index>=q.queue.length){finishSpecialQuiz(event);return;}

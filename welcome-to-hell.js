@@ -233,7 +233,7 @@
     if (quiz.shownWordRefs.includes(shownKey)) return;
     quiz.shownWordRefs.push(shownKey);
     if (!Array.isArray(state.recentQuizWords)) state.recentQuizWords = [];
-    state.recentQuizWords = [...state.recentQuizWords.filter(id => id !== ref.id), ref.id].slice(-12);
+    state.recentQuizWords = [...state.recentQuizWords.filter(id => id !== ref.id), ref.id].slice(-30);
   }
   function renderQuiz(event) {
     const quiz = event?.quiz;
