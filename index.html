@@ -3234,57 +3234,57 @@ function llMarkFirstExposure(word){
   }catch(error){try{globalThis.llQuizDiagnostic?.('first_exposure_save_error',{wordId:word.id||null,message:String(error?.message||error)});}catch{}}
   return true;
 }
+function llAdvanceQuizRecentIds(recentIds,id){
+  const next=(Array.isArray(recentIds)?recentIds:[]).filter(item=>item!==id);
+  next.push(id);
+  return next.slice(-30);
+}
+function llBuildStrictBaseQuizQueue({normalPool,priorities,target,usedIds,recentIds,introSlots}){
+  const normal=(Array.isArray(normalPool)?normalPool:[]).filter(word=>word&&word.id);
+  const intros=(Array.isArray(priorities)?priorities:[]).filter(word=>word&&word.id);
+  const normalIds=new Set(normal.map(word=>word.id));
+  let simulatedUsed=new Set((Array.isArray(usedIds)?usedIds:[]).filter(id=>normalIds.has(id)));
+  let simulatedRecent=(Array.isArray(recentIds)?recentIds:[]).slice(-30);
+  const slots=new Set(Array.isArray(introSlots)?introSlots:[]);
+  const queue=[];
+  let introIndex=0,cycleStartPending=false;
+  const pushIntro=()=>{
+    if(introIndex>=intros.length)return false;
+    const word=intros[introIndex++];
+    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:true});
+    simulatedRecent=llAdvanceQuizRecentIds(simulatedRecent,word.id);
+    return true;
+  };
+  for(let position=0;position<target;position++){
+    if(slots.has(position)&&pushIntro())continue;
+    let remaining=normal.filter(word=>!simulatedUsed.has(word.id));
+    if(!remaining.length&&normal.length){simulatedUsed=new Set();remaining=normal.slice();cycleStartPending=true;}
+    const recentSet=new Set(simulatedRecent);
+    const eligible=llShuffle(remaining.filter(word=>!recentSet.has(word.id)));
+    if(!eligible.length){if(pushIntro())continue;break;}
+    const word=eligible[0];
+    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:cycleStartPending,introPriority:false});
+    cycleStartPending=false;simulatedUsed.add(word.id);simulatedRecent=llAdvanceQuizRecentIds(simulatedRecent,word.id);
+  }
+  return queue;
+}
 function llPickQuizWords(count=10){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-30));
-  const choose=(pool,needed,blocked,allowCooldownFallback=false)=>{
-    const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,needed);
-    // Son 30 kelime sert cooldown: yetersizse recent kelimeyle doldurma yapılmaz.
-    return fresh;
-  };
-
   const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
-  const introduced=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
-  // Yerleşik havuzda 10 soruluk ana sınavın kontrollü hedefi NET 3 yeni
-  // kelimedir: 7 normal döngü kelimesi + en son eklenen 3 ilk-tanıtım kelimesi.
-  // 3'ten az bekleyen yeni kelime varsa olmayan kelimeyi tekrar ederek doldurmayız;
-  // mevcut bekleyenlerin tamamı kullanılır. Fresh kurulumda yeterli normal havuz
-  // yoksa sınavı kilitlememek için eski genel seçim davranışı korunur.
-  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
-  const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
+  const normalPool=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
+  const desiredIntroCount=target===10?Math.min(5,pending.length):0;
+  const canInjectIntroductions=target===10&&desiredIntroCount>0&&normalPool.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
-  const priorityIds=new Set(priorities.map(word=>word.id));
-  const selectable=priorities.length?[...introduced,...priorities]:words;
-  const closingPool=selectable.filter(w=>!used.has(w.id));
-  let closing=[];
-  if(priorities.length){
-    const normalClosing=choose(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,new Set(),true);
-    // 3 yeni kelime mevcutsa 2., 5. ve 8. sorulara dağıt. Daha az bekleyen
-    // varsa aynı mantıkla sınav boyunca mümkün olduğunca aralıklı yerleştir.
-    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
-    let normalIndex=0,introIndex=0;
-    for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
-      if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
-      else if(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
-      else if(introIndex<priorities.length)closing.push(priorities[introIndex++]);
-    }
-    while(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
-    while(introIndex<priorities.length)closing.push(priorities[introIndex++]);
-  }else closing=choose(closingPool,target,new Set(),true);
-
-  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:priorityIds.has(w.id)}));
-  if(queue.length<target){
-    const chosenIds=new Set(queue.map(ref=>ref.id));
-    let nextCycle=choose(selectable,target-queue.length,chosenIds,false);
-    // Yeni döngü de son 30 kelimelik sert cooldown'u delmez.
-    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(w.id)}));
-  }
-  return queue;
+  const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:priorities.length===1?[3]:[];
+  return llBuildStrictBaseQuizQueue({normalPool,priorities,target,usedIds:state.usedWords,recentIds:state.recentQuizWords.slice(-30),introSlots});
 }
 function llMarkQuizWordUsed(ref){
   const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
+  // Özel 5'li ilk-tanıtım soruları normal kelime loop'unu tüketmez.
+  // Yakın-tekrar listesi llRecordQuizWordShown tarafından yine güncellenir.
+  if(ref.introPriority)return;
   const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
   const recent=Array.isArray(lexLeague.state.recentQuizWords)?lexLeague.state.recentQuizWords:[];
   lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-30);
@@ -6475,7 +6475,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260826-hard-cooldown-30-v1"></script>
+<script src="diagnostics.js?v=20260826-strict-word-cycle-v2"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
