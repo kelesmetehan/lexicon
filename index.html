@@ -2259,7 +2259,8 @@ let wc = {
   basePlayerScore: 0,
   baseOppScore: 0,
   schedule: [],
-  usedWords: []
+  usedWords: [],
+  previousStandingsPositions: null
 };
 
 const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
@@ -2301,7 +2302,8 @@ let diceCup = {
   rerolledIndex: -1,
   eventNote: '',
   knockoutOpponentsUsed: [],
-  resultCommitted: false
+  resultCommitted: false,
+  previousStandingsPositions: null
 };
 
 
@@ -2367,7 +2369,7 @@ let diceUcl = {
   rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
   rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
   finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-  knockoutField:[], currentRoundPairings:[]
+  knockoutField:[], currentRoundPairings:[], previousStandingsPositions:null
 };
 
 
@@ -4735,7 +4737,8 @@ function resetDiceCupState() {
     rerolledIndex: -1,
     eventNote: '',
     knockoutOpponentsUsed: [],
-    resultCommitted: false
+    resultCommitted: false,
+    previousStandingsPositions: null
   };
 }
 
@@ -5228,7 +5231,7 @@ function diceCupStandingsHtml(rows) {
       <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
       ${rows.map((row, idx) => `
         <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === diceCup.playerTeam.name ? 'player' : ''}">
-          <td>${row.team.flag} ${row.team.name}</td>
+          <td>${row.team.flag} ${row.team.name}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, diceCup.previousStandingsPositions) : ''}</td>
           <td>${row.W + row.D + row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
           <td>${row.GD > 0 ? '+' + row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
         </tr>`).join('')}
@@ -5253,6 +5256,7 @@ function finishDiceCupMatch() {
     const otherTeam1 = diceCup.groupTeams[fix.otherMatch[0]];
     const otherTeam2 = diceCup.groupTeams[fix.otherMatch[1]];
     const otherResult = simulatePureDiceMatch();
+    if (typeof llStandingsCaptureRows === 'function') diceCup.previousStandingsPositions = llStandingsCaptureRows(sortedDiceCupStandings(), row => row.team.name);
     updateDiceCupStandings(diceCup.playerTeam, diceCup.opponent, diceCup.playerScore, diceCup.opponentScore);
     updateDiceCupStandings(otherTeam1, otherTeam2, otherResult.playerScore, otherResult.opponentScore);
     const rows = sortedDiceCupStandings();
@@ -5324,7 +5328,7 @@ function resetDiceUclState() {
     rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
     rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
     finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-    knockoutField:[], currentRoundPairings:[]
+    knockoutField:[], currentRoundPairings:[], previousStandingsPositions:null
   };
 }
 
@@ -5745,7 +5749,7 @@ function diceUclStandingsHtml(rows) {
       <tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
       ${rows.map((row,idx) => `
         <tr class="${idx < 8 ? 'ucl-direct' : idx < 24 ? 'ucl-playoff' : 'ucl-out'} ${row.team.name === diceUcl.playerTeam.name ? 'player' : ''}">
-          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}</td>
+          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, diceUcl.previousStandingsPositions) : ''}</td>
           <td>${row.W+row.D+row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
           <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
         </tr>`).join('')}
@@ -5777,6 +5781,7 @@ function buildDiceUclOtherRoundPairings(roundOpponent) {
 }
 
 function simulateDiceUclLeagueRound(playerGoals, opponentGoals) {
+  if (typeof llStandingsCaptureRows === 'function') diceUcl.previousStandingsPositions = llStandingsCaptureRows(sortedDiceUclStandings(), row => row.team.name);
   const round = diceUcl.leagueRounds[diceUcl.leagueMatchIndex] || [];
   round.forEach(([home,away]) => {
     const playerIsHome = home.name === diceUcl.playerTeam.name;
@@ -5945,6 +5950,7 @@ function startWCTournament() {
   wc.stage = 'group';
   wc.matchIndex = 0;
   wc.usedWords = []; 
+  wc.previousStandingsPositions = null;
   
   const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
   wc.playerTeam = WC_TEAMS[randomTeamIndex];
@@ -6105,6 +6111,10 @@ function showWCSummary() {
     let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
     let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
     
+    if (typeof llStandingsCaptureRows === 'function') {
+      const beforeRows = Object.values(wc.standings).sort((a, b) => b.P - a.P || b.GD - a.GD || b.GF - a.GF);
+      wc.previousStandingsPositions = llStandingsCaptureRows(beforeRows, row => row.team.name);
+    }
     updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
     updateStandings(otherTeam1, otherTeam2, og1, og2);
     
@@ -6119,7 +6129,7 @@ function showWCSummary() {
         <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
         ${sortedStandings.map((row, idx) => `
           <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === wc.playerTeam.name ? 'player' : ''}">
-            <td>${row.team.flag} ${row.team.name}</td>
+            <td>${row.team.flag} ${row.team.name}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, wc.previousStandingsPositions) : ''}</td>
             <td>${row.W + row.D + row.L}</td>
             <td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
             <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td>
@@ -6485,5 +6495,6 @@ renderPreStart();
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
+<script src="standings-movement.js?v=20260826-v1"></script>
 </body>
 </html>
