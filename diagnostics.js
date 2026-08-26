@@ -186,11 +186,16 @@ globalThis.llPickQuizWords=function(count=10){
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   const target=Math.min(Math.max(0,Number(count)||0),words.length),used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT));
   const needsIntro=word=>typeof globalThis.llNeedsPriorityIntroduction==='function'?llNeedsPriorityIntroduction(word):!!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
-  const orderPending=list=>typeof globalThis.llPriorityIntroductionOrder==='function'?llPriorityIntroductionOrder(list):list.slice().sort((a,b)=>String(b?.addedAt||'').localeCompare(String(a?.addedAt||''))||String(a?.en||'').localeCompare(String(b?.en||''),'en'));
+  const orderPending=list=>{
+    if(typeof globalThis.llPriorityIntroductionOrder==='function')return llPriorityIntroductionOrder(list);
+    const pending=(Array.isArray(list)?list:[]).map((word,index)=>({word,index})).sort((a,b)=>String(b.word?.addedAt||'').localeCompare(String(a.word?.addedAt||''))||b.index-a.index).map(item=>item.word),ordered=[];
+    while(pending.length){for(let i=0;i<3&&pending.length;i++)ordered.push(pending.shift());for(let i=0;i<2&&pending.length;i++)ordered.push(pending.pop());}
+    return ordered;
+  };
   const pending=target===10?orderPending(words.filter(needsIntro)):[];
   const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
   // 10 soruluk normal sınavın kontrollü hedefi: 5 normal + NET 5 yeni kelime.
-  // En son eklenen bekleyen kelimeler önceliklidir. 5'ten az bekleyen varsa aynı
+  // 5 slotta 3 en yeni + 2 en eski bekleyen kelime kullanılır. 5'ten az bekleyen varsa aynı
   // kelimeyi tekrarlamayız; mevcutların tamamını kullanırız. Fresh havuzda yeterli
   // normal kelime yoksa sınav kilitlenmesin diye genel seçim davranışı korunur.
   const desiredIntroCount=target===10?Math.min(5,pending.length):0;
