@@ -2836,14 +2836,17 @@ function llActiveStandaloneNationalTheme(){
 }
 function llSyncEuropeMatchTheme(){
   const host=typeof llArea==='function'?llArea():null;
-  const matchCompetition=lexLeague?.match?.fixture?.competition;
-  const fixtureCompetition=lexLeague?.quiz?.fixture?.competition||(typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null);
-  const activeFixtureCompetition=matchCompetition||fixtureCompetition;
+  const matchFixture=lexLeague?.match?.fixture||null;
+  const quizFixture=lexLeague?.quiz?.fixture||null;
+  const pendingFixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
+  const activeFixture=matchFixture||quizFixture||pendingFixture;
+  const activeFixtureCompetition=activeFixture?.competition||null;
   const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
   const clubEuropeCompetition=lexLeague?.active&&inMatchFlow&&['ucl','uel','uecl'].includes(activeFixtureCompetition)?activeFixtureCompetition:null;
   llSetEuropeMatchTheme(clubEuropeCompetition);
 
-  const leagueNationalCompetition=lexLeague?.active&&inMatchFlow?llNormalizeNationalThemeCompetition(activeFixtureCompetition):null;
+  const nationalKey=activeFixture?.nationalTournament?activeFixture?.nationalType:activeFixtureCompetition;
+  const leagueNationalCompetition=lexLeague?.active&&inMatchFlow?llNormalizeNationalThemeCompetition(nationalKey):null;
   const standaloneNationalCompetition=!lexLeague?.active?llActiveStandaloneNationalTheme():null;
   llSetNationalMatchTheme(clubEuropeCompetition?null:(leagueNationalCompetition||standaloneNationalCompetition));
 }
@@ -6499,5 +6502,6 @@ renderPreStart();
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
 <script src="standings-movement.js?v=20260826-v1"></script>
+<script src="national-tournaments.js?v=20260826-national-tournaments-restored-v3"></script>
 </body>
 </html>
