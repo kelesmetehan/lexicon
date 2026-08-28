@@ -79,6 +79,20 @@
     background-size:cover,cover;
     background-position:center,center;
   }
+  body.ll-euro-match-wc {
+    --ll-euro-accent:#c4b5fd;
+    --ll-euro-border:rgba(96,165,250,.45);
+    background-image:linear-gradient(180deg,rgba(3,8,46,.08),rgba(7,12,28,.78) 76vh,var(--bg) 132vh),url("assets/europe-match-themes/world-cup-desktop-v1.png");
+    background-size:cover,cover;
+    background-position:center,center;
+  }
+  body.ll-euro-match-euro {
+    --ll-euro-accent:#67e8f9;
+    --ll-euro-border:rgba(45,212,191,.46);
+    background-image:linear-gradient(180deg,rgba(0,18,33,.08),rgba(7,15,25,.80) 76vh,var(--bg) 132vh),url("assets/europe-match-themes/euro-national-desktop-v1.png");
+    background-size:cover,cover;
+    background-position:center,center;
+  }
   body.ll-euro-match-day .ll-panel { background:rgba(10,14,23,.90); border-color:var(--ll-euro-border); backdrop-filter:blur(10px); }
   body.ll-euro-match-day .ll-title em,
   body.ll-euro-match-day .ll-card-title { color:var(--ll-euro-accent); }
@@ -992,6 +1006,8 @@
     body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
     body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
     body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
+    body.ll-euro-match-wc{background-image:linear-gradient(180deg,rgba(3,8,46,.08),rgba(7,12,28,.80) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/world-cup-mobile-v1.png")}
+    body.ll-euro-match-euro{background-image:linear-gradient(180deg,rgba(0,18,33,.08),rgba(7,15,25,.80) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/euro-national-mobile-v1.png")}
   }
 
   .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
@@ -2748,19 +2764,27 @@ function llSetWide(on=true){
   const container=document.querySelector('.container');
   if(container) container.classList.toggle('league-wide',on);
 }
-const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl'];
+const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl','ll-euro-match-wc','ll-euro-match-euro'];
 function llSetEuropeMatchTheme(competition=null){
   if(typeof document==='undefined'||!document.body)return;
   document.body.classList.remove(...LL_EURO_MATCH_THEME_CLASSES);
-  if(!['ucl','uel','uecl'].includes(competition))return;
+  if(!['ucl','uel','uecl','wc','euro'].includes(competition))return;
   document.body.classList.add('ll-euro-match-day','ll-euro-match-'+competition);
 }
 function llSyncEuropeMatchTheme(){
   const host=typeof llArea==='function'?llArea():null;
-  const matchCompetition=lexLeague?.match?.fixture?.competition;
-  const fixtureCompetition=lexLeague?.quiz?.fixture?.competition||(typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null);
+  const themedView=host?.querySelector?.('[data-ll-national-theme]')?.dataset?.llNationalTheme||null;
+  if(lexLeague?.active&&themedView){ llSetEuropeMatchTheme(themedView); return; }
+  const matchFixture=lexLeague?.match?.fixture||null;
+  const quizFixture=lexLeague?.quiz?.fixture||null;
+  const playerFixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
+  const statePending=lexLeague?.state?.pendingFixture||null;
+  const matchCompetition=matchFixture?.competition;
+  const fixtureCompetition=quizFixture?.competition||playerFixture?.competition;
+  const nationalType=(matchFixture?.nationalType||quizFixture?.nationalType||playerFixture?.nationalType||statePending?.nationalType||null);
+  const resolvedCompetition=(matchCompetition==='national'||fixtureCompetition==='national')?(nationalType||'euro'):(matchCompetition||fixtureCompetition);
   const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
-  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
+  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?resolvedCompetition:null);
 }
 if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
   const llEuropeThemeHost=document.getElementById('flashcard-area');
@@ -6302,6 +6326,6 @@ renderPreStart();
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
-<script src="national-tournaments.js?v=20260828-national-fixture-identity-v4"></script>
+<script src="national-tournaments.js?v=20260828-national-theme-v1"></script>
 </body>
 </html>
