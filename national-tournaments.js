@@ -119,6 +119,18 @@ function ensureRecord(state,create=false){
   if(rec){rec.type=info.type;rec.year=info.year;if(!Array.isArray(rec.offers))rec.offers=[];}
   return rec||null;
 }
+function unfinishedNationalRecord(state){
+  const root=ensureRoot(state);if(!root)return null;
+  return Object.values(root.seasons||{}).filter(rec=>rec&&rec.completed!==true&&['pending','accepted','active','rejected'].includes(rec.status)).sort((a,b)=>num(b.year)-num(a.year)||num(b.season)-num(a.season))[0]||null;
+}
+function activeNationalRecord(state){
+  const root=ensureRoot(state);if(!root)return null;
+  return Object.values(root.seasons||{}).filter(rec=>rec&&rec.completed!==true&&rec.status==='active'&&rec.edition).sort((a,b)=>num(b.year)-num(a.year)||num(b.season)-num(a.season))[0]||null;
+}
+function latestNationalRecord(state){
+  const root=ensureRoot(state);if(!root)return null;
+  return Object.values(root.seasons||{}).filter(Boolean).sort((a,b)=>num(b.year)-num(a.year)||num(b.season)-num(a.season))[0]||null;
+}
 function ensureTeamState(state,name,cards=null){
   if(!state.teams||typeof state.teams!=='object')state.teams={};
   let team=state.teams[name];
@@ -291,7 +303,7 @@ function initializeManagedEdition(state,rec){
 function userGroupRoundMatches(rec,roundIndex){const ed=rec.edition,g=editionGroupForTeam(rec.type,rec.selectedTeam),teams=groupsFor(rec.type)[g],round=groupSchedule(teams)[roundIndex]||[];return {g,round};}
 function prepareNextManagedGroupMatch(state,rec){
   const ed=rec.edition;if(ed.groupRound>=3){completeManagedGroup(state,rec);return;}
-  const {g,round}=userGroupRoundMatches(rec,ed.groupRound);for(const pair of round){const m=ed.groupMatches[g].find(x=>x.home===pair.home&&x.away===pair.away);if(!m)continue;if(m.home===rec.selectedTeam||m.away===rec.selectedTeam){ed.pendingFixtureId=m.id;state.pendingFixture={home:m.home,away:m.away,competition:'cup',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · Grup ${g} · ${ed.groupRound+1}. Maç`,nationalTournament:true,nationalType:rec.type,nationalStage:'group',nationalFixtureId:m.id};}else simulateGroupMatch(state,ed,m);}
+  const {g,round}=userGroupRoundMatches(rec,ed.groupRound);for(const pair of round){const m=ed.groupMatches[g].find(x=>x.home===pair.home&&x.away===pair.away);if(!m)continue;if(m.home===rec.selectedTeam||m.away===rec.selectedTeam){ed.pendingFixtureId=m.id;state.pendingFixture={home:m.home,away:m.away,competition:'national',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · Grup ${g} · ${ed.groupRound+1}. Maç`,nationalTournament:true,nationalType:rec.type,nationalStage:'group',nationalFixtureId:m.id};}else simulateGroupMatch(state,ed,m);}
 }
 function completeManagedGroup(state,rec){
   const ed=rec.edition,g=editionGroupForTeam(rec.type,rec.selectedTeam),ranked=rankGroup(rec.type,ed.tables[g],ed.groupMatches[g]),place=ranked.findIndex(r=>r.team===rec.selectedTeam)+1,best=bestThirds(rec.type,ed,rec.type==='wc'?8:4),qualified=place<=2||(place===3&&best.some(r=>r.team===rec.selectedTeam));
@@ -300,7 +312,7 @@ function completeManagedGroup(state,rec){
 }
 function prepareManagedKnockoutRound(state,rec,stage){
   const ed=rec.edition,round=ed.bracket[stage]||[];simulateRoundExcept(state,ed,round,rec.selectedTeam);const userFixture=round.find(f=>!f.played&&(f.home===rec.selectedTeam||f.away===rec.selectedTeam));
-  if(userFixture){ed.pendingFixtureId=userFixture.id;state.pendingFixture={home:userFixture.home,away:userFixture.away,competition:'cup',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · ${STAGE_LABELS[stage]}`,nationalTournament:true,nationalType:rec.type,nationalStage:stage,nationalFixtureId:userFixture.id};return;}
+  if(userFixture){ed.pendingFixtureId=userFixture.id;state.pendingFixture={home:userFixture.home,away:userFixture.away,competition:'national',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · ${STAGE_LABELS[stage]}`,nationalTournament:true,nationalType:rec.type,nationalStage:stage,nationalFixtureId:userFixture.id};return;}
   if(!stageContainsTeam(round,rec.selectedTeam)){simulateRemainingAfterElimination(state,rec);return;}
 }
 function advanceAfterKnockoutRound(state,rec,stage){
@@ -313,7 +325,7 @@ function advanceAfterKnockoutRound(state,rec,stage){
   }
   if(!userStill){
     queueNationalOutcomeCinematic(state,rec,'elimination',stage,userFixture);
-    if(rec.type==='wc'&&stage==='sf'){const final=buildNextRound('wc','sf',round);ed.bracket.final=final;final.forEach(f=>simulateKnockoutFixture(state,f));const losers=round.map(f=>f.home===f.winner?f.away:f.home),third=fixture('M103',losers[0],losers[1],'third');ed.bracket.third=[third];ed.stage='third';if(third.home===rec.selectedTeam||third.away===rec.selectedTeam){ed.pendingFixtureId=third.id;state.pendingFixture={home:third.home,away:third.away,competition:'cup',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · ${STAGE_LABELS.third}`,nationalTournament:true,nationalType:rec.type,nationalStage:'third',nationalFixtureId:third.id};return;}}
+    if(rec.type==='wc'&&stage==='sf'){const final=buildNextRound('wc','sf',round);ed.bracket.final=final;final.forEach(f=>simulateKnockoutFixture(state,f));const losers=round.map(f=>f.home===f.winner?f.away:f.home),third=fixture('M103',losers[0],losers[1],'third');ed.bracket.third=[third];ed.stage='third';if(third.home===rec.selectedTeam||third.away===rec.selectedTeam){ed.pendingFixtureId=third.id;state.pendingFixture={home:third.home,away:third.away,competition:'national',league:'national',roundLabel:`${typeLabel(rec.type)} ${rec.year} · ${STAGE_LABELS.third}`,nationalTournament:true,nationalType:rec.type,nationalStage:'third',nationalFixtureId:third.id};return;}}
     simulateRemainingAfterElimination(state,rec);return;}
   const next=buildNextRound(rec.type,stage,round),nextStage=next[0]?.stage;if(!nextStage){simulateRemainingAfterElimination(state,rec);return;}ed.bracket[nextStage]=next;ed.stage=nextStage;markReached(state,rec,nextStage);prepareManagedKnockoutRound(state,rec,nextStage);
 }
@@ -326,10 +338,21 @@ function simulateRemainingAfterElimination(state,rec){
   ed.completed=true;ed.stage='completed';finishEdition(state,rec);
 }
 function findNationalFixture(rec,id){const ed=rec?.edition;if(!ed)return null;for(const matches of Object.values(ed.groupMatches||{})){const m=matches.find(x=>x.id===id);if(m)return m;}for(const round of Object.values(ed.bracket||{})){const f=(round||[]).find(x=>x.id===id);if(f)return f;}return null;}
+function findNationalFixtureForMatch(rec,fx,match){
+  const byId=findNationalFixture(rec,fx?.nationalFixtureId);if(byId)return byId;
+  const home=fx?.home||match?.fixture?.home,away=fx?.away||match?.fixture?.away,stage=fx?.nationalStage||null,ed=rec?.edition;
+  if(!ed||!home||!away)return null;
+  const same=f=>f&&!f.played&&f.home===home&&f.away===away&&(!stage||f.stage===stage);
+  for(const matches of Object.values(ed.groupMatches||{})){const found=(matches||[]).find(same);if(found)return found;}
+  for(const round of Object.values(ed.bracket||{})){const found=(round||[]).find(same);if(found)return found;}
+  return null;
+}
 function manualGrammarCounterAdvance(state){if(Number.isFinite(state.relativeClauseOfficialMatches))state.relativeClauseOfficialMatches++;if(Number.isFinite(state.gerundInfinitiveOfficialMatches))state.gerundInfinitiveOfficialMatches++;}
 function commitNationalMatch(){
-  const state=stateNow(),m=global.lexLeague?.match,rec=ensureRecord(state,false);if(!state||!m||!rec||rec.status!=='active'||!m.resolution||m.committed)return false;const fx=m.fixture;if(!fx?.nationalTournament)return false;m.committed=true;
-  const r=m.resolution,pg=num(r.scoreA),og=num(r.scoreB),homeGoals=m.playerHome?pg:og,awayGoals=m.playerHome?og:pg,target=findNationalFixture(rec,fx.nationalFixtureId);if(!target)throw new Error('Milli turnuva maçı bulunamadı: '+fx.nationalFixtureId);
+  const state=stateNow(),m=global.lexLeague?.match,rec=activeNationalRecord(state)||ensureRecord(state,false);if(!state||!m||!rec||rec.status!=='active'||!m.resolution||m.committed)return false;const fx=m.fixture;if(!fx?.nationalTournament&&fx?.league!=='national'&&!fx?.nationalFixtureId)return false;
+  const target=findNationalFixtureForMatch(rec,fx,m);if(!target){m.committed=false;console.error('[National Tournament] Milli maç kaydı bulunamadı.',{fixture:fx,year:rec.year,type:rec.type});if(typeof global.alert==='function')global.alert('Milli turnuva maç kaydı eşleşmedi. Maç kaydedilmedi; tekrar deneyebilirsin.');return false;}
+  m.committed=true;
+  const r=m.resolution,pg=num(r.scoreA),og=num(r.scoreB),homeGoals=m.playerHome?pg:og,awayGoals=m.playerHome?og:pg;
   /* Mevcut kart motorunun maç-sonu zincir etkilerini koru; ancak milli turnuva snapshot kartlarının sözleşme hakkını tüketme. */
   try{if(typeof global.llApplyLocks==='function'){const pt=state.teams?.[m.player],ot=state.teams?.[m.opponent],pc=deep(pt?.cardContracts||{}),oc=deep(ot?.cardContracts||{});global.llApplyLocks(r,m.player,m.opponent);if(pt)pt.cardContracts=pc;if(ot)ot.cardContracts=oc;}}catch(_){}
   target.homeGoals=homeGoals;target.awayGoals=awayGoals;target.played=true;let winner=null,pen=null;
@@ -371,10 +394,10 @@ function injectDashboardButton(){const area=global.llArea?.();if(!area||area.que
 function injectStyles(){if(typeof document==='undefined'||document.getElementById('ll-national-tournaments-css'))return;const style=document.createElement('style');style.id='ll-national-tournaments-css';style.textContent=`.ll-national-flag{display:inline-flex;align-items:center;justify-content:center;font-size:20px;line-height:1;min-width:25px}.ll-national-flag.big{font-size:42px;min-width:54px}.ll-national-offer-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px;margin-top:16px}.ll-national-offer{appearance:none;text-align:left;color:inherit;background:rgba(15,23,42,.58);border:1px solid rgba(45,212,191,.26);border-radius:14px;padding:15px;display:flex;gap:12px;align-items:center;cursor:pointer}.ll-national-offer:hover{border-color:rgba(45,212,191,.72);transform:translateY(-1px)}.ll-national-offer span:last-child{display:flex;flex-direction:column;gap:4px}.ll-national-offer small,.ll-national-offer em{font-size:12px;color:#94a3b8;font-style:normal}.ll-national-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ll-national-groups .ll-table-wrap{overflow-x:hidden}.ll-national-table{width:100%;min-width:0!important;table-layout:fixed;font-size:11px}.ll-national-table th,.ll-national-table td{padding:9px 4px}.ll-national-table th:first-child,.ll-national-table td:first-child{width:7%}.ll-national-table th:nth-child(2),.ll-national-table td:nth-child(2){width:31%}.ll-national-table th:nth-child(n+3),.ll-national-table td:nth-child(n+3){width:7.75%}.ll-national-table .ll-standing-team{gap:4px;min-width:0}.ll-national-table .ll-standing-team-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ll-national-table .ll-standing-stars{flex:0 0 auto}.ll-national-bracket{display:flex;gap:12px;overflow:auto;padding:8px 2px}.ll-national-round{min-width:230px;flex:1}.ll-national-round h4{margin:0 0 8px;color:#67e8f9}.ll-national-bracket-match{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;padding:9px;border:1px solid rgba(148,163,184,.18);border-radius:9px;margin-bottom:7px;background:rgba(2,6,23,.3);font-size:12px}.ll-national-bracket-match span:last-child{text-align:right}.ll-national-bracket-match.player{border-color:rgba(250,204,21,.58);background:rgba(113,63,18,.15)}.ll-national-next{border-color:rgba(45,212,191,.48)}@media(max-width:1050px){.ll-national-offer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ll-national-groups{grid-template-columns:1fr}}@media(max-width:650px){.ll-national-offer-grid{grid-template-columns:1fr}.ll-national-flag.big{font-size:34px}.ll-national-bracket{display:block}.ll-national-round{min-width:0}.ll-national-table{min-width:0!important;font-size:9px}.ll-national-table th,.ll-national-table td{padding:7px 2px}.ll-national-table th:nth-child(2),.ll-national-table td:nth-child(2){width:34%}.ll-national-table th:nth-child(n+3),.ll-national-table td:nth-child(n+3){width:7.375%}.ll-national-table .ll-national-flag{font-size:15px;min-width:18px}.ll-national-table .ll-standing-stars{font-size:9px}}`;document.head.appendChild(style);}
 
 /* Public UI/actions */
-global.llRenderNationalTournaments=function(type){const state=stateNow();if(!state)return;const rec=ensureRecord(state,false);if(rec?.status==='pending'){renderOffers(rec);return;}if(type==='wc'||type==='euro')renderTournamentTab(type);else renderNationalHome();};
+global.llRenderNationalTournaments=function(type){const state=stateNow();if(!state)return;const rec=unfinishedNationalRecord(state)||ensureRecord(state,false);if(rec?.status==='pending'){renderOffers(rec);return;}if(rec?.status==='active'&&rec.edition){renderTournamentTab(rec.type);return;}if(type==='wc'||type==='euro')renderTournamentTab(type);else renderNationalHome();};
 global.llAcceptNationalOffer=function(team){const state=stateNow(),rec=ensureRecord(state,false);if(!rec||rec.status!=='pending'||!rec.offers.some(o=>o.team===team))return;rec.selectedTeam=team;rec.objective=objectiveFor(team);rec.status='accepted';rec.decisionAt=new Date().toISOString();save();global.llRenderDashboard();};
 global.llRejectNationalOffers=function(){const state=stateNow(),rec=ensureRecord(state,false);if(!rec||rec.status!=='pending')return;rec.status='rejected';rec.selectedTeam=null;rec.objective=null;rec.decisionAt=new Date().toISOString();save();global.llRenderDashboard();};
-global.llNationalContinueSeasonEnd=function(){const state=stateNow(),rec=ensureRecord(state,false);if(rec)rec.noticeSeen=true;save();if(typeof BASE_RENDER_SEASON_END==='function')BASE_RENDER_SEASON_END();};
+global.llNationalContinueSeasonEnd=function(){const state=stateNow(),rec=latestNationalRecord(state);if(rec)rec.noticeSeen=true;save();if(rec&&num(state?.season)>num(rec.season)&&!state?.seasonEnded){if(typeof global.llRenderDashboard==='function')global.llRenderDashboard();return;}if(typeof BASE_RENDER_SEASON_END==='function')BASE_RENDER_SEASON_END();};
 
 /* Integrations are installed after all existing gameplay modules, making these wrappers
  * the outermost guards. */
@@ -390,16 +413,22 @@ const BASE_FINISH_QUIZ=global.llFinishLeagueQuiz;
 if(typeof BASE_FINISH_QUIZ==='function')global.llFinishLeagueQuiz=function(){const q=global.lexLeague?.quiz;if(!q?.fixture?.nationalTournament||q.relativeClause||q.gerundInfinitive)return BASE_FINISH_QUIZ.apply(this,arguments);if(q.committed)return;q.committed=true;const leagueAp=(typeof LL_COMP_REWARDS!=='undefined'&&LL_COMP_REWARDS?.league?.ap)?num(LL_COMP_REWARDS.league.ap,5):5,perWord=Math.round(leagueAp*NATIONAL_AP_MULTIPLIER),baseAp=num(q.correct)*perWord,recoveryAp=num(q.recoveryBonus),ap=baseAp+recoveryAp;global.lexLeague.state.ap=num(global.lexLeague.state.ap)+ap;const completed=!q.skipped&&q.index>=q.queue.length;let bonus='none';if(completed&&q.correct===10){bonus='perfect';global.lexLeague.state.lp=num(global.lexLeague.state.lp)+10;}else if(completed&&q.correct===9)bonus='reroll';q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=bonus;q.totalAnswered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index;save();global.llRenderQuizReward();};
 
 const BASE_COMMIT_MATCH=global.llCommitCurrentMatch;
-if(typeof BASE_COMMIT_MATCH==='function')global.llCommitCurrentMatch=function(){const m=global.lexLeague?.match;if(m?.fixture?.nationalTournament)return commitNationalMatch();return BASE_COMMIT_MATCH.apply(this,arguments);};
+if(typeof BASE_COMMIT_MATCH==='function')global.llCommitCurrentMatch=function(){const m=global.lexLeague?.match,fx=m?.fixture;if(fx?.nationalTournament||fx?.league==='national'||fx?.nationalFixtureId)return commitNationalMatch();return BASE_COMMIT_MATCH.apply(this,arguments);};
 
 const BASE_RENDER_DASHBOARD=global.llRenderDashboard;
-if(typeof BASE_RENDER_DASHBOARD==='function')global.llRenderDashboard=function(){const state=stateNow();if(!state)return BASE_RENDER_DASHBOARD.apply(this,arguments);ensureRoot(state);const rec=ensureRecord(state,false);if(rec?.status==='active'&&rec.edition&&!rec.completed){renderTournamentTab(rec.type);return;}if(shouldTriggerOffer(state)){generateOffers(state,ensureRecord(state,true));renderOffers(ensureRecord(state,false));return;}if(rec?.status==='pending'){renderOffers(rec);return;}const result=BASE_RENDER_DASHBOARD.apply(this,arguments);injectDashboardButton();return result;};
+if(typeof BASE_RENDER_DASHBOARD==='function')global.llRenderDashboard=function(){const state=stateNow();if(!state)return BASE_RENDER_DASHBOARD.apply(this,arguments);ensureRoot(state);const unfinished=unfinishedNationalRecord(state),rec=unfinished||ensureRecord(state,false);if(rec?.status==='active'&&rec.edition&&!rec.completed){renderTournamentTab(rec.type);return;}if(rec?.status==='accepted'&&state.seasonEnded){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return;}if(shouldTriggerOffer(state)){generateOffers(state,ensureRecord(state,true));renderOffers(ensureRecord(state,false));return;}if(rec?.status==='pending'){renderOffers(rec);return;}const result=BASE_RENDER_DASHBOARD.apply(this,arguments);injectDashboardButton();return result;};
 
 const BASE_RENDER_SEASON_END=global.llRenderSeasonEnd;
-if(typeof BASE_RENDER_SEASON_END==='function')global.llRenderSeasonEnd=function(){const state=stateNow();if(!state)return BASE_RENDER_SEASON_END.apply(this,arguments);const info=seasonTournament(state);if(!info)return BASE_RENDER_SEASON_END.apply(this,arguments);let rec=ensureRecord(state,true);if(rec.status==='unoffered')generateOffers(state,rec);if(rec.status==='pending'){renderOffers(rec);return;}if(rec.status==='accepted'){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return;}if(rec.status==='active'){renderTournamentTab(rec.type);return;}if(rec.status==='rejected'){simulateRejected(state,rec);renderWinnerNotice(rec);return;}if(rec.status==='completed'&&!rec.noticeSeen){if(rec.selectedTeam)renderManagedCompletionNotice(rec);else renderWinnerNotice(rec);return;}return BASE_RENDER_SEASON_END.apply(this,arguments);};
+if(typeof BASE_RENDER_SEASON_END==='function')global.llRenderSeasonEnd=function(){const state=stateNow();if(!state)return BASE_RENDER_SEASON_END.apply(this,arguments);let rec=unfinishedNationalRecord(state);const info=seasonTournament(state);if(!rec&&!info)return BASE_RENDER_SEASON_END.apply(this,arguments);if(!rec)rec=ensureRecord(state,true);if(rec.status==='unoffered')generateOffers(state,rec);if(rec.status==='pending'){renderOffers(rec);return;}if(rec.status==='accepted'){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return;}if(rec.status==='active'){renderTournamentTab(rec.type);return;}if(rec.status==='rejected'){simulateRejected(state,rec);renderWinnerNotice(rec);return;}if(rec.status==='completed'&&!rec.noticeSeen){if(rec.selectedTeam)renderManagedCompletionNotice(rec);else renderWinnerNotice(rec);return;}return BASE_RENDER_SEASON_END.apply(this,arguments);};
+
+const BASE_START_NEXT_SEASON=global.llStartNextSeason;
+if(typeof BASE_START_NEXT_SEASON==='function')global.llStartNextSeason=function(){const state=stateNow();if(!state)return BASE_START_NEXT_SEASON.apply(this,arguments);const rec=unfinishedNationalRecord(state);if(rec){if(rec.status==='pending'){renderOffers(rec);return;}if(rec.status==='accepted'){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return;}if(rec.status==='active'){renderTournamentTab(rec.type);return;}if(rec.status==='rejected'){simulateRejected(state,rec);renderWinnerNotice(rec);return;}}return BASE_START_NEXT_SEASON.apply(this,arguments);};
+
+const BASE_CALENDAR_MATCH_TEXT=global.llCalendarMatchText;
+if(typeof BASE_CALENDAR_MATCH_TEXT==='function')global.llCalendarMatchText=function(state,fixture,week){if(fixture?.nationalTournament||fixture?.league==='national'||fixture?.nationalFixtureId){const rec=activeNationalRecord(state)||unfinishedNationalRecord(state),label=fixture?.roundLabel||`${typeLabel(rec?.type)} ${rec?.year||''}`.trim();return `${label} · Milli turnuva`;}return BASE_CALENDAR_MATCH_TEXT.apply(this,arguments);};
 
 const BASE_CONTINUE=global.llContinueGame;
-if(typeof BASE_CONTINUE==='function')global.llContinueGame=function(){const result=BASE_CONTINUE.apply(this,arguments);const state=stateNow();if(!state)return result;const rec=ensureRecord(state,false);if(rec?.status==='active')renderTournamentTab(rec.type);else if(rec?.status==='pending')renderOffers(rec);return result;};
+if(typeof BASE_CONTINUE==='function')global.llContinueGame=function(){const result=BASE_CONTINUE.apply(this,arguments);const state=stateNow();if(!state)return result;const rec=unfinishedNationalRecord(state)||ensureRecord(state,false);if(rec?.status==='active')renderTournamentTab(rec.type);else if(rec?.status==='pending')renderOffers(rec);return result;};
 
 const BASE_MANAGER_PROFILE_RENDER=global.llRenderManagerProfile;
 if(typeof BASE_MANAGER_PROFILE_RENDER==='function')global.llRenderManagerProfile=function(){const result=BASE_MANAGER_PROFILE_RENDER.apply(this,arguments);try{renderCareerSection();}catch(_){}return result;};
@@ -413,6 +442,6 @@ registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboard
 global.llNationalTournamentTestApi={
  version:VERSION,teamRegistry:TEAM_REGISTRY,wcGroups:WC_GROUPS,euroGroups:EURO_GROUPS,euroThirdMap:EURO_THIRD_MAP,wcThirdMapCount:WC_THIRD_MAP.length-1,
  tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,
- wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
+ wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
 };
 })(globalThis);
