@@ -127,6 +127,18 @@ function activeNationalRecord(state){
   const root=ensureRoot(state);if(!root)return null;
   return Object.values(root.seasons||{}).filter(rec=>rec&&rec.completed!==true&&rec.status==='active'&&rec.edition).sort((a,b)=>num(b.year)-num(a.year)||num(b.season)-num(a.season))[0]||null;
 }
+function nationalRecordForType(state,type){
+  const unfinished=unfinishedNationalRecord(state);if(unfinished?.type===type)return unfinished;
+  const current=ensureRecord(state,false);return current?.type===type?current:null;
+}
+function postContinueNationalRoute(){
+  const state=stateNow();if(!state)return false;ensureRoot(state);
+  const rec=unfinishedNationalRecord(state)||ensureRecord(state,false);
+  if(rec?.status==='active'&&rec.edition&&!rec.completed){renderTournamentTab(rec.type);return true;}
+  if(rec?.status==='pending'){renderOffers(rec);return true;}
+  if(rec?.status==='accepted'&&state.seasonEnded){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return true;}
+  return false;
+}
 function latestNationalRecord(state){
   const root=ensureRoot(state);if(!root)return null;
   return Object.values(root.seasons||{}).filter(Boolean).sort((a,b)=>num(b.year)-num(a.year)||num(b.season)-num(a.season))[0]||null;
@@ -349,22 +361,27 @@ function findNationalFixtureForMatch(rec,fx,match){
 }
 function manualGrammarCounterAdvance(state){if(Number.isFinite(state.relativeClauseOfficialMatches))state.relativeClauseOfficialMatches++;if(Number.isFinite(state.gerundInfinitiveOfficialMatches))state.gerundInfinitiveOfficialMatches++;}
 function commitNationalMatch(){
-  const state=stateNow(),m=global.lexLeague?.match,rec=activeNationalRecord(state)||ensureRecord(state,false);if(!state||!m||!rec||rec.status!=='active'||!m.resolution||m.committed)return false;const fx=m.fixture;if(!fx?.nationalTournament&&fx?.league!=='national'&&!fx?.nationalFixtureId)return false;
-  const target=findNationalFixtureForMatch(rec,fx,m);if(!target){m.committed=false;console.error('[National Tournament] Milli maç kaydı bulunamadı.',{fixture:fx,year:rec.year,type:rec.type});if(typeof global.alert==='function')global.alert('Milli turnuva maç kaydı eşleşmedi. Maç kaydedilmedi; tekrar deneyebilirsin.');return false;}
+  const state=stateNow(),m=global.lexLeague?.match,rec=activeNationalRecord(state)||ensureRecord(state,false);if(!state||!m||!rec||rec.status!=='active'||!m.resolution||m.committed)return false;const fx=m.fixture||{};
+  const target=findNationalFixtureForMatch(rec,fx,m);if(!target){m.committed=false;console.error('[National Tournament] Milli maç kaydı bulunamadı.',{fixture:fx,year:rec.year,type:rec.type,player:m.player,opponent:m.opponent});if(typeof global.alert==='function')global.alert('Milli turnuva maç kaydı eşleşmedi. Maç kaydedilmedi; kariyer kaydın korunuyor.');return false;}
+  const explicitNational=!!(fx.nationalTournament||fx.league==='national'||fx.nationalFixtureId||fx.competition==='national');
+  const legacyNational=!!(rec.selectedTeam&&m.player===rec.selectedTeam&&target&&!target.played);
+  if(!explicitNational&&!legacyNational)return false;
+  const stage=fx.nationalStage||target.stage||(target.group?'group':null)||rec.edition?.stage||'group';
   m.committed=true;
   const r=m.resolution,pg=num(r.scoreA),og=num(r.scoreB),homeGoals=m.playerHome?pg:og,awayGoals=m.playerHome?og:pg;
   /* Mevcut kart motorunun maç-sonu zincir etkilerini koru; ancak milli turnuva snapshot kartlarının sözleşme hakkını tüketme. */
   try{if(typeof global.llApplyLocks==='function'){const pt=state.teams?.[m.player],ot=state.teams?.[m.opponent],pc=deep(pt?.cardContracts||{}),oc=deep(ot?.cardContracts||{});global.llApplyLocks(r,m.player,m.opponent);if(pt)pt.cardContracts=pc;if(ot)ot.cardContracts=oc;}}catch(_){}
   target.homeGoals=homeGoals;target.awayGoals=awayGoals;target.played=true;let winner=null,pen=null;
-  if(fx.nationalStage==='group'){applyStanding(rec.edition.tables[target.group],target.home,target.away,homeGoals,awayGoals);rec.edition.matchLog.push({stage:'group',group:target.group,...deep(target)});}
-  else{if(homeGoals===awayGoals){const p=penalty(state,target.home,target.away);pen={home:p.home,away:p.away};winner=p.winner;}else winner=homeGoals>awayGoals?target.home:target.away;target.winner=winner;target.penalties=pen;rec.edition.matchLog.push({stage:fx.nationalStage,...deep(target)});}
+  if(stage==='group'){applyStanding(rec.edition.tables[target.group],target.home,target.away,homeGoals,awayGoals);rec.edition.matchLog.push({stage:'group',group:target.group,...deep(target)});}
+  else{if(homeGoals===awayGoals){const p=penalty(state,target.home,target.away);pen={home:p.home,away:p.away};winner=p.winner;}else winner=homeGoals>awayGoals?target.home:target.away;target.winner=winner;target.penalties=pen;rec.edition.matchLog.push({stage,...deep(target)});}
   updateNationalForm(state,target.home,target.away,homeGoals,awayGoals);
-  const userWon=fx.nationalStage==='group'?pg>og:winner===rec.selectedTeam,decisionWin=fx.nationalStage==='group'?null:userWon,lpAward=nationalResultLp(pg,og,decisionWin);state.lp=num(state.lp)+lpAward;
-  state.nationalTournaments.matchHistory=Array.isArray(state.nationalTournaments.matchHistory)?state.nationalTournaments.matchHistory:[];state.nationalTournaments.matchHistory.push({season:state.season,year:rec.year,type:rec.type,team:rec.selectedTeam,home:target.home,away:target.away,homeGoals,awayGoals,penalties:pen,stage:fx.nationalStage,userMatch:true,lpAwarded:lpAward});
+  const userWon=stage==='group'?pg>og:winner===rec.selectedTeam,decisionWin=stage==='group'?null:userWon,lpAward=nationalResultLp(pg,og,decisionWin);state.lp=num(state.lp)+lpAward;
+  state.nationalTournaments.matchHistory=Array.isArray(state.nationalTournaments.matchHistory)?state.nationalTournaments.matchHistory:[];state.nationalTournaments.matchHistory.push({season:state.season,year:rec.year,type:rec.type,team:rec.selectedTeam,home:target.home,away:target.away,homeGoals,awayGoals,penalties:pen,stage,userMatch:true,lpAwarded:lpAward});
   manualGrammarCounterAdvance(state);state.pendingFixture=null;
-  if(fx.nationalStage==='group'){rec.edition.groupRound++;if(rec.edition.groupRound>=3)completeManagedGroup(state,rec);else prepareNextManagedGroupMatch(state,rec);}else advanceAfterKnockoutRound(state,rec,fx.nationalStage);
+  if(stage==='group'){rec.edition.groupRound++;if(rec.edition.groupRound>=3)completeManagedGroup(state,rec);else prepareNextManagedGroupMatch(state,rec);}else advanceAfterKnockoutRound(state,rec,stage);
   save();renderNationalMatchResult(rec,target,userWon,pen);if(typeof global.llScheduleTrophyAnimation==='function')global.llScheduleTrophyAnimation(90);return true;
 }
+
 function simulateRejected(state,rec){ensureAllNationalTeams(state);rec.edition=createEdition(rec.type,rec.year,null);simulateEditionToEnd(state,rec.edition);rec.status='completed';rec.completed=true;rec.completedAt=new Date().toISOString();rec.noticeSeen=false;archiveEdition(state,rec);save();}
 function currentOfferRecord(state,create=false){return ensureRecord(state,create);}
 
@@ -381,7 +398,7 @@ function scoreText(f){if(!f?.played)return 'VS';return `${num(f.homeGoals)}-${nu
 function bracketHtml(rec){const ed=rec.edition;if(!ed)return '';const order=rec.type==='wc'?['r32','r16','qf','sf','third','final']:['r16','qf','sf','final'];return `<div class="ll-national-bracket">${order.filter(stage=>ed.bracket[stage]?.length).map(stage=>`<div class="ll-national-round"><h4>${STAGE_LABELS[stage]}</h4>${ed.bracket[stage].map(f=>`<div class="ll-national-bracket-match ${f.home===rec.selectedTeam||f.away===rec.selectedTeam?'player':''}"><span>${flagFor(f.home)} ${esc(f.home||'—')}</span><b>${esc(scoreText(f))}</b><span>${flagFor(f.away)} ${esc(f.away||'—')}</span></div>`).join('')}</div>`).join('')}</div>`;}
 function historyHtml(root,type){const rows=(root.history||[]).filter(x=>x.type===type).sort((a,b)=>num(b.year)-num(a.year));return rows.length?`<div class="ll-table-wrap"><table class="ll-table"><thead><tr><th>Yıl</th><th>Şampiyon</th><th>Finalist</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.year}</td><td>${flagFor(r.champion)} <b>${esc(r.champion||'—')}</b></td><td>${flagFor(r.runnerUp)} ${esc(r.runnerUp||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="ll-muted">Henüz tamamlanmış turnuva yok.</div>';}
 function renderTournamentTab(type){
-  const state=stateNow();if(!state)return;const root=ensureRoot(state),rec=ensureRecord(state,false),active=rec&&rec.type===type&&['active','completed'].includes(rec.status)?rec:null,accepted=rec&&rec.type===type&&rec.status==='accepted'?rec:null,year=endYearForState(state),currentType=tournamentTypeForEndYear(year),currentRec=rec&&rec.type===type&&num(rec.year)===num(year)?rec:null,next=(currentType===type&&currentRec?.status!=='completed')?year:nextYear(type,year+(currentType===type?1:0));if(typeof global.llSetWide==='function')global.llSetWide(true);
+  const state=stateNow();if(!state)return;const root=ensureRoot(state),rec=nationalRecordForType(state,type),active=rec&&rec.type===type&&['active','completed'].includes(rec.status)?rec:null,accepted=rec&&rec.type===type&&rec.status==='accepted'?rec:null,year=endYearForState(state),currentType=tournamentTypeForEndYear(year),currentSeasonRec=ensureRecord(state,false),currentRec=currentSeasonRec&&currentSeasonRec.type===type&&num(currentSeasonRec.year)===num(year)?currentSeasonRec:null,next=(active&&!active.completed)?num(active.year):(currentType===type&&currentRec?.status!=='completed')?year:nextYear(type,year+(currentType===type?1:0));if(typeof global.llSetWide==='function')global.llSetWide(true);
   const tabs=`<div class="ll-subtabs"><button class="ll-btn ${type==='wc'?'primary':''}" onclick="llRenderNationalTournaments('wc')">Dünya Kupası</button><button class="ll-btn ${type==='euro'?'primary':''}" onclick="llRenderNationalTournaments('euro')">Avrupa Şampiyonası</button></div>`;
   let content='';
   if(active?.edition){const ed=active.edition,groupCards=Object.keys(groupsFor(type)).map(g=>tableHtml(active,g)).join(''),team=active.selectedTeam;content=`<div class="ll-cup-status"><div class="ll-metric"><strong>${ed.completed?'Tamamlandı':STAGE_LABELS[ed.stage]||ed.stage}</strong><span>Durum</span></div><div class="ll-metric"><strong>${team?`${flagFor(team)} ${esc(team)}`:'AI'}</strong><span>Yönetilen Takım</span></div><div class="ll-metric"><strong>${team?objectiveFor(team):'—'}</strong><span>Hedef</span></div><div class="ll-metric"><strong>${ed.champion?`${flagFor(ed.champion)} ${esc(ed.champion)}`:'—'}</strong><span>Şampiyon</span></div></div>${team&&active.cardSnapshot?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Turnuva Kart Snapshot'ı</div><div class="ll-squad">${POSITIONS.map(pos=>{const id=active.cardSnapshot?.[pos],card=id&&typeof global.llCard==='function'?global.llCard(id):null;return `<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${typeof LL_POSITION_ICONS!=='undefined'?LL_POSITION_ICONS[pos]||'': ''} ${esc(pos)}</span><span class="ll-stars">Sabit</span></div><b>${esc(card?.name||'Kart yok')}</b><div class="ll-muted">Turnuva boyunca değişmez · kullanım tüketmez</div></div>`;}).join('')}</div></div>`:''}${team&&!ed.completed&&state.pendingFixture?.nationalTournament?`<div class="ll-card ll-national-next"><div class="ll-card-title">Sıradaki Milli Maç</div><div class="ll-next-match"><div class="ll-club"><span class="ll-national-flag big">${flagFor(state.pendingFixture.home)}</span><b>${esc(state.pendingFixture.home)}</b></div><div class="ll-vs">VS</div><div class="ll-club"><span class="ll-national-flag big">${flagFor(state.pendingFixture.away)}</span><b>${esc(state.pendingFixture.away)}</b></div></div><button class="ll-btn primary" style="width:100%;margin-top:12px" onclick="llStartMatchPreparation()">10 Kelimelik Milli Maça Başla</button><div class="ll-muted" style="margin-top:8px">Milli maçlarda normal lig kelime AP’si +%20. Turnuva başında alınan üç aktif kart sabittir ve kullanım hakkı tüketmez.</div></div>`:''}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Gruplar</div><div class="ll-national-groups">${groupCards}</div></div>${bracketHtml(active)?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Eleme Ağacı</div>${bracketHtml(active)}</div>`:''}`;}
@@ -413,7 +430,14 @@ const BASE_FINISH_QUIZ=global.llFinishLeagueQuiz;
 if(typeof BASE_FINISH_QUIZ==='function')global.llFinishLeagueQuiz=function(){const q=global.lexLeague?.quiz;if(!q?.fixture?.nationalTournament||q.relativeClause||q.gerundInfinitive)return BASE_FINISH_QUIZ.apply(this,arguments);if(q.committed)return;q.committed=true;const leagueAp=(typeof LL_COMP_REWARDS!=='undefined'&&LL_COMP_REWARDS?.league?.ap)?num(LL_COMP_REWARDS.league.ap,5):5,perWord=Math.round(leagueAp*NATIONAL_AP_MULTIPLIER),baseAp=num(q.correct)*perWord,recoveryAp=num(q.recoveryBonus),ap=baseAp+recoveryAp;global.lexLeague.state.ap=num(global.lexLeague.state.ap)+ap;const completed=!q.skipped&&q.index>=q.queue.length;let bonus='none';if(completed&&q.correct===10){bonus='perfect';global.lexLeague.state.lp=num(global.lexLeague.state.lp)+10;}else if(completed&&q.correct===9)bonus='reroll';q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=bonus;q.totalAnswered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index;save();global.llRenderQuizReward();};
 
 const BASE_COMMIT_MATCH=global.llCommitCurrentMatch;
-if(typeof BASE_COMMIT_MATCH==='function')global.llCommitCurrentMatch=function(){const m=global.lexLeague?.match,fx=m?.fixture;if(fx?.nationalTournament||fx?.league==='national'||fx?.nationalFixtureId)return commitNationalMatch();return BASE_COMMIT_MATCH.apply(this,arguments);};
+if(typeof BASE_COMMIT_MATCH==='function')global.llCommitCurrentMatch=function(){
+  const state=stateNow(),m=global.lexLeague?.match,fx=m?.fixture||{};
+  if(fx.nationalTournament||fx.league==='national'||fx.nationalFixtureId||fx.competition==='national')return commitNationalMatch();
+  /* Eski PC/IndexedDB save'lerinde milli fixture competition:'cup' olarak kalmış olabilir.
+   * Yalnız aktif milli görev + seçili milli takım + edition içindeki tam eşleşme varsa milli yola al. */
+  const rec=activeNationalRecord(state);if(rec&&m?.player===rec.selectedTeam)return commitNationalMatch();
+  return BASE_COMMIT_MATCH.apply(this,arguments);
+};
 
 const BASE_RENDER_DASHBOARD=global.llRenderDashboard;
 if(typeof BASE_RENDER_DASHBOARD==='function')global.llRenderDashboard=function(){const state=stateNow();if(!state)return BASE_RENDER_DASHBOARD.apply(this,arguments);ensureRoot(state);const unfinished=unfinishedNationalRecord(state),rec=unfinished||ensureRecord(state,false);if(rec?.status==='active'&&rec.edition&&!rec.completed){renderTournamentTab(rec.type);return;}if(rec?.status==='accepted'&&state.seasonEnded){initializeManagedEdition(state,rec);renderTournamentTab(rec.type);return;}if(shouldTriggerOffer(state)){generateOffers(state,ensureRecord(state,true));renderOffers(ensureRecord(state,false));return;}if(rec?.status==='pending'){renderOffers(rec);return;}const result=BASE_RENDER_DASHBOARD.apply(this,arguments);injectDashboardButton();return result;};
@@ -428,7 +452,14 @@ const BASE_CALENDAR_MATCH_TEXT=global.llCalendarMatchText;
 if(typeof BASE_CALENDAR_MATCH_TEXT==='function')global.llCalendarMatchText=function(state,fixture,week){if(fixture?.nationalTournament||fixture?.league==='national'||fixture?.nationalFixtureId){const rec=activeNationalRecord(state)||unfinishedNationalRecord(state),label=fixture?.roundLabel||`${typeLabel(rec?.type)} ${rec?.year||''}`.trim();return `${label} · Milli turnuva`;}return BASE_CALENDAR_MATCH_TEXT.apply(this,arguments);};
 
 const BASE_CONTINUE=global.llContinueGame;
-if(typeof BASE_CONTINUE==='function')global.llContinueGame=function(){const result=BASE_CONTINUE.apply(this,arguments);const state=stateNow();if(!state)return result;const rec=unfinishedNationalRecord(state)||ensureRecord(state,false);if(rec?.status==='active')renderTournamentTab(rec.type);else if(rec?.status==='pending')renderOffers(rec);return result;};
+if(typeof BASE_CONTINUE==='function')global.llContinueGame=function(){
+  const args=arguments,isGated=BASE_CONTINUE.__llIdbGated===true,statusBefore=typeof global.llStorageBootStatus==='function'?global.llStorageBootStatus():null;
+  const result=BASE_CONTINUE.apply(this,args);
+  /* Desktop IndexedDB ilk açılışta llContinueGame'i asenkron kuyruğa alır. O anda state'e bakmak
+   * eski/boş state'i yönlendirebilir. Storage hazırsa senkron yönlendir; değilse yüklenen state'i bekle. */
+  if(!isGated||statusBefore?.ready||statusBefore?.unavailable){postContinueNationalRoute();return result;}
+  let tries=0;const waitForLoadedCareer=()=>{tries++;const status=typeof global.llStorageBootStatus==='function'?global.llStorageBootStatus():null;if((status?.ready||status?.unavailable)&&stateNow()){postContinueNationalRoute();return;}if(tries<80)setTimeout(waitForLoadedCareer,50);};setTimeout(waitForLoadedCareer,0);return result;
+};
 
 const BASE_MANAGER_PROFILE_RENDER=global.llRenderManagerProfile;
 if(typeof BASE_MANAGER_PROFILE_RENDER==='function')global.llRenderManagerProfile=function(){const result=BASE_MANAGER_PROFILE_RENDER.apply(this,arguments);try{renderCareerSection();}catch(_){}return result;};
@@ -442,6 +473,6 @@ registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboard
 global.llNationalTournamentTestApi={
  version:VERSION,teamRegistry:TEAM_REGISTRY,wcGroups:WC_GROUPS,euroGroups:EURO_GROUPS,euroThirdMap:EURO_THIRD_MAP,wcThirdMapCount:WC_THIRD_MAP.length-1,
  tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,
- wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
+ wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,nationalRecordForType,postContinueNationalRoute,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
 };
 })(globalThis);
