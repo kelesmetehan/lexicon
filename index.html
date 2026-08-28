@@ -86,54 +86,6 @@
     body.ll-euro-match-day .ll-quiz-card { max-width:880px; }
   }
 
-  /* National-team tournament match themes. Kept independent from club-Europe themes. */
-  body.ll-national-match-day {
-    --ll-national-accent:#f8d477;
-    --ll-national-border:rgba(248,212,119,.42);
-    background-color:var(--bg);
-    background-repeat:no-repeat;
-    background-attachment:fixed;
-    transition:background-color .28s ease;
-  }
-  body.ll-national-match-world-cup {
-    --ll-national-accent:#f5d68a;
-    --ll-national-border:rgba(245,214,138,.48);
-    background-image:
-      radial-gradient(circle at 13% 11%,rgba(45,212,191,.22),transparent 27%),
-      radial-gradient(circle at 88% 16%,rgba(244,63,94,.22),transparent 30%),
-      repeating-linear-gradient(118deg,rgba(255,255,255,.025) 0 1px,transparent 1px 70px),
-      linear-gradient(180deg,rgba(18,5,18,.18),rgba(8,12,24,.80) 76vh,var(--bg) 126vh),
-      linear-gradient(135deg,#2a0717 0%,#071d2b 46%,#171026 100%);
-    background-size:auto,auto,auto,auto,cover;
-    background-position:center top,center top,center top,center top,center top;
-  }
-  body.ll-national-match-euro {
-    --ll-national-accent:#93c5fd;
-    --ll-national-border:rgba(125,211,252,.48);
-    background-image:
-      radial-gradient(circle at 15% 12%,rgba(34,211,238,.22),transparent 28%),
-      radial-gradient(circle at 82% 14%,rgba(168,85,247,.22),transparent 31%),
-      radial-gradient(circle at 50% 0%,rgba(250,204,21,.10),transparent 32%),
-      repeating-linear-gradient(64deg,rgba(255,255,255,.022) 0 1px,transparent 1px 78px),
-      linear-gradient(180deg,rgba(4,17,62,.10),rgba(7,12,27,.80) 76vh,var(--bg) 126vh),
-      linear-gradient(135deg,#071d4e 0%,#17113f 48%,#071b38 100%);
-    background-size:auto,auto,auto,auto,auto,cover;
-    background-position:center top,center top,center top,center top,center top,center top;
-  }
-  body.ll-national-match-day .quiz-start-card,
-  body.ll-national-match-day .ll-panel {
-    background:rgba(10,14,23,.89);
-    border-color:var(--ll-national-border);
-    backdrop-filter:blur(10px);
-  }
-  body.ll-national-match-day .quiz-start-title em,
-  body.ll-national-match-day .ll-title em,
-  body.ll-national-match-day .ll-card-title { color:var(--ll-national-accent); }
-  body.ll-national-match-day .wc-score-box {
-    border-color:var(--ll-national-border);
-    background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(3,7,18,.36));
-  }
-
   .container {
     width: 100%;
     max-width: 620px;
@@ -1040,9 +992,6 @@
     body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
     body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
     body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
-    body.ll-national-match-day{background-attachment:scroll;background-position:center top}
-    body.ll-national-match-world-cup{background-image:radial-gradient(circle at 16% 8%,rgba(45,212,191,.20),transparent 25%),radial-gradient(circle at 86% 14%,rgba(244,63,94,.20),transparent 28%),repeating-linear-gradient(118deg,rgba(255,255,255,.022) 0 1px,transparent 1px 58px),linear-gradient(180deg,rgba(18,5,18,.14),rgba(8,12,24,.82) 70vh,var(--bg) 122vh),linear-gradient(135deg,#2a0717 0%,#071d2b 48%,#171026 100%)}
-    body.ll-national-match-euro{background-image:radial-gradient(circle at 14% 8%,rgba(34,211,238,.20),transparent 26%),radial-gradient(circle at 84% 13%,rgba(168,85,247,.20),transparent 29%),radial-gradient(circle at 50% 0%,rgba(250,204,21,.09),transparent 30%),linear-gradient(180deg,rgba(4,17,62,.08),rgba(7,12,27,.82) 70vh,var(--bg) 122vh),linear-gradient(135deg,#071d4e 0%,#17113f 50%,#071b38 100%)}
   }
 
   .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
@@ -1149,8 +1098,6 @@ let fcIndex = 0;
 let fcCorrect = 0;
 let fcTotal = 0;
 let fcRevealed = false;
-let fcReviewSource = 'study';
-let fcExposureSessionId = '';
 
 // KELİME VERİ TABANI
 const NATIVE_USER_DATA = [
@@ -1667,11 +1614,7 @@ const NATIVE_USER_DATA = [
   {en:"contrive", tr:"tasarlamak / kurgulamak", example:"They contrived a plan to meet without being noticed.", exampleTr:"Fark edilmeden bulu\u015fmak i\u00e7in bir plan kurgulad\u0131lar.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"give the plot away", tr:"konunun s\u00fcrprizini bozmak / spoiler vermek", example:"Please do not give the plot away before I watch the film.", exampleTr:"Filmi izlemeden \u00f6nce l\u00fctfen konunun s\u00fcrprizini bozma.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"bring up (a topic)", tr:"bir konuyu g\u00fcndeme getirmek", example:"She brought up an important question during the meeting.", exampleTr:"Toplant\u0131 s\u0131ras\u0131nda \u00f6nemli bir soruyu g\u00fcndeme getirdi.", pos:"pv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"protagonist", tr:"ba\u015f karakter / ana kahraman", example:"The protagonist learns an important lesson by the end of the story.", exampleTr:"Ba\u015f karakter, hik\u00e2yenin sonunda \u00f6nemli bir ders al\u0131r.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"admitted", tr:"itiraf etti / kabul etti", example:"He admitted making a mistake during the meeting.", exampleTr:"Toplant\u0131 s\u0131ras\u0131nda bir hata yapt\u0131\u011f\u0131n\u0131 itiraf etti.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"I meant to", tr:"niyetim ... yapmakt\u0131 / ... yapmay\u0131 istemi\u015ftim", example:"I meant to call you yesterday, but I forgot.", exampleTr:"D\u00fcn seni aramak istemi\u015ftim ama unuttum.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"stain", tr:"leke", example:"There is a coffee stain on my shirt.", exampleTr:"G\u00f6mle\u011fimde bir kahve lekesi var.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"justify", tr:"hakl\u0131 g\u00f6stermek / gerek\u00e7elendirmek", example:"You cannot justify that decision without clear evidence.", exampleTr:"A\u00e7\u0131k bir kan\u0131t olmadan bu karar\u0131 hakl\u0131 g\u00f6steremezsin.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"protagonist", tr:"ba\u015f karakter / ana kahraman", example:"The protagonist learns an important lesson by the end of the story.", exampleTr:"Ba\u015f karakter, hik\u00e2yenin sonunda \u00f6nemli bir ders al\u0131r.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -2263,8 +2206,7 @@ let wc = {
   basePlayerScore: 0,
   baseOppScore: 0,
   schedule: [],
-  usedWords: [],
-  previousStandingsPositions: null
+  usedWords: []
 };
 
 const STAGE_WORDS = { 'group': 10, 'ro32': 15, 'ro16': 18, 'qf': 20, 'sf': 22, 'final': 25 };
@@ -2306,8 +2248,7 @@ let diceCup = {
   rerolledIndex: -1,
   eventNote: '',
   knockoutOpponentsUsed: [],
-  resultCommitted: false,
-  previousStandingsPositions: null
+  resultCommitted: false
 };
 
 
@@ -2373,7 +2314,7 @@ let diceUcl = {
   rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
   rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
   finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-  knockoutField:[], currentRoundPairings:[], previousStandingsPositions:null
+  knockoutField:[], currentRoundPairings:[]
 };
 
 
@@ -2808,47 +2749,18 @@ function llSetWide(on=true){
   if(container) container.classList.toggle('league-wide',on);
 }
 const LL_EURO_MATCH_THEME_CLASSES=['ll-euro-match-day','ll-euro-match-ucl','ll-euro-match-uel','ll-euro-match-uecl'];
-const LL_NATIONAL_MATCH_THEME_CLASSES=['ll-national-match-day','ll-national-match-world-cup','ll-national-match-euro'];
 function llSetEuropeMatchTheme(competition=null){
   if(typeof document==='undefined'||!document.body)return;
   document.body.classList.remove(...LL_EURO_MATCH_THEME_CLASSES);
   if(!['ucl','uel','uecl'].includes(competition))return;
   document.body.classList.add('ll-euro-match-day','ll-euro-match-'+competition);
 }
-function llNormalizeNationalThemeCompetition(value){
-  const key=String(value||'').trim().toLowerCase().replace(/[ _]+/g,'-');
-  if(['wc','worldcup','world-cup','fifa-world-cup','fifa-wc'].includes(key))return 'world-cup';
-  if(['euro','euros','euro2032','euro-2032','uefa-euro','uefa-euro-2032','european-championship','uefa-european-championship'].includes(key))return 'euro';
-  return null;
-}
-function llSetNationalMatchTheme(competition=null){
-  if(typeof document==='undefined'||!document.body)return;
-  document.body.classList.remove(...LL_NATIONAL_MATCH_THEME_CLASSES);
-  const normalized=llNormalizeNationalThemeCompetition(competition);
-  if(!normalized)return;
-  document.body.classList.add('ll-national-match-day','ll-national-match-'+normalized);
-}
-function llActiveStandaloneNationalTheme(){
-  try{if(typeof wc!=='undefined'&&wc?.active)return 'world-cup';}catch(_error){}
-  try{if(typeof euro!=='undefined'&&euro?.active)return 'euro';}catch(_error){}
-  try{if(typeof euroCup!=='undefined'&&euroCup?.active)return 'euro';}catch(_error){}
-  return null;
-}
 function llSyncEuropeMatchTheme(){
   const host=typeof llArea==='function'?llArea():null;
-  const matchFixture=lexLeague?.match?.fixture||null;
-  const quizFixture=lexLeague?.quiz?.fixture||null;
-  const pendingFixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
-  const activeFixture=matchFixture||quizFixture||pendingFixture;
-  const activeFixtureCompetition=activeFixture?.competition||null;
+  const matchCompetition=lexLeague?.match?.fixture?.competition;
+  const fixtureCompetition=lexLeague?.quiz?.fixture?.competition||(typeof llPlayerFixture==='function'?llPlayerFixture()?.competition:null);
   const inMatchFlow=!!lexLeague?.match||!!lexLeague?.quiz||!!host?.querySelector('[onclick*="llStartMatchPreparation"]');
-  const clubEuropeCompetition=lexLeague?.active&&inMatchFlow&&['ucl','uel','uecl'].includes(activeFixtureCompetition)?activeFixtureCompetition:null;
-  llSetEuropeMatchTheme(clubEuropeCompetition);
-
-  const nationalKey=activeFixture?.nationalTournament?activeFixture?.nationalType:activeFixtureCompetition;
-  const leagueNationalCompetition=lexLeague?.active&&inMatchFlow?llNormalizeNationalThemeCompetition(nationalKey):null;
-  const standaloneNationalCompetition=!lexLeague?.active?llActiveStandaloneNationalTheme():null;
-  llSetNationalMatchTheme(clubEuropeCompetition?null:(leagueNationalCompetition||standaloneNationalCompetition));
+  llSetEuropeMatchTheme(lexLeague?.active&&inMatchFlow?(matchCompetition||fixtureCompetition):null);
 }
 if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'){
   const llEuropeThemeHost=document.getElementById('flashcard-area');
@@ -3211,21 +3123,11 @@ function llNeedsPriorityIntroduction(word){
   return !!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
 }
 function llPriorityIntroductionOrder(words){
-  // Bekleyen ilk-tanıtım kelimelerinde iki hedefi birlikte koru:
-  // 1) gerçekten yeni eklenenler erken görünsün, 2) eski bekleyenler starvation yaşamasın.
-  // Her 5'lik öncelik grubunda 3 en yeni + 2 en eski bekleyen kelime seçilir.
-  // Aynı gün eklenenlerde storage sırası kullanılır; daha sonra eklenen kelime daha yenidir.
-  const newestFirst=(Array.isArray(words)?words:[]).map((word,index)=>({word,index})).sort((a,b)=>{
-    const dateCompare=String(b.word?.addedAt||'').localeCompare(String(a.word?.addedAt||''));
+  return (Array.isArray(words)?words:[]).slice().sort((a,b)=>{
+    const dateCompare=String(b?.addedAt||'').localeCompare(String(a?.addedAt||''));
     if(dateCompare)return dateCompare;
-    return b.index-a.index;
-  }).map(item=>item.word);
-  const ordered=[];
-  while(newestFirst.length){
-    for(let i=0;i<3&&newestFirst.length;i++)ordered.push(newestFirst.shift());
-    for(let i=0;i<2&&newestFirst.length;i++)ordered.push(newestFirst.pop());
-  }
-  return ordered;
+    return String(a?.en||'').localeCompare(String(b?.en||''),'en');
+  });
 }
 function llMarkFirstExposure(word){
   if(!llNeedsPriorityIntroduction(word))return false;
@@ -3237,60 +3139,61 @@ function llMarkFirstExposure(word){
   }catch(error){try{globalThis.llQuizDiagnostic?.('first_exposure_save_error',{wordId:word.id||null,message:String(error?.message||error)});}catch{}}
   return true;
 }
-function llAdvanceQuizRecentIds(recentIds,id){
-  const next=(Array.isArray(recentIds)?recentIds:[]).filter(item=>item!==id);
-  next.push(id);
-  return next.slice(-30);
-}
-function llBuildStrictBaseQuizQueue({normalPool,priorities,target,usedIds,recentIds,introSlots}){
-  const normal=(Array.isArray(normalPool)?normalPool:[]).filter(word=>word&&word.id);
-  const intros=(Array.isArray(priorities)?priorities:[]).filter(word=>word&&word.id);
-  const normalIds=new Set(normal.map(word=>word.id));
-  let simulatedUsed=new Set((Array.isArray(usedIds)?usedIds:[]).filter(id=>normalIds.has(id)));
-  let simulatedRecent=(Array.isArray(recentIds)?recentIds:[]).slice(-30);
-  const slots=new Set(Array.isArray(introSlots)?introSlots:[]);
-  const queue=[];
-  let introIndex=0,cycleStartPending=false;
-  const pushIntro=()=>{
-    if(introIndex>=intros.length)return false;
-    const word=intros[introIndex++];
-    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:true});
-    simulatedRecent=llAdvanceQuizRecentIds(simulatedRecent,word.id);
-    return true;
-  };
-  for(let position=0;position<target;position++){
-    if(slots.has(position)&&pushIntro())continue;
-    let remaining=normal.filter(word=>!simulatedUsed.has(word.id));
-    if(!remaining.length&&normal.length){simulatedUsed=new Set();remaining=normal.slice();cycleStartPending=true;}
-    const recentSet=new Set(simulatedRecent);
-    const eligible=llShuffle(remaining.filter(word=>!recentSet.has(word.id)));
-    if(!eligible.length){if(pushIntro())continue;break;}
-    const word=eligible[0];
-    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:cycleStartPending,introPriority:false});
-    cycleStartPending=false;simulatedUsed.add(word.id);simulatedRecent=llAdvanceQuizRecentIds(simulatedRecent,word.id);
-  }
-  return queue;
-}
 function llPickQuizWords(count=10){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
+  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-12));
+  const choose=(pool,needed,blocked,allowCooldownFallback=false)=>{
+    const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,needed);
+    if(fresh.length>=needed||!allowCooldownFallback)return fresh;
+    const freshIds=new Set(fresh.map(w=>w.id));
+    return [...fresh,...llShuffle(pool.filter(w=>!blocked.has(w.id)&&!freshIds.has(w.id))).slice(0,needed-fresh.length)];
+  };
+
   const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
-  const normalPool=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
-  const desiredIntroCount=target===10?Math.min(5,pending.length):0;
-  const canInjectIntroductions=target===10&&desiredIntroCount>0&&normalPool.length>=target-desiredIntroCount;
+  const introduced=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
+  // Yerleşik havuzda 10 soruluk ana sınavın kontrollü hedefi NET 3 yeni
+  // kelimedir: 7 normal döngü kelimesi + en son eklenen 3 ilk-tanıtım kelimesi.
+  // 3'ten az bekleyen yeni kelime varsa olmayan kelimeyi tekrar ederek doldurmayız;
+  // mevcut bekleyenlerin tamamı kullanılır. Fresh kurulumda yeterli normal havuz
+  // yoksa sınavı kilitlememek için eski genel seçim davranışı korunur.
+  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
+  const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
-  const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:priorities.length===1?[3]:[];
-  return llBuildStrictBaseQuizQueue({normalPool,priorities,target,usedIds:state.usedWords,recentIds:state.recentQuizWords.slice(-30),introSlots});
+  const priorityIds=new Set(priorities.map(word=>word.id));
+  const selectable=priorities.length?[...introduced,...priorities]:words;
+  const closingPool=selectable.filter(w=>!used.has(w.id));
+  let closing=[];
+  if(priorities.length){
+    const normalClosing=choose(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,new Set(),true);
+    // 3 yeni kelime mevcutsa 2., 5. ve 8. sorulara dağıt. Daha az bekleyen
+    // varsa aynı mantıkla sınav boyunca mümkün olduğunca aralıklı yerleştir.
+    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
+    let normalIndex=0,introIndex=0;
+    for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
+      if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
+      else if(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+      else if(introIndex<priorities.length)closing.push(priorities[introIndex++]);
+    }
+    while(normalIndex<normalClosing.length)closing.push(normalClosing[normalIndex++]);
+    while(introIndex<priorities.length)closing.push(priorities[introIndex++]);
+  }else closing=choose(closingPool,target,new Set(),true);
+
+  const queue=closing.map(w=>({id:w.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:priorityIds.has(w.id)}));
+  if(queue.length<target){
+    const chosenIds=new Set(queue.map(ref=>ref.id));
+    let nextCycle=choose(selectable,target-queue.length,chosenIds,false);
+    if(nextCycle.length<target-queue.length)nextCycle=choose(selectable,target-queue.length,chosenIds,true);
+    nextCycle.slice(0,target-queue.length).forEach((w,index)=>queue.push({id:w.id,askTrToEn:Math.random()>.5,cycleStart:index===0,introPriority:priorityIds.has(w.id)}));
+  }
+  return queue;
 }
 function llMarkQuizWordUsed(ref){
   const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
-  // Özel 5'li ilk-tanıtım soruları normal kelime loop'unu tüketmez.
-  // Yakın-tekrar listesi llRecordQuizWordShown tarafından yine güncellenir.
-  if(ref.introPriority)return;
   const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
   const recent=Array.isArray(lexLeague.state.recentQuizWords)?lexLeague.state.recentQuizWords:[];
-  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-30);
+  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-12);
 }
 function llStartMatchPreparation(){
   fcQueue=[];
@@ -3298,7 +3201,7 @@ function llStartMatchPreparation(){
   if(!fixture){alert('Sıradaki maç bulunamadı. Dashboarda dönüp fikstürün yeniden oluşturulmasını bekle.');return;}
   const queue=llPickQuizWords(10);
   if(queue.length<10){alert(`Maç için en az 10 kelime gerekiyor. Kullanılabilir kelime: ${queue.length}. Ana menüden “Hata Kaydını İndir” dosyasını gönder.`);return;}
-  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,exposureSessionId:`league-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,fixture:{...fixture}};
+  lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,fixture:{...fixture}};
   llRenderLeagueQuiz();
 }
 function llQuizApPerWord(){
@@ -3309,8 +3212,6 @@ function llRenderLeagueQuiz(){
   if(q.index>=q.queue.length){llFinishLeagueQuiz();return;}
   const ref=q.queue[q.index],word=loadUserWords().find(w=>w.id===ref.id);
   if(!word){q.index++;llRenderLeagueQuiz();return;}
-  if(!q.exposureSessionId)q.exposureSessionId=`league-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  llRecordWordExposure(ref.id,'normalMatch',`${q.exposureSessionId}:${q.index}:${ref.id}`);
   if(typeof llRecordQuizWordShown==='function')llRecordQuizWordShown(ref,word);
   const question=ref.askTrToEn?word.tr.split(',')[0].trim():word.en;
   const answer=ref.askTrToEn?word.en:word.tr;
@@ -3324,7 +3225,7 @@ function llRenderLeagueQuiz(){
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
   // Normal 10 kelimelik sinavda ornek cumlede cevap gizlenmisse, cevap acilinca
   // kelimenin cumle icindeki tam Ingilizce kullanimini da goster.
-  const answerExampleHtml=q.revealed&&example.includes('_____')&&word.example
+  const answerExampleHtml=q.revealed&&word.example
     ?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(word.example)}”</div>`
     :'';
   const pct=(q.index/q.queue.length)*100;
@@ -3350,7 +3251,7 @@ function llPersistQuizWordRating(ref,q,correct,{markUsed=true}={}){
     if(card){
       recovered=!!(correct&&card.isActiveMistake===true);
       try{
-        const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;llRecordWordAnswerSource(card,'normalMatch');
+        const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;
         if(correct)card.isActiveMistake=false;else{card.wrongCount=(Number(card.wrongCount)||0)+1;card.isActiveMistake=true;}
       }catch(error){errors.push({stage:'sm2',message:String(error?.message||error)});}
       if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(Number(q.recoveredWords)||0)+1;q.recoveryBonus=(Number(q.recoveryBonus)||0)+bonus;}
@@ -4315,7 +4216,7 @@ function llExampleAnswerPattern(candidate){
   const tokens=phrase.split(/\s+/).filter(Boolean);if(!tokens.length)return '';
   const first=llEnglishWordForms(tokens.shift()).map(escapeRegExp).join('|');
   const particleLead=/^(?:about|after|away|back|down|for|in|into|off|on|out|over|through|to|up|with)$/i.test(tokens[0]||'');
-  const rest=tokens.map(escapeRegExp).join('\\s+');
+  const rest=tokens.map(token=>/^(?:a|an|the)$/i.test(token)?'(?:a|an|the)':escapeRegExp(token)).join('\\s+');
   // "care about" gibi ayr\u0131labilen fiillerde (cares deeply about) anlaml\u0131 ara s\u00f6zc\u00fckler c\u00fcmleyi gizlemesin.
   return '\\b(?:'+first+')'+(rest?(particleLead?'(?:\\s+\\w+){0,4}\\s+':'\\s+')+rest:'')+'\\b';
 }
@@ -4428,8 +4329,6 @@ function initDatabase() {
       if (word.source === 'user' && spellingFixes[normalizedEn]) word.en = spellingFixes[normalizedEn];
       llEnsureEnglishExample(word);
       word.pos = llInferWordPos(word);
-      llEnsureWordTracking(word);
-      llNormalizeReviewSchedule(word);
     });
 
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
@@ -4452,7 +4351,6 @@ function initDatabase() {
       const existsInNative = synchronizedPool.find(s => s.id === ex.id || s.en.toLowerCase() === ex.en.toLowerCase());
       if (!existsInNative && ex.source === 'user') synchronizedPool.push(llEnsureEnglishExample(ex));
     });
-    synchronizedPool.forEach(word => { llEnsureWordTracking(word); llNormalizeReviewSchedule(word); });
 
     LL_RUNTIME_WORD_FALLBACK = synchronizedPool;
     localStorage.setItem(DB_KEY, JSON.stringify(synchronizedPool));
@@ -4494,85 +4392,6 @@ function saveWordsToStorage(updatedWords) {
 function loadMeta() { try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
 function saveMeta(meta) { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
 
-// Kelime istatistikleri bu sürümden itibaren kaynak bazında tutulur.
-// Eski reviewCount/wrongCount korunur; geçmiş veriler yeni sayaçlara uydurulmaz.
-const LL_WORD_STATS_VERSION = 1;
-const LL_MAX_REVIEW_INTERVAL_DAYS = 365;
-const LL_WORD_ANSWER_COUNTERS = {
-  normalMatch: 'normalMatchCount',
-  mistakeReview: 'mistakeReviewCount',
-  specialQuiz: 'specialQuizCount',
-  reroll: 'rerollCount',
-  study: 'studyReviewCount'
-};
-const LL_WORD_EXPOSURE_COUNTERS = {
-  normalMatch: 'normalMatchExposureCount',
-  mistakeReview: 'mistakeExposureCount',
-  specialQuiz: 'specialQuizExposureCount',
-  reroll: 'rerollExposureCount',
-  study: 'studyExposureCount'
-};
-function llEnsureWordTracking(card) {
-  if (!card || typeof card !== 'object') return card;
-  if (!card.statsTrackingStartedAt) card.statsTrackingStartedAt = new Date().toISOString();
-  card.statsTrackingVersion = LL_WORD_STATS_VERSION;
-  ['normalMatchCount','mistakeReviewCount','specialQuizCount','rerollCount','studyReviewCount',
-   'totalExposureCount','normalMatchExposureCount','mistakeExposureCount','specialQuizExposureCount','rerollExposureCount','studyExposureCount']
-    .forEach(field => { const value=Number(card[field]); card[field]=Number.isFinite(value)&&value>=0?Math.floor(value):0; });
-  return card;
-}
-function llRecordWordAnswerSource(card, source) {
-  if (!card) return;
-  llEnsureWordTracking(card);
-  const field = LL_WORD_ANSWER_COUNTERS[source] || LL_WORD_ANSWER_COUNTERS.study;
-  card[field] = (Number(card[field]) || 0) + 1;
-  card.lastAnswerSource = source || 'study';
-  card.lastAnswerAt = new Date().toISOString();
-}
-function llRecordWordExposure(cardId, source, eventKey) {
-  if (!cardId || !eventKey) return;
-  try {
-    const words=loadUserWords(), card=words.find(word=>word.id===cardId);
-    if (!card) return;
-    llEnsureWordTracking(card);
-    if (card.lastExposureEventKey === eventKey) return;
-    const field = LL_WORD_EXPOSURE_COUNTERS[source] || LL_WORD_EXPOSURE_COUNTERS.study;
-    card.totalExposureCount = (Number(card.totalExposureCount) || 0) + 1;
-    card[field] = (Number(card[field]) || 0) + 1;
-    card.lastExposureSource = source || 'study';
-    card.lastExposureAt = new Date().toISOString();
-    card.lastExposureEventKey = eventKey;
-    saveWordsToStorage(words);
-  } catch (error) {
-    try{globalThis.llQuizDiagnostic?.('word_exposure_save_error',{wordId:cardId,source,message:String(error?.message||error)});}catch{}
-  }
-}
-function llReviewBaseDate(card) {
-  const candidate=String(card?.lastReviewed||'');
-  const parsed=candidate ? new Date(candidate+'T00:00:00') : null;
-  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
-}
-function llDateOnlyLocal(date) {
-  const d=new Date(date); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
-  return d.toISOString().split('T')[0];
-}
-function llNormalizeReviewSchedule(card) {
-  if (!card || typeof card !== 'object') return false;
-  let changed=false;
-  let interval=Number(card.interval);
-  if (!Number.isFinite(interval) || interval < 0) interval=0;
-  interval=Math.min(LL_MAX_REVIEW_INTERVAL_DAYS,Math.round(interval));
-  if (Number(card.interval)!==interval) { card.interval=interval; changed=true; }
-  if (!card.nextReview) return changed;
-  const next=new Date(String(card.nextReview)+'T00:00:00');
-  const base=llReviewBaseDate(card); base.setHours(0,0,0,0);
-  const maxDate=new Date(base); maxDate.setDate(maxDate.getDate()+LL_MAX_REVIEW_INTERVAL_DAYS);
-  if (Number.isNaN(next.getTime()) || next.getTime()>maxDate.getTime()) {
-    card.nextReview=llDateOnlyLocal(maxDate); changed=true;
-  }
-  return changed;
-}
-
 function sm2(card, quality) {
   let { interval, repetitions, ef } = card;
   if (!ef) ef = 2.5; if (!interval) interval = 0; if (!repetitions) repetitions = 0;
@@ -4580,7 +4399,6 @@ function sm2(card, quality) {
   if (quality < 3) { repetitions = 0; interval = 1; } 
   else {
     if (repetitions === 0) interval = 1; else if (repetitions === 1) interval = 6; else interval = Math.round(interval * ef);
-    interval = Math.min(LL_MAX_REVIEW_INTERVAL_DAYS, Math.max(1, interval));
     repetitions++;
   }
   ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
@@ -4743,8 +4561,7 @@ function resetDiceCupState() {
     rerolledIndex: -1,
     eventNote: '',
     knockoutOpponentsUsed: [],
-    resultCommitted: false,
-    previousStandingsPositions: null
+    resultCommitted: false
   };
 }
 
@@ -4839,7 +4656,6 @@ function prepareNextDiceCupMatch() {
   diceCup.rerollQueue = [];
   diceCup.rerollIndex = 0;
   diceCup.rerollRevealed = false;
-  diceCup.rerollExposureSessionId = `cup-reroll-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   diceCup.selectedRerollIndex = -1;
   diceCup.rerolledValue = null;
   diceCup.rerolledIndex = -1;
@@ -5068,7 +4884,6 @@ function showNextDiceCupRerollWord() {
   const area = document.getElementById('flashcard-area');
   const card = diceCup.rerollQueue[diceCup.rerollIndex];
   diceCup.rerollRevealed = false;
-  llRecordWordExposure(card.id,'reroll',`${diceCup.rerollExposureSessionId||'cup-reroll'}:${diceCup.rerollIndex}:${card.id}`);
   const askTrToEn = Math.random() > 0.5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
@@ -5129,7 +4944,6 @@ function recordDiceCupWordResult(cardId, quality) {
   card.nextReview = updated.nextReview;
   card.lastReviewed = todayStr();
   card.reviewCount = (card.reviewCount || 0) + 1;
-  llRecordWordAnswerSource(card, 'reroll');
   if (quality < 3) {
     card.wrongCount = (card.wrongCount || 0) + 1;
     card.isActiveMistake = true;
@@ -5237,7 +5051,7 @@ function diceCupStandingsHtml(rows) {
       <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
       ${rows.map((row, idx) => `
         <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === diceCup.playerTeam.name ? 'player' : ''}">
-          <td>${row.team.flag} ${row.team.name}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, diceCup.previousStandingsPositions) : ''}</td>
+          <td>${row.team.flag} ${row.team.name}</td>
           <td>${row.W + row.D + row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
           <td>${row.GD > 0 ? '+' + row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
         </tr>`).join('')}
@@ -5262,7 +5076,6 @@ function finishDiceCupMatch() {
     const otherTeam1 = diceCup.groupTeams[fix.otherMatch[0]];
     const otherTeam2 = diceCup.groupTeams[fix.otherMatch[1]];
     const otherResult = simulatePureDiceMatch();
-    if (typeof llStandingsCaptureRows === 'function') diceCup.previousStandingsPositions = llStandingsCaptureRows(sortedDiceCupStandings(), row => row.team.name);
     updateDiceCupStandings(diceCup.playerTeam, diceCup.opponent, diceCup.playerScore, diceCup.opponentScore);
     updateDiceCupStandings(otherTeam1, otherTeam2, otherResult.playerScore, otherResult.opponentScore);
     const rows = sortedDiceCupStandings();
@@ -5334,7 +5147,7 @@ function resetDiceUclState() {
     rerollRevealed:false, selectedRerollIndex:-1, usedWords:[], rerolledValue:null,
     rerolledIndex:-1, eventNote:'', resultCommitted:false, playedPairs:{},
     finalPosition:null, directQualifiers:[], playoffPairings:[], playoffWinners:[],
-    knockoutField:[], currentRoundPairings:[], previousStandingsPositions:null
+    knockoutField:[], currentRoundPairings:[]
   };
 }
 
@@ -5445,7 +5258,6 @@ function resetDiceUclMatchState() {
   diceUcl.rerollQueue = [];
   diceUcl.rerollIndex = 0;
   diceUcl.rerollRevealed = false;
-  diceUcl.rerollExposureSessionId = `ucl-reroll-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   diceUcl.selectedRerollIndex = -1;
   diceUcl.rerolledValue = null;
   diceUcl.rerolledIndex = -1;
@@ -5627,7 +5439,6 @@ function showNextDiceUclRerollWord() {
   const area = document.getElementById('flashcard-area');
   const card = diceUcl.rerollQueue[diceUcl.rerollIndex];
   diceUcl.rerollRevealed = false;
-  llRecordWordExposure(card.id,'reroll',`${diceUcl.rerollExposureSessionId||'ucl-reroll'}:${diceUcl.rerollIndex}:${card.id}`);
   const askTrToEn = Math.random() > .5;
   const question = askTrToEn ? card.tr.split(',')[0].trim() : card.en;
   const answer = askTrToEn ? card.en : card.tr;
@@ -5755,7 +5566,7 @@ function diceUclStandingsHtml(rows) {
       <tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
       ${rows.map((row,idx) => `
         <tr class="${idx < 8 ? 'ucl-direct' : idx < 24 ? 'ucl-playoff' : 'ucl-out'} ${row.team.name === diceUcl.playerTeam.name ? 'player' : ''}">
-          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, diceUcl.previousStandingsPositions) : ''}</td>
+          <td>${idx+1}</td><td>${row.team.flag} ${row.team.short}</td>
           <td>${row.W+row.D+row.L}</td><td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
           <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td><td style="font-weight:700;color:var(--text)">${row.P}</td>
         </tr>`).join('')}
@@ -5787,7 +5598,6 @@ function buildDiceUclOtherRoundPairings(roundOpponent) {
 }
 
 function simulateDiceUclLeagueRound(playerGoals, opponentGoals) {
-  if (typeof llStandingsCaptureRows === 'function') diceUcl.previousStandingsPositions = llStandingsCaptureRows(sortedDiceUclStandings(), row => row.team.name);
   const round = diceUcl.leagueRounds[diceUcl.leagueMatchIndex] || [];
   round.forEach(([home,away]) => {
     const playerIsHome = home.name === diceUcl.playerTeam.name;
@@ -5956,7 +5766,6 @@ function startWCTournament() {
   wc.stage = 'group';
   wc.matchIndex = 0;
   wc.usedWords = []; 
-  wc.previousStandingsPositions = null;
   
   const randomTeamIndex = Math.floor(Math.random() * WC_TEAMS.length);
   wc.playerTeam = WC_TEAMS[randomTeamIndex];
@@ -6117,10 +5926,6 @@ function showWCSummary() {
     let og1 = getSimulatedGoals(wc.wordCount, otherTeam1.stars);
     let og2 = getSimulatedGoals(wc.wordCount, otherTeam2.stars);
     
-    if (typeof llStandingsCaptureRows === 'function') {
-      const beforeRows = Object.values(wc.standings).sort((a, b) => b.P - a.P || b.GD - a.GD || b.GF - a.GF);
-      wc.previousStandingsPositions = llStandingsCaptureRows(beforeRows, row => row.team.name);
-    }
     updateStandings(wc.playerTeam, wc.opponent, playerGoals, oppGoals);
     updateStandings(otherTeam1, otherTeam2, og1, og2);
     
@@ -6135,7 +5940,7 @@ function showWCSummary() {
         <tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr>
         ${sortedStandings.map((row, idx) => `
           <tr class="${idx < 2 ? 'advanced' : ''} ${row.team.name === wc.playerTeam.name ? 'player' : ''}">
-            <td>${row.team.flag} ${row.team.name}${typeof llStandingsMovementHtml === 'function' ? llStandingsMovementHtml(row.team.name, idx + 1, wc.previousStandingsPositions) : ''}</td>
+            <td>${row.team.flag} ${row.team.name}</td>
             <td>${row.W + row.D + row.L}</td>
             <td>${row.W}</td><td>${row.D}</td><td>${row.L}</td>
             <td>${row.GD > 0 ? '+'+row.GD : row.GD}</td>
@@ -6270,8 +6075,6 @@ function startFlashcard(onlyMistakes = false, limitOverride = null) {
   let pool = loadUserWords();
 
   const loopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
-  fcReviewSource = onlyMistakes ? 'mistakeReview' : (loopState ? 'specialQuiz' : 'study');
-  fcExposureSessionId = `flash-${fcReviewSource}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   
   if (onlyMistakes) {
     pool = pool.filter(w => w.isActiveMistake || (w.interval <= 1 && (w.reviewCount || 0) > 0));
@@ -6325,7 +6128,6 @@ function showNextFlashcard() {
   }
 
   const card = fcQueue[fcIndex];
-  llRecordWordExposure(card.id,fcReviewSource,`${fcExposureSessionId}:${fcIndex}:${card.id}`);
   const activeLoopState = wc.active ? wc : (diceCup.active ? diceCup : (diceUcl.active ? diceUcl : null));
   llMarkSpacedLoopWordShown(card, activeLoopState);
   fcRevealed = false;
@@ -6400,7 +6202,6 @@ function rateFlashcard(cardId, quality) {
     card.nextReview = updated.nextReview;
     card.lastReviewed = todayStr();
     card.reviewCount = (card.reviewCount || 0) + 1;
-    llRecordWordAnswerSource(card, fcReviewSource);
     
     if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
     else if (quality >= 4) { card.isActiveMistake = false; }
@@ -6470,15 +6271,15 @@ renderPreStart();
 <script src="manager-market.js?v=20260811-manager-signing-transition-3"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
 <script src="europe-knockout-tiebreak.js?v=20260723-1"></script>
-<script src="europe-team-pools.js?v=20260826-sporting-canonical-v6"></script>
-<script src="european-leagues-pools.js?v=20260826-sporting-alias-v2"></script>
+<script src="europe-team-pools.js?v=20260809-local-europe-logos-2"></script>
+<script src="european-leagues-pools.js?v=20260731-2"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="ai-opponent-strategy.js?v=20260807-reroll-chain-1"></script>
 <script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260826-strict-word-cycle-v2"></script>
+<script src="diagnostics.js?v=20260820-new-word-intro-v3-5words"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
@@ -6496,12 +6297,11 @@ renderPreStart();
 <script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
 <script src="manager-offer-fit.js?v=20260812-facility-offers-v1"></script>
 <script src="europe-calendar-guard.js?v=20260807-1"></script>
-<script src="legend-call.js?v=20260826-recent-30-v2"></script>
-<script src="welcome-to-hell.js?v=20260826-recent-30-v2"></script>
+<script src="legend-call.js?v=20260813-word-cycle-v1"></script>
+<script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
-<script src="standings-movement.js?v=20260826-v1"></script>
-<script src="national-tournaments.js?v=20260826-national-tournaments-restored-v3"></script>
+<script src="national-tournaments.js?v=20260824-national-tournaments-v2-cinematics"></script>
 </body>
 </html>
