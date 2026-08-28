@@ -354,7 +354,7 @@ function penalty(state,home,away){
 function simulateKnockoutFixture(state,f){const s=simScore(state,f.home,f.away);f.homeGoals=s.homeGoals;f.awayGoals=s.awayGoals;if(s.homeGoals===s.awayGoals){const p=penalty(state,f.home,f.away);f.penalties={home:p.home,away:p.away};f.winner=p.winner;}else f.winner=s.homeGoals>s.awayGoals?f.home:f.away;updateNationalForm(state,f.home,f.away,f.homeGoals,f.awayGoals);f.played=true;return f;}
 function createEdition(type,year,managedTeam=null){
   const edition={version:VERSION,type,year,managedTeam,stage:'group',groupRound:0,tables:createTables(type),groupMatches:{},bracket:{},champion:null,runnerUp:null,thirdPlace:null,completed:false,reachedStage:'group',pendingFixtureId:null,matchLog:[],rankMovement:{}};
-  Object.entries(groupsFor(type)).forEach(([g,teams])=>{edition.groupMatches[g]=groupSchedule(teams).flat().map((m,i)=>({...m,id:`${g}${i+1}`,group:g,stage:'group',played:false,homeGoals:null,awayGoals:null}));});return edition;
+  Object.entries(groupsFor(type)).forEach(([g,teams])=>{edition.groupMatches[g]=groupSchedule(teams).flat().map((m,i)=>({...m,id:`G-${g}-${i+1}`,group:g,stage:'group',played:false,homeGoals:null,awayGoals:null}));});return edition;
 }
 function editionGroupForTeam(type,team){for(const [g,teams] of Object.entries(groupsFor(type)))if(teams.includes(team))return g;return null;}
 function simulateGroupMatch(state,edition,m){if(m.played)return;m.played=true;const score=simScore(state,m.home,m.away);m.homeGoals=score.homeGoals;m.awayGoals=score.awayGoals;applyStanding(edition.tables[m.group],m.home,m.away,m.homeGoals,m.awayGoals);updateNationalForm(state,m.home,m.away,m.homeGoals,m.awayGoals);edition.matchLog.push({stage:'group',group:m.group,...deep(m)});}
@@ -469,9 +469,10 @@ function managedNationalViewMode(state,rec){
 function enterManagedNationalContext(state,rec){
   if(!state||!rec?.edition||rec.status!=='active'||rec.completed)return {changed:false,repaired:false};
   const wasClub=managedNationalViewMode(state,rec)==='club';if(wasClub)rec.clubPendingFixture=deep(state.pendingFixture);
+  const identityRepaired=repairNationalFixtureIdentityCollision(state,rec);
   rec.viewMode='national';state.playerTeam=rec.selectedTeam;
   state.pendingFixture=deep(rec.nationalPendingFixture)||null;const recovery=repairManagedNationalFixture(state,rec);if(recovery.fixture)rec.nationalPendingFixture=deep(recovery.fixture);
-  return {changed:wasClub,repaired:recovery.repaired,fixture:recovery.fixture};
+  return {changed:wasClub||identityRepaired,repaired:recovery.repaired,fixture:recovery.fixture};
 }
 function leaveManagedNationalContext(state,rec){
   if(!state||!rec?.edition||rec.status!=='active'||rec.completed)return false;
@@ -500,15 +501,20 @@ function simulateRemainingAfterElimination(state,rec){
   if(rec.type==='wc'&&!ed.bracket.third){const sf=ed.bracket.sf||[],losers=sf.map(f=>f.home===f.winner?f.away:f.home);if(losers.length===2){const third=fixture('M103',losers[0],losers[1],'third');simulateKnockoutFixture(state,third);ed.bracket.third=[third];ed.thirdPlace=third.winner;}}
   ed.completed=true;ed.stage='completed';finishEdition(state,rec);
 }
-function findNationalFixture(rec,id){const ed=rec?.edition;if(!ed)return null;for(const matches of Object.values(ed.groupMatches||{})){const m=matches.find(x=>x.id===id);if(m)return m;}for(const round of Object.values(ed.bracket||{})){const f=(round||[]).find(x=>x.id===id);if(f)return f;}return null;}
+function repairNationalFixtureIdentityCollision(state,rec){
+  if(!state||!rec?.edition||num(rec.fixtureIdentityRepairVersion)>=1)return false;const ed=rec.edition,team=rec.selectedTeam,logs=Array.isArray(ed.matchLog)?ed.matchLog:[],firstGroupLog=new Map();
+  logs.forEach(item=>{if(item?.stage!=='group'||!item.group||!item.id)return;const key=`${item.group}|${item.id}`;if(!firstGroupLog.has(key))firstGroupLog.set(key,item);});
+  for(const matches of Object.values(ed.groupMatches||{}))for(const match of matches||[]){const snapshot=firstGroupLog.get(`${match.group}|${match.id}`);if(!snapshot)continue;match.played=!!snapshot.played;match.homeGoals=snapshot.homeGoals;match.awayGoals=snapshot.awayGoals;match.winner=snapshot.winner??null;match.penalties=deep(snapshot.penalties)||null;}
+  const seenGroups=new Set();ed.matchLog=logs.filter(item=>{if(item?.stage!=='group'||!item.group||!item.id)return true;const key=`${item.group}|${item.id}`;if(seenGroups.has(key))return false;seenGroups.add(key);return true;});
+  const history=Array.isArray(state.nationalTournaments?.matchHistory)?state.nationalTournaments.matchHistory:[],bad=item=>item?.userMatch&&num(item.year)===num(rec.year)&&item.type===rec.type&&item.team===team&&item.home!==team&&item.away!==team,badItems=history.filter(bad),refund=badItems.reduce((sum,item)=>sum+num(item.lpAwarded),0);
+  badItems.slice().reverse().forEach(item=>{for(const [name,gf,ga] of [[item.home,num(item.homeGoals),num(item.awayGoals)],[item.away,num(item.awayGoals),num(item.homeGoals)]]){const t=state.teams?.[name],outcome=gf>ga?'W':gf===ga?'D':'L';if(t?.lastResults?.[t.lastResults.length-1]===outcome)t.lastResults.pop();if(t&&gf>ga)t.wins=Math.max(0,num(t.wins)-1);}});
+  if(refund)state.lp=Math.max(0,num(state.lp)-refund);if(state.nationalTournaments)state.nationalTournaments.matchHistory=history.filter(item=>!bad(item));rec.fixtureIdentityRepairVersion=1;return true;
+}
 function findNationalFixtureForMatch(rec,fx,match){
-  const byId=findNationalFixture(rec,fx?.nationalFixtureId);if(byId)return byId;
   const home=fx?.home||match?.fixture?.home,away=fx?.away||match?.fixture?.away,stage=fx?.nationalStage||null,ed=rec?.edition;
   if(!ed||!home||!away)return null;
-  const same=f=>f&&!f.played&&f.home===home&&f.away===away&&(!stage||f.stage===stage);
-  for(const matches of Object.values(ed.groupMatches||{})){const found=(matches||[]).find(same);if(found)return found;}
-  for(const round of Object.values(ed.bracket||{})){const found=(round||[]).find(same);if(found)return found;}
-  return null;
+  const team=rec.selectedTeam,id=fx?.nationalFixtureId||null,groups=Object.values(ed.groupMatches||{}).flat(),knockout=Object.values(ed.bracket||{}).flat(),pool=stage==='group'?groups:stage&&ed.bracket?.[stage]?ed.bracket[stage]:groups.concat(knockout),eligible=f=>f&&!f.played&&(f.home===team||f.away===team)&&(!stage||f.stage===stage),samePair=f=>eligible(f)&&f.home===home&&f.away===away;
+  return pool.find(f=>samePair(f)&&(!id||f.id===id))||pool.find(samePair)||pool.find(f=>eligible(f)&&id&&f.id===id)||null;
 }
 function manualGrammarCounterAdvance(state){if(Number.isFinite(state.relativeClauseOfficialMatches))state.relativeClauseOfficialMatches++;if(Number.isFinite(state.gerundInfinitiveOfficialMatches))state.gerundInfinitiveOfficialMatches++;}
 function commitNationalMatch(){
@@ -584,7 +590,13 @@ const BASE_TEAM_LOGO=global.llTeamLogo;
 if(typeof BASE_TEAM_LOGO==='function')global.llTeamLogo=function(teamOrName,variant=''){const name=typeof teamOrName==='string'?teamOrName:teamOrName?.name;if(name&&TEAM_REGISTRY[name])return badgeFor(name,variant||'table');return BASE_TEAM_LOGO.apply(this,arguments);};
 
 const BASE_REPAIR=global.llV2RepairState;
-if(typeof BASE_REPAIR==='function')global.llV2RepairState=function(state){state=BASE_REPAIR.apply(this,arguments);ensureRoot(state);const rec=activeNationalRecord(state);if(rec&&managedNationalViewMode(state,rec)==='national')enterManagedNationalContext(state,rec);return state;};
+if(typeof BASE_REPAIR==='function')global.llV2RepairState=function(state){
+  let rec=activeNationalRecord(state),nationalMode=!!(rec&&managedNationalViewMode(state,rec)==='national');
+  if(nationalMode&&rec.clubTeam){if(state.pendingFixture?.nationalTournament||state.pendingFixture?.league==='national'||state.pendingFixture?.nationalFixtureId)rec.nationalPendingFixture=deep(state.pendingFixture);state.playerTeam=rec.clubTeam;state.pendingFixture=deep(rec.clubPendingFixture)||null;}
+  state=BASE_REPAIR.apply(this,arguments);ensureRoot(state);rec=activeNationalRecord(state);
+  if(rec&&nationalMode){rec.clubPendingFixture=deep(state.pendingFixture);rec.viewMode='national';state.playerTeam=rec.selectedTeam;state.pendingFixture=deep(rec.nationalPendingFixture)||null;enterManagedNationalContext(state,rec);}
+  return state;
+};
 
 const BASE_FINISH_QUIZ=global.llFinishLeagueQuiz;
 if(typeof BASE_FINISH_QUIZ==='function')global.llFinishLeagueQuiz=function(){const q=global.lexLeague?.quiz;if(!q?.fixture?.nationalTournament||q.relativeClause||q.gerundInfinitive)return BASE_FINISH_QUIZ.apply(this,arguments);if(q.committed)return;q.committed=true;const leagueAp=(typeof LL_COMP_REWARDS!=='undefined'&&LL_COMP_REWARDS?.league?.ap)?num(LL_COMP_REWARDS.league.ap,5):5,perWord=Math.round(leagueAp*NATIONAL_AP_MULTIPLIER),baseAp=num(q.correct)*perWord,recoveryAp=num(q.recoveryBonus),ap=baseAp+recoveryAp;global.lexLeague.state.ap=num(global.lexLeague.state.ap)+ap;const completed=!q.skipped&&q.index>=q.queue.length;let bonus='none';if(completed&&q.correct===10){bonus='perfect';global.lexLeague.state.lp=num(global.lexLeague.state.lp)+10;}else if(completed&&q.correct===9)bonus='reroll';q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=bonus;q.totalAnswered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index;save();global.llRenderQuizReward();};
@@ -637,6 +649,6 @@ registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboard
 global.llNationalTournamentTestApi={
  version:VERSION,teamRegistry:TEAM_REGISTRY,wcGroups:WC_GROUPS,euroGroups:EURO_GROUPS,euroThirdMap:EURO_THIRD_MAP,wcThirdMapCount:WC_THIRD_MAP.length-1,
  tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,nationalLogoSrc,groupRankMap,reconstructedGroupMovement,rankArrowHtml,
- wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,nationalRecordForType,postContinueNationalRoute,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,recoverableManagedFixture,repairManagedNationalFixture,managedNationalViewMode,enterManagedNationalContext,leaveManagedNationalContext,ensureRoot,ensureRecord,generateOffers,finishEdition
+ wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,nationalRecordForType,postContinueNationalRoute,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,recoverableManagedFixture,repairManagedNationalFixture,repairNationalFixtureIdentityCollision,managedNationalViewMode,enterManagedNationalContext,leaveManagedNationalContext,ensureRoot,ensureRecord,generateOffers,finishEdition
 };
 })(globalThis);
