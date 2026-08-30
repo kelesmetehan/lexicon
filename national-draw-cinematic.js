@@ -11,7 +11,7 @@
 (function(global){
 'use strict';
 
-const VERSION=2;
+const VERSION=3;
 const QUIZ_SIZE=3;
 const TYPES=['wc','euro'];
 const LABELS={wc:'Dünya Kupası',euro:'Avrupa Şampiyonası'};
@@ -147,7 +147,14 @@ function ensureStyles(){
     .ll-nd-intro-pot{border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
     .ll-nd-intro-pot h4{margin:0;padding:9px 10px;text-align:center;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase}
     .ll-nd-stage.wc .ll-nd-intro-pot{background:#08142F}.ll-nd-stage.wc .ll-nd-intro-pot h4{color:#F8F8FA;background:#061126}.ll-nd-stage.euro .ll-nd-intro-pot{background:rgba(33,77,219,.75)}.ll-nd-stage.euro .ll-nd-intro-pot h4{background:#10368E;color:#E9C43A}
-    .ll-nd-intro-pot-list{padding:8px;display:flex;flex-direction:column;gap:5px}.ll-nd-intro-pot .ll-nd-pot-team{font-size:13px}
+    .ll-nd-intro-pot-list{padding:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ll-nd-intro-pot .ll-nd-pot-team{font-size:13px}
+    .ll-nd-ball{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-width:0;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.98) 0 11%,rgba(255,255,255,.82) 12% 27%,rgba(213,220,239,.95) 56%,rgba(124,137,177,.96) 100%);border:1px solid rgba(255,255,255,.48);box-shadow:inset -8px -9px 14px rgba(5,15,42,.25),0 7px 16px rgba(0,0,0,.23);color:#13203c;font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px}
+    .ll-nd-stage.euro .ll-nd-ball{background:radial-gradient(circle at 34% 28%,#fff7ce 0 10%,#f4df72 12% 29%,#e9c43a 58%,#a77c0b 100%);border-color:rgba(255,242,171,.72);color:#10368E}
+    .ll-nd-ball:after{content:'';position:absolute;left:14%;right:14%;top:48%;height:1px;background:rgba(15,23,42,.18)}
+    .ll-nd-ball.draw-active{animation:llNdBallShake .18s linear infinite alternate;box-shadow:0 0 0 3px rgba(54,223,255,.25),0 8px 22px rgba(0,0,0,.32)}
+    .ll-nd-stage.euro .ll-nd-ball.draw-active{box-shadow:0 0 0 3px rgba(233,196,58,.3),0 8px 22px rgba(0,0,0,.32)}
+    @keyframes llNdBallShake{from{transform:translate(-2px,-1px) rotate(-4deg)}to{transform:translate(2px,1px) rotate(4deg)}}
+    .ll-nd-pot-closed-note{grid-column:1/-1;text-align:center;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.78;padding-top:2px}
     .ll-nd-quiz{position:relative;z-index:2;margin:4px 16px 16px;padding:18px;border-radius:12px;background:rgba(0,0,0,.19);border:1px solid rgba(255,255,255,.13);text-align:center}
     .ll-nd-q-progress{font-size:13px;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:10px}.ll-nd-question{font-size:32px;font-weight:800;line-height:1.15}.ll-nd-answer{font-size:24px;font-weight:700;margin-top:14px;padding:11px;border-radius:9px;background:rgba(0,0,0,.2)}
     .ll-national-draw-entry{margin-top:14px;border:1px solid rgba(233,196,58,.34)!important;background:linear-gradient(100deg,rgba(15,23,42,.52),rgba(30,64,175,.2))!important}
@@ -169,6 +176,12 @@ function titleHtml(type,sub='FINAL DRAW'){
 }
 function stageOpen(type,inner){const t=themeStyle(type);return `<div class="ll-nd-root"><div class="ll-nd-stage ${type}" style="background:${t.bg}">${inner}</div></div>`;}
 function potItem(type,team,classes=''){return `<div class="ll-nd-pot-team ${classes}">${logo(team,'table')}<span>${esc(team)}</span></div>`;}
+function closedPotBalls(type,pot,count,{active=false,compact=false}={}){
+  const max=compact?Math.min(Number(count)||0,6):Math.min(Number(count)||0,12);
+  const balls=Array.from({length:max},(_,i)=>`<div class="ll-nd-ball ${active&&i===Math.floor(max/2)?'draw-active':''}" aria-label="Kapalı kura topu">${pot}</div>`).join('');
+  const hidden=(Number(count)||0)-max;
+  return `${balls}${hidden>0?`<div class="ll-nd-pot-closed-note">+${hidden} kapalı top</div>`:''}`;
+}
 
 function selectWords(limit=QUIZ_SIZE){
   const all=typeof global.loadUserWords==='function'?global.loadUserWords():[];const words=(Array.isArray(all)?all:[]).filter(w=>String(w?.en||'').trim()&&String(w?.tr||'').trim());if(!words.length)return [];
@@ -185,8 +198,8 @@ function persistWord(ref,correct){
 
 function renderIntro(type){
   ensureStyles();const rec=activeRecord(type);if(!rec?.edition)return;const d=drawState(rec),pots=potsFor(type),t=themeStyle(type);
-  const potCards=[1,2,3,4].map(p=>`<div class="ll-nd-intro-pot"><h4>POT ${p}</h4><div class="ll-nd-intro-pot-list">${(pots[p]||[]).map(team=>potItem(type,team)).join('')}</div></div>`).join('');
-  const content=titleHtml(type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 13px;color:${t.muted};font-size:15px;line-height:1.45"><b style="color:${t.title}">${type==='wc'?'48 takım · 12 grup':'24 takım · 6 grup'}</b> · 4 pot · her grup 4 takım. <b style="color:${t.title}">Senin takımın + tam 3 rakip</b>. Kura başlamadan önce ${QUIZ_SIZE} kelimelik kısa tur var. Zar kullanılmaz; ardından yalnızca senin 3 grup rakibin kendi potlarından sırayla açılır.</div><div class="ll-nd-intro-grid">${potCards}</div><div class="ll-nd-actions">${d.completed?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawReplay('${type}')">Kurayı Tekrar İzle</button><button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${type}')">Turnuvaya Dön</button>`:d.quizDone?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${type}')">Kura Sahnesine Geç</button>`:`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawQuizStart('${type}')">Kelime Turunu Başlat</button>`}</div>`;
+  const potCards=[1,2,3,4].map(p=>`<div class="ll-nd-intro-pot"><h4>POT ${p}</h4><div class="ll-nd-intro-pot-list">${closedPotBalls(type,p,(pots[p]||[]).length,{compact:true})}</div></div>`).join('');
+  const content=titleHtml(type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 13px;color:${t.muted};font-size:15px;line-height:1.45"><b style="color:${t.title}">${type==='wc'?'48 takım · 12 grup':'24 takım · 6 grup'}</b> · 4 pot · her grup 4 takım. <b style="color:${t.title}">Senin takımın + tam 3 rakip</b>. Rakip isimleri kura başlamadan gösterilmez. Kura öncesinde ${QUIZ_SIZE} kelimelik kısa tur var; zar yok.</div><div class="ll-nd-intro-grid">${potCards}</div><div class="ll-nd-actions">${d.completed?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawReplay('${type}')">Kurayı Tekrar İzle</button><button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${type}')">Turnuvaya Dön</button>`:d.quizDone?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${type}')">Kura Sahnesine Geç</button>`:`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawQuizStart('${type}')">Kelime Turunu Başlat</button>`}</div>`;
   showModal(stageOpen(type,content));
 }
 
@@ -213,10 +226,15 @@ function groupSlotsHtml(session){
   return `<div class="ll-nd-group" style="grid-column:1/-1"><div class="ll-nd-group-title">${GROUP_LABEL[session.type]} ${group} · SENİN GRUBUN</div><div class="ll-nd-group-slots">${ordered.map(team=>{const isManaged=team===managed,isVisible=isManaged||revealed.has(team);return `<div class="ll-nd-group-slot ${isVisible?'revealed':''} ${current?.team===team?'current':''}">${isVisible?logo(team,'table'):''}<span class="ll-nd-group-team">${isVisible?esc(team):'—'}</span>${isManaged?'<span style="margin-left:auto;font-size:10px;letter-spacing:1px;opacity:.78">SEN</span>':''}</div>`;}).join('')}</div></div>`;
 }
 function renderDraw(){
-  ensureStyles();const s=global.llNationalDraw;if(!s)return;const t=themeStyle(s.type),currentPot=s.sequence[Math.min(s.revealed,s.sequence.length-1)]?.pot||4,pots=potsFor(s.type),revealed=revealedSet(s),current=s.revealed>0?s.sequence[s.revealed-1]:null,done=s.revealed>=s.sequence.length;
-  const potTeams=(pots[currentPot]||[]).map(team=>potItem(s.type,team,`${revealed.has(team)?'used':''} ${current?.team===team?'current':''}`)).join('');
-  const currentHtml=current?`${logo(current.team,'match')}<span>${esc(current.team)} → ${GROUP_LABEL[s.type]} ${esc(current.group)}</span>`:`<span>${done?'KURA TAMAMLANDI':'POT 1 HAZIR'}</span>`;
-  const content=titleHtml(s.type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 4px;color:${t.muted};font-size:14px">Doğrudan grup aşaması · kendi takımın + <b style="color:${t.title}">3 rakip</b> · toplam 3 grup maçı.</div><div class="ll-nd-layout"><div class="ll-nd-pot-panel"><div class="ll-nd-pot-head"><div class="ll-nd-pot-label">POT</div><div class="ll-nd-pot-number">${currentPot}</div></div><div class="ll-nd-pot-list">${potTeams}</div></div><div class="ll-nd-groups">${groupSlotsHtml(s)}</div></div><div class="ll-nd-current">${currentHtml}</div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" ${s.running||done?'disabled':''} onclick="llNationalDrawStart()">${s.running?'KURA ÇEKİLİYOR...':done?'3 RAKİP BELLİ OLDU':'3 RAKİBİ ÇEK'}</button>${done?`<button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${s.type}')">Turnuvaya Devam Et</button>`:''}</div>`;
+  ensureStyles();const s=global.llNationalDraw;if(!s)return;
+  const t=themeStyle(s.type),done=s.revealed>=s.sequence.length;
+  const target=s.sequence[Math.min(s.revealed,s.sequence.length-1)]||s.sequence[s.sequence.length-1];
+  const current=s.revealed>0?s.sequence[s.revealed-1]:null;
+  const currentPot=done?(current?.pot||target?.pot||1):(target?.pot||1);
+  const potCount=(potsFor(s.type)?.[currentPot]||[]).length;
+  const potTeams=closedPotBalls(s.type,currentPot,potCount,{active:!!s.running,compact:false});
+  const currentHtml=current?`${logo(current.team,'match')}<span>${esc(current.team)} → ${GROUP_LABEL[s.type]} ${esc(current.group)}</span>`:`<span>${s.running?`POT ${currentPot} · TOP ÇEKİLİYOR...`:`POT ${currentPot} HAZIR`}</span>`;
+  const content=titleHtml(s.type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 4px;color:${t.muted};font-size:14px">Doğrudan grup aşaması · kendi takımın + <b style="color:${t.title}">3 gizli rakip</b> · toplam 3 grup maçı. Potlardaki takım adları açılmaz; sadece çekilen takım görünür.</div><div class="ll-nd-layout"><div class="ll-nd-pot-panel"><div class="ll-nd-pot-head"><div class="ll-nd-pot-label">POT</div><div class="ll-nd-pot-number">${currentPot}</div></div><div class="ll-nd-intro-pot-list">${potTeams}</div></div><div class="ll-nd-groups">${groupSlotsHtml(s)}</div></div><div class="ll-nd-current">${currentHtml}</div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" ${s.running||done?'disabled':''} onclick="llNationalDrawStart()">${s.running?'KURA ÇEKİLİYOR...':done?'3 RAKİP BELLİ OLDU':'KURAYI BAŞLAT'}</button>${done?`<button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${s.type}')">Turnuvaya Devam Et</button>`:''}</div>`;
   showModal(stageOpen(s.type,content));
   const progress=document.getElementById('ll-nd-progress');if(progress)progress.textContent=done?`${s.sequence.length}/${s.sequence.length} · COMPLETE`:`${s.revealed}/${s.sequence.length} · POT ${currentPot}`;
   if(done){const rec=activeRecord(s.type),d=drawState(rec);if(d&&!d.completed){d.completed=true;d.completedAt=new Date().toISOString();save();}}
@@ -248,7 +266,21 @@ global.llNationalDrawQuizReveal=function(){const q=global.llNationalDrawQuiz;if(
 global.llNationalDrawQuizAnswer=function(correct){const q=global.llNationalDrawQuiz;if(!q)return;const item=q.queue[q.index];persistWord(item.word,!!correct);if(correct)q.correct++;q.index++;if(q.index>=q.queue.length)renderQuizDone();else renderQuiz();};
 global.llNationalDrawEnter=function(type){const rec=activeRecord(type);if(!rec)return;const sequence=buildSequence(type,rec.selectedTeam);if(sequence.length!==3){if(typeof global.alert==='function')global.alert('Milli kura grubu geçersiz: tam 3 rakip bulunamadı.');return;}global.llNationalDrawQuiz=null;global.llNationalDraw={type,sequence,revealed:0,running:false};renderDraw();};
 global.llNationalDrawReplay=function(type){const rec=activeRecord(type)||currentRecord(type);const sequence=buildSequence(type,rec?.selectedTeam);if(sequence.length!==3){if(typeof global.alert==='function')global.alert('Milli kura grubu geçersiz: tam 3 rakip bulunamadı.');return;}global.llNationalDraw={type,sequence,revealed:0,running:false,replay:true};renderDraw();};
-global.llNationalDrawStart=function(){const s=global.llNationalDraw;if(!s||s.running||s.revealed>=s.sequence.length)return;s.running=true;renderDraw();const delay=s.type==='wc'?390:520;const tick=()=>{s.revealed++;const done=s.revealed>=s.sequence.length;if(done)s.running=false;renderDraw();if(!done)setTimeout(tick,delay);};setTimeout(tick,420);};
+global.llNationalDrawStart=function(){
+  const s=global.llNationalDraw;if(!s||s.running||s.revealed>=s.sequence.length)return;
+  s.running=true;
+  const shuffleDelay=s.type==='wc'?760:820,revealHold=s.type==='wc'?720:780;
+  const step=()=>{
+    if(s.revealed>=s.sequence.length){s.running=false;renderDraw();return;}
+    renderDraw();
+    setTimeout(()=>{
+      s.revealed++;renderDraw();
+      if(s.revealed>=s.sequence.length){s.running=false;setTimeout(()=>renderDraw(),revealHold);return;}
+      setTimeout(step,revealHold);
+    },shuffleDelay);
+  };
+  step();
+};
 global.llNationalDrawClose=function(type){try{if(typeof global.llCloseModal==='function')global.llCloseModal();}catch(_){}if(typeof global.llRenderNationalTournaments==='function')global.llRenderNationalTournaments(type);};
 
 /* Integrate without altering the tournament engine's group generation. */
