@@ -96,6 +96,79 @@
   body.ll-euro-match-day .ll-panel { background:rgba(10,14,23,.90); border-color:var(--ll-euro-border); backdrop-filter:blur(10px); }
   body.ll-euro-match-day .ll-title em,
   body.ll-euro-match-day .ll-card-title { color:var(--ll-euro-accent); }
+
+  /* National tournaments: keep the tournament identity visible even when the
+     main panel covers most of the body background. This also themes the 10-word
+     quiz itself, not only the page behind it. */
+  .ll-shell[data-ll-national-theme="euro"] {
+    --ll-national-accent:#E9C43A;
+    --ll-national-blue:#2348D9;
+    --ll-national-deep:#10368E;
+    position:relative;
+    padding:10px;
+    border-radius:20px;
+    background-color:#173DB8;
+    background-image:linear-gradient(180deg,rgba(31,73,216,.28),rgba(4,19,80,.72)),url("assets/europe-match-themes/euro-national-desktop-v1.png");
+    background-size:cover,cover;
+    background-position:center top,center top;
+    background-repeat:no-repeat,no-repeat;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .ll-shell[data-ll-national-theme="wc"] {
+    --ll-national-accent:#D4AF55;
+    --ll-national-blue:#08142F;
+    --ll-national-deep:#020B22;
+    position:relative;
+    padding:10px;
+    border-radius:20px;
+    background-color:#04112D;
+    background-image:linear-gradient(180deg,rgba(4,17,45,.16),rgba(2,11,34,.72)),url("assets/europe-match-themes/world-cup-desktop-v1.png");
+    background-size:cover,cover;
+    background-position:center top,center top;
+    background-repeat:no-repeat,no-repeat;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .ll-shell[data-ll-national-theme] > .ll-panel {
+    background:rgba(5,15,40,.72)!important;
+    border-color:rgba(255,255,255,.17)!important;
+    backdrop-filter:blur(7px);
+  }
+  .ll-shell[data-ll-national-theme="euro"] > .ll-panel { background:rgba(8,28,94,.70)!important; }
+  .ll-shell[data-ll-national-theme="wc"] > .ll-panel { background:rgba(3,12,31,.72)!important; }
+  .ll-shell[data-ll-national-theme] .ll-topbar {
+    margin:-8px -8px 16px;
+    padding:14px 14px 12px;
+    border-radius:13px;
+    border:1px solid rgba(255,255,255,.12);
+  }
+  .ll-shell[data-ll-national-theme="euro"] .ll-topbar {
+    background:linear-gradient(135deg,rgba(16,54,142,.94),rgba(35,72,217,.82));
+    border-bottom-color:rgba(233,196,58,.58);
+  }
+  .ll-shell[data-ll-national-theme="wc"] .ll-topbar {
+    background:linear-gradient(135deg,rgba(8,20,47,.96),rgba(4,40,78,.84));
+    border-bottom-color:rgba(54,223,255,.42);
+  }
+  .ll-shell[data-ll-national-theme="euro"] .ll-title em,
+  .ll-shell[data-ll-national-theme="euro"] .ll-card-title,
+  .ll-shell[data-ll-national-theme="euro"] .ll-position { color:#E9C43A!important; }
+  .ll-shell[data-ll-national-theme="wc"] .ll-title em,
+  .ll-shell[data-ll-national-theme="wc"] .ll-card-title,
+  .ll-shell[data-ll-national-theme="wc"] .ll-position { color:#8BE9FF!important; }
+  .ll-shell.ll-quiz-card[data-ll-national-theme] .ll-question {
+    border:1px solid rgba(255,255,255,.20);
+    box-shadow:0 18px 50px rgba(0,0,0,.22);
+  }
+  .ll-shell.ll-quiz-card[data-ll-national-theme="euro"] .ll-question {
+    background:linear-gradient(145deg,rgba(31,73,216,.88),rgba(16,54,142,.91));
+    border-color:rgba(233,196,58,.40);
+  }
+  .ll-shell.ll-quiz-card[data-ll-national-theme="wc"] .ll-question {
+    background:linear-gradient(145deg,rgba(8,20,47,.93),rgba(10,44,78,.88));
+    border-color:rgba(54,223,255,.30);
+  }
+  .ll-shell.ll-quiz-card[data-ll-national-theme="euro"] .ll-progress > div { background:linear-gradient(90deg,#E9C43A,#FFF0A0); }
+  .ll-shell.ll-quiz-card[data-ll-national-theme="wc"] .ll-progress > div { background:linear-gradient(90deg,#36DFFF,#D4AF55); }
   @media (min-width:1200px) {
     body.ll-euro-match-day .ll-quiz-card { max-width:880px; }
   }
@@ -1006,10 +1079,16 @@
     body.ll-euro-match-ucl{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
     body.ll-euro-match-uel{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
     body.ll-euro-match-uecl{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
-    body.ll-euro-match-wc{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(3,8,46,.02),rgba(7,12,28,.52) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/world-cup-mobile-v2.png")}
-    body.ll-euro-match-euro{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(0,18,33,.02),rgba(7,15,25,.50) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/euro-national-mobile-v2.png")}
+    body.ll-euro-match-wc{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(3,8,46,.02),rgba(7,12,28,.52) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/world-cup-mobile-v3.png")}
+    body.ll-euro-match-euro{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(0,18,33,.02),rgba(7,15,25,.50) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/euro-national-mobile-v3.png")}
     body.ll-euro-match-wc .ll-panel{background:rgba(7,12,28,.74);backdrop-filter:blur(5px)}
     body.ll-euro-match-euro .ll-panel{background:rgba(7,15,25,.70);backdrop-filter:blur(5px)}
+    .ll-shell[data-ll-national-theme="euro"]{padding:7px;border-radius:16px;background-color:#2348D9;background-image:linear-gradient(180deg,rgba(35,72,217,.16),rgba(8,25,95,.68)),url("assets/europe-match-themes/euro-national-mobile-v3.png");background-size:100% 100%,100% auto;background-position:center top,center top;background-repeat:no-repeat,no-repeat}
+    .ll-shell[data-ll-national-theme="wc"]{padding:7px;border-radius:16px;background-color:#04112D;background-image:linear-gradient(180deg,rgba(4,17,45,.10),rgba(2,11,34,.66)),url("assets/europe-match-themes/world-cup-mobile-v3.png");background-size:100% 100%,100% auto;background-position:center top,center top;background-repeat:no-repeat,no-repeat}
+    .ll-shell[data-ll-national-theme="euro"] > .ll-panel{background:rgba(9,31,105,.60)!important;backdrop-filter:blur(4px)}
+    .ll-shell[data-ll-national-theme="wc"] > .ll-panel{background:rgba(3,12,31,.62)!important;backdrop-filter:blur(4px)}
+    .ll-shell[data-ll-national-theme] .ll-topbar{margin:-5px -5px 13px;padding:12px 11px 10px}
+    .ll-shell.ll-quiz-card[data-ll-national-theme] .ll-question{min-height:300px;display:flex;align-items:center;justify-content:center}
   }
 
   .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
@@ -3235,6 +3314,8 @@ function llQuizApPerWord(){
 }
 function llRenderLeagueQuiz(){
   const q=lexLeague.quiz;if(!q)return;
+  const nationalTheme=q.fixture?.nationalTournament&&['wc','euro'].includes(q.fixture?.nationalType)?q.fixture.nationalType:null;
+  if(nationalTheme&&typeof llSetEuropeMatchTheme==='function')llSetEuropeMatchTheme(nationalTheme);
   if(q.index>=q.queue.length){llFinishLeagueQuiz();return;}
   const ref=q.queue[q.index],word=loadUserWords().find(w=>w.id===ref.id);
   if(!word){q.index++;llRenderLeagueQuiz();return;}
@@ -3255,7 +3336,7 @@ function llRenderLeagueQuiz(){
     ?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(word.example)}”</div>`
     :'';
   const pct=(q.index/q.queue.length)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"${nationalTheme?` data-ll-national-theme="${llEscape(nationalTheme)}"`:''}><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}${answerExampleHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
   <div class="ll-quiz-actions" style="${q.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRateLeagueQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRateLeagueQuiz(true)">✓ Bildim</button></div><button class="ll-btn" style="width:100%;margin-top:10px" onclick="llSkipLeagueQuiz()">Geç · ${q.index} cevap üzerinden puanı al ve maça devam et</button></div></div>`;
   markNewWordFrame(word,llArea().querySelector('.ll-question'));
@@ -6328,7 +6409,7 @@ renderPreStart();
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
-<script src="national-tournaments.js?v=20260830-national-balance-v4"></script>
+<script src="national-tournaments.js?v=20260830-national-mobile-theme-v5"></script>
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 <script src="europe-draw-cinematic.js?v=20260830-interactive-draw-v1"></script>
