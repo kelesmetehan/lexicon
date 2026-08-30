@@ -3117,7 +3117,7 @@ function llRenderDashboard(){
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel">
     <div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">${llTeamLogo(def,'brand')}</div><div><div class="ll-title">${llEscape(s.playerTeam)}</div><div class="ll-muted">Sezon ${s.season} · ${s.week}. Hafta / 34</div></div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings()">📊 Lig Tablosu</button><button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div>
     <div class="ll-metrics"><div class="ll-metric"><strong>${s.ap}</strong><span>AP</span></div><div class="ll-metric"><strong>${s.lp}</strong><span>LP</span></div><div class="ll-metric"><strong>${llStars(team.stars)}</strong><span>Yıldız</span></div><div class="ll-metric"><strong>${llSortTable().findIndex(x=>x.team===s.playerTeam)+1}.</strong><span>Sıra</span></div></div>
-    <div class="ll-grid"><div><div class="ll-card"><div class="ll-card-title">Sıradaki Maç</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b><div class="ll-stars">${llStars(team.stars)}</div></div><div class="ll-vs">${isHome?'EV':'DEP'}<br>VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(opponentName)}</b><div class="ll-stars">${llStars(opp.stars)}</div>${llOpponentIcons(opponentName)}</div></div>
+    <div class="ll-grid"><div><div class="ll-card"><div class="ll-card-title">Sıradaki Maç</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b><div class="ll-stars">${llStars(team.stars)}</div></div><div class="ll-vs">${fixture.neutral?'NÖTR':isHome?'EV':'DEP'}<br>VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(opponentName)}</b><div class="ll-stars">${llStars(opp.stars)}</div>${llOpponentIcons(opponentName)}</div></div>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="ll-btn primary" onclick="llStartMatchPreparation()">10 Kelimelik Maça Başla</button>${transferOpen?`<button class="ll-btn gold" onclick="llRenderShop()">🛒 ${s.week}. Hafta Transfer Merkezi</button>`:''}</div></div>
       <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>
       <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px">${upgradeCost?`<button class="ll-btn" onclick="llUpgradeStars()">Yıldızı Yükselt · ${upgradeCost} LP</button><span class="ll-muted">${team.stars}★ → ${team.stars+1}★</span>`:`<span class="ll-notice">Takım maksimum 6 yıldıza ulaştı.</span>`}</div></div></div>
@@ -3416,8 +3416,8 @@ function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,is
   switch(base){
     case 'Sahayı Oku': case 'Metronom': case 'Reflex': case 'Kalenin Efendisi': return true;
     case 'Yıldız Oyuncu': return team?.stars>=3;
-    case 'Ev Sahibi Avantajı': return isHome;
-    case 'Deplasman Ruhu': case 'Deplasman Disiplini': return !isHome;
+    case 'Ev Sahibi Avantajı': return isHome===true;
+    case 'Deplasman Ruhu': case 'Deplasman Disiplini': return isHome===false;
     case 'Dev Avcısı': return (team?.stars||0)<(rival?.stars||0);
     case 'Moral Bozukluğu': return rival?.lastResults?.length>=2&&rival.lastResults.slice(-2).every(x=>x==='L');
     case 'Uzun Top': case 'Pas Ustası': case 'İkili Oyun': case 'Frikik Ustası': case 'Golcü İçgüdüsü': case 'Kale Direği': return llOwnTrigger(card,own);
@@ -3458,8 +3458,8 @@ function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,is
     case 'Savunma Blo\u011fu': return die.position==='Kaleci'&&LL_POSITIONS.filter(pos=>llFindPosition(ownDice,pos)?.value<llFindPosition(oppDice,pos)?.value).length>=2;
     case '\u00c7ift Y\u00f6nl\u00fc Oyun': return die.position==='Orta Saha'&&llFindPosition(ownDice,'Kaleci')?.value===llFindPosition(ownDice,'Forvet')?.value;
     case 'Lig Maratonu': return llHatTrickForm(teamName,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'}).active;
-    case 'Deplasman Plan\u0131': return !isHome;
-    case 'Evde Bask\u0131': return die.position==='Forvet'&&isHome;
+    case 'Deplasman Plan\u0131': return isHome===false;
+    case 'Evde Bask\u0131': return die.position==='Forvet'&&isHome===true;
     case 'Plan B': return false;
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die);
     case 'Taktik Tahtası': case 'Yedek Kulübesi': return false;
@@ -3473,7 +3473,7 @@ function llCardTriggeredForScouting(card,die,ownDice,oppDice,teamName,oppName,is
 }
 function llPrepareScouting(aName,bName,aDice,bDice,ctx={}){
   const disabled={a:new Set(),b:new Set()},events=[],randoms=ctx.randoms||{a:{captain:{},chance:null},b:{captain:{},chance:null}};
-  const sides={a:{name:aName,opp:bName,dice:aDice,oppDice:bDice,home:!!ctx.aHome},b:{name:bName,opp:aName,dice:bDice,oppDice:aDice,home:!ctx.aHome}};
+  const neutral=!!ctx.neutral,sides={a:{name:aName,opp:bName,dice:aDice,oppDice:bDice,home:neutral?null:!!ctx.aHome},b:{name:bName,opp:aName,dice:bDice,oppDice:aDice,home:neutral?null:!ctx.aHome}};
   const plans=[];
   [['a','b'],['b','a']].forEach(([ownerKey,oppKey])=>{
     const owner=sides[ownerKey],opponent=sides[oppKey],scoutDie=owner.dice.find(d=>llBaseName(llCard(d.cardId))==='Sahayı Oku'),scout=scoutDie&&llCard(scoutDie.cardId);if(!scout)return;
@@ -3499,7 +3499,7 @@ function llHighestDie(dice){return dice.reduce((a,b)=>a.value>=b.value?a:b);}
 function llFindPosition(dice,pos){return dice.find(d=>d.position===pos);}
 function llSum(dice){return dice.reduce((s,d)=>s+d.value,0);}
 function llOfficialTeamResults(teamName,limit=null){
-  const season=Number(lexLeague.state?.season)||1,official=['league','cup','playoff','ucl','uel','uecl'];
+  const season=Number(lexLeague.state?.season)||1,official=['league','cup','playoff','ucl','uel','uecl','supercup'];
   const results=(lexLeague.state?.results||[]).filter(result=>Number(result.season)===season&&(result.home===teamName||result.away===teamName)&&(!result.competition||official.includes(result.competition)));
   return Number.isInteger(limit)&&limit>0?results.slice(-limit):results;
 }
@@ -3550,9 +3550,9 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
   const aDice=llOrderDiceByPosition(llDeep(aDiceInput)),bDice=llOrderDiceByPosition(llDeep(bDiceInput)),scouting=ctx.scouting||llPrepareScouting(aName,bName,aDice,bDice,ctx),events=[...(scouting.events||[]),...(ctx.manualCardEvents||[])],eventScores=[...(scouting.events||[]),...(ctx.manualCardEvents||[])].map(()=>null),nextLocks={a:{},b:{}};
   const rawADice=llDeep(aDice),rawBDice=llDeep(bDice);
   const aState=llTeamState(aName),bState=llTeamState(bName);
-  const sides={a:{name:aName,dice:aDice,state:aState,home:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:!ctx.aHome,extra:0,shield:0}};
+  const neutral=!!ctx.neutral,sides={a:{name:aName,dice:aDice,state:aState,home:neutral?null:!!ctx.aHome,extra:0,shield:0},b:{name:bName,dice:bDice,state:bState,home:neutral?null:!ctx.aHome,extra:0,shield:0}};
   const disabled={a:new Set(scouting.disabled?.a||[]),b:new Set(scouting.disabled?.b||[])};
-  [['a','b'],['b','a']].forEach(([key,oppKey])=>{const me=sides[key],opp=sides[oppKey];if(me.home||!me.dice.some(d=>llBaseName(llCard(d.cardId))==='Deplasman Plan\u0131'))return;const homeCard=opp.dice.find(d=>llBaseName(llCard(d.cardId))==='Ev Sahibi Avantaj\u0131');if(homeCard){disabled[oppKey].add(homeCard.uid);events.push(me.name+': Deplasman Plan\u0131 \u2192 rakibin Ev Sahibi Avantaj\u0131 kart\u0131 etkisizle\u015ftirildi.');eventScores.push(null);}});
+  [['a','b'],['b','a']].forEach(([key,oppKey])=>{const me=sides[key],opp=sides[oppKey];if(me.home!==false||!me.dice.some(d=>llBaseName(llCard(d.cardId))==='Deplasman Plan\u0131'))return;const homeCard=opp.dice.find(d=>llBaseName(llCard(d.cardId))==='Ev Sahibi Avantaj\u0131');if(homeCard){disabled[oppKey].add(homeCard.uid);events.push(me.name+': Deplasman Plan\u0131 \u2192 rakibin Ev Sahibi Avantaj\u0131 kart\u0131 etkisizle\u015ftirildi.');eventScores.push(null);}});
   let scoreA=0,scoreB=0,processedPairs=0,extrasCommitted=false;
   function projectedScore(){
     let a=scoreA,b=scoreB;
@@ -3614,12 +3614,12 @@ function llResolveBattle(aName,bName,aDiceInput,bDiceInput,ctx={}){
     me.dice.forEach(d=>{
       const c=activeCard(d,key),base=llBaseName(c);if(!c||!globalPhaseCards[phase]?.has(base))return;
       if(base==='Lig Maratonu'&&ctx.competition==='league'){const form=llHatTrickForm(me.name,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'});if(form.active){const target=llFindPosition(me.dice,'Orta Saha'),old=target.value;target.value+=1;log(me.name+': Lig Maratonu \u2192 son '+form.windowSize+' resmi ma\u00e7ta '+form.wins+' galibiyet; Orta Saha zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}}
-      if(base==='Deplasman Plan\u0131'&&!me.home){const target=llLowestDie(me.dice),old=target.value;target.value+=1;log(me.name+': Deplasman Plan\u0131 \u2192 deplasmanda '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
-      if(base==='Ev Sahibi Avantajı'&&me.home){const own=llFindPosition(me.dice,d.position),min=Math.min(...me.dice.map(x=>x.value)),target=c.upgradeRule==='home-advantage'&&own?.value===min?own:llLowestDie(me.dice),bonus=c.upgradeRule==='home-advantage'&&target===own?2:1,old=target.value;target.value+=bonus;log(`${me.name}: Ev Sahibi Avantajı → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +${bonus}).`);}
+      if(base==='Deplasman Plan\u0131'&&me.home===false){const target=llLowestDie(me.dice),old=target.value;target.value+=1;log(me.name+': Deplasman Plan\u0131 \u2192 deplasmanda '+target.position+' zar\u0131 '+old+'\u2192'+target.value+' (zar etkisi, uygulanan +1).');}
+      if(base==='Ev Sahibi Avantajı'&&me.home===true){const own=llFindPosition(me.dice,d.position),min=Math.min(...me.dice.map(x=>x.value)),target=c.upgradeRule==='home-advantage'&&own?.value===min?own:llLowestDie(me.dice),bonus=c.upgradeRule==='home-advantage'&&target===own?2:1,old=target.value;target.value+=bonus;log(`${me.name}: Ev Sahibi Avantajı → ${target.position} zarı ${old}→${target.value} (zar etkisi, uygulanan +${bonus}).`);}
       const preparedCaptain=scouting.randoms?.[key]?.captain?.[d.uid],captainActive=c.upgradeRule==='captain'&&llLowestDie(me.dice).value<=2?true:(typeof preparedCaptain==='boolean'?preparedCaptain:Math.random()<.5);
       if(base==='Kaptanlık Pazubandı'&&captainActive){const low=llLowestDie(me.dice),old=low.value;low.value+=1;log(`${me.name}: Kaptanlık Pazubandı → ${low.position} zarı ${old}→${low.value} (zar etkisi, uygulanan +1).`);}
-      if(base==='Deplasman Ruhu'&&!me.home){const high=llHighestDie(opp.dice),old=high.value;high.value=Math.max(1,old-1);log(`${me.name}: Deplasman Ruhu → rakibin ${high.position} zarı ${old}→${high.value}.`);}
-      if(base==='Deplasman Disiplini'&&!me.home){const min=Math.min(...opp.dice.map(x=>x.value)),targets=c.upgradeRule==='away-discipline'?opp.dice.filter(x=>x.value===min).slice(0,2):[llLowestDie(opp.dice)];targets.forEach(low=>{const old=low.value;low.value=Math.max(1,low.value-1);log(`${me.name}: Deplasman Disiplini → rakibin ${low.position} zarı ${old}→${low.value}.`);});}
+      if(base==='Deplasman Ruhu'&&me.home===false){const high=llHighestDie(opp.dice),old=high.value;high.value=Math.max(1,old-1);log(`${me.name}: Deplasman Ruhu → rakibin ${high.position} zarı ${old}→${high.value}.`);}
+      if(base==='Deplasman Disiplini'&&me.home===false){const min=Math.min(...opp.dice.map(x=>x.value)),targets=c.upgradeRule==='away-discipline'?opp.dice.filter(x=>x.value===min).slice(0,2):[llLowestDie(opp.dice)];targets.forEach(low=>{const old=low.value;low.value=Math.max(1,low.value-1);log(`${me.name}: Deplasman Disiplini → rakibin ${low.position} zarı ${old}→${low.value}.`);});}
       if(base==='Dev Avcısı'&&me.state.stars<opp.state.stars){const max=Math.max(...opp.dice.map(x=>x.value)),targets=c.upgradeRule==='giant-killer'?opp.dice.filter(x=>x.value===max).slice(0,2):[llHighestDie(opp.dice)];targets.forEach(high=>{const old=high.value;high.value=Math.max(1,high.value-1);log(`${me.name}: Dev Avcısı → daha güçlü rakibin ${high.position} zarı ${old}→${high.value}.`);});}
       if(base==='Kalenin Efendisi'){const keeper=llFindPosition(opp.dice,'Kaleci'),old=keeper?.value;if(keeper){keeper.value=Math.min(4,keeper.value);log(`${me.name}: Kalenin Efendisi → rakip Kaleci zarı ${old}; 4 tavanından sonra ${keeper.value} sayıldı.`);}}
       if(base==='Moral Bozukluğu'&&((opp.state.lastResults.length>=2&&opp.state.lastResults.slice(-2).every(x=>x==='L'))||(c.upgradeRule==='morale'&&opp.state.lastResults.length>=3&&opp.state.lastResults.slice(-3).every(x=>x!=='W')))){const high=llHighestDie(opp.dice),old=high.value;high.value=Math.max(1,old-1);log(`${me.name}: Moral Bozukluğu → rakibin ${high.position} zarı ${old}→${high.value}.`);}
@@ -3791,12 +3791,12 @@ function llBeginMatch(plusPos){
   llSetWide(true);
   const f=lexLeague.quiz?.fixture||llPlayerFixture();if(!f){alert('Maç fikstürü değişti veya geçersizleşti. Dashboarda dönülüyor.');llRenderDashboard();return;}const p=lexLeague.state.playerTeam,o=f.home===p?f.away:f.home;
   const quizReroll=['reroll','perfect'].includes(lexLeague.quiz?.reward)?1:0,baseRerolls=quizReroll+llTakeCarriedRerolls(p);
-  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,manualCardEvents:[],committed:false};
+  lexLeague.match={fixture:f,player:p,opponent:o,playerHome:f.home===p,neutral:!!f.neutral,plusPos,playerDice:[],opponentDice:[],phase:'ready',selectedUid:null,baseRerolls,rerolls:baseRerolls+llExtraRerolls(p),rerollCredits:null,scouting:null,projectedResolution:null,resolution:null,manualCardEvents:[],committed:false};
   llRenderMatch();
 }
 function llRefreshMatchProjection(m){
   if(!m?.playerDice?.length||!m?.opponentDice?.length){if(m)m.projectedResolution=null;return;}
-  const randoms=m.scouting?.randoms;m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,randoms});m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
+  const randoms=m.scouting?.randoms;m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,neutral:!!m.neutral,randoms});m.projectedResolution=llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,neutral:!!m.neutral,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
 }
 function llAnimateVisibleDice(m,token,duration){
   const tick=()=>{if(lexLeague.match!==m||m.rollAnimationToken!==token)return;document.querySelectorAll('.ll-die.rolling').forEach((el,i)=>{el.textContent=String(1+Math.floor(Math.random()*6));el.setAttribute('aria-label',`Zar dönüyor: ${el.textContent}`);});};
@@ -3809,7 +3809,7 @@ function llRollCurrentMatch(){
   const wait=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?60:950;llAnimateVisibleDice(m,token,wait);
   setTimeout(()=>{
     if(lexLeague.match!==m||m.rollAnimationToken!==token)return;
-    m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome});
+    m.scouting=llPrepareScouting(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,neutral:!!m.neutral});
     llSetupMatchRerolls(m,m.scouting.disabled.a);
     const oppCredits=llRerollCreditsFromDice(m.opponentDice,m.scouting.disabled.b),oppCarry=llTakeCarriedRerolls(m.opponent);if(oppCarry||llExtraRerollsFromDice(m.opponentDice,m.scouting.disabled.b))m.opponentDice=llAutoRerollWithCredits(m.opponent,m.opponentDice,oppCredits,oppCarry);
     llRefreshMatchProjection(m);m.rollingAll=false;m.justLandedAll=true;m.phase=m.rerolls>0?'reroll':'preview';llRenderMatch();
@@ -3837,7 +3837,7 @@ function llUseReroll(){
 function llSkipRerolls(){const m=lexLeague.match;if(!m)return;m.rerolls=0;m.rerollCredits={base:0,general:0,Kaleci:0,'Orta Saha':0};m.selectedUid=null;m.phase='preview';llRenderMatch();}
 function llFinalizeCurrentMatch(){
   const m=lexLeague.match;if(!m||m.resolution)return;
-  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
+  m.resolution=m.projectedResolution||llResolveBattle(m.player,m.opponent,m.playerDice,m.opponentDice,{aHome:m.playerHome,neutral:!!m.neutral,competition:m.fixture?.competition||'league',scouting:m.scouting,manualCardEvents:m.manualCardEvents||[]});
   if(m.resolution.scoreA>0||m.resolution.scoreB>0){m.scorePop=true;m.scoreFlash=m.resolution.scoreA>m.resolution.scoreB?'player':m.resolution.scoreB>m.resolution.scoreA?'opponent':'draw';}
   m.phase='final';llRenderMatch();setTimeout(()=>{if(lexLeague.match===m){m.scorePop=false;m.scoreFlash=null;}},700);
 }
@@ -3853,9 +3853,9 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedD
   switch(base){
     case 'Metronom': return active('Reroll hakkı maç başında verildi.');
     case 'Yıldız Oyuncu': return team?.stars>=3?active('Takım en az 3 yıldızlı; zar alt sınırı uygulandı.'):inactive('Yalnızca 3 veya daha fazla yıldızlı takımda çalışır.');
-    case 'Ev Sahibi Avantajı': return isHome?active('Takım ev sahibi.'):inactive('Takım deplasmanda.');
-    case 'Deplasman Ruhu': return !isHome?active('Takım deplasmanda.'):inactive('Takım ev sahibi.');
-    case 'Deplasman Disiplini': return !isHome?active(`Takım deplasmanda; rakibin en düşük zarı ${llLowestDie(oppDice)?.value}.`):inactive('Takım ev sahibi.');
+    case 'Ev Sahibi Avantajı': return isHome===true?active('Takım ev sahibi.'):inactive(isHome===null?'Nötr sahada ev sahibi avantajı çalışmaz.':'Takım deplasmanda.');
+    case 'Deplasman Ruhu': return isHome===false?active('Takım deplasmanda.'):inactive(isHome===null?'Nötr sahada deplasman etkisi çalışmaz.':'Takım ev sahibi.');
+    case 'Deplasman Disiplini': return isHome===false?active(`Takım deplasmanda; rakibin en düşük zarı ${llLowestDie(oppDice)?.value}.`):inactive(isHome===null?'Nötr sahada deplasman etkisi çalışmaz.':'Takım ev sahibi.');
     case 'Dev Avcısı': {const rival=llTeamState(teamName===lexLeague.match.player?lexLeague.match.opponent:lexLeague.match.player);return (team?.stars||0)<(rival?.stars||0)?active(`Rakip ${rival.stars}★, kart sahibi ${team.stars}★.`):inactive('Rakip daha yüksek yıldızlı değil.');}
     case 'Kalenin Efendisi': {const keeper=llFindPosition(oppDice,'Kaleci');return active(`Rakip Kaleci zarı ${keeper?.value}; düelloda en fazla 4 sayılacak.`);}
     case 'Moral Bozukluğu': {const rival=llTeamState(teamName===lexLeague.match.player?lexLeague.match.opponent:lexLeague.match.player);return rival?.lastResults?.length>=2&&rival.lastResults.slice(-2).every(x=>x==='L')?active('Rakip son iki maçını kaybetti.'):inactive('Rakibin iki maçlık mağlubiyet serisi yok.');}
@@ -3906,8 +3906,8 @@ function llForecastCardStatus(card,die,ownDice,oppDice,teamName,isHome,resolvedD
     case 'Geri D\u00f6n\u00fc\u015f Plan\u0131': return uncertain('\u0130lk iki kartl\u0131 d\u00fcellodan sonraki skora ve Forvet durumuna bak\u0131lacak.');
     case 'Plan B': return uncertain('Yaln\u0131zca Forvet reroll sonucu eski de\u011ferden d\u00fc\u015f\u00fckse devreye girer.');
     case 'Lig Maratonu': {const f=llHatTrickForm(teamName,{trigger:'Son 5 resmi ma\u00e7\u0131n en az 3\u2019\u00fcn\u00fc kazand\u0131ysan'});return f.active?active('Son '+f.windowSize+' resmi ma\u00e7ta '+f.wins+' galibiyet var; lig ma\u00e7\u0131nda Orta Saha zar\u0131na +1.'):inactive('Yaln\u0131zca lig ma\u00e7\u0131nda son 5 resmi ma\u00e7ta en az 3 galibiyetle \u00e7al\u0131\u015f\u0131r.');}
-    case 'Deplasman Plan\u0131': return !isHome?active('Tak\u0131m deplasmanda; en d\u00fc\u015f\u00fck zar +1 alacak ve Ev Sahibi Avantaj\u0131 varsa bloklanacak.'):inactive('Tak\u0131m ev sahibi.');
-    case 'Evde Bask\u0131': return isHome?uncertain('Ev sahibi; Kaleci d\u00fcellosu kazan\u0131l\u0131rsa Forvet zar\u0131 +1 alacak.'):inactive('Tak\u0131m deplasmanda.');
+    case 'Deplasman Plan\u0131': return isHome===false?active('Tak\u0131m deplasmanda; en d\u00fc\u015f\u00fck zar +1 alacak ve Ev Sahibi Avantaj\u0131 varsa bloklanacak.'):inactive(isHome===null?'Nötr sahada deplasman planı çalışmaz.':'Tak\u0131m ev sahibi.');
+    case 'Evde Bask\u0131': return isHome===true?uncertain('Ev sahibi; Kaleci d\u00fcellosu kazan\u0131l\u0131rsa Forvet zar\u0131 +1 alacak.'):inactive(isHome===null?'Nötr sahada ev sahibi etkisi çalışmaz.':'Tak\u0131m deplasmanda.');
     case 'Nadir Kimya': return llNadirKimyaActiveForDice(ownDice,die)?active('Diğer iki kart da Nadir veya daha üstü; +1 reroll hazır.'):inactive('Diğer iki kartın ikisi de Nadir veya daha üstü değil.');
     case 'Taktik Tahtası': return inactive('Bu kart yalnızca transfer haftasında çalışır.');
     case 'Reflex': return active(`${llEffectAmount(card,1)} ekstra reroll hakkı maç başında verildi.`);
@@ -3991,7 +3991,7 @@ function llMatchForecastHtml(m){
   const verdict=playerGoals>opponentGoals?'Ham zarlarda avantaj sende':opponentGoals>playerGoals?'Ham zarlarda rakip avantajlı':'Ham zar durumu dengede';
   const activeCards=[...pDice,...oDice].filter(d=>llCard(d.cardId)).length;
   const scoutingInfo=m.scouting?.events?.length?`<div class="ll-notice" style="margin-top:12px">${m.scouting.events.map(e=>llEscape(e)).join('<br>')}</div>`:'';
-  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.playerHome,m.scouting?.disabled?.a,m.projectedResolution?.aDice)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,!m.playerHome,m.scouting?.disabled?.b,m.projectedResolution?.bDice)}</div>${llRealCardSynergyHtml(m.player,true)}${llRealCardSynergyHtml(m.opponent,true)}${llTriggeredCardLogHtml(m)}</div>`;
+  return `<div class="ll-forecast"><div class="ll-forecast-head"><div><div class="ll-card-title" style="margin-bottom:5px">Maç Öncesi Düello Tahmini</div><div class="ll-muted">Önce ham zar skoru, hemen altında mevcut tetiklenen kartlara göre oluşacak sonuç gösterilir.</div></div><div class="ll-forecast-score">Ham tahmin ${playerGoals}-${opponentGoals}</div></div><div class="ll-forecast-grid">${rows}</div>${llProjectedOutcomeHtml(m)}<div class="ll-notice" style="margin-top:12px"><b>${verdict}.</b> ${draws?`${draws} düello şu anda berabere. `:''}${activeCards?`${activeCards} kartın durumu aşağıda otomatik hesaplandı.`:'Aktif kart olmadığı için tahmin daha güvenilir.'}</div>${scoutingInfo}<div class="ll-forecast-cards">${llForecastSideCards(pDice,oDice,m.player,m.player,m.neutral?null:m.playerHome,m.scouting?.disabled?.a,m.projectedResolution?.aDice)}${llForecastSideCards(oDice,pDice,m.opponent,m.opponent,m.neutral?null:!m.playerHome,m.scouting?.disabled?.b,m.projectedResolution?.bDice)}</div>${llRealCardSynergyHtml(m.player,true)}${llRealCardSynergyHtml(m.opponent,true)}${llTriggeredCardLogHtml(m)}</div>`;
 }
 function llRenderMatch(){
   const m=lexLeague.match;if(!m)return;const pDef=llTeamDef(m.player),oDef=llTeamDef(m.opponent),r=m.resolution;
@@ -4003,7 +4003,7 @@ function llRenderMatch(){
   else if(m.phase==='reroll')controls=`<div class="ll-notice">${m.rerolls} reroll hakkın var. Yukarıdaki <b>Kartlı sonuç</b> skorunu inceleyip yeniden atmak istediğin zarı seç.</div><div style="display:flex;gap:9px;justify-content:center;margin-top:12px"><button class="ll-btn primary" ${m.selectedUid?'':'disabled'} onclick="llUseReroll()">Seçili Zarı Yeniden At</button><button class="ll-btn" onclick="llSkipRerolls()">Reroll Kullanma</button></div>`;
   else if(m.phase==='preview')controls=`<div class="ll-notice">Ham skor ile tetiklenen kartlara göre hesaplanan skoru inceledin. Şimdi kart etkilerini kesin sonuca uygulayabilirsin.</div><button class="ll-btn primary" style="margin-top:12px" onclick="llFinalizeCurrentMatch()">Kart Etkilerini Uygula</button>`;
   else controls=`<button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button>`;
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel ${m.scoreFlash?`ll-goal-flash ${m.scoreFlash}`:''}"><div class="ll-topbar"><div><div class="ll-title">${lexLeague.state.week}. Hafta <em>Zar Düellosu</em></div><div class="ll-muted">Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel ${m.scoreFlash?`ll-goal-flash ${m.scoreFlash}`:''}"><div class="ll-topbar"><div><div class="ll-title">${m.fixture?.competition==='supercup'?llEscape(m.fixture?.superCupName||'Süper Kupa'):`${lexLeague.state.week}. Hafta`} <em>Zar Düellosu</em></div><div class="ll-muted">${m.fixture?.competition==='supercup'?'Sezon Açılışı · ':''}Atış → Reroll → Kart etkileri → 3 karşılıklı düello</div></div><div class="ll-sub">${m.neutral?'Nötr Saha':m.playerHome?'Ev Sahibi':'Deplasman'}</div></div>
   <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs ${m.scorePop?'ll-score-pop':''}">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
   ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map((d,i)=>llDieRow(d,'a',m.phase==='reroll'&&llCanRerollDie(m,d.position),m.selectedUid===d.uid,m.phase==='rolling'||(m.phase==='rerollRolling'&&m.rollingUid===d.uid),m.justLandedAll||m.justLandedUid===d.uid,i)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map((d,i)=>llDieRow(d,'b',false,false,m.phase==='rolling',m.justLandedAll,i+3)).join('')}</div></div>`}
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
@@ -6290,7 +6290,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260810-match-save-summary-1"></script>
+<script src="league-v2.js?v=20260830-opening-supercup-v1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260811-manager-signing-transition-3"></script>
 <script src="europe-knockout-center.js?v=20260726-1"></script>
@@ -6300,7 +6300,7 @@ renderPreStart();
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="ai-opponent-strategy.js?v=20260807-reroll-chain-1"></script>
-<script src="multi-league-engine.js?v=20260810-country-competition-names-2"></script>
+<script src="multi-league-engine.js?v=20260830-opening-supercup-v1"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
 <script src="diagnostics.js?v=20260820-new-word-intro-v3-5words"></script>
@@ -6313,7 +6313,7 @@ renderPreStart();
 <script src="derby-achievements.js?v=20260814-manager-achievement-1"></script>
 <script src="achievement-cinematic.js?v=20260810-cinematic-queue-1"></script>
 <script src="competition-achievements.js?v=20260810-competition-titles-1"></script>
-<script src="super-cup.js?v=20260824-competition-center-v3"></script>
+<script src="super-cup.js?v=20260830-opening-reward-v1"></script>
 <script src="team-star-decline.js?v=20260804-2"></script>
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20260810-cinematic-queue-1"></script>
@@ -6326,7 +6326,8 @@ renderPreStart();
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
 <script src="gerund-infinitive-quiz.js?v=20260824-gerund-infinitive-131-v2"></script>
-<script src="national-tournaments.js?v=20260830-euro-matchdays-v3"></script>
+<script src="national-tournaments.js?v=20260830-national-balance-v4"></script>
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
+<script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 </body>
 </html>
