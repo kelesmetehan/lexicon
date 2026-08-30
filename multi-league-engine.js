@@ -507,11 +507,11 @@ llMLCommitBase=function(){
   var lp=pg>og?reward.win:pg===og?reward.draw:reward.loss;state.lp+=lp;
   var rolled=(match.playerDice||[]).map(function(die){return die.cardId;}).filter(Boolean),used=rolled.length?rolled:LL_POSITIONS.map(function(position){return llTeamState(match.player).cards[position];}).filter(Boolean),met=llTriggeredPlayerCardIds(match),applied=llAppliedPlayerCardIds(match);
   llRecordPlayerCardPerformance(used,pg>og?'win':pg===og?'draw':'loss',competition,pg,og,met,applied);
-  llRecordMatch(fixture.home,fixture.away,hg,ag,state.week,true,competition,fixture.league||null);llApplyLocks(resolution,match.player,match.opponent);
+  llRecordMatch(fixture.home,fixture.away,hg,ag,competition==='supercup'?0:state.week,true,competition,fixture.league||null);llApplyLocks(resolution,match.player,match.opponent);
   var recorded=state.results[state.results.length-1],cup=state.cup,isDouble=competition==='cup'&&llMLCupUsesTwoLegs(cup)&&!llMLCupRoundIsFinal(cup.round)&&cup&&cup.pending&&fixture.cupTieId===cup.pending.tieId,firstLeg=isDouble&&Number(fixture.cupLeg)===1,secondLeg=isDouble&&Number(fixture.cupLeg)===2,aggregate=null;
   if(recorded&&competition==='cup')Object.assign(recorded,{country:llMLCountryForTeam(fixture.home,state)||state.playerCountry,cupRound:Number(cup&&cup.round),cupLeg:Number(fixture.cupLeg)||1,cupTieId:fixture.cupTieId||null,roundLabel:fixture.roundLabel||null});
   if(secondLeg)aggregate={player:(Number(cup.pending.firstLeg&&cup.pending.firstLeg.playerGoals)||0)+pg,opponent:(Number(cup.pending.firstLeg&&cup.pending.firstLeg.opponentGoals)||0)+og};
-  var needsPens=(competition==='playoff'&&pg===og)||(competition==='cup'&&!firstLeg&&(secondLeg?aggregate.player===aggregate.opponent:pg===og));
+  var needsPens=(competition==='supercup'&&pg===og)||(competition==='playoff'&&pg===og)||(competition==='cup'&&!firstLeg&&(secondLeg?aggregate.player===aggregate.opponent:pg===og));
   var shootout=needsPens&&typeof llV12PenaltyShootout==='function'?llV12PenaltyShootout(state,match.player,match.opponent):null;
   if(shootout)shootout.aggregate=aggregate||{player:pg,opponent:og};
   var winner=firstLeg?null:shootout?shootout.winner:secondLeg?(aggregate.player>aggregate.opponent?match.player:match.opponent):(pg===og?(Math.random()<.5?match.player:match.opponent):pg>og?match.player:match.opponent);
@@ -528,6 +528,7 @@ llMLCommitBase=function(){
     else llV2FinishCupRound(winner);
   }else if(['ucl','uel','uecl'].includes(competition))llV2FinishEuropeRound(winner);
   else if(competition==='playoff')llV2FinishPlayoffMatch(winner);
+  else if(competition==='supercup'&&typeof llFinishSuperCup==='function')llFinishSuperCup(winner);
   state.pendingFixture=null;llSave();llRenderRoundSummary(state.week-(competition==='league'?1:0),lp,pg,og,competition,winner===match.player);
   if(secondLeg&&!shootout){var notice=llArea()&&llArea().querySelector('.ll-notice');if(notice)notice.innerHTML+='<br><b>Toplam skor:</b> '+aggregate.player+'-'+aggregate.opponent+' \u00b7 '+(winner===match.player?'Tur atlad\u0131n':'Elendin');}
 };

@@ -13,7 +13,7 @@
 (function(global){
 'use strict';
 
-const VERSION=3;
+const VERSION=4;
 const OFFER_COUNT=5;
 const NATIONAL_AP_MULTIPLIER=1.20;
 const POSITIONS=['Kaleci','Orta Saha','Forvet'];
@@ -47,7 +47,14 @@ const TEAM_REGISTRY={
  'Slovenia':{stars:2,flag:'🇸🇮'},'Tunisia':{stars:2,flag:'🇹🇳'},'Saudi Arabia':{stars:2,flag:'🇸🇦'},'Qatar':{stars:2,flag:'🇶🇦'},'Uzbekistan':{stars:2,flag:'🇺🇿'},'Bosnia & Herzegovina':{stars:2,flag:'🇧🇦'},'Iraq':{stars:2,flag:'🇮🇶'},'Cabo Verde':{stars:2,flag:'🇨🇻'},'Ghana':{stars:2,flag:'🇬🇭'},'Albania':{stars:2,flag:'🇦🇱'},'Georgia':{stars:2,flag:'🇬🇪'},'Jordan':{stars:2,flag:'🇯🇴'},
  'Curaçao':{stars:1,flag:'🇨🇼'},'New Zealand':{stars:1,flag:'🇳🇿'},'Haiti':{stars:1,flag:'🇭🇹'}
 };
-const OBJECTIVES={1:'Gruptan çık',2:'Son 16',3:'Çeyrek final',4:'Yarı final',5:'Final',6:'Şampiyonluk'};
+const OBJECTIVE_SPECS={
+  1:{label:'Gruptan çık',stage:'group_out'},
+  2:{label:'Son 16',stage:'r16'},
+  3:{label:'Çeyrek final',stage:'qf'},
+  4:{label:'Yarı final',stage:'sf'},
+  5:{label:'Final',stage:'final'},
+  6:{label:'Şampiyonluk',stage:'champion'}
+};
 const NATIONAL_LOGO_BASE='https://sachawd.github.io/wc26-assets/national-team-logos/';
 const NATIONAL_LOGO_FILES={
   'Albania':'Albania-national-team.png',
@@ -190,7 +197,13 @@ function rankArrowHtml(edition,group,team){
   if(movement==='down')return '<span class="ll-national-rank-arrow down" title="Son maç sonrası sıralamada düştü" aria-label="Sıralamada düştü">▼</span>';
   return '';
 }
-function objectiveFor(team){return OBJECTIVES[starsFor(team)]||OBJECTIVES[1];}
+function objectiveSpecFor(team,type){
+  const stars=clamp(starsFor(team),1,6),base=OBJECTIVE_SPECS[stars]||OBJECTIVE_SPECS[1];
+  /* WC ve EURO aynı güç merdivenini kullanır. Hedef etiketi ve başarı kontrolü
+   * tek kaynaktan gelir; ekrandaki hedef ile değerlendirme birbirinden kopmaz. */
+  return {...base,stars,type:type==='wc'?'wc':'euro'};
+}
+function objectiveFor(team,type){return objectiveSpecFor(team,type).label;}
 function groupZoneClass(type,index){if(index<2)return 'champion-zone';if(index===2)return 'playoff-zone';return 'relegation-zone';}
 function nationalStageLabel(stage){return STAGE_LABELS[stage]||String(stage||'Turnuva');}
 function nationalFixtureOpponent(rec,match){if(!rec?.selectedTeam||!match)return '';return match.home===rec.selectedTeam?match.away:match.away===rec.selectedTeam?match.home:'';}
@@ -263,11 +276,42 @@ function ensureTeamState(state,name,cards=null){
   team.name=name;team.stars=starsFor(name);if(!team.cards||typeof team.cards!=='object')team.cards={'Kaleci':null,'Orta Saha':null,'Forvet':null};
   if(cards)POSITIONS.forEach(pos=>team.cards[pos]=cards[pos]||null);else POSITIONS.forEach(pos=>team.cards[pos]=null);
   team.lockedDice={};team.nextMatchRerolls=0;team.nextMatchBonuses={};team.sixStreaks={};
-  if(cards){team.cardContracts={};POSITIONS.forEach(pos=>{const id=team.cards[pos];if(!id)return;let total=99;try{if(typeof global.llCardContractRule==='function')total=Math.max(1,num(global.llCardContractRule(id)?.matches,99));}catch(_){}team.cardContracts[pos]={cardId:id,remaining:total,total};});}
-  else team.cardContracts={};
+  team.cardContracts={};POSITIONS.forEach(pos=>{const id=team.cards[pos];if(!id)return;team.cardContracts[pos]={cardId:id,remaining:99,total:99};});
   return team;
 }
-function ensureAllNationalTeams(state){Object.keys(TEAM_REGISTRY).forEach(name=>ensureTeamState(state,name,null));}
+function nationalCardCount(stars){return stars>=5?3:stars>=3?2:1;}
+function nationalCardRarities(stars){
+  if(stars<=1)return ['common'];
+  if(stars===2)return ['common','rare'];
+  if(stars===3)return ['common','rare'];
+  if(stars===4)return ['rare','epic','common'];
+  if(stars===5)return ['rare','epic','legendary','common'];
+  return ['epic','legendary','rare'];
+}
+function nationalCardScore(card,teamName,pos){
+  try{if(typeof global.llAiCardScore==='function')return num(global.llAiCardScore(card,teamName,pos),0);}catch(_){}
+  const rarity={common:1,rare:2,epic:3,legendary:4}[card?.rarity]||1;return rarity*100+num(card?.minStar,1)*10;
+}
+function nationalAiCardsFor(state,name,rec=null){
+  const stars=starsFor(name),count=nationalCardCount(stars),seed=`national-cards|${rec?.type||'all'}|${rec?.year||0}|${name}|${stars}`;
+  const positions=[...POSITIONS].sort((a,b)=>stableHash(`${seed}|pos|${a}`)-stableHash(`${seed}|pos|${b}`));
+  const selected={'Kaleci':null,'Orta Saha':null,'Forvet':null},usedFamilies=new Set(),allowed=new Set(nationalCardRarities(stars));
+  for(const pos of positions.slice(0,count)){
+    let pool=[];
+    try{if(typeof global.llEligibleCards==='function')pool=global.llEligibleCards(name,pos)||[];}catch(_){}
+    pool=pool.filter(card=>card&&!card.clubCard&&!card.upgradeOnly&&num(card.minStar,1)<=stars&&allowed.has(card.rarity));
+    if(!pool.length){try{if(typeof global.llEligibleCards==='function')pool=(global.llEligibleCards(name,pos)||[]).filter(card=>card&&!card.clubCard&&!card.upgradeOnly&&num(card.minStar,1)<=stars);}catch(_){}}
+    pool=pool.filter(card=>{let family=card.name||card.id;try{if(typeof global.llCardFamilyName==='function')family=global.llCardFamilyName(card)||family;}catch(_){}return !usedFamilies.has(family);});
+    if(!pool.length)continue;
+    pool.sort((a,b)=>nationalCardScore(b,name,pos)-nationalCardScore(a,name,pos)||stableHash(`${seed}|${pos}|${a.id}`)-stableHash(`${seed}|${pos}|${b.id}`)||String(a.id).localeCompare(String(b.id)));
+    const strengthRatio=(stars-1)/5,topWindow=Math.max(1,Math.ceil(pool.length*(0.28+strengthRatio*0.30))),candidate=pool[stableHash(`${seed}|pick|${pos}`)%topWindow]||pool[0];
+    selected[pos]=candidate.id;let family=candidate.name||candidate.id;try{if(typeof global.llCardFamilyName==='function')family=global.llCardFamilyName(candidate)||family;}catch(_){}usedFamilies.add(family);
+  }
+  return selected;
+}
+function ensureAllNationalTeams(state,rec=null){
+  Object.keys(TEAM_REGISTRY).forEach(name=>{const team=ensureTeamState(state,name,null);team.usedCardFamilies=[];const cards=nationalAiCardsFor(state,name,rec);ensureTeamState(state,name,cards);team.nationalCardProfile={version:1,type:rec?.type||null,year:num(rec?.year),stars:starsFor(name),cards:{...cards}};});
+}
 function blankRow(team,seed){return {team,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0,seed};}
 function createTables(type){const out={};Object.entries(groupsFor(type)).forEach(([g,teams])=>{out[g]={};teams.forEach((team,index)=>out[g][team]=blankRow(team,index));});return out;}
 function applyStanding(table,home,away,hg,ag){
@@ -414,12 +458,23 @@ function offerTargetStars(state){
 }
 function stableHash(text){if(typeof global.llManagerHash==='function')return global.llManagerHash(text);let h=2166136261;for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 function buildOffers(state,rec){
-  const target=offerTargetStars(state),seed=`national|${rec.type}|${rec.year}|${state.playerTeam}|${target}`,pool=poolFor(rec.type).map(team=>({team,stars:starsFor(team)}));
-  pool.sort((a,b)=>Math.abs(a.stars-target)-Math.abs(b.stars-target)||stableHash(a.team+'|'+seed)-stableHash(b.team+'|'+seed)||a.team.localeCompare(b.team,'tr'));
-  const chosen=[],used=new Set();for(let band=0;band<=5&&chosen.length<OFFER_COUNT;band++){for(const item of pool){if(chosen.length>=OFFER_COUNT)break;if(used.has(item.team)||Math.abs(item.stars-target)>band)continue;used.add(item.team);chosen.push({team:item.team,stars:item.stars,flag:flagFor(item.team),objective:objectiveFor(item.team),type:rec.type,year:rec.year});}}
+  const target=offerTargetStars(state),seed=`national|${rec.type}|${rec.year}|${state.playerTeam}|${target}`,pool=poolFor(rec.type).map(team=>({team,stars:starsFor(team)})),chosen=[],used=new Set();
+  const byStars=level=>pool.filter(item=>item.stars===level&&!used.has(item.team)).sort((a,b)=>stableHash(`${seed}|${level}|${a.team}`)-stableHash(`${seed}|${level}|${b.team}`)||a.team.localeCompare(b.team,'tr'));
+  const addLevel=level=>{const item=byStars(clamp(level,1,6))[0];if(!item)return false;used.add(item.team);chosen.push({team:item.team,stars:item.stars,flag:flagFor(item.team),objective:objectiveFor(item.team,rec.type),type:rec.type,year:rec.year});return true;};
+  /* Beş teklif tek yıldız bandına yığılmaz. TD seviyesinin altında en az iki farklı güç
+   * seviyesi mümkünse özellikle dahil edilir; bir üst seviye ise yalnızca tek slotta denenir. */
+  const preferred=target>=6?[6,5,4,3,6]:target<=1?[1,2,1,3,2]:[target,target-1,target-2,target,target+1,target-3,target+2,1,2,3,4,5,6];preferred.forEach(level=>{if(chosen.length<OFFER_COUNT)addLevel(level);});
+  if(chosen.length<OFFER_COUNT){
+    const rest=pool.filter(item=>!used.has(item.team)).sort((a,b)=>Math.abs(a.stars-target)-Math.abs(b.stars-target)||stableHash(`${seed}|fill|${a.team}`)-stableHash(`${seed}|fill|${b.team}`)||a.team.localeCompare(b.team,'tr'));
+    for(const item of rest){if(chosen.length>=OFFER_COUNT)break;used.add(item.team);chosen.push({team:item.team,stars:item.stars,flag:flagFor(item.team),objective:objectiveFor(item.team,rec.type),type:rec.type,year:rec.year});}
+  }
   return chosen.slice(0,OFFER_COUNT);
 }
-function generateOffers(state,rec){if(!rec||rec.status!=='unoffered')return rec;rec.offers=buildOffers(state,rec);if(rec.offers.length!==OFFER_COUNT)throw new Error('Milli takım teklif sayısı 5 olamadı.');rec.status='pending';rec.offerGeneratedAt=new Date().toISOString();rec.offerTargetStars=offerTargetStars(state);save();return rec;}
+function rebalancePendingOffers(state,rec){
+  if(!rec||rec.status!=='pending'||rec.offerBalanceVersion===2)return rec;
+  rec.offers=buildOffers(state,rec);rec.offerTargetStars=offerTargetStars(state);rec.offerBalanceVersion=2;return rec;
+}
+function generateOffers(state,rec){if(!rec||rec.status!=='unoffered')return rec;rec.offers=buildOffers(state,rec);if(rec.offers.length!==OFFER_COUNT)throw new Error('Milli takım teklif sayısı 5 olamadı.');rec.status='pending';rec.offerGeneratedAt=new Date().toISOString();rec.offerTargetStars=offerTargetStars(state);rec.offerBalanceVersion=2;save();return rec;}
 function shouldTriggerOffer(state){const rec=ensureRecord(state,false);if(rec&&rec.status!=='unoffered')return false;const info=seasonTournament(state);if(!info||state.seasonEnded)return false;const remaining=remainingLeagueWeeks(state);return remaining>0&&remaining<=5;}
 function activeCardsSnapshot(state,clubTeam){const team=state.teams?.[clubTeam]||{},out={};POSITIONS.forEach(pos=>{const id=team.cards?.[pos]||null;let active=!!id;try{if(id&&typeof global.llCardContractSlotActive==='function')active=!!global.llCardContractSlotActive(team,pos);}catch(_){}out[pos]=active?id:null;});return out;}
 function unlockAchievement(state,id,team){
@@ -435,7 +490,7 @@ function markReached(state,rec,stage){
   if(stage==='final')unlockAchievement(state,rec.type==='wc'?'national_wc_final':'national_euro_final',team);
   if(stage==='champion')unlockAchievement(state,rec.type==='wc'?'national_wc_champion':'national_euro_champion',team);
 }
-function stageObjectiveMet(rec){const reached=rec.edition?.reachedStage||'group',stars=starsFor(rec.selectedTeam);const needed={1:'group_out',2:'r16',3:'qf',4:'sf',5:'final',6:'champion'}[stars];return (STAGE_ORDER[reached]??0)>=(STAGE_ORDER[needed]??99);}
+function stageObjectiveMet(rec){const reached=rec.edition?.reachedStage||'group',needed=objectiveSpecFor(rec.selectedTeam,rec.type).stage;return (STAGE_ORDER[reached]??0)>=(STAGE_ORDER[needed]??99);}
 function managerReputationReward(state,rec){
   try{if(typeof global.llManagerProfile!=='function')return;const p=global.llManagerProfile(state);let delta=stageObjectiveMet(rec)?5:0;const reached=rec.edition?.reachedStage;if(reached==='final')delta+=10;if(reached==='champion')delta+=15;p.reputation=clamp(num(p.reputation,50)+delta,0,100);p.reputationEvents=Array.isArray(p.reputationEvents)?p.reputationEvents:[];if(delta)p.reputationEvents.push({season:state.season,delta,reason:`${typeLabel(rec.type)} · ${rec.selectedTeam} · ${STAGE_LABELS[reached]||reached}`});}catch(_){}
 }
@@ -451,7 +506,7 @@ function finishEdition(state,rec){
   managerReputationReward(state,rec);archiveEdition(state,rec);restoreClub(state,rec);/* Kulüp teklifleri milli turnuva bitmeden görünmez; mevcut finalizer bunları önceden hazırlamışsa güncel milli kariyer/itibar ile yeniden üretilebilsin. */state.managerMarket=null;rec.completed=true;rec.status='completed';rec.completedAt=new Date().toISOString();rec.noticeSeen=false;save();
 }
 function initializeManagedEdition(state,rec){
-  rec.clubTeam=state.playerTeam;rec.clubCountry=state.playerCountry||null;rec.cardSnapshot=activeCardsSnapshot(state,rec.clubTeam);ensureAllNationalTeams(state);ensureTeamState(state,rec.selectedTeam,rec.cardSnapshot);state.playerTeam=rec.selectedTeam;rec.status='active';rec.edition=createEdition(rec.type,rec.year,rec.selectedTeam);rec.edition.clubTeam=rec.clubTeam;rec.edition.cardSnapshot=deep(rec.cardSnapshot);unlockAchievement(state,'national_first_job',rec.selectedTeam);
+  rec.clubTeam=state.playerTeam;rec.clubCountry=state.playerCountry||null;rec.cardSnapshot=activeCardsSnapshot(state,rec.clubTeam);ensureAllNationalTeams(state,rec);ensureTeamState(state,rec.selectedTeam,rec.cardSnapshot);state.playerTeam=rec.selectedTeam;rec.status='active';rec.edition=createEdition(rec.type,rec.year,rec.selectedTeam);rec.edition.clubTeam=rec.clubTeam;rec.edition.cardSnapshot=deep(rec.cardSnapshot);unlockAchievement(state,'national_first_job',rec.selectedTeam);
   prepareNextManagedGroupMatch(state,rec);save();
 }
 function userGroupRoundMatches(rec,roundIndex){const ed=rec.edition,g=editionGroupForTeam(rec.type,rec.selectedTeam),teams=groupsFor(rec.type)[g],round=groupSchedule(teams)[roundIndex]||[];return {g,round};}
@@ -525,7 +580,7 @@ function commitNationalMatch(){
   save();renderNationalMatchResult(rec,target,userWon,pen);if(typeof global.llScheduleTrophyAnimation==='function')global.llScheduleTrophyAnimation(90);return true;
 }
 
-function simulateRejected(state,rec){ensureAllNationalTeams(state);rec.edition=createEdition(rec.type,rec.year,null);simulateEditionToEnd(state,rec.edition);rec.status='completed';rec.completed=true;rec.completedAt=new Date().toISOString();rec.noticeSeen=false;archiveEdition(state,rec);save();}
+function simulateRejected(state,rec){ensureAllNationalTeams(state,rec);rec.edition=createEdition(rec.type,rec.year,null);simulateEditionToEnd(state,rec.edition);rec.status='completed';rec.completed=true;rec.completedAt=new Date().toISOString();rec.noticeSeen=false;archiveEdition(state,rec);save();}
 function currentOfferRecord(state,create=false){return ensureRecord(state,create);}
 function nationalSnapshotCardHtml(pos,id){
   const card=id&&typeof global.llCard==='function'?global.llCard(id):null;
@@ -536,9 +591,9 @@ function nationalSnapshotCardHtml(pos,id){
 }
 
 function renderOffers(rec){
-  const state=stateNow();if(!state||!rec)return;if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(rec.type);
+  const state=stateNow();if(!state||!rec)return;rebalancePendingOffers(state,rec);save();if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(rec.type);
   const cards=rec.offers.map(o=>`<button type="button" class="ll-national-offer" onclick="llAcceptNationalOffer('${esc(o.team).replace(/'/g,"\\'")}')">${badgeFor(o.team,'match')}<span><b>${esc(o.team)}</b><small>${o.stars}★ · ${esc(typeLabel(rec.type))} ${rec.year}</small><em>Hedef: ${esc(o.objective)}</em></span></button>`).join('');
-  global.llArea().innerHTML=`<div class="ll-shell" data-ll-national-theme="${rec.type}"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Milli Takım <em>Teklifleri</em></div><div class="ll-muted">${esc(typeLabel(rec.type))} ${rec.year} · Kariyer seviyene yakın tam 5 teklif</div></div></div><div class="ll-notice"><b>Görev turnuva için geçerlidir.</b> Kabul etsen de kulüp sezonun normal şekilde devam eder. Milli görev, tüm kulüp organizasyonları bittikten sonra başlar.</div><div class="ll-national-offer-grid">${cards}</div><button class="ll-btn danger" style="width:100%;margin-top:14px" onclick="llRejectNationalOffers()">5 Teklifin Tamamını Reddet</button></div></div>`;
+  global.llArea().innerHTML=`<div class="ll-shell" data-ll-national-theme="${rec.type}"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Milli Takım <em>Teklifleri</em></div><div class="ll-muted">${esc(typeLabel(rec.type))} ${rec.year} · Kariyer seviyene göre farklı güç bantlarından 5 teklif</div></div></div><div class="ll-notice"><b>Görev turnuva için geçerlidir.</b> Kabul etsen de kulüp sezonun normal şekilde devam eder. Milli görev, tüm kulüp organizasyonları bittikten sonra başlar.</div><div class="ll-national-offer-grid">${cards}</div><button class="ll-btn danger" style="width:100%;margin-top:14px" onclick="llRejectNationalOffers()">5 Teklifin Tamamını Reddet</button></div></div>`;
 }
 function renderWinnerNotice(rec){const ed=rec.edition;if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(rec.type);global.llArea().innerHTML=`<div class="ll-shell" data-ll-national-theme="${rec.type}"><div class="ll-panel" style="text-align:center"><div style="font-size:60px">🏆</div><div class="quiz-start-title">${esc(typeLabel(rec.type))} ${rec.year}</div><div class="ll-notice" style="margin-top:14px"><b>Şampiyon: ${badgeFor(ed.champion,'table')} ${esc(ed.champion||'—')}</b><br>Milli takım tekliflerini reddettiğin için turnuva yapay zekâ tarafından simüle edildi.</div><button class="ll-btn primary" style="margin-top:16px" onclick="llNationalContinueSeasonEnd()">Sezon Sonuna Devam Et</button></div></div>`;}
 function renderManagedCompletionNotice(rec){const ed=rec.edition;if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(rec.type);const won=ed?.champion===rec.selectedTeam,objective=stageObjectiveMet(rec);global.llArea().innerHTML=`<div class="ll-shell" data-ll-national-theme="${rec.type}"><div class="ll-panel" style="text-align:center"><div style="font-size:60px">${won?'🏆':'🌍'}</div><div class="quiz-start-title">${esc(typeLabel(rec.type))} ${rec.year} <em>Tamamlandı</em></div><div class="ll-metrics" style="max-width:760px;margin:18px auto"><div class="ll-metric"><strong>${badgeFor(rec.selectedTeam,'table')} ${esc(rec.selectedTeam)}</strong><span>Milli Takım</span></div><div class="ll-metric"><strong>${esc(STAGE_LABELS[ed?.reachedStage]||ed?.reachedStage||'—')}</strong><span>Ulaşılan Aşama</span></div><div class="ll-metric"><strong>${objective?'✓ Başarılı':'✗ Ulaşılamadı'}</strong><span>Hedef: ${esc(rec.objective||'—')}</span></div><div class="ll-metric"><strong>${badgeFor(ed?.champion,'table')} ${esc(ed?.champion||'—')}</strong><span>Şampiyon</span></div></div><div class="ll-notice"><b>Milli takım sözleşmen sona erdi.</b><br>Şimdi mevcut kulüp kariyerinin normal sezon sonu ve teklif akışına dönülecek.</div><button class="ll-btn primary" style="margin-top:16px" onclick="llNationalContinueSeasonEnd()">Sezon Sonuna Geç</button></div></div>`;}
@@ -551,8 +606,8 @@ function renderTournamentTab(type){
   const state=stateNow();if(!state)return;const root=ensureRoot(state),rec=nationalRecordForType(state,type);if(rec?.status==='active'&&rec?.edition?.stage==='group'&&repairManagedGroupProgress(state,rec))save();const active=rec&&rec.type===type&&['active','completed'].includes(rec.status)?rec:null,accepted=rec&&rec.type===type&&rec.status==='accepted'?rec:null,year=endYearForState(state),currentType=tournamentTypeForEndYear(year),currentSeasonRec=ensureRecord(state,false),currentRec=currentSeasonRec&&currentSeasonRec.type===type&&num(currentSeasonRec.year)===num(year)?currentSeasonRec:null,next=(active&&!active.completed)?num(active.year):(currentType===type&&currentRec?.status!=='completed')?year:nextYear(type,year+(currentType===type?1:0));if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(type);
   const tabs=`<div class="ll-subtabs"><button class="ll-btn ${type==='wc'?'primary':''}" onclick="llRenderNationalTournaments('wc')">Dünya Kupası</button><button class="ll-btn ${type==='euro'?'primary':''}" onclick="llRenderNationalTournaments('euro')">Avrupa Şampiyonası</button></div>`;
   let content='';
-  if(active?.edition){const ed=active.edition,groupCards=Object.keys(groupsFor(type)).map(g=>tableHtml(active,g)).join(''),team=active.selectedTeam;content=`<div class="ll-cup-status"><div class="ll-metric"><strong>${ed.completed?'Tamamlandı':STAGE_LABELS[ed.stage]||ed.stage}</strong><span>Durum</span></div><div class="ll-metric"><strong>${team?`${badgeFor(team,'table')} ${esc(team)}`:'AI'}</strong><span>Yönetilen Takım</span></div><div class="ll-metric"><strong>${team?objectiveFor(team):'—'}</strong><span>Hedef</span></div><div class="ll-metric"><strong>${ed.champion?`${badgeFor(ed.champion,'table')} ${esc(ed.champion)}`:'—'}</strong><span>Şampiyon</span></div></div>${team&&active.cardSnapshot?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Turnuva Kart Snapshot'ı</div><div class="ll-squad">${POSITIONS.map(pos=>nationalSnapshotCardHtml(pos,active.cardSnapshot?.[pos])).join('')}</div></div>`:''}${team&&!ed.completed&&state.pendingFixture?.nationalTournament?`<div class="ll-card ll-national-next"><div class="ll-card-title">Sıradaki Milli Maç</div><div class="ll-next-match"><div class="ll-club">${badgeFor(state.pendingFixture.home,'match')}<b>${esc(state.pendingFixture.home)}</b></div><div class="ll-vs">VS</div><div class="ll-club">${badgeFor(state.pendingFixture.away,'match')}<b>${esc(state.pendingFixture.away)}</b></div></div><button class="ll-btn primary" style="width:100%;margin-top:12px" onclick="llStartMatchPreparation()">10 Kelimelik Milli Maça Başla</button><div class="ll-muted" style="margin-top:8px">Milli maçlarda normal lig kelime AP’si +%20. Turnuva başında alınan üç aktif kart sabittir ve kullanım hakkı tüketmez.</div></div>`:''}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Gruplar</div><div class="ll-national-groups">${groupCards}</div></div>${bracketHtml(active)?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Eleme Ağacı</div>${bracketHtml(active)}</div>`:''}`;}
-  else{const last=(root.history||[]).filter(x=>x.type===type).sort((a,b)=>num(b.year)-num(a.year))[0],acceptedHtml=accepted?`<div class="ll-notice" style="margin-top:14px"><b>${badgeFor(accepted.selectedTeam,'table')} ${esc(accepted.selectedTeam)} görevi kabul edildi.</b><br>${esc(typeLabel(type))} ${accepted.year} görevi, mevcut kulüp sezonundaki tüm resmi organizasyonlar tamamlandıktan sonra başlayacak. Hedef: <b>${esc(accepted.objective||objectiveFor(accepted.selectedTeam))}</b>.</div>`:'';content=`<div class="ll-cup-status"><div class="ll-metric"><strong>${last?`${badgeFor(last.champion,'table')} ${esc(last.champion)}`:'—'}</strong><span>Son Şampiyon</span></div><div class="ll-metric"><strong>${last?.year||'—'}</strong><span>Son Turnuva</span></div><div class="ll-metric"><strong>${next}</strong><span>${currentType===type&&currentRec?.status!=='completed'?'Bu Sezon':'Sonraki Turnuva'}</span></div></div>${acceptedHtml}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Sabit Turnuva Şablonu</div><div class="ll-sub">${type==='wc'?'2026 FIFA Dünya Kupası · 48 takım · 12 grup · ilk 2 + en iyi 8 üçüncü':'EURO 2024 · 24 takım · 6 grup · ilk 2 + en iyi 4 üçüncü'}</div><div class="ll-national-groups" style="margin-top:12px">${Object.keys(groupsFor(type)).map(g=>tableHtml({type,selectedTeam:null,edition:null},g)).join('')}</div></div>`;}
+  if(active?.edition){const ed=active.edition,groupCards=Object.keys(groupsFor(type)).map(g=>tableHtml(active,g)).join(''),team=active.selectedTeam;content=`<div class="ll-cup-status"><div class="ll-metric"><strong>${ed.completed?'Tamamlandı':STAGE_LABELS[ed.stage]||ed.stage}</strong><span>Durum</span></div><div class="ll-metric"><strong>${team?`${badgeFor(team,'table')} ${esc(team)}`:'AI'}</strong><span>Yönetilen Takım</span></div><div class="ll-metric"><strong>${team?objectiveFor(team,type):'—'}</strong><span>Hedef</span></div><div class="ll-metric"><strong>${ed.champion?`${badgeFor(ed.champion,'table')} ${esc(ed.champion)}`:'—'}</strong><span>Şampiyon</span></div></div>${team&&active.cardSnapshot?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Turnuva Kart Snapshot'ı</div><div class="ll-squad">${POSITIONS.map(pos=>nationalSnapshotCardHtml(pos,active.cardSnapshot?.[pos])).join('')}</div></div>`:''}${team&&!ed.completed&&state.pendingFixture?.nationalTournament?`<div class="ll-card ll-national-next"><div class="ll-card-title">Sıradaki Milli Maç</div><div class="ll-next-match"><div class="ll-club">${badgeFor(state.pendingFixture.home,'match')}<b>${esc(state.pendingFixture.home)}</b></div><div class="ll-vs">VS</div><div class="ll-club">${badgeFor(state.pendingFixture.away,'match')}<b>${esc(state.pendingFixture.away)}</b></div></div><button class="ll-btn primary" style="width:100%;margin-top:12px" onclick="llStartMatchPreparation()">10 Kelimelik Milli Maça Başla</button><div class="ll-muted" style="margin-top:8px">Milli maçlarda normal lig kelime AP’si +%20. Turnuva başında alınan üç aktif kart sabittir ve kullanım hakkı tüketmez.</div></div>`:''}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Gruplar</div><div class="ll-national-groups">${groupCards}</div></div>${bracketHtml(active)?`<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Eleme Ağacı</div>${bracketHtml(active)}</div>`:''}`;}
+  else{const last=(root.history||[]).filter(x=>x.type===type).sort((a,b)=>num(b.year)-num(a.year))[0],acceptedHtml=accepted?`<div class="ll-notice" style="margin-top:14px"><b>${badgeFor(accepted.selectedTeam,'table')} ${esc(accepted.selectedTeam)} görevi kabul edildi.</b><br>${esc(typeLabel(type))} ${accepted.year} görevi, mevcut kulüp sezonundaki tüm resmi organizasyonlar tamamlandıktan sonra başlayacak. Hedef: <b>${esc(accepted.objective||objectiveFor(accepted.selectedTeam,type))}</b>.</div>`:'';content=`<div class="ll-cup-status"><div class="ll-metric"><strong>${last?`${badgeFor(last.champion,'table')} ${esc(last.champion)}`:'—'}</strong><span>Son Şampiyon</span></div><div class="ll-metric"><strong>${last?.year||'—'}</strong><span>Son Turnuva</span></div><div class="ll-metric"><strong>${next}</strong><span>${currentType===type&&currentRec?.status!=='completed'?'Bu Sezon':'Sonraki Turnuva'}</span></div></div>${acceptedHtml}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Sabit Turnuva Şablonu</div><div class="ll-sub">${type==='wc'?'2026 FIFA Dünya Kupası · 48 takım · 12 grup · ilk 2 + en iyi 8 üçüncü':'EURO 2024 · 24 takım · 6 grup · ilk 2 + en iyi 4 üçüncü'}</div><div class="ll-national-groups" style="margin-top:12px">${Object.keys(groupsFor(type)).map(g=>tableHtml({type,selectedTeam:null,edition:null},g)).join('')}</div></div>`;}
   global.llArea().innerHTML=`<div class="ll-shell" data-ll-national-theme="${type}"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Milli <em>Turnuvalar</em></div><div class="ll-muted">Gerçek sezon takvimine bağlı Dünya Kupası ve Avrupa Şampiyonası</div></div><button class="ll-btn" onclick="llNationalGoDashboard()">← Dashboard</button></div>${tabs}${content}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Geçmiş Şampiyonlar</div>${historyHtml(root,type)}</div></div></div>`;
 }
 function renderNationalHome(){const state=stateNow(),root=ensureRoot(state),year=endYearForState(state),nextWC=nextYear('wc',year),nextEuro=nextYear('euro',year);if(typeof global.llSetWide==='function')global.llSetWide(true);applyNationalTheme(null);const lastWC=root.history.filter(x=>x.type==='wc').sort((a,b)=>b.year-a.year)[0],lastEuro=root.history.filter(x=>x.type==='euro').sort((a,b)=>b.year-a.year)[0];global.llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Milli <em>Turnuvalar</em></div><div class="ll-muted">Dünya Kupası ve Avrupa Şampiyonası kariyer merkezi</div></div><button class="ll-btn" onclick="llNationalGoDashboard()">← Dashboard</button></div><div class="ll-subtabs"><button class="ll-btn primary" onclick="llRenderNationalTournaments('wc')">Dünya Kupası</button><button class="ll-btn" onclick="llRenderNationalTournaments('euro')">Avrupa Şampiyonası</button></div><div class="ll-cup-status"><div class="ll-metric"><strong>${lastWC?`${badgeFor(lastWC.champion,'table')} ${esc(lastWC.champion)}`:'—'}</strong><span>Son Dünya Şampiyonu</span></div><div class="ll-metric"><strong>${nextWC}</strong><span>Sonraki Dünya Kupası</span></div><div class="ll-metric"><strong>${lastEuro?`${badgeFor(lastEuro.champion,'table')} ${esc(lastEuro.champion)}`:'—'}</strong><span>Son Avrupa Şampiyonu</span></div><div class="ll-metric"><strong>${nextEuro}</strong><span>Sonraki EURO</span></div></div></div></div>`;}
@@ -562,7 +617,7 @@ function injectStyles(){if(typeof document==='undefined'||document.getElementByI
 
 /* Public UI/actions */
 global.llRenderNationalTournaments=function(type){const state=stateNow();if(!state)return;if(type==='wc'||type==='euro'){renderTournamentTab(type);return;}const rec=unfinishedNationalRecord(state)||ensureRecord(state,false);if(rec?.status==='pending'){renderOffers(rec);return;}if(rec?.status==='active'&&rec.edition){renderTournamentTab(rec.type);return;}renderNationalHome();};
-global.llAcceptNationalOffer=function(team){const state=stateNow(),rec=ensureRecord(state,false);if(!rec||rec.status!=='pending'||!rec.offers.some(o=>o.team===team))return;rec.selectedTeam=team;rec.objective=objectiveFor(team);rec.status='accepted';rec.decisionAt=new Date().toISOString();save();global.llRenderDashboard();};
+global.llAcceptNationalOffer=function(team){const state=stateNow(),rec=ensureRecord(state,false);if(!rec||rec.status!=='pending'||!rec.offers.some(o=>o.team===team))return;rec.selectedTeam=team;rec.objective=objectiveFor(team,rec.type);rec.status='accepted';rec.decisionAt=new Date().toISOString();save();global.llRenderDashboard();};
 global.llRejectNationalOffers=function(){const state=stateNow(),rec=ensureRecord(state,false);if(!rec||rec.status!=='pending')return;rec.status='rejected';rec.selectedTeam=null;rec.objective=null;rec.decisionAt=new Date().toISOString();save();global.llRenderDashboard();};
 global.llNationalContinueSeasonEnd=function(){const state=stateNow(),rec=latestNationalRecord(state);if(rec)rec.noticeSeen=true;save();applyNationalTheme(null);if(rec&&num(state?.season)>num(rec.season)&&!state?.seasonEnded){if(typeof global.llRenderDashboard==='function')global.llRenderDashboard();return;}if(typeof BASE_RENDER_SEASON_END==='function')BASE_RENDER_SEASON_END();};
 
@@ -632,7 +687,7 @@ registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboard
  * tests can verify calendar, pools, offer cardinality and official third-place mappings. */
 global.llNationalTournamentTestApi={
  version:VERSION,teamRegistry:TEAM_REGISTRY,wcGroups:WC_GROUPS,euroGroups:EURO_GROUPS,euroThirdMap:EURO_THIRD_MAP,wcThirdMapCount:WC_THIRD_MAP.length-1,
- tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,nationalLogoSrc,groupRankMap,reconstructedGroupMovement,rankArrowHtml,groupRoundIndex,simulateManagedGroupRoundPeers,rebuildGroupTables,repairManagedGroupProgress,
+ tournamentTypeForEndYear,seasonTournament,endYearForState,nextYear,createEdition,rankGroup,bestThirds,buildInitialKnockout,buildNextRound,buildOffers,offerTargetStars,objectiveSpecFor,nationalAiCardsFor,nationalCardCount,ensureAllNationalTeams,remainingLeagueWeeks,shouldTriggerOffer,simulateEditionToEnd,objectiveFor,stageObjectiveMet,nationalLogoSrc,groupRankMap,reconstructedGroupMovement,rankArrowHtml,groupRoundIndex,simulateManagedGroupRoundPeers,rebuildGroupTables,repairManagedGroupProgress,
  wcOptionForExcluded:key=>WC_EXCLUDED_OPTION[key]||null,activeCardsSnapshot,ensureTeamState,unfinishedNationalRecord,activeNationalRecord,nationalRecordForType,postContinueNationalRoute,findNationalFixtureForMatch,initializeManagedEdition,commitNationalMatch,completeManagedGroup,advanceAfterKnockoutRound,queueNationalOutcomeCinematic,ensureRoot,ensureRecord,generateOffers,finishEdition
 };
 })(globalThis);

@@ -4,9 +4,8 @@
 
   const LL_SUPER_CUP_NAME = 'UEFA Süper Kupa';
   const LL_SUPER_CUP_ACHIEVEMENT = 'uefa-super-cup';
-  // Süper Kupa, Avrupa sezonunun en seçkin tek maç ödülüdür.
-  // Toplam ödülü Şampiyonlar Ligi başarımından da yüksektir.
-  const LL_SUPER_CUP_REWARD = Object.freeze({ ap: 650, lp: 700 });
+  // Süper Kupa prestij ağırlıklıdır; ekonomik ödül bilinçli olarak küçüktür.
+  const LL_SUPER_CUP_REWARD = Object.freeze({ ap: 30, lp: 40 });
 
   function stateOf() {
     return globalThis.lexLeague && globalThis.lexLeague.state;
@@ -16,8 +15,8 @@
     return typeof globalThis.llEscape === 'function' ? globalThis.llEscape(value) : String(value == null ? '' : value);
   }
 
-  // Eski sürümde açılan başarımlar 100 AP / 120 LP veriyordu. Yeni değere
-  // geçerken yalnızca bir kez farkı tamamla; ekranı tekrar açmak çift ödül vermez.
+  // Eski sürümde açılan başarımlar daha yüksek ödül taşımış olabilir. Yeni ekonomik
+  // dengeye geçerken geçmiş bakiyeyi geri alma; yalnızca başarı metadata'sını yeni değere getir.
   function migrateAchievementReward(state) {
     if (!state || !state.superCupAchievements || typeof state.superCupAchievements !== 'object') return false;
     const achievement = state.superCupAchievements[LL_SUPER_CUP_ACHIEVEMENT];
@@ -359,14 +358,14 @@
     } else if (currentRecord) {
       currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div>${superCupFixtureHtml(currentRecord.home || currentRecord.uclWinner, currentRecord.away || currentRecord.uelWinner, currentRecord)}<div class="ll-notice" style="margin-top:12px"><b>Şampiyon:</b> ${escape(currentRecord.winner || '—')}</div></div>`;
     } else {
-      currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div><div class="ll-notice">Bu sezonun eşleşmesi, Şampiyonlar Ligi ve Avrupa Ligi şampiyonları belli olduktan sonra sezon sonunda oluşturulur.</div></div>`;
+      currentHtml = `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Bu Sezon</div><div class="ll-notice">Bu sezonun eşleşmesi, Şampiyonlar Ligi ve Avrupa Ligi şampiyonları belli olduktan sonra yeni sezon açılışında oluşturulur.</div></div>`;
     }
 
     const latestHtml = latest
       ? `<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">Son Oynanan UEFA Süper Kupa</div>${superCupFixtureHtml(latest.home || latest.uclWinner, latest.away || latest.uelWinner, latest)}<div class="ll-notice" style="margin-top:12px"><b>Son şampiyon:</b> ${escape(latest.winner || '—')} · Sezon ${escape(latest.season)}</div></div>`
       : '';
 
-    globalThis.llArea().innerHTML = `<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Müsabaka <em>Merkezi</em></div><div class="ll-muted">Sezon ${escape(state.season)} · Avrupa kupaları ve UEFA Süper Kupa</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${tabs}${subtabs}<div class="ll-cup-status"><div class="ll-metric"><strong>${escape(status)}</strong><span>Bu Sezon</span></div><div class="ll-metric"><strong>${escape(lastChampion)}</strong><span>Son Şampiyon</span></div><div class="ll-metric"><strong>${escape(lastSeason)}</strong><span>Son Oynanan Sezon</span></div></div><div class="ll-notice">UEFA Süper Kupa, Şampiyonlar Ligi şampiyonu ile Avrupa Ligi şampiyonu arasında sezon sonunda tek maç üzerinden oynanır.</div>${currentHtml}${latestHtml}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Geçmiş</div>${superCupHistoryTableHtml(state)}</div></div></div>`;
+    globalThis.llArea().innerHTML = `<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Müsabaka <em>Merkezi</em></div><div class="ll-muted">Sezon ${escape(state.season)} · Avrupa kupaları ve UEFA Süper Kupa</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${tabs}${subtabs}<div class="ll-cup-status"><div class="ll-metric"><strong>${escape(status)}</strong><span>Bu Sezon</span></div><div class="ll-metric"><strong>${escape(lastChampion)}</strong><span>Son Şampiyon</span></div><div class="ll-metric"><strong>${escape(lastSeason)}</strong><span>Son Oynanan Sezon</span></div></div><div class="ll-notice">UEFA Süper Kupa, Şampiyonlar Ligi şampiyonu ile Avrupa Ligi şampiyonu arasında sezon açılışında tek maç üzerinden oynanır.</div>${currentHtml}${latestHtml}<div class="ll-card" style="margin-top:14px"><div class="ll-card-title">UEFA Süper Kupa · Geçmiş</div>${superCupHistoryTableHtml(state)}</div></div></div>`;
   }
 
   function attachToCompetitionCenter() {
@@ -427,7 +426,7 @@
       europeGrid.insertAdjacentHTML('beforeend', superCupAchievementCard(unlock));
       return value;
       const panel = area.querySelector('.ll-panel:last-child') || area.querySelector('.ll-shell');
-      if (panel) panel.insertAdjacentHTML('beforeend', `<section class="ll-panel" data-supercup-achievement><h3>UEFA SÜPER KUPA</h3><div class="ll-achievement ${unlock ? 'unlocked' : ''}"><div class="ll-achievement-icon">🏆</div><div><strong>Süper Kupa Ustası</strong><p>UEFA Süper Kupa'yı kazan.</p>${unlock ? `<small>Açıldı · S${escape(unlock.season)} · ${escape(unlock.team)}</small>` : '<small>Henüz kazanılmadı</small>'}<b>+100 AP · +120 LP</b></div></div></section>`);
+      if (panel) panel.insertAdjacentHTML('beforeend', `<section class="ll-panel" data-supercup-achievement><h3>UEFA SÜPER KUPA</h3><div class="ll-achievement ${unlock ? 'unlocked' : ''}"><div class="ll-achievement-icon">🏆</div><div><strong>Süper Kupa Ustası</strong><p>UEFA Süper Kupa'yı kazan.</p>${unlock ? `<small>Açıldı · S${escape(unlock.season)} · ${escape(unlock.team)}</small>` : '<small>Henüz kazanılmadı</small>'}<b>+30 AP · +40 LP</b></div></div></section>`);
       return value;
     };
   }
