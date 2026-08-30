@@ -1002,12 +1002,14 @@
     .ll-question{padding:26px 16px}.ll-modal{padding:10px}.ll-modal-card{padding:16px}.ll-upgrade-compare{grid-template-columns:1fr}
     .ll-chain-step{grid-template-columns:28px minmax(0,1fr)}.ll-chain-score{grid-column:2;justify-self:start}
     .ll-table tr.champion-zone > td:first-child{box-shadow:inset 5px 0 #22c55e}.ll-table tr.playoff-zone > td:first-child{box-shadow:inset 5px 0 #38bdf8}.ll-table tr.ucl-zone > td:first-child{box-shadow:inset 5px 0 #8b5cf6}.ll-table tr.uel-zone > td:first-child{box-shadow:inset 5px 0 #f97316}.ll-table tr.uecl-zone > td:first-child{box-shadow:inset 5px 0 #14b8a6}.ll-table tr.relegation-zone > td:first-child{box-shadow:inset 5px 0 #ef4444}
-    body.ll-euro-match-day{background-attachment:scroll;background-size:cover,cover;background-position:center top,center top}
-    body.ll-euro-match-ucl{background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
-    body.ll-euro-match-uel{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
-    body.ll-euro-match-uecl{background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
-    body.ll-euro-match-wc{background-image:linear-gradient(180deg,rgba(3,8,46,.08),rgba(7,12,28,.80) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/world-cup-mobile-v1.png")}
-    body.ll-euro-match-euro{background-image:linear-gradient(180deg,rgba(0,18,33,.08),rgba(7,15,25,.80) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/euro-national-mobile-v1.png")}
+    body.ll-euro-match-day{background-attachment:scroll;background-position:center top,center top}
+    body.ll-euro-match-ucl{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(3,7,44,.08),rgba(8,12,24,.76) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/champions-league-mobile-v2.png")}
+    body.ll-euro-match-uel{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/europa-league-mobile-v2.png")}
+    body.ll-euro-match-uecl{background-size:cover,cover;background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(9,12,19,.78) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/conference-league-mobile-v2.png")}
+    body.ll-euro-match-wc{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(3,8,46,.02),rgba(7,12,28,.52) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/world-cup-mobile-v2.png")}
+    body.ll-euro-match-euro{background-size:100% 100%,100% auto;background-repeat:no-repeat,no-repeat;background-image:linear-gradient(180deg,rgba(0,18,33,.02),rgba(7,15,25,.50) 76vh,var(--bg) 135vh),url("assets/europe-match-themes/euro-national-mobile-v2.png")}
+    body.ll-euro-match-wc .ll-panel{background:rgba(7,12,28,.74);backdrop-filter:blur(5px)}
+    body.ll-euro-match-euro .ll-panel{background:rgba(7,15,25,.70);backdrop-filter:blur(5px)}
   }
 
   .ll-team-ranks{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:7px}.ll-team-ranks span{display:inline-flex;justify-content:center;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text2);font-size:9px;font-weight:800;text-align:center}.ll-team-ranks .europe{border-color:var(--ll-euro-border,rgba(56,189,248,.25));color:var(--ll-euro-accent,#67e8f9)}
@@ -6330,6 +6332,6 @@ renderPreStart();
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 <script src="europe-draw-cinematic.js?v=20260830-interactive-draw-v1"></script>
-<script src="national-draw-cinematic.js?v=20260830-national-draw-v2-3opponents"></script>
+<script src="national-draw-cinematic.js?v=20260830-national-draw-v4-no-pots-mobile-theme"></script>
 </body>
 </html>

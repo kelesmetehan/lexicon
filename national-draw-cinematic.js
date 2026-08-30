@@ -1,17 +1,16 @@
 /* Lexicon League · WC / EURO Interactive Draw v1
    - WC: FIFA-style dark navy broadcast package, pale team rows, cyan/green neon accents.
-   - EURO: royal-blue flat broadcast package, dark-blue pot headers, yellow POT titles.
+   - EURO: royal-blue flat broadcast package inspired by draw broadcast graphics.
    - Draw does NOT regenerate tournament groups. It reveals ONLY the managed national team's
-     existing 3 group opponents through a pot-based ceremony; group/knockout logic stays untouched.
-   - EURO uses the official EURO 2024 pot membership represented by this game's 24-team template.
-   - WC uses the game's 48-team field and maps one team per group to each of four 12-team pots
-     by group strength order. The managed team stays fixed in its 4-team group and exactly 3 opponents are revealed.
+     existing 3 group opponents through a three-ball ceremony; group/knockout logic stays untouched.
+   - Pot membership remains an internal compatibility detail only; it is not exposed in the UI.
+   - The managed team stays fixed in its 4-team group and exactly 3 opponents are revealed.
    - Before the first draw: 3 vocabulary questions, no dice.
 */
 (function(global){
 'use strict';
 
-const VERSION=3;
+const VERSION=4;
 const QUIZ_SIZE=3;
 const TYPES=['wc','euro'];
 const LABELS={wc:'Dünya Kupası',euro:'Avrupa Şampiyonası'};
@@ -155,12 +154,21 @@ function ensureStyles(){
     .ll-nd-stage.euro .ll-nd-ball.draw-active{box-shadow:0 0 0 3px rgba(233,196,58,.3),0 8px 22px rgba(0,0,0,.32)}
     @keyframes llNdBallShake{from{transform:translate(-2px,-1px) rotate(-4deg)}to{transform:translate(2px,1px) rotate(4deg)}}
     .ll-nd-pot-closed-note{grid-column:1/-1;text-align:center;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.78;padding-top:2px}
+    .ll-nd-sealed-draw{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,minmax(0,130px));justify-content:center;gap:18px;padding:14px 18px 22px}
+    .ll-nd-sealed-draw.compact{padding:8px 4px;gap:14px;grid-template-columns:repeat(3,minmax(82px,120px))}
+    .ll-nd-draw-ball{display:flex;flex-direction:column;align-items:center;gap:8px;color:#F8F9FF;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+    .ll-nd-draw-ball .ll-nd-ball{width:82px;height:82px;font-size:29px;flex:none}
+    .ll-nd-draw-ball.opened{opacity:.58}
+    .ll-nd-draw-layout{position:relative;z-index:2;display:grid;grid-template-columns:minmax(250px,360px) 1fr;gap:14px;padding:8px 16px 16px}
+    .ll-nd-draw-machine{border-radius:12px;padding:14px;background:rgba(8,20,47,.72);border:1px solid rgba(255,255,255,.13);display:flex;flex-direction:column;justify-content:center}
+    .ll-nd-stage.euro .ll-nd-draw-machine{background:rgba(16,54,142,.58);border-color:rgba(233,196,58,.28)}
+    .ll-nd-machine-title{text-align:center;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:6px}
     .ll-nd-quiz{position:relative;z-index:2;margin:4px 16px 16px;padding:18px;border-radius:12px;background:rgba(0,0,0,.19);border:1px solid rgba(255,255,255,.13);text-align:center}
     .ll-nd-q-progress{font-size:13px;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:10px}.ll-nd-question{font-size:32px;font-weight:800;line-height:1.15}.ll-nd-answer{font-size:24px;font-weight:700;margin-top:14px;padding:11px;border-radius:9px;background:rgba(0,0,0,.2)}
     .ll-national-draw-entry{margin-top:14px;border:1px solid rgba(233,196,58,.34)!important;background:linear-gradient(100deg,rgba(15,23,42,.52),rgba(30,64,175,.2))!important}
     .ll-national-draw-entry .ll-card-title{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-    @media(max-width:900px){.ll-nd-layout{grid-template-columns:1fr}.ll-nd-pot-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ll-nd-groups,.ll-nd-stage.wc .ll-nd-groups{grid-template-columns:repeat(3,minmax(0,1fr))}.ll-nd-intro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:600px){.ll-national-draw-modal-card{width:calc(100vw - 12px)!important;padding:7px!important}.ll-nd-head{padding:14px 12px 8px}.ll-nd-title{font-size:23px}.ll-nd-trophy{font-size:34px}.ll-nd-layout{padding:6px 9px 12px}.ll-nd-groups,.ll-nd-stage.wc .ll-nd-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.ll-nd-pot-list{grid-template-columns:1fr 1fr}.ll-nd-intro-grid{padding:0 9px 12px;gap:7px}.ll-nd-pot-team{font-size:12px;padding:5px}.ll-nd-group-slot{font-size:11px;padding:3px 4px}.ll-nd-current{margin:0 9px 10px;font-size:17px}.ll-nd-question{font-size:26px}}
+    @media(max-width:900px){.ll-nd-layout,.ll-nd-draw-layout{grid-template-columns:1fr}.ll-nd-pot-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ll-nd-groups,.ll-nd-stage.wc .ll-nd-groups{grid-template-columns:repeat(3,minmax(0,1fr))}.ll-nd-intro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:600px){.ll-national-draw-modal-card{width:calc(100vw - 12px)!important;padding:7px!important}.ll-nd-head{padding:14px 12px 8px}.ll-nd-title{font-size:23px}.ll-nd-trophy{font-size:34px}.ll-nd-layout{padding:6px 9px 12px}.ll-nd-groups,.ll-nd-stage.wc .ll-nd-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.ll-nd-pot-list{grid-template-columns:1fr 1fr}.ll-nd-intro-grid{padding:0 9px 12px;gap:7px}.ll-nd-pot-team{font-size:12px;padding:5px}.ll-nd-group-slot{font-size:11px;padding:3px 4px}.ll-nd-current{margin:0 9px 10px;font-size:17px}.ll-nd-question{font-size:26px}.ll-nd-sealed-draw,.ll-nd-sealed-draw.compact{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:8px}.ll-nd-draw-ball .ll-nd-ball{width:62px;height:62px;font-size:23px}.ll-nd-draw-layout{padding:6px 9px 12px}}
   `;document.head.appendChild(style);
 }
 
@@ -197,9 +205,9 @@ function persistWord(ref,correct){
 }
 
 function renderIntro(type){
-  ensureStyles();const rec=activeRecord(type);if(!rec?.edition)return;const d=drawState(rec),pots=potsFor(type),t=themeStyle(type);
-  const potCards=[1,2,3,4].map(p=>`<div class="ll-nd-intro-pot"><h4>POT ${p}</h4><div class="ll-nd-intro-pot-list">${closedPotBalls(type,p,(pots[p]||[]).length,{compact:true})}</div></div>`).join('');
-  const content=titleHtml(type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 13px;color:${t.muted};font-size:15px;line-height:1.45"><b style="color:${t.title}">${type==='wc'?'48 takım · 12 grup':'24 takım · 6 grup'}</b> · 4 pot · her grup 4 takım. <b style="color:${t.title}">Senin takımın + tam 3 rakip</b>. Rakip isimleri kura başlamadan gösterilmez. Kura öncesinde ${QUIZ_SIZE} kelimelik kısa tur var; zar yok.</div><div class="ll-nd-intro-grid">${potCards}</div><div class="ll-nd-actions">${d.completed?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawReplay('${type}')">Kurayı Tekrar İzle</button><button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${type}')">Turnuvaya Dön</button>`:d.quizDone?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${type}')">Kura Sahnesine Geç</button>`:`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawQuizStart('${type}')">Kelime Turunu Başlat</button>`}</div>`;
+  ensureStyles();const rec=activeRecord(type);if(!rec?.edition)return;const d=drawState(rec),t=themeStyle(type),managed=rec.selectedTeam||rec.edition?.managedTeam||managedTeamFor(type);
+  const sealed=Array.from({length:3},(_,i)=>`<div class="ll-nd-draw-ball"><div class="ll-nd-ball" aria-label="Gizli rakip ${i+1}">?</div><span>RAKİP ${i+1}</span></div>`).join('');
+  const content=titleHtml(type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 13px;color:${t.muted};font-size:15px;line-height:1.45"><b style="color:${t.title}">${type==='wc'?'48 takım · 12 grup':'24 takım · 6 grup'}</b> · Doğrudan grup aşaması. <b style="color:${t.title}">${esc(managed||'Takımın')} + tam 3 rakip</b>. Üç rakibin de kura bitene kadar gizli kalır. Kura öncesinde ${QUIZ_SIZE} kelimelik kısa tur var; zar yok.</div><div class="ll-nd-sealed-draw">${sealed}</div><div class="ll-nd-actions">${d.completed?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawReplay('${type}')">Kurayı Tekrar İzle</button><button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${type}')">Turnuvaya Dön</button>`:d.quizDone?`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${type}')">Kura Sahnesine Geç</button>`:`<button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawQuizStart('${type}')">Kelime Turunu Başlat</button>`}</div>`;
   showModal(stageOpen(type,content));
 }
 
@@ -214,7 +222,7 @@ function renderQuiz(){
 }
 function renderQuizDone(){
   const q=global.llNationalDrawQuiz;if(!q)return;const rec=activeRecord(q.type),d=drawState(rec),t=themeStyle(q.type);d.quizDone=true;d.quizCorrect=q.correct;d.quizTotal=q.queue.length;save();
-  const content=titleHtml(q.type,'DRAW READY')+`<div class="ll-nd-quiz"><div style="font-size:58px">🎱</div><div class="ll-nd-title" style="margin-top:7px">${q.correct}/${q.queue.length} DOĞRU</div><div style="margin-top:10px;opacity:.88">Kelime turu tamamlandı. Şimdi kendi takımın grupta sabit kalacak ve tam 3 grup rakibin potlardan sırayla açılacak.</div></div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${q.type}')">Kura Sahnesine Geç</button></div>`;
+  const content=titleHtml(q.type,'DRAW READY')+`<div class="ll-nd-quiz"><div style="font-size:58px">🎱</div><div class="ll-nd-title" style="margin-top:7px">${q.correct}/${q.queue.length} DOĞRU</div><div style="margin-top:10px;opacity:.88">Kelime turu tamamlandı. Şimdi kendi takımın grupta sabit kalacak ve 3 gizli rakibin kura toplarından sırayla açılacak.</div></div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" onclick="llNationalDrawEnter('${q.type}')">Kura Sahnesine Geç</button></div>`;
   showModal(stageOpen(q.type,content));
 }
 
@@ -222,27 +230,26 @@ function revealedSet(session){return new Set(session.sequence.slice(0,session.re
 function groupSlotsHtml(session){
   const rec=activeRecord(session.type)||currentRecord(session.type),managed=rec?.selectedTeam||rec?.edition?.managedTeam||managedTeamFor(session.type),group=groupOf(session.type,managed),teams=group?(groupsFor(session.type)?.[group]||[]):[],revealed=revealedSet(session),current=session.revealed>0?session.sequence[session.revealed-1]:null;
   if(!group||teams.length!==4)return `<div class="ll-nd-group"><div class="ll-nd-group-title">GRUP BULUNAMADI</div></div>`;
-  const ordered=[managed,...teams.filter(team=>team!==managed).sort((a,b)=>teamPot(session.type,a)-teamPot(session.type,b)||String(a).localeCompare(String(b),'en'))];
-  return `<div class="ll-nd-group" style="grid-column:1/-1"><div class="ll-nd-group-title">${GROUP_LABEL[session.type]} ${group} · SENİN GRUBUN</div><div class="ll-nd-group-slots">${ordered.map(team=>{const isManaged=team===managed,isVisible=isManaged||revealed.has(team);return `<div class="ll-nd-group-slot ${isVisible?'revealed':''} ${current?.team===team?'current':''}">${isVisible?logo(team,'table'):''}<span class="ll-nd-group-team">${isVisible?esc(team):'—'}</span>${isManaged?'<span style="margin-left:auto;font-size:10px;letter-spacing:1px;opacity:.78">SEN</span>':''}</div>`;}).join('')}</div></div>`;
+  const revealedOpponents=session.sequence.slice(0,session.revealed).map(x=>x.team);
+  const opponentSlots=[0,1,2].map(index=>{const team=revealedOpponents[index]||null,isCurrent=!!team&&current?.team===team;return `<div class="ll-nd-group-slot ${team?'revealed':''} ${isCurrent?'current':''}">${team?logo(team,'table'):''}<span class="ll-nd-group-team">${team?esc(team):`RAKİP ${index+1} · ?`}</span></div>`;}).join('');
+  return `<div class="ll-nd-group" style="grid-column:1/-1"><div class="ll-nd-group-title">${GROUP_LABEL[session.type]} ${group} · SENİN GRUBUN</div><div class="ll-nd-group-slots"><div class="ll-nd-group-slot revealed">${logo(managed,'table')}<span class="ll-nd-group-team">${esc(managed)}</span><span style="margin-left:auto;font-size:10px;letter-spacing:1px;opacity:.78">SEN</span></div>${opponentSlots}</div></div>`;
 }
 function renderDraw(){
   ensureStyles();const s=global.llNationalDraw;if(!s)return;
   const t=themeStyle(s.type),done=s.revealed>=s.sequence.length;
-  const target=s.sequence[Math.min(s.revealed,s.sequence.length-1)]||s.sequence[s.sequence.length-1];
   const current=s.revealed>0?s.sequence[s.revealed-1]:null;
-  const currentPot=done?(current?.pot||target?.pot||1):(target?.pot||1);
-  const potCount=(potsFor(s.type)?.[currentPot]||[]).length;
-  const potTeams=closedPotBalls(s.type,currentPot,potCount,{active:!!s.running,compact:false});
-  const currentHtml=current?`${logo(current.team,'match')}<span>${esc(current.team)} → ${GROUP_LABEL[s.type]} ${esc(current.group)}</span>`:`<span>${s.running?`POT ${currentPot} · TOP ÇEKİLİYOR...`:`POT ${currentPot} HAZIR`}</span>`;
-  const content=titleHtml(s.type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 4px;color:${t.muted};font-size:14px">Doğrudan grup aşaması · kendi takımın + <b style="color:${t.title}">3 gizli rakip</b> · toplam 3 grup maçı. Potlardaki takım adları açılmaz; sadece çekilen takım görünür.</div><div class="ll-nd-layout"><div class="ll-nd-pot-panel"><div class="ll-nd-pot-head"><div class="ll-nd-pot-label">POT</div><div class="ll-nd-pot-number">${currentPot}</div></div><div class="ll-nd-intro-pot-list">${potTeams}</div></div><div class="ll-nd-groups">${groupSlotsHtml(s)}</div></div><div class="ll-nd-current">${currentHtml}</div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" ${s.running||done?'disabled':''} onclick="llNationalDrawStart()">${s.running?'KURA ÇEKİLİYOR...':done?'3 RAKİP BELLİ OLDU':'KURAYI BAŞLAT'}</button>${done?`<button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${s.type}')">Turnuvaya Devam Et</button>`:''}</div>`;
+  const nextNumber=Math.min(s.revealed+1,3);
+  const drawBalls=Array.from({length:3},(_,i)=>{const revealed=i<s.revealed,active=!done&&s.running&&i===s.revealed;return `<div class="ll-nd-draw-ball ${revealed?'opened':''}"><div class="ll-nd-ball ${active?'draw-active':''}">${revealed?'✓':'?'}</div><span>${revealed?'AÇILDI':`RAKİP ${i+1}`}</span></div>`;}).join('');
+  const currentHtml=current?`${logo(current.team,'match')}<span>${esc(current.team)} → ${GROUP_LABEL[s.type]} ${esc(current.group)}</span>`:`<span>${s.running?`${nextNumber}. RAKİP İÇİN KURA TOPU AÇILIYOR...`:'3 RAKİP KURA İLE BELİRLENECEK'}</span>`;
+  const content=titleHtml(s.type,'FINAL DRAW')+`<div style="position:relative;z-index:2;padding:0 18px 4px;color:${t.muted};font-size:14px">Doğrudan grup aşaması · kendi takımın + <b style="color:${t.title}">3 gizli rakip</b> · toplam 3 grup maçı. Rakip isimleri yalnızca kura topu açıldığı anda görünür.</div><div class="ll-nd-draw-layout"><div class="ll-nd-draw-machine"><div class="ll-nd-machine-title">KURA TOPLARI</div><div class="ll-nd-sealed-draw compact">${drawBalls}</div></div><div class="ll-nd-groups">${groupSlotsHtml(s)}</div></div><div class="ll-nd-current">${currentHtml}</div><div class="ll-nd-actions"><button class="ll-nd-btn" style="background:${t.button}" ${s.running||done?'disabled':''} onclick="llNationalDrawStart()">${s.running?'KURA ÇEKİLİYOR...':done?'3 RAKİP BELLİ OLDU':'KURAYI BAŞLAT'}</button>${done?`<button class="ll-nd-btn secondary" onclick="llNationalDrawClose('${s.type}')">Turnuvaya Devam Et</button>`:''}</div>`;
   showModal(stageOpen(s.type,content));
-  const progress=document.getElementById('ll-nd-progress');if(progress)progress.textContent=done?`${s.sequence.length}/${s.sequence.length} · COMPLETE`:`${s.revealed}/${s.sequence.length} · POT ${currentPot}`;
+  const progress=document.getElementById('ll-nd-progress');if(progress)progress.textContent=done?`3/3 · COMPLETE`:`${s.revealed}/3 · ${s.running?`${nextNumber}. ÇEKİLİŞ`:'KURA HAZIR'}`;
   if(done){const rec=activeRecord(s.type),d=drawState(rec);if(d&&!d.completed){d.completed=true;d.completedAt=new Date().toISOString();save();}}
 }
 
 function injectEntry(){
   const state=stateNow();if(!state||typeof document==='undefined')return;const rec=api()?.activeNationalRecord?.(state);if(!rec?.edition||!TYPES.includes(rec.type))return;const root=document.querySelector(`[data-ll-national-theme="${rec.type}"] .ll-panel`);if(!root||root.querySelector('[data-national-draw-entry]'))return;const d=drawState(rec),status=d.completed?'Kura tamamlandı':'İlk maçtan önce tamamlanmalı';
-  const card=document.createElement('div');card.className='ll-card ll-national-draw-entry';card.dataset.nationalDrawEntry='1';card.innerHTML=`<div class="ll-card-title"><span>🎱 ${esc(LABELS[rec.type])} Kura Çekimi</span><button class="ll-btn gold" data-national-draw-open>${d.completed?'Kurayı Tekrar Gör':'Kurayı Başlat'}</button></div><div class="ll-sub">${esc(status)} · ${rec.type==='wc'?'4 × 12 takımlı pot · 12 grup':'4 × 6 takımlı pot · 6 grup'} · <b>senin takımın + 3 rakip</b> · 3 grup maçı · kura öncesi ${QUIZ_SIZE} kelime · zar yok.</div>`;
+  const card=document.createElement('div');card.className='ll-card ll-national-draw-entry';card.dataset.nationalDrawEntry='1';card.innerHTML=`<div class="ll-card-title"><span>🎱 ${esc(LABELS[rec.type])} Kura Çekimi</span><button class="ll-btn gold" data-national-draw-open>${d.completed?'Kurayı Tekrar Gör':'Kurayı Başlat'}</button></div><div class="ll-sub">${esc(status)} · ${rec.type==='wc'?'48 takım · 12 grup':'24 takım · 6 grup'} · <b>senin takımın + kura ile açılacak 3 rakip</b> · 3 grup maçı · kura öncesi ${QUIZ_SIZE} kelime · zar yok.</div>`;
   const statusBlock=root.querySelector('.ll-cup-status');if(statusBlock)statusBlock.insertAdjacentElement('afterend',card);else root.prepend(card);
   card.querySelector('[data-national-draw-open]')?.addEventListener('click',()=>renderIntro(rec.type));
   if(drawRequired(rec)){
