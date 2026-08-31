@@ -106,7 +106,7 @@
       const info=summary?.countrySummaries?.[country]||{};
       rows.forEach((row,index)=>{
         const team=row?.team;
-        if(!team||team===performance.from)return;
+        if(!team||team===performance.from||(typeof globalThis.llIsReserveTeam==='function'&&llIsReserveTeam(team)))return;
         const promoted=(info.promoted||[]).includes(team),relegated=(info.relegated||[]).includes(team);
         const nextTier=promoted?'tier1':relegated?'tier2':tier;
         out.push({team,country,tier,nextTier,stars:teamStars(state,team),position:index+1,teamCount:rows.length,promoted,relegated,row});

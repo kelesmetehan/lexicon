@@ -6,6 +6,19 @@ const LL_TIER2_POOLS={"ENG":[{"name":"Southampton FC","short":"SOU","stars":4,"i
 const LL_TEAM_NAME_ALIASES={"Arsenal":"Arsenal FC","Liverpool":"Liverpool FC","Chelsea":"Chelsea FC","Bayern München":"Bayern Munich","Barcelona":"FC Barcelona","Inter":"Inter Milan","Juventus":"Juventus FC","Atlético Madrid":"Atlético de Madrid","Atalanta":"Atalanta BC","Bayer Leverkusen":"Bayer 04 Leverkusen","Monaco":"AS Monaco","Marseille":"Olympique Marseille","Ajax":"Ajax Amsterdam","Villarreal":"Villarreal CF","Lyon":"Olympique Lyon","Real Betis":"Real Betis Balompié","Roma":"AS Roma","Bologna":"Bologna FC 1909","Celta Vigo":"Celta de Vigo","Lille":"LOSC Lille","Feyenoord":"Feyenoord Rotterdam","Nice":"OGC Nice","Utrecht":"FC Utrecht","Strasbourg":"RC Strasbourg Alsace","Mainz 05":"1.FSV Mainz 05","AZ":"AZ Alkmaar","Fiorentina":"ACF Fiorentina","Athletic Club":"Athletic Bilbao","Napoli":"SSC Napoli","Sporting Lizbon":"Sporting CP","Sporting Lisbon":"Sporting CP"};
 LL_TIER1_POOLS.TUR=LL_TEAMS.map(team=>({...team,country:'TUR',tier:'domestic-tier1',logoId:Number((team.logo||'').match(/\/(\d+)\.png$/)?.[1])||null}));
 LL_TIER2_POOLS.TUR=LL_FIRST_TEAMS.map(team=>({...team,country:'TUR',tier:'domestic-tier2',logoId:Number((team.logo||'').match(/\/(\d+)\.png$/)?.[1])||null}));
+/* Reserve/B teams may compete in tier 2, but they are never eligible for senior
+   promotion or promotion play-offs. Keep the explicit list authoritative and
+   use only conservative name fallbacks for future U21/U23/Jong/B additions. */
+const LL_PROMOTION_INELIGIBLE_TEAMS=Object.freeze([
+  'Real Sociedad B',
+  'AZ Alkmaar U21','PSV Eindhoven U21','Ajax Amsterdam U21','FC Utrecht U21'
+]);
+const LL_PROMOTION_INELIGIBLE_TEAM_SET=new Set(LL_PROMOTION_INELIGIBLE_TEAMS);
+function llIsReserveTeam(name){
+  const canonical=LL_TEAM_NAME_ALIASES[String(name||'')]||String(name||'');
+  return LL_PROMOTION_INELIGIBLE_TEAM_SET.has(canonical)||/\bU(?:21|23)\b/i.test(canonical)||/^Jong\s/i.test(canonical)||/\sB$/i.test(canonical);
+}
+function llIsPromotionEligibleTeam(name){return !!name&&!llIsReserveTeam(name);}
 /* Eredivisie 2026 başlangıç dizilimi: kullanıcı tarafından sağlanan güncel 18 kulüp sırası.
    Uzun/resmî adlar mevcut logo, kart ve Avrupa havuzu kimliklerini korur. */
 const LL_NED_ERE_DIVISIE_2026_ORDER=[
@@ -27,7 +40,7 @@ const LL_DOMESTIC_CUP_NAMES=Object.fromEntries(Object.entries(LL_COUNTRY_META).m
 const LL_LEAGUE_META=Object.fromEntries(Object.entries(LL_COUNTRY_META).map(([code,meta])=>[code,{...meta,tier1:{label:meta.tier1Label,teamCount:LL_TIER1_POOLS[code].length,promoteDirect:0,promotePlayoff:0,relegate:meta.relegate,cupName:meta.cupName,seasonGoalThresholds:{top40:.40,top50:.50,top75:.75}},tier2:{label:meta.tier2Label,teamCount:LL_TIER2_POOLS[code].length,promoteDirect:meta.promoteDirect,promotePlayoff:meta.promotePlayoff,relegate:0,cupName:meta.cupName,seasonGoalThresholds:{top40:.40,top50:.50,top75:.75}},seasonGoalThresholds:{top10Percent:size=>Math.max(1,Math.round(size*.10)),top25Percent:size=>Math.max(1,Math.round(size*.25)),top40Percent:size=>Math.max(1,Math.round(size*.40)),top50Percent:size=>Math.max(1,Math.round(size*.50)),top75Percent:size=>Math.max(1,Math.round(size*.75))}}]));
 const LL_ALL_DOMESTIC_TEAMS=Object.keys(LL_COUNTRY_META).flatMap(code=>[...LL_TIER1_POOLS[code],...LL_TIER2_POOLS[code]]);
 const LL_TEAM_REGISTRY=Object.create(null);
-LL_ALL_DOMESTIC_TEAMS.forEach(team=>{LL_TEAM_REGISTRY[team.name]={...team,source:'domestic',country:team.country,tier:team.tier};});
+LL_ALL_DOMESTIC_TEAMS.forEach(team=>{const reserveTeam=llIsReserveTeam(team.name);LL_TEAM_REGISTRY[team.name]={...team,source:'domestic',country:team.country,tier:team.tier,reserveTeam,promotionEligible:!reserveTeam};});
 Object.entries(LL_TEAM_NAME_ALIASES).forEach(([alias,canonical])=>{if(LL_TEAM_REGISTRY[canonical])LL_TEAM_REGISTRY[alias]=LL_TEAM_REGISTRY[canonical];});
 if(typeof LL_V14_EURO_META==='object')Object.entries(LL_V14_EURO_META).forEach(([name,team])=>{const canonical=LL_TEAM_NAME_ALIASES[name]||name;if(LL_TEAM_REGISTRY[canonical]){LL_TEAM_REGISTRY[name]=LL_TEAM_REGISTRY[canonical];return;}if(!LL_TEAM_REGISTRY[name])LL_TEAM_REGISTRY[name]={name:team.name,short:team.short,stars:team.stars,icon:team.flag,logo:team.logoId?'https://tmssl.akamaized.net/images/wappen/head/'+team.logoId+'.png':'',logoId:team.logoId,country:team.country,tier:'europe-pool',source:'europe-pool'};});
 function llCanonicalTeamName(name){return LL_TEAM_NAME_ALIASES[name]||name;}
