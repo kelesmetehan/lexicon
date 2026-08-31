@@ -483,6 +483,24 @@ function unlockAchievement(state,id,team){
   try{if(typeof global.llAchievementCinematic==='function'){const show=()=>global.llAchievementCinematic([{...def,entry}]),nationalTrophyPending=Array.isArray(state.achievementCinematics?.queue)&&state.achievementCinematics.queue.some(item=>String(item?.kind||'').startsWith('national-tournament-'));if(nationalTrophyPending&&typeof global.setTimeout==='function')global.setTimeout(show,220);else show();}}catch(_){}return def;
 }
 function registerAchievements(){const list=global.LL_ACHIEVEMENTS;if(!Array.isArray(list))return;ACHIEVEMENTS.forEach(def=>{if(!list.some(x=>x?.id===def.id))list.push({...def,check:()=>false,progress:()=> 'Milli turnuvada canlı olarak açılır'});});}
+function nationalAchievementRewardText(reward){return `${reward?.ap?`+${reward.ap} AP`:''}${reward?.ap&&reward?.lp?' · ':''}${reward?.lp?`+${reward.lp} LP`:''}`||'Rozet';}
+function renderNationalAchievementsSection(){
+  if(typeof document==='undefined')return;
+  const state=stateNow();if(!state)return;
+  registerAchievements();
+  const unlocked=state.achievements?.unlocked||{};
+  document.querySelector('[data-national-achievements]')?.remove();
+  const panel=document.querySelector('.ll-shell .ll-panel');if(!panel)return;
+  const cards=ACHIEVEMENTS.map(def=>{
+    const done=unlocked[def.id];
+    return `<div class="ll-achievement-card ${done?'done':''}"><div class="ll-achievement-card-head"><span>${done?'🏆':'🔒'}</span><b>${esc(def.name)}</b></div><div class="ll-sub">${esc(def.description)}</div><div class="ll-achievement-progress">${done?`Açıldı · S${esc(done.season)}${done.team?` · ${esc(done.team)}`:''}`:'Milli turnuvada canlı olarak açılır'}</div><div class="ll-achievement-reward">${nationalAchievementRewardText(def.reward)}</div></div>`;
+  }).join('');
+  panel.insertAdjacentHTML('beforeend',`<div class="ll-card ll-national-achievements" data-national-achievements style="margin-top:14px"><div class="ll-card-title">🌍 Milli Takım Başarımları</div><div class="ll-muted">Dünya Kupası ve EURO kariyerindeki milli takım başarımları. Kulüp değiştirsen de açılan başarımlar kariyerinde kalır.</div><div class="ll-achievement-grid">${cards}</div></div>`);
+  const metrics=panel.querySelectorAll('.ll-metrics .ll-metric strong');
+  if(metrics[0])metrics[0].textContent=String(Object.keys(unlocked).length);
+  if(metrics[1]&&Array.isArray(global.LL_ACHIEVEMENTS))metrics[1].textContent=String(global.LL_ACHIEVEMENTS.length);
+}
+
 function markReached(state,rec,stage){
   const ed=rec.edition;if(!ed)return;const current=STAGE_ORDER[ed.reachedStage]??0,next=STAGE_ORDER[stage]??0;if(next>current)ed.reachedStage=stage;
   const team=rec.selectedTeam;if(stage==='r32'||stage==='r16')unlockAchievement(state,'national_group_out',team);
@@ -751,7 +769,7 @@ if(typeof BASE_CONTINUE==='function')global.llContinueGame=function(){
 const BASE_MANAGER_PROFILE_RENDER=global.llRenderManagerProfile;
 if(typeof BASE_MANAGER_PROFILE_RENDER==='function')global.llRenderManagerProfile=function(){const result=BASE_MANAGER_PROFILE_RENDER.apply(this,arguments);try{renderCareerSection();}catch(_){}return result;};
 const BASE_ACH_RENDER=global.llRenderAchievements;
-if(typeof BASE_ACH_RENDER==='function')global.llRenderAchievements=function(){const result=BASE_ACH_RENDER.apply(this,arguments);registerAchievements();return result;};
+if(typeof BASE_ACH_RENDER==='function')global.llRenderAchievements=function(){registerAchievements();const result=BASE_ACH_RENDER.apply(this,arguments);renderNationalAchievementsSection();return result;};
 
 registerAchievements();injectStyles();try{ensureRoot(stateNow());injectDashboardButton();}catch(_){}
 
