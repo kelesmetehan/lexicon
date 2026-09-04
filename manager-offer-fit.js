@@ -1,7 +1,7 @@
 /* Manager market fit v1: offers are scored, never padded to an arbitrary count. */
 (function(){
   'use strict';
-  const VERSION=3;
+  const VERSION=4;
   const number=(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fallback;
   const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
   /* Reads legacy double-encoded UI values without changing valid text. */
@@ -139,11 +139,21 @@
   function kindLabel(kind){return ({prestige:'PRESTİJ TEKLİFİ',progress:'GELİŞİM TEKLİFİ',safe:'GÜVENLİ TEKLİF',rebuild:'YENİDEN YAPILANMA PROJESİ',crisis:'KRİZ KULÜBÜ',challenge:'ZORLU MEYDAN OKUMA',stay:'MEVCUT KULÜP'})[kind]||'TEKLİF';}
   function fitScore(item,currentStars,manager){
     const status=candidateStatus(item),gap=item.stars-currentStars,prestige={TUR:2,ENG:8,ESP:7,ITA:7,DEU:7,FRA:5,NLD:4}[item.country]||3;
-    const rebuild=status.crisis?(item.stars>=4?16:8):0;
-    const europe=qualification(manager.summary,item.country,item.team)==='Avrupa bileti yok'?0:5;
+    /* The market should value NEXT SEASON European qualification, not just a club's name.
+       UCL qualifiers get a meaningful premium; UEL/UECL remain progressively smaller bonuses. */
+    const europeLabel=qualification(manager.summary,item.country,item.team);
+    const europe={
+      'Şampiyonlar Ligi':15,
+      'Avrupa Ligi':8,
+      'Konferans Ligi':4
+    }[europeLabel]||0;
+    /* Successful league finishes deserve extra market pull on top of the European ticket. */
+    const leagueFinish=item.nextTier==='tier1'?(item.position===1?5:item.position===2?3:0):0;
+    /* Crisis projects stay attractive, but no longer dominate successful UCL-qualified clubs. */
+    const rebuild=status.crisis?(item.stars>=4?10:6):0;
     const tier=(item.nextTier==='tier1'?8:0)+(item.relegated?3:0);
     const starFit=gap>=0?gap*7:-Math.abs(gap)*5;
-    return manager.score*.28+prestige+rebuild+europe+tier+starFit+(status.underperformed?3:0);
+    return manager.score*.28+prestige+rebuild+europe+leagueFinish+tier+starFit+(status.underperformed?3:0);
   }
   function offerFrom(state,summary,item,kind,manager){
     const base=typeof globalThis.llManagerOffer==='function'?llManagerOffer(state,summary,item.team,kind):{};
