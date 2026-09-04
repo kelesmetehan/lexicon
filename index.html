@@ -626,6 +626,12 @@
   .ll-btn.gold { background:var(--gold); color:#111827; border-color:var(--gold2); }
   .ll-btn.danger { color:#fca5a5; border-color:rgba(239,68,68,.26); background:rgba(127,29,29,.15); }
   .ll-btn:disabled { opacity:.42; cursor:not-allowed; transform:none; }
+  .ll-mobile-final-save { display:none; }
+  @media(max-width:600px){
+    .ll-match-controls.ll-final-save-top { display:none; }
+    .ll-mobile-final-save { display:block; text-align:center; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); }
+    .ll-mobile-final-save .ll-btn { width:100%; min-height:48px; }
+  }
   .ll-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:16px; }
   .ll-grid > * { min-width:0; }
   .ll-card { background:var(--bg3); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:16px; }
@@ -4120,7 +4126,7 @@ function llRenderMatch(){
   <div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(pDef,'match')}</div><b>${llEscape(m.player)}</b><div class="ll-stars">${llStars(llTeamState(m.player).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.player))}</div></div><div class="ll-vs ${m.scorePop?'ll-score-pop':''}">${r?`${r.scoreA} - ${r.scoreB}`:'VS'}</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oDef,'match')}</div><b>${llEscape(m.opponent)}</b><div class="ll-stars">${llStars(llTeamState(m.opponent).stars)}</div><div class="ll-club-rank">${llEscape(llLeaguePositionLabel(m.opponent))}</div>${llOpponentIcons(m.opponent)}</div></div>
   ${m.phase==='ready'?`<div class="ll-notice" style="margin-top:14px">${m.plusPos?`${m.plusPos} zarına maçlık +1 uygulanacak.${m.rerolls?` Ayrıca ${m.rerolls} reroll hazır.`:''}`:m.rerolls?`${m.rerolls} reroll hazır.`:'Taktik ödülü yok.'}</div>`:`<div class="ll-battle" style="margin-top:16px"><div class="ll-dice-side">${pDice.map((d,i)=>llDieRow(d,'a',m.phase==='reroll'&&llCanRerollDie(m,d.position),m.selectedUid===d.uid,m.phase==='rolling'||(m.phase==='rerollRolling'&&m.rollingUid===d.uid),m.justLandedAll||m.justLandedUid===d.uid,i)).join('')}</div><div class="ll-pair-column">${pairs.map(x=>`<div class="ll-pair ${x?x.result==='a'?'win':x.result==='b'?'loss':'draw':''}">${x?x.result==='a'?`+${x.aGoals} Gol`:x.result==='b'?`Rakip +${x.bGoals}`:'Berabere':'↔'}</div>`).join('')}</div><div class="ll-dice-side">${oDice.map((d,i)=>llDieRow(d,'b',false,false,m.phase==='rolling',m.justLandedAll,i+3)).join('')}</div></div>`}
   ${(m.phase==='reroll'||m.phase==='preview')?llMatchForecastHtml(m):''}
-  <div style="text-align:center;margin-top:16px">${controls}</div>${r?llCardEffectChainHtml(m,r,false):''}</div></div>`;
+  <div class="ll-match-controls ${m.phase==='final'?'ll-final-save-top':''}" style="text-align:center;margin-top:16px">${controls}</div>${r?llCardEffectChainHtml(m,r,false):''}${m.phase==='final'?`<div class="ll-mobile-final-save"><button class="ll-btn primary" onclick="llCommitCurrentMatch()">Maç Sonucunu Kaydet</button></div>`:''}</div></div>`;
 }
 function llSimulateMatch(home,away,competition='league'){
   let hd=llMakeDice(home),ad=llMakeDice(away);const scouting=llPrepareScouting(home,away,hd,ad,{aHome:true});const hc=llRerollCreditsFromDice(hd,scouting.disabled.a),ac=llRerollCreditsFromDice(ad,scouting.disabled.b);hd=llAutoRerollWithCredits(home,hd,hc,llTakeCarriedRerolls(home));ad=llAutoRerollWithCredits(away,ad,ac,llTakeCarriedRerolls(away));
