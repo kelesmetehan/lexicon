@@ -827,7 +827,16 @@ function llV3NormalizeEuropeState(state,type,count,userResults){
 }llV2EnsureEuropeStandings=function(state){
   const valid=state.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&state.europeStandings.formatVersion===LL_EURO_FORMAT_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],count=LL_EURO_LEAGUE_WEEKS[type].length;return table?.teams?.length===36&&table.fixtures?.length===count&&table.fixtures.every(round=>round.length===18);});
   if(!valid)llV2CreateEuropeStandings(state);
-  const q=llV3ResolveEuropeQualifications(state),type=['ucl','uel','uecl'].find(key=>q[key].includes(state.playerTeam));
+  /* Multi-league careers have 2 qualifiers per playable country, while the legacy
+     qualification cache only contains the player's domestic 2+2+2 set.  The
+     European table is built from the full multi-country participant list, so
+     participation detection must use that same source or a qualified club can
+     appear in the 36-team table while state.europe is cleared. */
+  const tableType=['ucl','uel','uecl'].find(key=>Array.isArray(state.europeStandings?.[key]?.teams)&&state.europeStandings[key].teams.includes(state.playerTeam)),
+    q=typeof llMLResolveEuropeParticipants==='function'
+      ?llMLResolveEuropeParticipants(state)
+      :llV3ResolveEuropeQualifications(state),
+    type=tableType||['ucl','uel','uecl'].find(key=>Array.isArray(q?.[key])&&q[key].includes(state.playerTeam));
   let repaired=false;
   if(type){
     const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===state.playerTeam||r.away===state.playerTeam)).length;

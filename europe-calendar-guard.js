@@ -16,6 +16,20 @@
     const all=EURO_TYPES.flatMap(type=>Array.isArray(q?.[type])?q[type]:[]);
     return EURO_TYPES.every(type=>Array.isArray(q?.[type])&&q[type].length===2)&&all.length===6&&new Set(all).size===6;
   }
+  function playerIsCurrentParticipant(state,type){
+    if(!state||!isEuropeType(type)||!state.playerTeam)return false;
+    /* The current 36-team table is the strongest evidence for an in-progress save. */
+    if(Array.isArray(state.europeStandings?.[type]?.teams)&&state.europeStandings[type].teams.includes(state.playerTeam))return true;
+    /* New multi-league seasons resolve all playable countries at once. */
+    if(typeof globalThis.llMLResolveEuropeParticipants==='function'){
+      try{
+        const participants=globalThis.llMLResolveEuropeParticipants(state);
+        if(Array.isArray(participants?.[type])&&participants[type].includes(state.playerTeam))return true;
+      }catch(error){console.warn('Europe participant lookup failed',error);}
+    }
+    /* Legacy saves still use the player's domestic 2+2+2 qualification cache. */
+    return validQualifications(state.europeQualifications)&&state.europeQualifications[type]?.includes(state.playerTeam);
+  }
   function userLeagueResults(state,type){
     return (state.results||[]).filter(result=>
       Number(result?.season)===Number(state.season)&&
@@ -83,8 +97,10 @@
       let e=state.europe;
       if(e&&isEuropeType(e.type)){
         const q=state.europeQualifications;
-        if(!validQualifications(q)||!q[e.type]?.includes(state.playerTeam)){
-          /* A new season used to keep the previous season's valid qualification cache. */
+        if(!playerIsCurrentParticipant(state,e.type)){
+          /* Only invalidate when neither the live 36-team table nor the multi-league
+             qualification source contains the player.  This prevents a valid
+             multi-country UCL entry from being erased by the legacy 2+2+2 cache check. */
           state.europeQualifications=null;
           state.europeStandings=null;
           changed=true;
