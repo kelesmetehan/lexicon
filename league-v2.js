@@ -766,13 +766,24 @@ llRenderShop=function(){
 };;
 
 function llV3ValidQualifications(q){const all=['ucl','uel','uecl'].flatMap(type=>Array.isArray(q?.[type])?q[type]:[]);return ['ucl','uel','uecl'].every(type=>q?.[type]?.length===2)&&all.length===6&&new Set(all).size===6;}
+/* NATIONAL_CLUB_EUROPE_CONTEXT_V1
+ * Milli takım görevi sırasında national-tournaments.js state.playerTeam'i geçici olarak
+ * milli takıma çevirir. Kulüp Avrupa sistemleri bu geçici adı kulüp kimliği olarak
+ * kullanmamalı; aktif milli kayıttaki clubTeam gerçek kulüp sahibidir. */
+function llV3ActiveNationalClubContext(state){
+  const seasons=state?.nationalTournaments?.seasons;if(!seasons||typeof seasons!=='object')return null;
+  const rec=Object.values(seasons).filter(item=>item&&item.completed!==true&&item.status==='active'&&item.clubTeam).sort((a,b)=>Number(b.year||0)-Number(a.year||0)||Number(b.season||0)-Number(a.season||0))[0]||null;
+  return rec?{team:rec.clubTeam,country:rec.clubCountry||null,record:rec}:null;
+}
+function llV3EuropeOwnerTeam(state){return llV3ActiveNationalClubContext(state)?.team||state?.playerTeam||null;}
+function llV3NationalDutyActive(state){return !!llV3ActiveNationalClubContext(state);}
 function llV3ResolveEuropeQualifications(state){
   if(llV3ValidQualifications(state.europeQualifications))return state.europeQualifications;
   const latest=[...(state.seasonHistory||[])].sort((a,b)=>b.season-a.season).find(item=>Number(item.season)===Number(state.season)-1&&llV3ValidQualifications(item.qualifications));
   let q=latest?llDeep(latest.qualifications):null;
   if(!q){const ordered=[...(state.leagues?.super||[])].sort((a,b)=>llV2TeamStarsInState(state,b)-llV2TeamStarsInState(state,a)||a.localeCompare(b,'tr'));q={ucl:ordered.slice(0,2),uel:ordered.slice(2,4),uecl:ordered.slice(4,6)};}
-  const legacyType=state.europe?.type;if(legacyType&&q[legacyType]&&!q[legacyType].includes(state.playerTeam)){
-    ['ucl','uel','uecl'].forEach(type=>q[type]=q[type].filter(name=>name!==state.playerTeam));q[legacyType].push(state.playerTeam);q[legacyType]=q[legacyType].slice(-2);
+  const clubTeam=llV3EuropeOwnerTeam(state),legacyType=state.europe?.type;if(legacyType&&clubTeam&&q[legacyType]&&!q[legacyType].includes(clubTeam)){
+    ['ucl','uel','uecl'].forEach(type=>q[type]=q[type].filter(name=>name!==clubTeam));q[legacyType].push(clubTeam);q[legacyType]=q[legacyType].slice(-2);
     const used=new Set();['ucl','uel','uecl'].forEach(type=>{q[type]=q[type].filter(name=>!used.has(name));q[type].forEach(name=>used.add(name));for(const name of state.leagues.super||[]){if(q[type].length>=2)break;if(!used.has(name)){q[type].push(name);used.add(name);}}});
   }
   state.europeQualifications=q;return q;
@@ -825,6 +836,9 @@ function llV3NormalizeEuropeState(state,type,count,userResults){
   e.status=voided?`Lig aşaması onarıldı · ${voided} hatalı eleme kaydı geçersiz sayıldı.`:e.round?`Lig aşaması ${e.round}/${count} tamamlandı`:'Lig aşaması başlamadı';
   return true;
 }llV2EnsureEuropeStandings=function(state){
+  /* Milli turnuva aktifken kulüp sezonu dondurulmuştur. playerTeam milli takım
+     adıdır; bu pencerede Avrupa state'i oluşturulmaz, silinmez veya normalize edilmez. */
+  if(llV3NationalDutyActive(state)){state.europeNationalDutyProtectionVersion=1;return state.europeStandings||null;}
   const valid=state.europeStandings&&Number(state.europeStandings.season)===Number(state.season)&&state.europeStandings.formatVersion===LL_EURO_FORMAT_VERSION&&['ucl','uel','uecl'].every(type=>{const table=state.europeStandings[type],count=LL_EURO_LEAGUE_WEEKS[type].length;return table?.teams?.length===36&&table.fixtures?.length===count&&table.fixtures.every(round=>round.length===18);});
   if(!valid)llV2CreateEuropeStandings(state);
   /* Multi-league careers have 2 qualifiers per playable country, while the legacy
@@ -832,14 +846,14 @@ function llV3NormalizeEuropeState(state,type,count,userResults){
      European table is built from the full multi-country participant list, so
      participation detection must use that same source or a qualified club can
      appear in the 36-team table while state.europe is cleared. */
-  const tableType=['ucl','uel','uecl'].find(key=>Array.isArray(state.europeStandings?.[key]?.teams)&&state.europeStandings[key].teams.includes(state.playerTeam)),
+  const clubTeam=llV3EuropeOwnerTeam(state),tableType=['ucl','uel','uecl'].find(key=>Array.isArray(state.europeStandings?.[key]?.teams)&&state.europeStandings[key].teams.includes(clubTeam)),
     q=typeof llMLResolveEuropeParticipants==='function'
       ?llMLResolveEuropeParticipants(state)
       :llV3ResolveEuropeQualifications(state),
-    type=tableType||['ucl','uel','uecl'].find(key=>Array.isArray(q?.[key])&&q[key].includes(state.playerTeam));
+    type=tableType||['ucl','uel','uecl'].find(key=>Array.isArray(q?.[key])&&q[key].includes(clubTeam));
   let repaired=false;
   if(type){
-    const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===state.playerTeam||r.away===state.playerTeam)).length;
+    const count=LL_EURO_LEAGUE_WEEKS[type].length,userResults=(state.results||[]).filter(r=>r.competition===type&&r.league==='euro-table'&&r.userMatch&&(r.home===clubTeam||r.away===clubTeam)).length;
     if(!state.europe||state.europe.type!==type)state.europe={type,phase:'league',round:Math.min(count,userResults),alive:true,pending:null,winner:null,usedOpponents:[]};
     else repaired=llV3NormalizeEuropeState(state,type,count,userResults);
   }else if(state.europe?.phase==='league')state.europe=null;
@@ -847,7 +861,7 @@ function llV3NormalizeEuropeState(state,type,count,userResults){
   return state.europeStandings;
 };llV2SortEuropeTable=function(type){const table=llV2EnsureEuropeStandings(lexLeague.state)?.[type];return table?Object.values(table.standings).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.team.localeCompare(b.team,'tr')):[];};
 llV2SimulateEuropeTables=function(){
-  const s=lexLeague.state,tables=llV2EnsureEuropeStandings(s);['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(s.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(s.results||[]).some(r=>r.season===s.season&&r.competition===type&&r.league==='euro-table'&&r.home===fixture.home&&r.away===fixture.away);if(exists||fixture.home===s.playerTeam||fixture.away===s.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,weeks[roundIndex],false,type,'euro-table');});table.playedRounds++;}});llSave();
+  const s=lexLeague.state;if(llV3NationalDutyActive(s))return;const tables=llV2EnsureEuropeStandings(s);if(!tables)return;['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(s.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(s.results||[]).some(r=>r.season===s.season&&r.competition===type&&r.league==='euro-table'&&r.home===fixture.home&&r.away===fixture.away);if(exists||fixture.home===s.playerTeam||fixture.away===s.playerTeam)return;const score=llV2SimpleEuropeScore(fixture.home,fixture.away);llRecordMatch(fixture.home,fixture.away,score.homeGoals,score.awayGoals,weeks[roundIndex],false,type,'euro-table');});table.playedRounds++;}});llSave();
 };
 function llV3EuropeRank(type,team=lexLeague.state.playerTeam){return llV2SortEuropeTable(type).findIndex(row=>row.team===team)+1;}
 function llV3EnterEuropeKnockout(){
@@ -864,7 +878,7 @@ function llV3KnockoutOpponent(stage){
 }
 function llV3EnsureEuroOpponent(name){const s=lexLeague.state;if(!name||s.teams[name])return;const def=llTeamDef(name);s.teams[name]={name,stars:def?.stars||3,cards:{'Kaleci':null,'Orta Saha':null,'Forvet':null},usedCardFamilies:[],lastResults:[],wins:0,lockedDice:{},aiAp:0,nextMatchRerolls:0,sixStreaks:{},nextMatchBonuses:{}};}
 llV2EnsureEurope=function(){
-  const s=lexLeague.state;llV2SimulateEuropeTables();const e=s.europe;if(!e||!e.alive||e.pending)return;
+  const s=lexLeague.state;if(llV3NationalDutyActive(s))return;llV2SimulateEuropeTables();const e=s.europe;if(!e||!e.alive||e.pending)return;
   if(e.phase==='league'){
     const weeks=LL_EURO_LEAGUE_WEEKS[e.type],table=llV2EnsureEuropeStandings(s)[e.type];
     while(e.round<weeks.length){const scheduled=table.fixtures[e.round]?.find(f=>f.home===s.playerTeam||f.away===s.playerTeam),already=scheduled&&(s.results||[]).some(r=>r.competition===e.type&&r.league==='euro-table'&&r.home===scheduled.home&&r.away===scheduled.away);if(already){e.round++;continue;}if(Number(s.week)<weeks[e.round])return;if(!scheduled){e.round++;continue;}const opponent=scheduled.home===s.playerTeam?scheduled.away:scheduled.home;llV3EnsureEuroOpponent(opponent);e.pending=opponent;s.pendingFixture={...scheduled,competition:e.type,league:'euro-table',roundLabel:`Lig Aşaması ${e.round+1}/${weeks.length}`};return;}
@@ -974,7 +988,7 @@ function llV4RenewAiContracts(teamName){const team=llTeamState(teamName);if(!tea
 function llDevelopOpponents(completedWeek){const state=lexLeague.state;if(!state)return;llV2EnsureEuropeStandings(state);if(!state.aiContractWindows)state.aiContractWindows={};LL_AI_TRANSFER_WEEKS.filter(week=>Number(completedWeek)>=week&&!state.aiContractWindows[`${state.season}-${week}`]).forEach(week=>{Object.keys(state.teams).filter(name=>name!==state.playerTeam).forEach(llV4RenewAiContracts);state.aiContractWindows[`${state.season}-${week}`]=true;if(!state.aiTransferWindows)state.aiTransferWindows={};state.aiTransferWindows[`${state.season}-${week}`]=true;});}
 const llV4RecordMatchBase=llRecordMatch;
 llRecordMatch=function(home,away,hg,ag,week,userMatch=false,competition='league',league=null){const state=lexLeague.state;llV4CreateEuroTeam(state,home);llV4CreateEuroTeam(state,away);llEnsureTeamContracts(state.teams[home]);llEnsureTeamContracts(state.teams[away]);llV4RecordMatchBase(home,away,hg,ag,week,userMatch,competition,league);const reward=LL_COMP_REWARDS[competition]||LL_COMP_REWARDS.league;[[home,hg,ag],[away,ag,hg]].forEach(([name,gf,ga])=>{const team=state.teams[name];if(name!==state.playerTeam){team.aiLp=(team.aiLp||0)+(gf>ga?reward.win:gf===ga?reward.draw:reward.loss);if(competition!=='league')team.aiAp=(team.aiAp||0)+(gf>ga?20:gf===ga?12:6);}});};
-llV2SimulateEuropeTables=function(){const state=lexLeague.state,tables=llV2EnsureEuropeStandings(state);['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(state.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(state.results||[]).some(result=>result.season===state.season&&result.competition===type&&result.league==='euro-table'&&result.home===fixture.home&&result.away===fixture.away);if(exists||fixture.home===state.playerTeam||fixture.away===state.playerTeam)return;llV2SimFixture(fixture,type,'euro-table',weeks[roundIndex]);});table.playedRounds++;}});llSave();};
+llV2SimulateEuropeTables=function(){const state=lexLeague.state;if(llV3NationalDutyActive(state))return;const tables=llV2EnsureEuropeStandings(state);if(!tables)return;['ucl','uel','uecl'].forEach(type=>{const table=tables[type],weeks=LL_EURO_LEAGUE_WEEKS[type],due=weeks.filter(week=>Number(state.week)>=week).length;while(table.playedRounds<due){const roundIndex=table.playedRounds,round=table.fixtures[roundIndex]||[];round.forEach(fixture=>{const exists=(state.results||[]).some(result=>result.season===state.season&&result.competition===type&&result.league==='euro-table'&&result.home===fixture.home&&result.away===fixture.away);if(exists||fixture.home===state.playerTeam||fixture.away===state.playerTeam)return;llV2SimFixture(fixture,type,'euro-table',weeks[roundIndex]);});table.playedRounds++;}});llSave();};
 function llRollValue(teamName,pos){const team=llTeamState(teamName),[min,max]=llRange(team.stars),locked=team.lockedDice?.[pos];let value;if(Number.isFinite(locked)){delete team.lockedDice[pos];value=locked;}else value=llRandomInt(min,max);const bonus=Number(team.nextMatchBonuses?.[pos]||0);if(bonus){delete team.nextMatchBonuses[pos];value+=bonus;}const card=llCard(llActiveCardId(teamName,pos));if(llBaseName(card)==='Yıldız Oyuncu'&&team.stars>=3)value=Math.max(4,value);return value;}
 function llMakeDice(teamName,plusPos=null){const team=llTeamState(teamName);llEnsureTeamContracts(team);return LL_POSITIONS.map(pos=>({uid:`${teamName}-${pos}-${Math.random()}`,position:pos,value:llRollValue(teamName,pos)+(pos===plusPos?1:0),cardId:llActiveCardId(teamName,pos),stars:team.stars}));}
 function llHasBase(teamName,base){return LL_POSITIONS.some(pos=>llBaseName(llCard(llActiveCardId(teamName,pos)))===base);}

@@ -4,7 +4,7 @@
 
   const EURO_TYPES=['ucl','uel','uecl'];
   const KNOCKOUT_PHASES=new Set(['playoff','r16','qf','sf','final']);
-  const GUARD_VERSION=1;
+  const GUARD_VERSION=2;
   let repairing=false;
 
   function isEuropeType(type){return EURO_TYPES.includes(String(type||''));}
@@ -16,25 +16,32 @@
     const all=EURO_TYPES.flatMap(type=>Array.isArray(q?.[type])?q[type]:[]);
     return EURO_TYPES.every(type=>Array.isArray(q?.[type])&&q[type].length===2)&&all.length===6&&new Set(all).size===6;
   }
+  function activeNationalClubContext(state){
+    const seasons=state?.nationalTournaments?.seasons;if(!seasons||typeof seasons!=='object')return null;
+    const rec=Object.values(seasons).filter(item=>item&&item.completed!==true&&item.status==='active'&&item.clubTeam).sort((a,b)=>Number(b.year||0)-Number(a.year||0)||Number(b.season||0)-Number(a.season||0))[0]||null;
+    return rec?{team:rec.clubTeam,country:rec.clubCountry||null,record:rec}:null;
+  }
+  function europeOwnerTeam(state){return activeNationalClubContext(state)?.team||state?.playerTeam||null;}
   function playerIsCurrentParticipant(state,type){
-    if(!state||!isEuropeType(type)||!state.playerTeam)return false;
+    const clubTeam=europeOwnerTeam(state);if(!state||!isEuropeType(type)||!clubTeam)return false;
     /* The current 36-team table is the strongest evidence for an in-progress save. */
-    if(Array.isArray(state.europeStandings?.[type]?.teams)&&state.europeStandings[type].teams.includes(state.playerTeam))return true;
+    if(Array.isArray(state.europeStandings?.[type]?.teams)&&state.europeStandings[type].teams.includes(clubTeam))return true;
     /* New multi-league seasons resolve all playable countries at once. */
     if(typeof globalThis.llMLResolveEuropeParticipants==='function'){
       try{
         const participants=globalThis.llMLResolveEuropeParticipants(state);
-        if(Array.isArray(participants?.[type])&&participants[type].includes(state.playerTeam))return true;
+        if(Array.isArray(participants?.[type])&&participants[type].includes(clubTeam))return true;
       }catch(error){console.warn('Europe participant lookup failed',error);}
     }
     /* Legacy saves still use the player's domestic 2+2+2 qualification cache. */
-    return validQualifications(state.europeQualifications)&&state.europeQualifications[type]?.includes(state.playerTeam);
+    return validQualifications(state.europeQualifications)&&state.europeQualifications[type]?.includes(clubTeam);
   }
   function userLeagueResults(state,type){
+    const clubTeam=europeOwnerTeam(state);
     return (state.results||[]).filter(result=>
       Number(result?.season)===Number(state.season)&&
       result?.userMatch&&result.competition===type&&result.league==='euro-table'&&
-      (result.home===state.playerTeam||result.away===state.playerTeam)
+      (result.home===clubTeam||result.away===clubTeam)
     ).length;
   }
   function clearPending(state,e){
@@ -53,9 +60,9 @@
     team.lockedDice={};
   }
   function removePrematureResults(state,e){
-    const removed=[];
+    const removed=[],clubTeam=europeOwnerTeam(state);
     state.results=(state.results||[]).filter(result=>{
-      const current=Number(result?.season)===Number(state.season)&&result?.userMatch&&(result.home===state.playerTeam||result.away===state.playerTeam);
+      const current=Number(result?.season)===Number(state.season)&&result?.userMatch&&(result.home===clubTeam||result.away===clubTeam);
       const premature=current&&(
         (result.competition===e.type&&result.league==='euro-knockout')||
         result.league==='euro-format-void'
@@ -94,6 +101,11 @@
     repairing=true;
     let changed=false;
     try{
+      /* Milli takım görevi aktifken state.playerTeam milli takımdır. Kulüp Avrupa
+         verisine bu pencere boyunca hiçbir repair/cleanup uygulanmaz. Kulüp geri
+         yüklendikten sonra normal guard mevcut save onarımını güvenle çalıştırır. */
+      const nationalContext=activeNationalClubContext(state);
+      if(nationalContext){state.europeNationalDutyProtectionVersion=1;state.europeCalendarGuardVersion=GUARD_VERSION;return false;}
       let e=state.europe;
       if(e&&isEuropeType(e.type)){
         const q=state.europeQualifications;
