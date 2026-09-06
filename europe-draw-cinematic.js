@@ -1,4 +1,4 @@
-/* Europe Draw Cinematic v4
+/* Europe Draw Cinematic v5
    - Kullanıcının yüklediği cinematic draw akışı baz alınmıştır.
    - Kura öncesi kısa kelime turu eklendi (zar yok).
    - Katılımcı 36 takım özeti ve kendi takımının altta sabit şeritte görünmesi korunur.
@@ -132,6 +132,13 @@
     try{if(typeof llSave==='function')llSave();}catch(error){console.warn('Europe draw save failed',error);}
   }
 
+  function activeClubTeam(state){
+    try{if(typeof llV3EuropeOwnerTeam==='function')return llV3EuropeOwnerTeam(state); }catch(error){}
+    return state?.playerTeam||null;
+  }
+  function nationalDutyActive(state){
+    try{return typeof llV3NationalDutyActive==='function'&&llV3NationalDutyActive(state); }catch(error){return false;}
+  }
   function competitionTeamsFor(type){
     const state=getState();
     const tables=typeof llV2EnsureEuropeStandings==='function'?llV2EnsureEuropeStandings(state):state?.europeStandings;
@@ -142,7 +149,7 @@
     const state=getState();
     const tables=typeof llV2EnsureEuropeStandings==='function'?llV2EnsureEuropeStandings(state):state?.europeStandings;
     const table=tables?.[type];
-    const player=state?.playerTeam;
+    const player=activeClubTeam(state);
     const rounds=Array.isArray(table?.fixtures)?table.fixtures:[];
     const list=[];
     rounds.forEach(round=>{
@@ -230,7 +237,7 @@
     const cfg=CONFIG[type]||CONFIG.ucl;
     const entrants=competitionTeamsFor(type);
     const state=getState();
-    const player=state?.playerTeam||'';
+    const player=activeClubTeam(state)||'';
     const meta=getMeta(type);
     const entrantsHtml=entrants.map(team=>`<div class="ll-draw-pool-item">${logoHtml(team,'table')}<div>${escapeHtml(team)}</div></div>`).join('');
     const doneNotice=meta.completed?`<div class="ll-draw-note" style="margin-top:10px"><b>Kura daha önce izlendi.</b> İstersen aşağıdan animasyonu tekrar oynatabilir veya doğrudan kura özetini görebilirsin.</div>`:'';
@@ -350,7 +357,7 @@
       const tagColor=item.home?theme.home:theme.away;
       return `<div class="ll-draw-row ${isRevealed?'is-revealed':''} ${isCurrent?'is-current':''}">${logoHtml(item.opponent,'table')}<div class="ll-draw-nm">${escapeHtml(item.opponent)}</div><div class="ll-draw-tag" style="background:${tagColor}">${item.home?'H':'A'}</div></div>`;
     }).join('');
-    const player=getState()?.playerTeam||'';
+    const player=activeClubTeam(getState())||'';
     const html=`
       <div class="ll-draw-shell">
         <div class="ll-rarity">${label.toUpperCase()} KURASI</div>
@@ -365,7 +372,7 @@
         </div>
         <div class="ll-draw-actions-inline">
           <button class="ll-draw-btn" style="background:${theme.btn}" ${draw.running||done?'disabled':''} onclick="llEuropeDrawStart()">${draw.running?'Kura Çekiliyor...':done?'Kura Tamamlandı':'Kurayı Çek'}</button>
-          ${done?`<button class="ll-draw-btn secondary" onclick="llEuropeDrawCloseToEurope('${draw.type}')">Avrupa Merkezine Dön</button>`:''}
+          ${done?`<button class="ll-draw-btn secondary" onclick="${window.llEuropeDrawMandatory?`llEuropeDrawCloseAfterMandatory('${draw.type}')`:`llEuropeDrawCloseToEurope('${draw.type}')`}">${window.llEuropeDrawMandatory?'Maça Dön':'Avrupa Merkezine Dön'}</button>`:''}
         </div>
         <div class="ll-draw-done">${done?`Toplam ${total} rakibin belli oldu. İyi şanslar! ⚽`:`Rakipler sırayla isim + logo + iç saha/deplasman rozetiyle açılacak.`}</div>
       </div>`;
@@ -373,10 +380,11 @@
     if(done)patchMeta(draw.type,{completed:true,completedAt:new Date().toISOString()});
   }
 
-  window.llEuropeDrawOpen=function(type){
+  window.llEuropeDrawOpen=function(type,mandatory=false){
     type=normalizeType(type);
     const order=playerOpponentsFor(type);
     if(!order.length){ alert('Bu turnuva için fikstür henüz oluşturulmadı.'); return; }
+    window.llEuropeDrawMandatory=!!mandatory;
     renderIntro(type);
   };
   window.llShowEuropeDraw=window.llEuropeDrawOpen;
@@ -453,9 +461,64 @@
     setTimeout(step,350);
   };
   window.llEuropeDrawCloseToEurope=function(type){
+    window.llEuropeDrawMandatory=false;
     if(typeof llCloseModal==='function')try{llCloseModal();}catch{}
     if(typeof llRenderCompetitionCenter==='function')llRenderCompetitionCenter('europe',normalizeType(type));
   };
+  window.llEuropeDrawCloseAfterMandatory=function(){
+    window.llEuropeDrawMandatory=false;
+    if(typeof llCloseModal==='function')try{llCloseModal();}catch{}
+    if(typeof llRenderDashboard==='function')llRenderDashboard();
+  };
+
+  function pendingMandatoryDrawType(){
+    const state=getState();
+    if(!state||nationalDutyActive(state))return null;
+    const fixture=state.pendingFixture;
+    const type=normalizeType(fixture?.competition);
+    if(!['ucl','uel','uecl'].includes(type)||fixture?.competition!==type)return null;
+    const clubTeam=activeClubTeam(state);
+    if(!clubTeam)return null;
+    const table=typeof llV2EnsureEuropeStandings==='function'?llV2EnsureEuropeStandings(state)?.[type]:state.europeStandings?.[type];
+    if(!Array.isArray(table?.teams)||!table.teams.includes(clubTeam))return null;
+    const meta=getMeta(type);
+    if(meta.completed)return null;
+    return playerOpponentsFor(type).length?type:null;
+  }
+  function openMandatoryDrawIfNeeded(){
+    const type=pendingMandatoryDrawType();
+    if(!type)return false;
+    window.llEuropeDrawOpen(type,true);
+    return true;
+  }
+
+  /* Kariyer akışı: ilk Avrupa maçı, kura tamamlanmadan başlatılamaz.
+     Fikstür zaten motor tarafından oluşturulmuş olabilir; bu katman onu yeniden
+     üretmez, yalnızca mevcut rakipleri zorunlu kura sahnesinde gösterir. */
+  if(typeof llStartMatchPreparation==='function'){
+    const baseStartMatchPreparation=llStartMatchPreparation;
+    window.llStartMatchPreparation=function(...args){
+      if(openMandatoryDrawIfNeeded())return;
+      return baseStartMatchPreparation.apply(this,args);
+    };
+  }
+  if(typeof llRenderDashboard==='function'){
+    const baseRenderDashboard=llRenderDashboard;
+    window.llRenderDashboard=function(...args){
+      const out=baseRenderDashboard.apply(this,args);
+      const type=pendingMandatoryDrawType();
+      if(!type)return out;
+      const startButton=[...(area()?.querySelectorAll('button')||[])].find(btn=>String(btn.getAttribute('onclick')||'').includes('llStartMatchPreparation'));
+      if(startButton){
+        startButton.textContent='🎱 Önce Avrupa Kurasını Çek';
+        startButton.classList.add('gold');
+      }
+      setTimeout(()=>{
+        if(pendingMandatoryDrawType()===type&&!document.getElementById('ll-modal'))window.llEuropeDrawOpen(type,true);
+      },0);
+      return out;
+    };
+  }
 
   if(typeof llRenderCompetitionCenter==='function'){
     const base=llRenderCompetitionCenter;
