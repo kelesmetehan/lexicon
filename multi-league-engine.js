@@ -52,6 +52,72 @@ function llMLMigrateNestedSchedules(value){
   if(value?.TUR?.tier1&&value?.TUR?.tier2)return value;
   return {TUR:{tier1:Array.isArray(value?.super)?value.super:[],tier2:Array.isArray(value?.first)?value.first:[]}};
 }
+/* RESERVE_TOP_TIER_SAVE_REPAIR_V2
+ * A previous reserve-promotion fix prevented new B/U21 promotions, but saves
+ * that had already promoted a reserve side could keep it in tier1 forever.
+ * This repair swaps any such reserve with the best currently-eligible tier2
+ * club while preserving the current season's table/schedule slots. It runs on
+ * state repair as a no-op once the roster is clean, so both old saves and
+ * future corrupted states are covered without resetting the career.
+ */
+const LL_RESERVE_TOP_TIER_SAVE_REPAIR_VERSION=2;
+function llMLReserveCandidateOrder(state,country){
+  const tier2=[...(state?.leagues?.[country]?.tier2||[])],allowed=new Set(tier2.filter(name=>llIsPromotionEligibleTeam(name)&&name!==state?.playerTeam)),ordered=[],seen=new Set();
+  const push=name=>{if(!allowed.has(name)||seen.has(name))return;seen.add(name);ordered.push(name);};
+  const history=[...(state?.seasonHistory||[])].sort((a,b)=>Number(b?.season||0)-Number(a?.season||0));
+  for(const entry of history){
+    if(Number(entry?.season||0)>=Number(state?.season||0))continue;
+    const info=entry?.countrySummaries?.[country],rows=info?.tier2Rows||entry?.leagueRows?.[country]?.tier2||[];
+    for(const row of rows)push(row?.team);
+  }
+  const currentRows=Object.values(state?.standings?.[country]?.tier2||{}).sort((a,b)=>(Number(b?.Pts)||0)-(Number(a?.Pts)||0)||(Number(b?.GD)||0)-(Number(a?.GD)||0)||(Number(b?.GF)||0)-(Number(a?.GF)||0)||String(a?.team||'').localeCompare(String(b?.team||''),'tr'));
+  for(const row of currentRows)push(row?.team);
+  for(const name of tier2)push(name);
+  return ordered;
+}
+function llMLSwapName(value,a,b){return value===a?b:value===b?a:value;}
+function llMLSwapFixtureNames(schedule,a,b){
+  if(!Array.isArray(schedule))return;
+  for(const round of schedule){if(!Array.isArray(round))continue;for(const fixture of round){if(!fixture)continue;fixture.home=llMLSwapName(fixture.home,a,b);fixture.away=llMLSwapName(fixture.away,a,b);}}
+}
+function llMLSwapStandingSlots(state,country,reserve,replacement){
+  const top=state?.standings?.[country]?.tier1,second=state?.standings?.[country]?.tier2;if(!top||!second)return;
+  const reserveRow=top[reserve]?{...top[reserve]}:llBlankStanding(reserve),replacementRow=second[replacement]?{...second[replacement]}:llBlankStanding(replacement);
+  delete top[reserve];delete second[replacement];top[replacement]={...reserveRow,team:replacement};second[reserve]={...replacementRow,team:reserve};
+}
+function llMLSwapCurrentSeasonResults(state,country,reserve,replacement){
+  for(const result of state?.results||[]){
+    if(Number(result?.season)!==Number(state?.season)||result?.competition!=='league')continue;
+    const resultCountry=result?.country||llMLCountryForTeam(result?.home,state)||llMLCountryForTeam(result?.away,state);if(resultCountry!==country)continue;
+    result.home=llMLSwapName(result.home,reserve,replacement);result.away=llMLSwapName(result.away,reserve,replacement);
+  }
+  const pending=state?.pendingFixture;if(pending){const pendingCountry=pending.country||llMLCountryForTeam(pending.home,state)||llMLCountryForTeam(pending.away,state);if(pendingCountry===country){pending.home=llMLSwapName(pending.home,reserve,replacement);pending.away=llMLSwapName(pending.away,reserve,replacement);if(pending.opponent)pending.opponent=llMLSwapName(pending.opponent,reserve,replacement);}}
+}
+function llMLRepairExistingReserveTopTiers(state){
+  if(!state?.leagues)return [];
+  const corrections=[];
+  for(const country of LL_COUNTRY_CODES){
+    const leagues=state.leagues[country];if(!leagues)continue;
+    const tier1=[...(leagues.tier1||[])],tier2=[...(leagues.tier2||[])],invalid=tier1.filter(name=>llIsReserveTeam(name));if(!invalid.length)continue;
+    const candidates=llMLReserveCandidateOrder(state,country);
+    for(const reserve of invalid){
+      const replacement=candidates.find(name=>tier2.includes(name)&&llIsPromotionEligibleTeam(name)&&!tier1.includes(name));if(!replacement)continue;
+      const topIndex=tier1.indexOf(reserve),secondIndex=tier2.indexOf(replacement);if(topIndex<0||secondIndex<0)continue;
+      tier1[topIndex]=replacement;tier2[secondIndex]=reserve;
+      llMLSwapStandingSlots(state,country,reserve,replacement);
+      llMLSwapFixtureNames(state?.schedules?.[country]?.tier1,reserve,replacement);llMLSwapFixtureNames(state?.schedules?.[country]?.tier2,reserve,replacement);
+      llMLSwapCurrentSeasonResults(state,country,reserve,replacement);
+      corrections.push({country,reserve,replacement,season:Number(state.season)||1,at:new Date().toISOString()});
+    }
+    state.leagues[country]={tier1:[...tier1],tier2:[...tier2]};
+  }
+  if(corrections.length){
+    state.reserveTopTierRepairVersion=LL_RESERVE_TOP_TIER_SAVE_REPAIR_VERSION;
+    state.reserveTopTierCorrections=[...(state.reserveTopTierCorrections||[]),...corrections].slice(-20);
+    state.teamSeasonTargets=null;
+  }
+  return corrections;
+}
 function llMLNormalizeState(state){
   if(!state)return state;
   const legacyCup=state.cup&&!state.cups?state.cup:null;
@@ -73,6 +139,7 @@ function llMLNormalizeState(state){
     }
     if(!state.cups[country])state.cups[country]=llMLCreateCup(state,country);else{state.cups[country].country=country;state.cups[country].name=LL_DOMESTIC_CUP_NAMES[country];if(country!==state.playerCountry)state.cups[country].alive=false;}
   }
+  llMLRepairExistingReserveTopTiers(state);
   if(!state.teams||typeof state.teams!=='object')state.teams={};
   for(const def of LL_ALL_DOMESTIC_TEAMS){
     if(!state.teams[def.name])state.teams[def.name]=llMLTeamState(def);
