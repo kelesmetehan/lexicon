@@ -541,6 +541,14 @@ function llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName=''){
   return 'Tur atladın. Sıradaki eşleşme hazırlanıyor.';
 }
 
+function llV2LeagueWeekSummaryHtml(completedWeek,leagueKey){
+  const state=lexLeague.state,week=Number(completedWeek),schedule=state?.schedules?.[leagueKey]?.[week-1]||[];
+  if(!schedule.length)return '';
+  const results=(state.results||[]).filter(r=>r.season===state.season&&r.competition==='league'&&r.league===leagueKey&&Number(r.week)===week),resultMap=new Map(results.map(r=>[`${r.home}|${r.away}`,r]));
+  const played=schedule.filter(f=>resultMap.has(`${f.home}|${f.away}`)).length;
+  return `<div class="ll-card" style="margin-top:14px;text-align:left"><div class="ll-card-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span>${week}. HAFTA SONUÇLARI</span><span class="ll-muted" style="font-size:11px;font-weight:600">${played}/${schedule.length} oynandı</span></div><div class="ll-fixture-list" style="padding:0">${schedule.map(f=>llV2FixtureRow(f.home,f.away,resultMap.get(`${f.home}|${f.away}`)||null)).join('')}</div></div>`;
+}
+
 function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=false){
   const state=lexLeague.state;
   // Bu ekran maç kaydedildikten sonra da çalışır. Dashboard'daki yerel `key`
@@ -548,7 +556,8 @@ function llRenderRoundSummary(completedWeek,lp,pg,og,comp='league',advanced=fals
   const fixtureLeague=lexLeague.match?.fixture?.league||llTeamLeague(state?.playerTeam)||'super';
   const isEurope=['ucl','uel','uecl'].includes(comp),label=comp==='league'?llLeagueLabel(fixtureLeague):comp==='cup'?llDomesticCupLabelForFixture(lexLeague.match?.fixture,state):comp==='playoff'?`${llLeagueLabel('first')} Play-Off`:isEurope?llV2EuroLabel(comp):comp==='supercup'?(lexLeague.match?.fixture?.superCupName||'Süper Kupa'):comp.toUpperCase(),result=pg>og?'Galibiyet':pg===og?'Beraberlik':'Mağlubiyet',e=state.europe;
   const completedRound=isEurope?Math.max(0,Math.min(LL_EURO_ROUNDS.length-1,advanced?Number(e?.round||1)-1:Number(e?.round||0))):null,stageName=isEurope?LL_EURO_ROUNDS[completedRound]:'',nextStage=isEurope?llV2EuropeSummaryProgress(comp,e,advanced,completedRound,stageName):'';
-  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel" style="text-align:center"><div class="quiz-start-title">${label} · ${result} <em>${pg}-${og}</em></div><div class="ll-notice">+${lp} LP${comp!=='league'&&pg===og?` · Penaltılar: ${advanced?'Tur atladın':'Elendin'}`:''}${isEurope?`<br><b>${stageName}:</b> ${llEscape(nextStage)}`:''}</div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">${isEurope?`<button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${comp}')">Avrupa Tur Yolunu Gör</button>`:''}<button class="ll-btn primary" onclick="llRenderDashboard()">Devam Et</button></div></div></div>`;
+  const weekResultsHtml=comp==='league'?llV2LeagueWeekSummaryHtml(completedWeek,fixtureLeague):'';
+  llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel" style="text-align:center"><div class="quiz-start-title">${label} · ${result} <em>${pg}-${og}</em></div><div class="ll-notice">+${lp} LP${comp!=='league'&&pg===og?` · Penaltılar: ${advanced?'Tur atladın':'Elendin'}`:''}${isEurope?`<br><b>${stageName}:</b> ${llEscape(nextStage)}`:''}</div>${weekResultsHtml}<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">${isEurope?`<button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${comp}')">Avrupa Tur Yolunu Gör</button>`:''}<button class="ll-btn primary" onclick="llRenderDashboard()">Devam Et</button></div></div></div>`;
 }
 
 function llV2InitCup(state){
