@@ -6,7 +6,7 @@
  * versions of cup, Europe and season-finalization functions.
  */
 
-var LL_TROPHY_CINEMATIC_VERSION=2;
+var LL_TROPHY_CINEMATIC_VERSION=4;
 var LL_TROPHY_CINEMATIC_MAX_HISTORY=140;
 
 function llTrophyCinematicState(state=lexLeague?.state){
@@ -106,13 +106,51 @@ function llShowTrophyAnimation(trophyName,options={}){
   return true;
 }
 
+/*
+ * Result -> trophy -> dashboard navigation guard.
+ * A result screen stays readable on its own; its primary Continue action
+ * starts the queued trophy flow.  When every queued trophy is closed we
+ * continue to the dashboard.  Other places may still show trophies without
+ * requesting this return action (load repair, season end, etc.).
+ */
+var llTrophyAfterQueueAction=null;
+
 function llCloseTrophyAnimation(){
   document.getElementById('ll-trophy-cinematic')?.remove();
   document.body?.classList.remove('ll-cinematic-open');
   window.setTimeout(()=>{
     const trophyShown=llTryShowQueuedTrophyAnimation();
-    if(!trophyShown&&typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
+    if(trophyShown)return;
+    const after=llTrophyAfterQueueAction;
+    llTrophyAfterQueueAction=null;
+    if(after==='dashboard'&&typeof llRenderDashboard==='function'){
+      llRenderDashboard();
+      window.setTimeout(()=>{
+        if(typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
+      },120);
+      return;
+    }
+    if(typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
   },180);
+}
+
+function llAdvanceRoundSummaryAfterCinematic(){
+  llTrophyAfterQueueAction='dashboard';
+  const shown=llTryShowQueuedTrophyAnimation();
+  if(shown)return true;
+  llTrophyAfterQueueAction=null;
+  if(typeof llRenderDashboard==='function')llRenderDashboard();
+  return false;
+}
+
+function llBindRoundSummaryCinematicContinue(){
+  const root=typeof llArea==='function'?llArea():null;
+  if(!root)return false;
+  const primary=[...root.querySelectorAll('.ll-panel .ll-btn.primary')].find(button=>/Devam Et/i.test(button.textContent||''));
+  if(!primary)return false;
+  primary.setAttribute('onclick','llAdvanceRoundSummaryAfterCinematic()');
+  primary.dataset.cinematicContinue='1';
+  return true;
 }
 
 function llTryShowQueuedTrophyAnimation(){
@@ -356,12 +394,15 @@ if(typeof llV2FinalizeSeason==='function'){
   };
 }
 
-/* Show queued events after the underlying result screen has rendered. */
+/*
+ * Round result is now a distinct step.  Do NOT auto-open the trophy over it.
+ * The primary Continue button starts the trophy queue explicitly.
+ */
 if(typeof llRenderRoundSummary==='function'){
   const llTrophyRenderRoundSummaryBase=llRenderRoundSummary;
   llRenderRoundSummary=function(...args){
     const result=llTrophyRenderRoundSummaryBase(...args);
-    llScheduleTrophyAnimation(80);
+    llBindRoundSummaryCinematicContinue();
     return result;
   };
 }
@@ -385,7 +426,7 @@ if(typeof llRenderDashboard==='function'){
 llTrophyCinematicState(lexLeague?.state);
 
 /* V3: dedicated relegation cinematic, separate from cup/Europe elimination. */
-LL_TROPHY_CINEMATIC_VERSION=3;
+LL_TROPHY_CINEMATIC_VERSION=4;
 function llShowRelegationAnimation(fromLeagueLabel,detail,options={}){
   if(typeof document==='undefined'||document.getElementById('ll-trophy-cinematic'))return false;
   const state=lexLeague?.state,team=options.team||state?.playerTeam||'';

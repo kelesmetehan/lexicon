@@ -1134,9 +1134,11 @@
 
 
   /* Kupa ve lig yükselme sinematiği */
-  .ll-trophy-cinematic{position:fixed;inset:0;z-index:13500;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 40%,rgba(250,204,21,.22),rgba(2,6,23,.96) 62%,#000);overflow:hidden;isolation:isolate;animation:llTrophyFadeIn .35s ease}
-  .ll-trophy-cinematic.loss{background:radial-gradient(circle at 50% 40%,rgba(248,113,113,.20),rgba(2,6,23,.96) 62%,#000)}
-  .ll-trophy-stage{position:relative;text-align:center;width:min(460px,100%);padding:28px 36px}
+  body.ll-cinematic-open{overflow:hidden}
+  .ll-trophy-cinematic{position:fixed;inset:0;z-index:13500;display:grid;place-items:center;padding:18px;background:#020617;overflow:auto;overscroll-behavior:contain;isolation:isolate;animation:llTrophyFadeIn .35s ease}
+  .ll-trophy-cinematic::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,rgba(250,204,21,.18),transparent 48%);pointer-events:none}
+  .ll-trophy-cinematic.loss{background:#020617}
+  .ll-trophy-stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;width:min(540px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:34px 38px 32px;border:1px solid rgba(250,204,21,.30);border-radius:22px;background:linear-gradient(145deg,rgba(38,31,10,.985),rgba(15,23,42,.995) 58%,rgba(7,27,30,.99));box-shadow:0 28px 90px rgba(0,0,0,.78),0 0 52px rgba(250,204,21,.12)}
   .ll-trophy-icon{font-size:88px;line-height:1;display:inline-block;filter:drop-shadow(0 0 22px rgba(250,204,21,.65));animation:llTrophyPop .7s cubic-bezier(.2,.8,.2,1)}
   .ll-trophy-cinematic.loss .ll-trophy-icon{filter:drop-shadow(0 0 22px rgba(248,113,113,.55))}
   .ll-trophy-title{margin-top:16px;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;opacity:0;transform:translateY(8px);animation:llSigningText .5s .5s ease forwards}
@@ -1150,7 +1152,7 @@
   .ll-trophy-cinematic .ll-pack-particle{width:7px;height:7px;box-shadow:0 0 9px var(--particle,#facc15)}
   @keyframes llTrophyFadeIn{from{opacity:0}to{opacity:1}}
   @keyframes llTrophyPop{0%{opacity:0;transform:scale(.3) rotate(-16deg)}60%{opacity:1;transform:scale(1.16) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
-  @media(max-width:520px){.ll-trophy-stage{padding:24px 14px}.ll-trophy-icon{font-size:76px}.ll-trophy-sub{font-size:13px}.ll-trophy-detail{font-size:12px}}
+  @media(max-width:520px){.ll-trophy-cinematic{padding:12px}.ll-trophy-stage{width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:27px 18px 24px;border-radius:18px}.ll-trophy-icon{font-size:68px}.ll-trophy-title{margin-top:12px}.ll-trophy-name{font-size:clamp(23px,8vw,30px)}.ll-trophy-sub{font-size:13px}.ll-trophy-detail{font-size:12px}.ll-trophy-continue{width:100%;margin-top:20px}}
   @media(prefers-reduced-motion:reduce){.ll-trophy-cinematic,.ll-trophy-icon,.ll-trophy-title,.ll-trophy-name,.ll-trophy-sub,.ll-trophy-detail,.ll-trophy-continue{animation-duration:.01ms!important;animation-delay:0ms!important}}
 
   /* Küme düşme sinematiği: kupadan elenmeden ayrı, kırmızı ve kısa. */
@@ -6492,7 +6494,7 @@ renderPreStart();
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
 <script src="diagnostics.js?v=20260906-learning-priority-v1"></script>
-<script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
+<script src="trophy-cinematic.js?v=20260906-sequential-overlay-v1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
 <script src="die-upgrade-cinematic.js?v=20260802-2"></script>
