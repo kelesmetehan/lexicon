@@ -185,93 +185,88 @@ function llSimulatedRecentPush(recentIds,id){
   next.push(id);
   return next.slice(-LL_RECENT_QUIZ_WORD_LIMIT);
 }
-function llBuildStrictQuizQueue({normalPool,priorities,target,usedIds,recentIds,introSlots}){
+function llWordLearningProgress(word){
+  try{return typeof globalThis.llNewWordCorrectCount==='function'?globalThis.llNewWordCorrectCount(word):Math.min(5,Math.max(0,Number(word?.reviewCount)||0));}catch{return 0;}
+}
+function llExposureDue(value,current){
+  const numeric=Number(value);
+  return !Number.isFinite(numeric)||numeric<=current;
+}
+function llPriorityReviewRefs(words,state,target){
+  if(target!==10)return [];
+  const current=Math.max(0,Number(state?.wordExposureSeq)||0),seen=new Set(),refs=[];
+  const mistakes=(Array.isArray(words)?words:[]).filter(word=>word?.id&&word.isActiveMistake===true&&llExposureDue(word.mistakeNextExposure,current)).sort((a,b)=>(Number(a.mistakeNextExposure)||0)-(Number(b.mistakeNextExposure)||0)||(Number(b.wrongCount)||0)-(Number(a.wrongCount)||0));
+  const learning=(Array.isArray(words)?words:[]).filter(word=>{
+    if(!word?.id||word.isActiveMistake===true)return false;
+    const progress=llWordLearningProgress(word);
+    const introduced=!!word.firstExposureAt||(Number(word.reviewCount)||0)>0;
+    return introduced&&progress<5&&llExposureDue(word.learningNextExposure,current);
+  }).sort((a,b)=>(Number(a.learningNextExposure)||0)-(Number(b.learningNextExposure)||0)||llWordLearningProgress(a)-llWordLearningProgress(b)||String(a.en||'').localeCompare(String(b.en||''),'en'));
+  for(const word of mistakes){
+    if(refs.length>=2)break;if(seen.has(word.id))continue;seen.add(word.id);
+    refs.push({word,kind:'mistake',askTrToEn:typeof word.mistakeAskTrToEn==='boolean'?word.mistakeAskTrToEn:Math.random()>.5});
+  }
+  for(const word of learning){
+    if(refs.length>=2)break;if(seen.has(word.id))continue;seen.add(word.id);
+    refs.push({word,kind:'learning',askTrToEn:typeof word.learningNextAskTrToEn==='boolean'?word.learningNextAskTrToEn:Math.random()>.5});
+  }
+  return refs;
+}
+function llPrioritySlots(count,reserved){
+  const blocked=reserved instanceof Set?reserved:new Set(reserved||[]),preferred=[0,6,2,8,4,1,3,5,7,9],slots=[];
+  for(const position of preferred){if(slots.length>=count)break;if(!blocked.has(position))slots.push(position);}
+  return slots;
+}
+function llBuildStrictQuizQueue({normalPool,priorities,reviewRefs,target,usedIds,recentIds,introSlots,reviewSlots,currentExposureSeq}){
   const normal=(Array.isArray(normalPool)?normalPool:[]).filter(word=>word&&word.id);
   const intros=(Array.isArray(priorities)?priorities:[]).filter(word=>word&&word.id);
+  const reviews=(Array.isArray(reviewRefs)?reviewRefs:[]).filter(item=>item?.word?.id);
   const normalIds=new Set(normal.map(word=>word.id));
   let simulatedUsed=new Set((Array.isArray(usedIds)?usedIds:[]).filter(id=>normalIds.has(id)));
   let simulatedRecent=(Array.isArray(recentIds)?recentIds:[]).slice(-LL_RECENT_QUIZ_WORD_LIMIT);
-  const slots=new Set(Array.isArray(introSlots)?introSlots:[]);
-  const queue=[];
-  let introIndex=0;
-  let cycleStartPending=false;
-  let blocked=null;
+  const introPositions=Array.isArray(introSlots)?introSlots:[],reviewPositions=Array.isArray(reviewSlots)?reviewSlots:[];
+  const priorityAt=new Map();
+  introPositions.forEach((position,index)=>{const word=intros[index];if(word)priorityAt.set(position,{word,kind:'intro',askTrToEn:Math.random()>.5});});
+  reviewPositions.forEach((position,index)=>{const item=reviews[index];if(item)priorityAt.set(position,item);});
+  const queue=[];let cycleStartPending=false;let blocked=null;
 
-  const pushIntro=()=>{
-    if(introIndex>=intros.length)return false;
-    const word=intros[introIndex++];
-    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:false,introPriority:true});
-    // İlk-tanıtım kelimesi normal loop'u tüketmez; ancak 30 kelimelik yakın
-    // tekrar mesafesinde gerçek bir gösterim olarak hesaba katılır.
-    simulatedRecent=llSimulatedRecentPush(simulatedRecent,word.id);
+  const pushPriority=item=>{
+    if(!item?.word?.id)return false;
+    const kind=item.kind||'learning';
+    queue.push({id:item.word.id,askTrToEn:!!item.askTrToEn,cycleStart:false,introPriority:kind==='intro',learningPriority:kind==='learning',mistakePriority:kind==='mistake'});
+    simulatedRecent=llSimulatedRecentPush(simulatedRecent,item.word.id);
     return true;
   };
 
   for(let position=0;position<target;position++){
-    if(slots.has(position)&&pushIntro())continue;
-
+    if(priorityAt.has(position)&&pushPriority(priorityAt.get(position)))continue;
     let remaining=normal.filter(word=>!simulatedUsed.has(word.id));
-    if(!remaining.length&&normal.length){
-      // Döngü ancak mevcut normal havuzun TAMAMI tüketildikten sonra sıfırlanır.
-      simulatedUsed=new Set();
-      remaining=normal.slice();
-      cycleStartPending=true;
-    }
-
-    let recentSet=new Set(simulatedRecent);
-    let eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
+    if(!remaining.length&&normal.length){simulatedUsed=new Set();remaining=normal.slice();cycleStartPending=true;}
+    let recentSet=new Set(simulatedRecent),eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
     if(!eligible.length){
-      // Önce varsa ilk-tanıtım kelimesini erkene al; bu gerçek bir gösterim olduğu
-      // için recent penceresini ilerletir ve mevcut döngünün sonunu açabilir.
-      if(pushIntro())continue;
-
-      // Döngünün sonunda kalan normal kelimelerin TAMAMI hard recent cooldown'a
-      // takıldıysa burada bekleyip maçı kilitlemeyiz. Eski döngüyü kapatırız ama
-      // bloklanan kelimeleri "kullanılmış" saymayız: yeni döngüde recent süresi
-      // dolduğunda yeniden aday olurlar. Böylece hem 30 kelimelik koruma delinmez
-      // hem de 10 soruluk maç kuyruğu deadlock'a girmez.
       if(remaining.length&&normal.length){
         const deferredIds=remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id);
-        simulatedUsed=new Set();
-        remaining=normal.slice();
-        cycleStartPending=true;
-        recentSet=new Set(simulatedRecent);
+        simulatedUsed=new Set();remaining=normal.slice();cycleStartPending=true;recentSet=new Set(simulatedRecent);
         eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
-        if(eligible.length){
-          llDiagnosticEvent('QUIZ_CYCLE_ROLLED_OVER_COOLDOWN',{
-            position,
-            deferredCount:deferredIds.length,
-            deferredIds:deferredIds.slice(0,40),
-            reason:'cycle_tail_blocked_by_recent_cooldown'
-          },{level:'INFO'});
-        }
+        if(eligible.length)llDiagnosticEvent('QUIZ_CYCLE_ROLLED_OVER_COOLDOWN',{position,deferredCount:deferredIds.length,deferredIds:deferredIds.slice(0,40),reason:'cycle_tail_blocked_by_recent_cooldown'},{level:'INFO'});
       }
-
-      if(!eligible.length){
-        blocked={
-          position,
-          remainingInCycle:remaining.length,
-          recentBlocked:remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id).slice(0,40),
-          reason:normal.length?'all_normal_words_inside_recent_cooldown':'no_normal_words'
-        };
-        break;
-      }
+      if(!eligible.length){blocked={position,remainingInCycle:remaining.length,recentBlocked:remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id).slice(0,40),reason:normal.length?'all_normal_words_inside_recent_cooldown':'no_normal_words'};break;}
     }
-
-    const word=eligible[0];
-    queue.push({id:word.id,askTrToEn:Math.random()>.5,cycleStart:cycleStartPending,introPriority:false});
-    cycleStartPending=false;
-    simulatedUsed.add(word.id);
-    simulatedRecent=llSimulatedRecentPush(simulatedRecent,word.id);
+    const word=eligible[0],progress=llWordLearningProgress(word),current=Math.max(0,Number(currentExposureSeq)||0);
+    let askTrToEn=Math.random()>.5;
+    if(word.isActiveMistake===true&&llExposureDue(word.mistakeNextExposure,current)&&typeof word.mistakeAskTrToEn==='boolean')askTrToEn=word.mistakeAskTrToEn;
+    else if(progress<5&&llExposureDue(word.learningNextExposure,current)&&typeof word.learningNextAskTrToEn==='boolean')askTrToEn=word.learningNextAskTrToEn;
+    queue.push({id:word.id,askTrToEn,cycleStart:cycleStartPending,introPriority:false,learningPriority:false,mistakePriority:false});
+    cycleStartPending=false;simulatedUsed.add(word.id);simulatedRecent=llSimulatedRecentPush(simulatedRecent,word.id);
   }
-
   return {queue,blocked,simulatedUsed:[...simulatedUsed],simulatedRecent};
 }
 globalThis.llPickQuizWords=function(count=10){
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
   const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  const target=Math.min(Math.max(0,Number(count)||0),words.length),recent=state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT);
+  if(!Number.isFinite(Number(state.wordExposureSeq)))state.wordExposureSeq=0;
+  const target=Math.min(Math.max(0,Number(count)||0),words.length),recent=state.recentQuizWords.slice(-LL_RECENT_QUIZ_WORD_LIMIT),current=Math.max(0,Number(state.wordExposureSeq)||0);
   const needsIntro=word=>typeof globalThis.llNeedsPriorityIntroduction==='function'?llNeedsPriorityIntroduction(word):!!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
   const orderPending=list=>{
     if(typeof globalThis.llPriorityIntroductionOrder==='function')return llPriorityIntroductionOrder(list);
@@ -280,36 +275,40 @@ globalThis.llPickQuizWords=function(count=10){
     return ordered;
   };
   const pending=target===10?orderPending(words.filter(needsIntro)):[];
-  // İlk kez gösterilecek kelimeler normal loop'un dışında tutulur. Normal loop
-  // yalnızca daha önce en az bir kez tanıtılmış kelimelerden oluşur.
-  const normalPool=target===10?words.filter(word=>!needsIntro(word)):words;
+  const introduced=target===10?words.filter(word=>!needsIntro(word)):words;
+  // Henüz planlı tekrar zamanı gelmemiş yeni/yanlış kelime normal döngüden erken
+  // çekilmez. Zamanı gelenler ise normal havuzda kalabilir ve ayrıca en fazla iki
+  // öğrenme önceliği slotundan yararlanır.
+  const normalPool=target===10?introduced.filter(word=>{
+    if(word.isActiveMistake===true&&!llExposureDue(word.mistakeNextExposure,current))return false;
+    const progress=llWordLearningProgress(word);
+    if(progress<5&&Number.isFinite(Number(word.learningNextExposure))&&!llExposureDue(word.learningNextExposure,current))return false;
+    return true;
+  }):words;
   const desiredIntroCount=target===10?Math.min(5,pending.length):0;
   const canInjectIntroductions=target===10&&desiredIntroCount>0&&normalPool.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
   const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:priorities.length===1?[3]:[];
-  const built=llBuildStrictQuizQueue({normalPool,priorities,target,usedIds:state.usedWords,recentIds:recent,introSlots});
+  const reviewRefs=llPriorityReviewRefs(words,state,target).filter(item=>!priorities.some(word=>word.id===item.word.id));
+  const reviewSlots=llPrioritySlots(reviewRefs.length,new Set(introSlots));
+  const built=llBuildStrictQuizQueue({normalPool,priorities,reviewRefs,target,usedIds:state.usedWords,recentIds:recent,introSlots,reviewSlots,currentExposureSeq:current});
   const queue=built.queue;
-  if(built.blocked){
-    llDiagnosticEvent('QUIZ_STRICT_LOOP_BLOCKED',{requested:target,selected:queue.length,...built.blocked},{level:'WARN'});
-  }
+  if(built.blocked)llDiagnosticEvent('QUIZ_STRICT_LOOP_BLOCKED',{requested:target,selected:queue.length,...built.blocked},{level:'WARN'});
   const usedNormalIds=new Set(state.usedWords.filter(id=>normalPool.some(word=>word.id===id)));
-  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{
-    requested:count,selected:queue.length,totalWords:words.length,normalPool:normalPool.length,
-    usedInCycle:usedNormalIds.size,recentCooldown:recent.length,cycleCrossed:queue.some(ref=>ref.cycleStart),
-    introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,
-    pendingFirstExposure:pending.length,strictLoop:true,ids:queue.map(ref=>ref.id)
-  });
+  llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:count,selected:queue.length,totalWords:words.length,normalPool:normalPool.length,usedInCycle:usedNormalIds.size,recentCooldown:recent.length,cycleCrossed:queue.some(ref=>ref.cycleStart),introPriorityIds:priorities.map(word=>word.id),introPriorityCount:priorities.length,reviewPriorityIds:reviewRefs.map(item=>item.word.id),reviewPriorityKinds:reviewRefs.map(item=>item.kind),pendingFirstExposure:pending.length,strictLoop:true,ids:queue.map(ref=>ref.id)});
   return queue;
 };
 globalThis.llRecordQuizWordShown=function(ref,word){
   const league=llDiagnosticLeagueContext(),state=league?.state,q=league?.quiz;if(!state||!q||!ref)return;
   if(!Array.isArray(q.shownWordRefs))q.shownWordRefs=[];const shownKey=`${Number(q.index)||0}:${ref.id}`;
   if(q.shownWordRefs.includes(shownKey))return;q.shownWordRefs.push(shownKey);
-  // Aynı kelime ileride yeniden gelirse onu tekrar listenin sonuna taşır;
-  // bu, yön değişse bile yeni 30 kelimelik mesafeyi yeniden başlatır.
+  if(!Number.isFinite(Number(state.wordExposureSeq)))state.wordExposureSeq=0;state.wordExposureSeq=Math.max(0,Number(state.wordExposureSeq)||0)+1;ref.shownExposureSeq=state.wordExposureSeq;
+  // Aynı kelime ileride yeniden gelirse onu tekrar listenin sonuna taşır; yön değişse
+  // bile normal döngüdeki 30 kelimelik mesafe yeniden başlar. Planlı öğrenme/hata
+  // tekrarları kendi aralıkları dolduğunda bu genel cooldown'un kontrollü istisnasıdır.
   if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
   state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-LL_RECENT_QUIZ_WORD_LIMIT);
-  llDiagnosticEvent('QUIZ_WORD_SHOWN',{id:ref.id,question:Number(q.index)+1,cycleStart:!!ref.cycleStart});if(typeof llSave==='function')llSave();
+  llDiagnosticEvent('QUIZ_WORD_SHOWN',{id:ref.id,question:Number(q.index)+1,cycleStart:!!ref.cycleStart,askTrToEn:!!ref.askTrToEn,direction:ref.askTrToEn?'TR_TO_EN':'EN_TO_TR',exposureSeq:state.wordExposureSeq,priority:ref.mistakePriority?'mistake':ref.learningPriority?'learning':ref.introPriority?'intro':'normal'});if(typeof llSave==='function')llSave();
 };
 function llDiagnosticRepeatDistances(ids){const last=new Map(),repeats=[];(ids||[]).forEach((id,index)=>{if(last.has(id))repeats.push({id,previousIndex:last.get(id),index,distance:index-last.get(id)});last.set(id,index);});return repeats;}
 function llDiagnosticCareerSummary(state){

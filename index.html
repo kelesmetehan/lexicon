@@ -3257,9 +3257,67 @@ function llRenderStandings(){
 }
 
 // ------------------------- KELİME SINAVI -------------------------
-// Yeni eklenen / henüz hiç görülmemiş kelimeler normal kelime döngüsünün dışında
-// küçük bir "tanıtım kuyruğu" gibi davranır. 10 soruluk ana sınavda yeterli
-// normal kelime varsa en son eklenen 3 tanesi kontrollü biçimde öne alınır.
+// Yeni kelime öğrenme katmanı. Ana 533 kelimelik döngü korunur; yeni/yanlış
+// kelimeler kontrollü aralıklarla ek tekrar önceliği alır.
+const LL_CORE_RECENT_QUIZ_WORD_LIMIT=30;
+const LL_NEW_WORD_CORRECT_TARGET=5;
+const LL_NEW_WORD_REVIEW_GAPS=[20,30,45,60];
+const LL_MISTAKE_REVIEW_GAP=12;
+function llNewWordCorrectCount(word){
+  if(!word)return 0;
+  const explicit=Number(word.newWordCorrectCount);
+  if(Number.isFinite(explicit))return Math.max(0,Math.min(LL_NEW_WORD_CORRECT_TARGET,Math.floor(explicit)));
+  // Eski save'lerde doğru/yanlış ayrımı geçmişte tutulmadığı için mevcut ilerlemeyi
+  // kaybetmiyoruz. 5+ review görmüş kelimeler öğrenilmiş kabul edilir; kısmi
+  // ilerleme ise bugünden sonra yalnız doğru cevaplarla artar.
+  const legacy=Math.max(0,Number(word.reviewCount)||0);
+  return legacy>=LL_NEW_WORD_CORRECT_TARGET?LL_NEW_WORD_CORRECT_TARGET:Math.min(legacy,LL_NEW_WORD_CORRECT_TARGET-1);
+}
+function llEnsureNewWordCorrectCount(word){
+  if(!word)return 0;
+  if(!Number.isFinite(Number(word.newWordCorrectCount)))word.newWordCorrectCount=llNewWordCorrectCount(word);
+  return llNewWordCorrectCount(word);
+}
+function llRecordNewWordCorrect(word,correct){
+  let count=llEnsureNewWordCorrectCount(word);
+  if(correct&&count<LL_NEW_WORD_CORRECT_TARGET){count++;word.newWordCorrectCount=count;}
+  if(count>=LL_NEW_WORD_CORRECT_TARGET){
+    delete word.learningNextExposure;delete word.learningNextAskTrToEn;
+  }
+  return count;
+}
+function llCurrentWordExposureSeq(){
+  try{return Math.max(0,Number(lexLeague?.state?.wordExposureSeq)||0);}catch{return 0;}
+}
+function llScheduleWordLearningAfterAnswer(word,correct,ref){
+  if(!word)return;
+  const seq=Math.max(0,Number(ref?.shownExposureSeq)||llCurrentWordExposureSeq());
+  const progress=llNewWordCorrectCount(word);
+  if(!correct){
+    word.mistakeNextExposure=seq+LL_MISTAKE_REVIEW_GAP;
+    word.mistakeAskTrToEn=!!ref?.askTrToEn;
+    if(progress<LL_NEW_WORD_CORRECT_TARGET){
+      word.learningNextExposure=seq+LL_MISTAKE_REVIEW_GAP;
+      word.learningNextAskTrToEn=!!ref?.askTrToEn;
+    }
+    return;
+  }
+  delete word.mistakeNextExposure;delete word.mistakeAskTrToEn;
+  if(progress<LL_NEW_WORD_CORRECT_TARGET){
+    const gap=LL_NEW_WORD_REVIEW_GAPS[Math.max(0,Math.min(LL_NEW_WORD_REVIEW_GAPS.length-1,progress-1))]||60;
+    word.learningNextExposure=seq+gap;
+    // Planlı yeni-kelime tekrarında iki yönü de çalıştır: başarılı yönün tersini tercih et.
+    word.learningNextAskTrToEn=!ref?.askTrToEn;
+  }else{
+    delete word.learningNextExposure;delete word.learningNextAskTrToEn;
+  }
+}
+globalThis.llNewWordCorrectCount=llNewWordCorrectCount;
+globalThis.llEnsureNewWordCorrectCount=llEnsureNewWordCorrectCount;
+globalThis.llRecordNewWordCorrect=llRecordNewWordCorrect;
+globalThis.llScheduleWordLearningAfterAnswer=llScheduleWordLearningAfterAnswer;
+globalThis.LL_NEW_WORD_CORRECT_TARGET=LL_NEW_WORD_CORRECT_TARGET;
+globalThis.LL_MISTAKE_REVIEW_GAP=LL_MISTAKE_REVIEW_GAP;
 function llNeedsPriorityIntroduction(word){
   return !!(word&&word.id&&(Number(word.reviewCount)||0)===0&&!word.firstExposureAt);
 }
@@ -3284,7 +3342,7 @@ function llPickQuizWords(count=10){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];
-  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-12));
+  const used=new Set(state.usedWords),recent=new Set(state.recentQuizWords.slice(-LL_CORE_RECENT_QUIZ_WORD_LIMIT));
   const choose=(pool,needed,blocked,allowCooldownFallback=false)=>{
     const fresh=llShuffle(pool.filter(w=>!blocked.has(w.id)&&!recent.has(w.id))).slice(0,needed);
     if(fresh.length>=needed||!allowCooldownFallback)return fresh;
@@ -3294,12 +3352,12 @@ function llPickQuizWords(count=10){
 
   const pending=target===10?llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)):[];
   const introduced=target===10?words.filter(word=>!llNeedsPriorityIntroduction(word)):words;
-  // Yerleşik havuzda 10 soruluk ana sınavın kontrollü hedefi NET 3 yeni
-  // kelimedir: 7 normal döngü kelimesi + en son eklenen 3 ilk-tanıtım kelimesi.
-  // 3'ten az bekleyen yeni kelime varsa olmayan kelimeyi tekrar ederek doldurmayız;
+  // Yerleşik havuzda 10 soruluk ana sınavın kontrollü hedefi NET 5 yeni
+  // kelimedir: 5 normal döngü kelimesi + en son eklenen 5 ilk-tanıtım kelimesi.
+  // 5'ten az bekleyen yeni kelime varsa olmayan kelimeyi tekrar ederek doldurmayız;
   // mevcut bekleyenlerin tamamı kullanılır. Fresh kurulumda yeterli normal havuz
   // yoksa sınavı kilitlememek için eski genel seçim davranışı korunur.
-  const desiredIntroCount=target===10?Math.min(3,pending.length):0;
+  const desiredIntroCount=target===10?Math.min(5,pending.length):0;
   const canInjectIntroductions=target===10&&desiredIntroCount>0&&introduced.length>=target-desiredIntroCount;
   const priorities=canInjectIntroductions?pending.slice(0,desiredIntroCount):[];
   const priorityIds=new Set(priorities.map(word=>word.id));
@@ -3308,9 +3366,9 @@ function llPickQuizWords(count=10){
   let closing=[];
   if(priorities.length){
     const normalClosing=choose(closingPool.filter(word=>!priorityIds.has(word.id)),target-priorities.length,new Set(),true);
-    // 3 yeni kelime mevcutsa 2., 5. ve 8. sorulara dağıt. Daha az bekleyen
-    // varsa aynı mantıkla sınav boyunca mümkün olduğunca aralıklı yerleştir.
-    const introSlots=priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
+    // 5 yeni kelime mevcutsa 2., 4., 6., 8. ve 10. sorulara dağıt.
+    // Daha az bekleyen varsa sınav boyunca mümkün olduğunca aralıklı yerleştir.
+    const introSlots=priorities.length===5?[1,3,5,7,9]:priorities.length===4?[1,3,6,8]:priorities.length===3?[1,4,7]:priorities.length===2?[2,6]:[3];
     let normalIndex=0,introIndex=0;
     for(let position=0;position<target&&(normalIndex<normalClosing.length||introIndex<priorities.length);position++){
       if(introSlots.includes(position)&&introIndex<priorities.length)closing.push(priorities[introIndex++]);
@@ -3332,9 +3390,12 @@ function llPickQuizWords(count=10){
 }
 function llMarkQuizWordUsed(ref){
   const q=lexLeague.quiz;if(!q||q.wordTrackingVersion!==2||!ref)return;
-  const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
+  // İlk tanıtım ve planlı öğrenme/hata tekrarları ana 533 kelimelik döngüyü tüketmez.
+  if(!ref.introPriority&&!ref.learningPriority&&!ref.mistakePriority){
+    const used=new Set(ref.cycleStart?[]:(lexLeague.state.usedWords||[]));used.add(ref.id);lexLeague.state.usedWords=[...used];
+  }
   const recent=Array.isArray(lexLeague.state.recentQuizWords)?lexLeague.state.recentQuizWords:[];
-  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-12);
+  lexLeague.state.recentQuizWords=[...recent.filter(id=>id!==ref.id),ref.id].slice(-LL_CORE_RECENT_QUIZ_WORD_LIMIT);
 }
 function llStartMatchPreparation(){
   fcQueue=[];
@@ -3350,6 +3411,7 @@ function llQuizApPerWord(){
 }
 function llRenderLeagueQuiz(){
   const q=lexLeague.quiz;if(!q)return;
+  if(globalThis.llSuppressNormalQuizRender===true&&!q.relativeClause&&!q.gerundInfinitive)return;
   const nationalTheme=q.fixture?.nationalTournament&&['wc','euro'].includes(q.fixture?.nationalType)?q.fixture.nationalType:null;
   if(nationalTheme&&typeof llSetEuropeMatchTheme==='function')llSetEuropeMatchTheme(nationalTheme);
   if(q.index>=q.queue.length){llFinishLeagueQuiz();return;}
@@ -3394,8 +3456,11 @@ function llPersistQuizWordRating(ref,q,correct,{markUsed=true}={}){
     if(card){
       recovered=!!(correct&&card.isActiveMistake===true);
       try{
+        llEnsureNewWordCorrectCount(card);
         const updated=sm2(card,correct?5:1);Object.assign(card,updated);card.lastReviewed=todayStr();card.reviewCount=(Number(card.reviewCount)||0)+1;
+        llRecordNewWordCorrect(card,!!correct);
         if(correct)card.isActiveMistake=false;else{card.wrongCount=(Number(card.wrongCount)||0)+1;card.isActiveMistake=true;}
+        llScheduleWordLearningAfterAnswer(card,!!correct,ref);
       }catch(error){errors.push({stage:'sm2',message:String(error?.message||error)});}
       if(recovered){const bonus=typeof LL_RECOVERY_AP==='number'?LL_RECOVERY_AP:3;q.recoveredWords=(Number(q.recoveredWords)||0)+1;q.recoveryBonus=(Number(q.recoveryBonus)||0)+bonus;}
       try{saveWordsToStorage(words);}catch(error){errors.push({stage:'words-save',message:String(error?.message||error)});}
@@ -4518,7 +4583,7 @@ function loadUserWords() {
   }
   if (LL_RUNTIME_WORD_FALLBACK.length < 10) LL_RUNTIME_WORD_FALLBACK = llBuildRuntimeNativePool();
   return LL_RUNTIME_WORD_FALLBACK;
-}function markNewWordFrame(word,element){const reviews=Math.max(0,Number(word?.reviewCount)||0);if(!element||reviews>=5)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${reviews+1}/5</div>`);try{llMarkFirstExposure(word);}catch{}}
+}function markNewWordFrame(word,element){const corrects=llNewWordCorrectCount(word);if(!element||corrects>=LL_NEW_WORD_CORRECT_TARGET)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${corrects}/${LL_NEW_WORD_CORRECT_TARGET} DO\u011eRU</div>`);try{llMarkFirstExposure(word);}catch{}}
 
 function saveWordsToStorage(updatedWords) {
   try {
@@ -5086,7 +5151,9 @@ function recordDiceCupWordResult(cardId, quality) {
   card.ef = updated.ef;
   card.nextReview = updated.nextReview;
   card.lastReviewed = todayStr();
+  llEnsureNewWordCorrectCount(card);
   card.reviewCount = (card.reviewCount || 0) + 1;
+  llRecordNewWordCorrect(card, quality >= 4);
   if (quality < 3) {
     card.wrongCount = (card.wrongCount || 0) + 1;
     card.isActiveMistake = true;
@@ -6344,7 +6411,9 @@ function rateFlashcard(cardId, quality) {
     card.ef = updated.ef;
     card.nextReview = updated.nextReview;
     card.lastReviewed = todayStr();
+    llEnsureNewWordCorrectCount(card);
     card.reviewCount = (card.reviewCount || 0) + 1;
+    llRecordNewWordCorrect(card, quality >= 4);
     
     if (quality < 3) { card.wrongCount = (card.wrongCount || 0) + 1; card.isActiveMistake = true; } 
     else if (quality >= 4) { card.isActiveMistake = false; }
@@ -6422,7 +6491,7 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260831-reserve-promotion-v1"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20260906-cycle-tail-deadlock-fix-v1"></script>
+<script src="diagnostics.js?v=20260906-learning-priority-v1"></script>
 <script src="trophy-cinematic.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
@@ -6443,8 +6512,8 @@ renderPreStart();
 <script src="legend-call.js?v=20260813-word-cycle-v1"></script>
 <script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
-<script src="relative-clause-quiz.js?v=20260818-relative-random-112-v2"></script>
-<script src="gerund-infinitive-quiz.js?v=20260906-gerund-infinitive-random-v3"></script>
+<script src="relative-clause-quiz.js?v=20260906-no-ghost-word-v1"></script>
+<script src="gerund-infinitive-quiz.js?v=20260906-learning-no-ghost-v1"></script>
 <script src="national-tournaments.js?v=20260831-national-achievements-ui-v1"></script>
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>

@@ -348,7 +348,11 @@
         var state = stateNow();
         var fixture = fixtureNow();
         var due = state && fixture && isDue(state, fixture);
-        var output = baseStart.apply(this, arguments);
+        var previousSuppress = global.llSuppressNormalQuizRender;
+        if (due) global.llSuppressNormalQuizRender = true;
+        var output;
+        try { output = baseStart.apply(this, arguments); }
+        finally { global.llSuppressNormalQuizRender = previousSuppress; }
         var quiz = global.lexLeague && global.lexLeague.quiz;
 
         if (due && quiz && quiz.relativeClause) {
