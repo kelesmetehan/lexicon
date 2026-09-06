@@ -120,9 +120,10 @@ function llV15FinishPenaltyAnimation(){
   const status=panel?.querySelector('.ll-penalty-final');
   const skip=panel?.querySelector('.ll-penalty-skip');
   const won=runtime.shootout.winner===runtime.shootout.playerTeam;
+  const isSuperCup=runtime.comp==='supercup';
   if(status){
     status.hidden=false;
-    status.innerHTML='<strong>'+(won?'TURU GE\u00c7T\u0130N':'ELEND\u0130N')+'</strong><span>Penalt\u0131lar '+runtime.shootout.player+'\u2013'+runtime.shootout.opponent+'</span>';
+    status.innerHTML='<strong>'+(won?(isSuperCup?'KUPAYI KAZANDIN':'TURU GE\u00c7T\u0130N'):(isSuperCup?'KUPAYI KAYBETT\u0130N':'ELEND\u0130N'))+'</strong><span>Penalt\u0131lar '+runtime.shootout.player+'\u2013'+runtime.shootout.opponent+'</span>';
   }
   if(skip)skip.hidden=true;
   if(runtime.notice)runtime.notice.innerHTML=runtime.finalNotice;
@@ -130,7 +131,7 @@ function llV15FinishPenaltyAnimation(){
   runtime.completed=true;
   runtime.actions?.querySelectorAll('button').forEach(button=>button.disabled=true);
   if(panel&&!panel.querySelector('.ll-penalty-continue')){
-    panel.insertAdjacentHTML('beforeend','<button class="ll-btn primary ll-penalty-continue" type="button" onclick="llV15ContinueAfterPenaltyAnimation()">'+(won?'Sonucu G\u00f6r':'Elenme Animasyonunu G\u00f6r')+'</button>');
+    panel.insertAdjacentHTML('beforeend','<button class="ll-btn primary ll-penalty-continue" type="button" onclick="llV15ContinueAfterPenaltyAnimation()">'+(isSuperCup?'Kupa Sonucunu G\u00f6r':(won?'Sonucu G\u00f6r':'Elenme Animasyonunu G\u00f6r'))+'</button>');
   }
 }
 
@@ -177,10 +178,10 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   llV15PenaltyRuntime=null;
   /* Lock every other cinematic before the base result renderer can queue one. */
   const preResult=[...(lexLeague?.state?.results||[])].reverse().find(item=>item.userMatch&&item.competition===comp);
-  const isPenaltyResult=['cup','playoff','ucl','uel','uecl'].includes(comp)&&Array.isArray(preResult?.penaltyShootout?.kicks)&&preResult.penaltyShootout.kicks.length>0;
+  const isPenaltyResult=['cup','playoff','ucl','uel','uecl','supercup'].includes(comp)&&Array.isArray(preResult?.penaltyShootout?.kicks)&&preResult.penaltyShootout.kicks.length>0;
   globalThis.llPenaltySequenceActive=isPenaltyResult;
   llV15RenderRoundSummaryBase(completedWeek,lp,pg,og,comp,advanced);
-  if(!['cup','playoff','ucl','uel','uecl'].includes(comp)){
+  if(!['cup','playoff','ucl','uel','uecl','supercup'].includes(comp)){
     globalThis.llPenaltySequenceActive=false;
     return;
   }
@@ -203,15 +204,25 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   }
 
   const isEurope=['ucl','uel','uecl'].includes(comp);
+  const isSuperCup=comp==='supercup';
   const cupName=typeof llDomesticCupLabelForFixture==='function'
     ?llDomesticCupLabelForFixture(lexLeague.match?.fixture,state)
     :(state.cup?.name||LL_DOMESTIC_CUP_NAMES?.[state.playerCountry]||'Yerel Kupa');
-  const stage=isEurope?llV11EuroStageLabel(result.euroStage):comp==='cup'?(result.roundLabel||LL_CUP_ROUNDS?.[Number(result.cupRound)||0]||cupName):'Yükselme Play-Off';
-  const competitionName=isEurope?llV2EuroLabel(comp):comp==='cup'?cupName:'Play-Off';
+  const superCupName=lexLeague.match?.fixture?.superCupName||result?.superCupName||'Süper Kupa';
+  const stage=isEurope
+    ?llV11EuroStageLabel(result.euroStage)
+    :isSuperCup
+      ?(result.roundLabel||lexLeague.match?.fixture?.roundLabel||'Tek Maç')
+      :comp==='cup'
+        ?(result.roundLabel||LL_CUP_ROUNDS?.[Number(result.cupRound)||0]||cupName)
+        :'Yükselme Play-Off';
+  const competitionName=isEurope?llV2EuroLabel(comp):isSuperCup?superCupName:comp==='cup'?cupName:'Play-Off';
   const won=shootout.winner===state.playerTeam;
   const progress=isEurope
     ?(state.europe?.status||`${stage} tamamlandı.`)
-    :`${stage} · Penaltılarda ${shootout.player}-${shootout.opponent} ${won?'tur atladın':'elendin'}.`;
+    :isSuperCup
+      ?`${stage} · Penaltılarda ${shootout.player}-${shootout.opponent} ${won?'kupayı kazandın':'kupayı kaybettin'}.`
+      :`${stage} · Penaltılarda ${shootout.player}-${shootout.opponent} ${won?'tur atladın':'elendin'}.`;
   const aggregate=llV15PenaltyAggregate(shootout,progress);
   const scoreCaption=isEurope?'Toplam skor':'Maç skoru';
   const finalNotice=`+${lp} LP<br><b>${llEscape(competitionName)} · ${llEscape(stage)}:</b> ${llEscape(progress)}`;
@@ -219,7 +230,7 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
   actions.querySelectorAll('button').forEach(button=>button.disabled=true);
   actions.insertAdjacentHTML('beforebegin',`<section class="ll-penalty-shootout" id="ll-penalty-shootout" aria-live="polite">
     <div class="ll-penalty-kicker">PENALTI ATIŞLARI</div>
-    <div class="ll-penalty-heading">Toplam skor <strong>${aggregate}</strong> · Kazanan tur atlar</div>
+    <div class="ll-penalty-heading">${isSuperCup?'Maç skoru':'Toplam skor'} <strong>${aggregate}</strong> · ${isSuperCup?'Kazanan kupayı alır':'Kazanan tur atlar'}</div>
     <div class="ll-penalty-team-head"><span aria-hidden="true"></span>
       <span>${llEscape(shootout.playerTeam)}</span>
       <b>SKOR</b>
@@ -230,7 +241,7 @@ llRenderRoundSummary=function(completedWeek,lp,pg,og,comp='league',advanced=fals
     <button class="ll-btn ll-penalty-skip" type="button" onclick="llV15SkipPenaltyAnimation()">Animasyonu Geç</button>
   </section>`);
 
-  llV15PenaltyRuntime={shootout,notice,actions,finalNotice,timers:[]};
+  llV15PenaltyRuntime={shootout,notice,actions,finalNotice,comp,timers:[]};
   const openingDelay=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?100:750;
   llV15PenaltyRuntime.timers.push(setTimeout(()=>llV15RevealPenaltyKick(0),openingDelay));
 };
