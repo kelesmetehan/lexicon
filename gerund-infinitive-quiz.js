@@ -65,6 +65,10 @@
     if (!Number.isFinite(state.gerundInfinitiveOfficialMatches)) state.gerundInfinitiveOfficialMatches = officialResults(state).length;
     if (!Number.isFinite(state.gerundInfinitiveCursor)) state.gerundInfinitiveCursor = 0;
     if (!Array.isArray(state.gerundInfinitiveDeck)) state.gerundInfinitiveDeck = [];
+    if (state.gerundInfinitiveDeckOrderVersion !== 3) {
+      shuffleInPlace(state.gerundInfinitiveDeck);
+      state.gerundInfinitiveDeckOrderVersion = 3;
+    }
     if (!state.gerundInfinitiveHistory || typeof state.gerundInfinitiveHistory !== 'object') state.gerundInfinitiveHistory = {};
     if (!state.gerundInfinitiveStats || typeof state.gerundInfinitiveStats !== 'object') {
       state.gerundInfinitiveStats = { shown: 0, correct: 0, wrong: 0, recovered: 0, completed: 0 };
@@ -93,53 +97,23 @@
   }
 
   function randomIndex(length) { return Math.floor(Math.random() * length); }
+  function shuffleInPlace(items) {
+    for (var index = items.length - 1; index > 0; index -= 1) {
+      var swapIndex = randomIndex(index + 1);
+      var temporary = items[index];
+      items[index] = items[swapIndex];
+      items[swapIndex] = temporary;
+    }
+    return items;
+  }
   function questionById(id) {
     for (var index = 0; index < BANK.length; index += 1) if (BANK[index].id === id) return BANK[index];
     return null;
   }
-  function balancedShuffle(questions, previousForm) {
-    var groups = { gerund: [], infinitive: [] };
-    var totals = { gerund: 0, infinitive: 0 };
-    var used = { gerund: 0, infinitive: 0 };
-    questions.forEach(function (question) {
-      groups[question.form].push(question);
-      totals[question.form] += 1;
-    });
-    Object.keys(groups).forEach(function (form) {
-      for (var index = groups[form].length - 1; index > 0; index -= 1) {
-        var swapIndex = randomIndex(index + 1);
-        var temporary = groups[form][index];
-        groups[form][index] = groups[form][swapIndex];
-        groups[form][swapIndex] = temporary;
-      }
-    });
-    var output = [];
-    var batchCounts = { gerund: 0, infinitive: 0 };
-    var totalQuestions = questions.length;
-    while (output.length < totalQuestions) {
-      if (output.length % QUESTION_COUNT === 0) batchCounts = { gerund: 0, infinitive: 0 };
-      var position = output.length;
-      var forms = Object.keys(groups).filter(function (form) { return groups[form].length; });
-      var bestForm = null;
-      var bestScore = -Infinity;
-      forms.forEach(function (form) {
-        var expectedByNow = ((position + 1) * totals[form]) / totalQuestions;
-        var deficit = expectedByNow - used[form];
-        var score = deficit + (Math.random() * 0.35);
-        if (form === previousForm && forms.length > 1) score -= 1.4;
-        if (batchCounts[form] >= 5 && forms.length > 1) score -= 2.5;
-        if (score > bestScore) {
-          bestScore = score;
-          bestForm = form;
-        }
-      });
-      var chosen = groups[bestForm].pop();
-      output.push(chosen);
-      used[bestForm] += 1;
-      batchCounts[bestForm] += 1;
-      previousForm = bestForm;
-    }
-    return output;
+  function balancedShuffle(questions) {
+    // Gerund ve infinitive sorularini form sirasi dayatmadan tek havuzda karistir.
+    // Ayni formun arka arkaya gelmesi normaldir; boylece test G-I-G-I seklinde tahmin edilebilir olmaz.
+    return shuffleInPlace(questions.slice());
   }
   function refillDeck(state) {
     var validIds = {};
@@ -151,8 +125,7 @@
     var queued = {};
     state.gerundInfinitiveDeck.forEach(function (id) { queued[id] = true; });
     var candidates = BANK.filter(function (question) { return !queued[question.id]; });
-    var previous = state.gerundInfinitiveDeck.length ? questionById(state.gerundInfinitiveDeck[state.gerundInfinitiveDeck.length - 1]) : null;
-    var shuffled = balancedShuffle(candidates, previous && previous.form);
+    var shuffled = balancedShuffle(candidates);
     state.gerundInfinitiveDeck = state.gerundInfinitiveDeck.concat(shuffled.map(function (question) { return question.id; }));
   }
   function buildQueue(state) {
@@ -456,7 +429,7 @@
 
   global.LL_GERUND_INFINITIVE_BANK = BANK;
   global.llGerundInfinitiveQuiz = {
-    version: 2,
+    version: 3,
     questionCount: QUESTION_COUNT,
     dueEvery: DUE_EVERY,
     bankSize: BANK.length,

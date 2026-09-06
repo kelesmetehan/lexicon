@@ -221,16 +221,41 @@ function llBuildStrictQuizQueue({normalPool,priorities,target,usedIds,recentIds,
     let recentSet=new Set(simulatedRecent);
     let eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
     if(!eligible.length){
-      // Bir intro slotunu erkene çekmek 30'luk pencereyi ilerletebiliyorsa bunu
-      // kullan; yine de normal loop'tan kelime atlayıp yeni döngüye geçme.
+      // Önce varsa ilk-tanıtım kelimesini erkene al; bu gerçek bir gösterim olduğu
+      // için recent penceresini ilerletir ve mevcut döngünün sonunu açabilir.
       if(pushIntro())continue;
-      blocked={
-        position,
-        remainingInCycle:remaining.length,
-        recentBlocked:remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id).slice(0,40),
-        reason:normal.length?'strict_cycle_waiting_for_recent_cooldown':'no_normal_words'
-      };
-      break;
+
+      // Döngünün sonunda kalan normal kelimelerin TAMAMI hard recent cooldown'a
+      // takıldıysa burada bekleyip maçı kilitlemeyiz. Eski döngüyü kapatırız ama
+      // bloklanan kelimeleri "kullanılmış" saymayız: yeni döngüde recent süresi
+      // dolduğunda yeniden aday olurlar. Böylece hem 30 kelimelik koruma delinmez
+      // hem de 10 soruluk maç kuyruğu deadlock'a girmez.
+      if(remaining.length&&normal.length){
+        const deferredIds=remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id);
+        simulatedUsed=new Set();
+        remaining=normal.slice();
+        cycleStartPending=true;
+        recentSet=new Set(simulatedRecent);
+        eligible=llDiagnosticShuffle(remaining.filter(word=>!recentSet.has(word.id)));
+        if(eligible.length){
+          llDiagnosticEvent('QUIZ_CYCLE_ROLLED_OVER_COOLDOWN',{
+            position,
+            deferredCount:deferredIds.length,
+            deferredIds:deferredIds.slice(0,40),
+            reason:'cycle_tail_blocked_by_recent_cooldown'
+          },{level:'INFO'});
+        }
+      }
+
+      if(!eligible.length){
+        blocked={
+          position,
+          remainingInCycle:remaining.length,
+          recentBlocked:remaining.filter(word=>recentSet.has(word.id)).map(word=>word.id).slice(0,40),
+          reason:normal.length?'all_normal_words_inside_recent_cooldown':'no_normal_words'
+        };
+        break;
+      }
     }
 
     const word=eligible[0];
