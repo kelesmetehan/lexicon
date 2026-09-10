@@ -1,8 +1,8 @@
 /* Lexicon League · WC / EURO Interactive Draw v1
    - WC: FIFA-style dark navy broadcast package, pale team rows, cyan/green neon accents.
    - EURO: royal-blue flat broadcast package inspired by draw broadcast graphics.
-   - Draw does NOT regenerate tournament groups. It reveals ONLY the managed national team's
-     existing 3 group opponents through a three-ball ceremony; group/knockout logic stays untouched.
+   - Each tournament edition receives a fresh seeded group draw from the fixed participant pool.
+   - The ceremony reveals ONLY the managed national team's 3 stored opponents; reloading never rerolls the group.
    - Pot membership remains an internal compatibility detail only; it is not exposed in the UI.
    - The managed team stays fixed in its 4-team group and exactly 3 opponents are revealed.
    - Before the first draw: 3 vocabulary questions, no dice.
@@ -10,7 +10,7 @@
 (function(global){
 'use strict';
 
-const VERSION=4;
+const VERSION=5;
 const QUIZ_SIZE=3;
 const TYPES=['wc','euro'];
 const LABELS={wc:'Dünya Kupası',euro:'Avrupa Şampiyonası'};
@@ -43,9 +43,9 @@ function deep(v){try{return JSON.parse(JSON.stringify(v));}catch(_){return v;}}
 function save(){try{if(typeof global.llSave==='function')global.llSave();}catch(error){console.warn('[National Draw] save failed',error);}}
 function logo(name,variant='table'){return typeof global.llTeamLogo==='function'?global.llTeamLogo(name,variant):`<span>${esc(name)}</span>`;}
 function starsFor(name){return Math.max(1,Math.min(6,Number(api()?.teamRegistry?.[name]?.stars)||3));}
-function groupsFor(type){return type==='wc'?(api()?.wcGroups||{}):(api()?.euroGroups||{});}
-function activeRecord(type=null){const state=stateNow();const rec=api()?.activeNationalRecord?.(state)||null;return rec&&(!type||rec.type===type)?rec:null;}
 function currentRecord(type){const state=stateNow();return api()?.nationalRecordForType?.(state,type)||null;}
+function activeRecord(type=null){const state=stateNow(),live=api()?.activeNationalRecord?.(state)||null,fallback=type?currentRecord(type):(api()?.unfinishedNationalRecord?.(state)||null),rec=live||fallback;return rec&&rec.edition&&['accepted','active'].includes(rec.status)&&(!type||rec.type===type)?rec:null;}
+function groupsFor(type){const rec=activeRecord(type)||currentRecord(type),stored=rec?.edition?.groups;if(stored&&typeof stored==='object')return stored;return type==='wc'?(api()?.wcGroups||{}):(api()?.euroGroups||{});}
 function drawState(rec){
   if(!rec?.edition)return null;
   if(!rec.edition.drawCeremony||typeof rec.edition.drawCeremony!=='object')rec.edition.drawCeremony={version:VERSION,completed:false,quizDone:false,quizCorrect:0,quizTotal:0,prompted:false,completedAt:null};
@@ -61,7 +61,7 @@ function drawState(rec){
   if(played&&!d.completed){d.completed=true;d.migratedFromPlayedTournament=true;d.completedAt=d.completedAt||new Date().toISOString();save();}
   return d;
 }
-function drawRequired(rec){const d=drawState(rec);return !!(rec?.status==='active'&&rec?.edition?.stage==='group'&&!rec?.edition?.completed&&!d?.completed);}
+function drawRequired(rec){const d=drawState(rec);return !!(['accepted','active'].includes(rec?.status)&&rec?.edition?.stage==='group'&&!rec?.edition?.completed&&!d?.completed);}
 
 function wcPots(){
   const groups=groupsFor('wc'),pots={1:[],2:[],3:[],4:[]};
@@ -288,7 +288,7 @@ global.llNationalDrawStart=function(){
   };
   step();
 };
-global.llNationalDrawClose=function(type){try{if(typeof global.llCloseModal==='function')global.llCloseModal();}catch(_){}if(typeof global.llRenderNationalTournaments==='function')global.llRenderNationalTournaments(type);};
+global.llNationalDrawClose=function(type){try{if(typeof global.llCloseModal==='function')global.llCloseModal();}catch(_){}const rec=activeRecord(type),state=stateNow();if(rec?.status==='accepted'&&!state?.seasonEnded&&typeof global.llRenderDashboard==='function'){global.llRenderDashboard();return;}if(typeof global.llRenderNationalTournaments==='function')global.llRenderNationalTournaments(type);};
 
 /* Integrate without altering the tournament engine's group generation. */
 const BASE_NATIONAL_RENDER=global.llRenderNationalTournaments;
