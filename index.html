@@ -3526,9 +3526,7 @@ function llRenderLeagueQuiz(){
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
   // Normal 10 kelimelik sinavda ornek cumlede cevap gizlenmisse, cevap acilinca
   // kelimenin cumle icindeki tam Ingilizce kullanimini da goster.
-  const answerExampleHtml=q.revealed&&word.example
-    ?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(word.example)}”</div>`
-    :'';
+  const answerExampleHtml=q.revealed?llFullExampleSentenceHtml(word):'';
   const pct=(q.index/q.queue.length)*100;
   llArea().innerHTML=`<div class="ll-shell ll-quiz-card"${nationalTheme?` data-ll-national-theme="${llEscape(nationalTheme)}"`:''}><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Maç Öncesi <em>Sınav</em></div><div class="ll-muted">${q.index+1}/10 · Her doğru ${llQuizApPerWord()} AP · Önceki hatayı düzeltme +3 AP</div></div><div class="ll-stars">Doğru: ${q.correct}${q.recoveredWords?` · Geri kazanım: ${q.recoveredWords}`:''}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div>
   <div class="ll-question" onclick="llRevealQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${q.revealed?`<div class="ll-answer">${answerHtml}${answerExampleHtml}</div>`:`<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>`}</div></div>
@@ -4542,6 +4540,13 @@ function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
   const sentenceClass = compact ? 'word-ex' : 'quiz-example';
   return `<div class="example-block"><div class="example-line"><div class="${sentenceClass}">“${llEscape(shownExample)}”</div>${translation?`<button class="example-translate-btn" type="button" aria-label="Türkçe çeviriyi göster" aria-expanded="false" aria-controls="${panelId}" title="Türkçe çeviriyi göster" onclick="toggleExampleTranslation(event,'${panelId}')"><span aria-hidden="true">↔</span><span>TR</span></button>`:''}</div>${translation?`<div class="example-translation" id="${panelId}" hidden>${llEscape(translation)}</div>`:''}</div>`;
 }
+// Cevap açıldığında kelimenin örnek içindeki gizlenmemiş tam İngilizce cümlesini
+// bütün kelime quizlerinde aynı görünümle gösterir.
+function llFullExampleSentenceHtml(card) {
+  const fullExample = String(card?.example || '').trim();
+  if (!fullExample) return '';
+  return `<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`;
+}
 function toggleExampleTranslation(event, panelId) {
   event?.preventDefault();
   event?.stopPropagation();
@@ -5193,6 +5198,7 @@ function showNextDiceCupRerollWord() {
   const answer = askTrToEn ? card.en : card.tr;
   const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
   const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
+  const fullExampleHtml = llFullExampleSentenceHtml(card);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -5213,7 +5219,7 @@ function showNextDiceCupRerollWord() {
         <div class="quiz-mode-label">REROLL ${diceCup.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
         <div class="quiz-word">${questionHtml}</div>
         ${example}
-        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
+        <div class="flashcard-back" id="dice-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}${fullExampleHtml}</div></div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
     </div>
@@ -5750,6 +5756,7 @@ function showNextDiceUclRerollWord() {
   const answer = askTrToEn ? card.en : card.tr;
   const questionHtml = askTrToEn ? llEscape(question) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,question)}</span>${llPronounceButton(card.en)}</div>`;
   const answerHtml = askTrToEn ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answer)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answer);
+  const fullExampleHtml = llFullExampleSentenceHtml(card);
   let example = '';
   if (card.example) {
     if (askTrToEn) {
@@ -5765,7 +5772,7 @@ function showNextDiceUclRerollWord() {
       <div class="flashcard" id="ucl-reroll-inner">
         <div class="quiz-mode-label">UCL REROLL ${diceUcl.rerollIndex + 1}/5 · ${askTrToEn ? 'TÜRKÇE → İNGİLİZCE' : 'İNGİLİZCE → TÜRKÇE'}</div>
         <div class="quiz-word">${questionHtml}</div>${example}
-        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}</div></div>
+        <div class="flashcard-back" id="ucl-reroll-back" style="display:none"><div class="flashcard-answer">${answerHtml}${fullExampleHtml}</div></div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
     </div>
@@ -6456,6 +6463,7 @@ function showNextFlashcard() {
   else { questionText = card.en; answerText = card.tr; }
   const questionHtml = askTurkishToEnglish ? llEscape(questionText) : `<div class="pronounce-line"><span>${llEnglishWordHtml(card,questionText)}</span>${llPronounceButton(card.en)}</div>`;
   const answerHtml = askTurkishToEnglish ? `<div class="pronounce-line"><span>${llEnglishWordHtml(card,answerText)}</span>${llPronounceButton(card.en)}</div>` : llEscape(answerText);
+  const fullExampleHtml = llFullExampleSentenceHtml(card);
 
   area.innerHTML = `
     <div class="quiz-progress" style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
@@ -6472,7 +6480,7 @@ function showNextFlashcard() {
           ${exampleDisplay}
         </div>
         <div class="flashcard-back" id="fc-back" style="display:none">
-          <div class="flashcard-answer">${answerHtml}</div>
+          <div class="flashcard-answer">${answerHtml}${fullExampleHtml}</div>
         </div>
         <div class="reveal-hint">▼ Cevabı görmek için karta tıkla</div>
       </div>
@@ -6600,13 +6608,13 @@ renderPreStart();
 <script src="super-cup.js?v=20260830-opening-reward-v1"></script>
 <script src="team-star-decline.js?v=20260804-2"></script>
 <script src="team-star-rise-report.js?v=20260806-1"></script>
-<script src="manager-job-market.js?v=20260810-cinematic-queue-1"></script>
+<script src="manager-job-market.js?v=20260911-desired-club-applications-v1"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
-<script src="board-confidence-reputation.js?v=20260808-press-cooldown-1"></script>
+<script src="board-confidence-reputation.js?v=20260911-full-example-sentence-v1"></script>
 <script src="manager-offer-fit.js?v=20260831-reserve-promotion-v1"></script>
 <script src="europe-calendar-guard.js?v=20260905-national-europe-protection-v2"></script>
-<script src="legend-call.js?v=20260813-word-cycle-v1"></script>
-<script src="welcome-to-hell.js?v=20260813-word-cycle-v1"></script>
+<script src="legend-call.js?v=20260911-full-example-sentence-v1"></script>
+<script src="welcome-to-hell.js?v=20260911-full-example-sentence-v1"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260906-no-ghost-word-v1"></script>
 <script src="gerund-infinitive-quiz.js?v=20260906-learning-no-ghost-v1"></script>
@@ -6614,6 +6622,6 @@ renderPreStart();
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 <script src="europe-draw-cinematic.js?v=20260906-mandatory-career-draw-v1"></script>
-<script src="national-draw-cinematic.js?v=20260910-after-selection-dynamic-groups-v1"></script>
+<script src="national-draw-cinematic.js?v=20260911-full-example-sentence-v1"></script>
 </body>
 </html>

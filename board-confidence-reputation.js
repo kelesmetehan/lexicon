@@ -335,8 +335,9 @@ function renderPressQuiz(){
   const exampleHtml=example&&typeof globalThis.llExampleSentenceHtml==='function'?llExampleSentenceHtml(word,example,`press-${pq.index}-${word.id}`):'';
   const questionHtml=ref.askTrToEn?esc(question):`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,question):esc(question)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`;
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,answer):esc(answer)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`:esc(answer);
+  const fullExampleHtml=pq.revealed&&typeof globalThis.llFullExampleSentenceHtml==='function'?llFullExampleSentenceHtml(word):'';
   const pct=(pq.index/pq.queue.length)*100;
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Basın Toplantısı <em>Kelime Boost</em></div><div class="ll-muted">Normal sınavın devamı · ${pq.index+1}/5 · Boost için kusursuz 5/5 gerekir</div></div><div class="ll-stars">Doğru: ${pq.correct}/5</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llRevealPressQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${pq.revealed?`<div class="ll-answer">${answerHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${pq.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRatePressQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRatePressQuiz(true)">✓ Bildim</button></div><div class="ll-muted" style="text-align:center;margin-top:10px">Katılım başladıktan sonra 5 kelimenin tamamı cevaplanır.</div></div></div>`;
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Basın Toplantısı <em>Kelime Boost</em></div><div class="ll-muted">Normal sınavın devamı · ${pq.index+1}/5 · Boost için kusursuz 5/5 gerekir</div></div><div class="ll-stars">Doğru: ${pq.correct}/5</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llRevealPressQuiz()"><div><div class="ll-position">${ref.askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${pq.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${pq.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" data-quiz-answer="unknown" onclick="llRatePressQuiz(false)">✗ Bilmiyorum</button><button type="button" class="ll-btn primary" data-quiz-answer="known" onclick="llRatePressQuiz(true)">✓ Bildim</button></div><div class="ll-muted" style="text-align:center;margin-top:10px">Katılım başladıktan sonra 5 kelimenin tamamı cevaplanır.</div></div></div>`;
   if(typeof globalThis.markNewWordFrame==='function')markNewWordFrame(word,llArea().querySelector('.ll-question'));
 }
 function ratePressQuiz(correct){
@@ -668,11 +669,33 @@ function adjustApplication(team){
   application.boardDecision=application.accepted?'Yönetim başvurunu kabul etti. Sözleşme imzalamaya davet edildin.':'Yönetim; itibar, güven desteği ve diğer zorunlu kriterler birlikte değerlendirildiğinde başvurunu yeterli bulmadı.';
   return application;
 }
+function adjustDesiredApplication(team){
+  const state=stateNow(),market=state?.managerMarket,application=market?.desiredApplications?.[team],candidate=(market?.desiredCandidates||[]).find(item=>item.team===team);
+  if(!state||!application||!candidate||application.boardIntegrationVersion===VERSION)return application;
+  const profile=ensureProfile(state),baseRep=profile.reputation,effective=effectiveReputation(state,baseRep),criterion=(application.criteria||[]).find(item=>item.code==='reputation');
+  if(criterion){
+    const required=num(String(criterion.required||'').match(/\d+/)?.[0],({1:28,2:36,3:46,4:58,5:70,6:82}[candidate.stars]||50)),oldPoints=num(criterion.points);
+    const newPoints=Math.round(Math.min(30,(effective/Math.max(1,required))*30)),pass=effective>=required;
+    criterion.points=newPoints;criterion.pass=pass;criterion.current=`${baseRep}/100${marketModifier(state)?` · yönetim etkisi ${marketModifier(state)>0?'+':''}${marketModifier(state)} → ${effective}`:''}`;
+    criterion.detail=`Profil itibarı ${reputationTier(baseRep)}. Yönetim güveni doğrudan kulüp başvurusunda geçici itibar etkisi oluşturur.`;
+    application.totalScore=num(application.totalScore)-oldPoints+newPoints;
+    const levelPass=(application.criteria||[]).find(item=>item.code==='level')?.pass!==false,countryPass=(application.criteria||[]).find(item=>item.code==='country')?.pass!==false;
+    application.mandatoryPass=pass&&levelPass&&countryPass;application.accepted=application.totalScore>=application.requiredScore&&application.mandatoryPass;
+  }
+  application.baseReputation=baseRep;application.effectiveReputation=effective;application.boardConfidence=ensureBoard(state).value;application.boardModifier=marketModifier(state);application.boardIntegrationVersion=VERSION;
+  application.boardDecision=application.accepted?'Kulüp yönetimi doğrudan başvurunu kabul etti. Mevcut teknik direktörle yollar ayrılacak ve sözleşme imzalamaya davet edildin.':'Kulüp yönetimi; itibar, yönetim güveni, kariyer seviyesi ve mevcut teknik direktörün konumunu birlikte değerlendirerek başvurunu reddetti.';
+  return application;
+}
 function installApplicationWrapper(){
   if(typeof globalThis.llApplyForVacantClub==='function'&&!globalThis.llApplyForVacantClub.__boardRep){
     const base=globalThis.llApplyForVacantClub;
     const wrapped=function(team){const result=base.apply(this,arguments),app=adjustApplication(team);if(app){if(typeof globalThis.llSave==='function')llSave();if(typeof globalThis.llCloseVacantJobReport==='function')llCloseVacantJobReport();if(typeof globalThis.llShowVacantJobReport==='function')llShowVacantJobReport(team);}return result;};
     wrapped.__boardRep=true;globalThis.llApplyForVacantClub=wrapped;
+  }
+  if(typeof globalThis.llApplyForDesiredClub==='function'&&!globalThis.llApplyForDesiredClub.__boardRep){
+    const base=globalThis.llApplyForDesiredClub;
+    const wrapped=function(team){const result=base.apply(this,arguments),app=adjustDesiredApplication(team);if(app){if(typeof globalThis.llSave==='function')llSave();if(typeof globalThis.llCloseVacantJobReport==='function')llCloseVacantJobReport();if(typeof globalThis.llShowDesiredClubReport==='function')llShowDesiredClubReport(team);}return result;};
+    wrapped.__boardRep=true;globalThis.llApplyForDesiredClub=wrapped;
   }
 }
 function applyCleanDepartureBonus(state,market,fromTeam,toTeam){
@@ -694,6 +717,11 @@ function installDepartureWrappers(){
     const base=globalThis.llAcceptVacantClub;
     const wrapped=function(teamName){const state=stateNow(),market=state?.managerMarket,from=market?.fromTeam,result=base.apply(this,arguments);if(state&&market?.status==='chosen')applyCleanDepartureBonus(state,market,from,teamName);if(typeof globalThis.llSave==='function')llSave();return result;};
     wrapped.__boardDeparture=true;globalThis.llAcceptVacantClub=wrapped;
+  }
+  if(typeof globalThis.llAcceptDesiredClub==='function'&&!globalThis.llAcceptDesiredClub.__boardDeparture){
+    const base=globalThis.llAcceptDesiredClub;
+    const wrapped=function(teamName){const state=stateNow(),market=state?.managerMarket,from=market?.fromTeam,result=base.apply(this,arguments);if(state&&market?.status==='chosen')applyCleanDepartureBonus(state,market,from,teamName);if(typeof globalThis.llSave==='function')llSave();return result;};
+    wrapped.__boardDeparture=true;globalThis.llAcceptDesiredClub=wrapped;
   }
 }
 
@@ -775,6 +803,8 @@ function install(){
   wrap('llRenderManagerMarket',base=>function(){const result=base.apply(this,arguments);decorateManagerMarket();return result;});
   wrap('llRenderVacantManagerJobs',base=>function(){const market=stateNow()?.managerMarket;Object.keys(market?.applications||{}).forEach(adjustApplication);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
   wrap('llShowVacantJobReport',base=>function(team){adjustApplication(team);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
+  wrap('llRenderDesiredManagerJobs',base=>function(){const market=stateNow()?.managerMarket;Object.keys(market?.desiredApplications||{}).forEach(adjustDesiredApplication);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
+  wrap('llShowDesiredClubReport',base=>function(team){adjustDesiredApplication(team);if(typeof globalThis.llSave==='function')llSave();return base.apply(this,arguments);});
   wrap('llRenderManagerProfile',base=>function(){const result=base.apply(this,arguments);try{decorateProfile();}catch(error){console.error('[Hoca Profili] Yönetim özeti eklenemedi:',error);}return result;});
   wrap('llCommitCurrentMatch',base=>function(){
     const state=stateNow(),match=globalThis.lexLeague?.match,weekBefore=num(state?.week),already=match?.__boardConfidenceProcessed;
