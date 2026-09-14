@@ -89,6 +89,7 @@
   }
   function isEligible(state, fixture) {
     if (!state || !fixture || !isHome(state, fixture)) return false;
+    try { if (typeof globalThis.llIsTalentHuntWeek === 'function' && llIsTalentHuntWeek(state)) return false; } catch {}
     if (legendaryEventBlocks(state, fixture)) return false;
     return opponentStars(state, fixture) >= 5;
   }

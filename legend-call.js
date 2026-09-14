@@ -69,6 +69,7 @@ function leagueMathInfo(fixture,state){
 }
 function eligibleMatch(fixture,state){
   if(!fixture||!state)return null;
+  try{if(typeof globalThis.llIsTalentHuntWeek==='function'&&llIsTalentHuntWeek(state))return null;}catch{}
   const comp=fixture.competition||'league',label=String(fixture.roundLabel||'');
   const derby=derbyLabel(fixture,state);if(derby)return {label:derby,code:'derby',weight:.62};
   if(['ucl','uel','uecl'].includes(comp)){

@@ -12,6 +12,7 @@
     uecl: { label: 'Konferans Ligi', order: 6 },
     legend: { label: 'Efsaneni \u00c7a\u011f\u0131r', order: 7 },
     hell: { label: 'Cehennemi Ya\u015fat', order: 8 },
+    talent: { label: 'Yetenek Av\u0131', order: 9 },
     other: { label: 'Di\u011fer resmi ma\u00e7', order: 99 }
   };
 
@@ -47,6 +48,7 @@
   function sourceKey(fixture, eventType) {
     if (eventType === 'legend') return 'legend';
     if (eventType === 'hell') return 'hell';
+    if (eventType === 'talent') return 'talent';
     const competition = String(fixture && fixture.competition || 'league').toLowerCase();
     if (competition === 'league') return 'league';
     if (competition === 'cup' || competition === 'domesticcup' || competition === 'domestic_cup') return 'domesticCup';
