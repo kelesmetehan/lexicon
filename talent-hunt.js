@@ -386,7 +386,13 @@
   function install() {
     injectStyles();
     wrap('llV2RepairState', base => function (state) { const result = base.apply(this, arguments); if (result) ensureSystem(result); return result; });
-    wrap('llRenderDashboard', base => function () { const result = base.apply(this, arguments); decorateDashboard(); return result; });
+    wrap('llRenderDashboard', base => function () {
+      const result = base.apply(this, arguments);
+      try { decorateDashboard(); } catch (error) {
+        try { globalThis.llQuizDiagnostic?.('talent_hunt_dashboard_error', { message: String(error?.message || error), week: num(stateNow()?.week), season: num(stateNow()?.season) }); } catch {}
+      }
+      return result;
+    });
     wrap('llStartMatchPreparation', base => function () {
       const state = stateNow(), fixture = fixtureNow();
       let event = currentEvent(state);
@@ -406,6 +412,14 @@
     const state = stateNow(); if (state) ensureSystem(state);
   }
 
+  // Public dashboard hook: league-v2 also calls this after rebuilding the dashboard.
+  // This makes the offer resilient to dashboard render paths/wrapper ordering and
+  // safely no-ops outside weeks 10/24 or after the event has been consumed.
+  globalThis.llTalentDecorateDashboard = function () {
+    try { decorateDashboard(); } catch (error) {
+      try { globalThis.llQuizDiagnostic?.('talent_hunt_dashboard_error', { message: String(error?.message || error), week: num(stateNow()?.week), season: num(stateNow()?.season) }); } catch {}
+    }
+  };
   globalThis.llIsTalentHuntWeek = function (state = stateNow()) { return eventWeek(state); };
   globalThis.llTalentAccept = function () { const state = stateNow(), fixture = fixtureNow(); let event = currentEvent(state); if (!event) event = maybeCreateEvent(state, fixture); if (event?.status === 'offered') renderPositionChoice(event); };
   globalThis.llTalentSkipOffer = skipOffer;
@@ -420,4 +434,6 @@
   globalThis.llTalentHuntTestApi = { VERSION, WORD_COUNT, EVENT_WEEKS, OUTCOMES, eventWeek, eventKey, outcomeForCorrect, ensureSystem, isEligible, maybeCreateEvent, eligibleRewardCards, pickRewardCard };
 
   install();
+  // If a career dashboard was already on screen when this module loaded, decorate it now.
+  setTimeout(() => globalThis.llTalentDecorateDashboard?.(), 0);
 })();
