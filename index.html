@@ -743,7 +743,7 @@
     .ll-domestic-table td:nth-child(12),
     .ll-compact-standings-table th:nth-child(10),
     .ll-compact-standings-table td:nth-child(10) { width:38px; }
-    .ll-standing-stars { display:none; }
+    .ll-standing-stars { display:inline-flex; font-size:9px; }
     .ll-standing-team .ll-team-logo.table { width:19px; height:19px; }
   }
 
@@ -764,7 +764,7 @@
     .ll-domestic-table td:nth-child(12),
     .ll-compact-standings-table th:nth-child(10),
     .ll-compact-standings-table td:nth-child(10) { width:38px; }
-    .ll-standing-stars { display:none; }
+    .ll-standing-stars { display:inline-flex; font-size:9px; }
     .ll-domestic-table th:nth-child(4), .ll-domestic-table td:nth-child(4),
     .ll-domestic-table th:nth-child(5), .ll-domestic-table td:nth-child(5),
     .ll-domestic-table th:nth-child(6), .ll-domestic-table td:nth-child(6),
@@ -1782,24 +1782,10 @@ const NATIVE_USER_DATA = [
   {en:"workaround", tr:"geçici çözüm", example:"The current solution is not permanent; it is a workaround.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"integrate", tr:"entegre etmek", example:"Can we integrate this tool into the validator?", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"reproduce", tr:"yeniden oluşturmak / tekrar üretmek", example:"We could not reproduce the issue.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"find out", tr:"öğrenmek / ortaya çıkarmak", example:"I found out about the meeting this morning.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"work out", tr:"çözmek / yoluna girmek / halletmek", example:"Don't worry, we'll work it out.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"end up", tr:"sonunda ... olmak / yapmak", example:"We ended up staying home because it was raining.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"turn out", tr:"ortaya çıkmak / sonunda ... çıkmak", example:"It turned out that I was wrong.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"put off", tr:"ertelemek", example:"I've been putting off this appointment for weeks.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"go through", tr:"bir süreçten geçmek / gözden geçirmek", example:"She went through a difficult time last year.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be supposed to", tr:"yapması beklenmek / gerekiyor olmak", example:"We are supposed to meet at seven.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"focus on", tr:"odaklanmak", example:"Try to focus on what you can control.", pos:"verb phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"be aware of", tr:"farkında olmak", example:"I wasn't aware of that problem.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"cope with", tr:"başa çıkmak", example:"He is learning how to cope with stress.", pos:"verb phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"stand out", tr:"öne çıkmak / dikkat çekmek", example:"Her confidence made her stand out from the others.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"break down", tr:"bozulmak / çökmek", example:"My car broke down on the way to work.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"run into", tr:"rastlamak / bir sorunla karşılaşmak", example:"I ran into an old friend yesterday.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"reach out to", tr:"iletişime geçmek", example:"I'll reach out to him tomorrow.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"come down to", tr:"sonuçta ... meselesi olmak", example:"It all comes down to what you really want.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"live up to", tr:"beklentileri karşılamak", example:"The movie didn't live up to my expectations.", pos:"phrasal verb", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"affect", tr:"etkilemek", example:"Lack of sleep can affect your mood.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"overlook", tr:"gözden kaçırmak", example:"I overlooked an important detail.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"apart from that", tr:"bunun dışında / onun dışında", example:"Apart from that, everything went well.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"welfare", tr:"refah / esenlik", example:"The government wants to improve the welfare of its citizens.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"examine", tr:"incelemek / muayene etmek", example:"The doctor examined my ankle after the match.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"expenses", tr:"masraflar / giderler", example:"The company will cover your travel expenses.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -2381,24 +2367,10 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Mevcut çözüm kalıcı değil; geçici bir çözümdür.",
   "Bu aracı validator'a entegre edebilir miyiz?",
   "Sorunu yeniden oluşturamadık.",
-  "Toplantıyı bu sabah öğrendim.",
-  "Endişelenme, bunu halledeceğiz.",
-  "Yağmur yağdığı için sonunda evde kaldık.",
-  "Sonunda yanıldığım ortaya çıktı.",
-  "Bu randevuyu haftalardır erteliyorum.",
-  "Geçen yıl zor bir dönemden geçti.",
-  "Saat yedide buluşmamız gerekiyor.",
-  "Kontrol edebileceğin şeylere odaklanmaya çalış.",
-  "O sorunun farkında değildim.",
-  "Stresle nasıl başa çıkacağını öğreniyor.",
-  "Özgüveni onun diğerlerinden öne çıkmasını sağladı.",
-  "Arabam işe giderken bozuldu.",
-  "Dün eski bir arkadaşıma rastladım.",
-  "Yarın onunla iletişime geçeceğim.",
-  "Sonuçta her şey gerçekten ne istediğin meselesine geliyor.",
-  "Film beklentilerimi karşılamadı.",
-  "Uykusuzluk ruh halini etkileyebilir.",
-  "Önemli bir ayrıntıyı gözden kaçırdım."
+  "Bunun dışında her şey iyi gitti.",
+  "Hükümet vatandaşlarının refahını artırmak istiyor.",
+  "Doktor maçtan sonra ayak bileğimi muayene etti.",
+  "Şirket seyahat masraflarını karşılayacak."
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "ingredient":"n","struggling":"adj","strict":"adj",
@@ -4527,7 +4499,19 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 const LL_EXAMPLE_IRREGULAR_FORMS={
-  be:['am','is','are','was','were','been','being'],come:['came','comes','coming'],get:['got','gets','getting'],fall:['fell','falls','fallen','falling'],go:['went','goes','gone','going'],keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],swing:['swung','swings','swinging'],beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
+  be:['am','is','are','was','were','been','being'],have:['has','had','having'],do:['does','did','done','doing'],
+  come:['came','comes','coming'],get:['got','gotten','gets','getting'],go:['went','goes','gone','going'],
+  keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],
+  make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],
+  see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],
+  bring:['brought','brings','bringing'],buy:['bought','buys','buying'],think:['thought','thinks','thinking'],know:['knew','known','knows','knowing'],
+  feel:['felt','feels','feeling'],leave:['left','leaves','leaving'],meet:['met','meets','meeting'],choose:['chose','chosen','chooses','choosing'],
+  build:['built','builds','building'],catch:['caught','catches','catching'],teach:['taught','teaches','teaching'],tell:['told','tells','telling'],
+  sell:['sold','sells','selling'],send:['sent','sends','sending'],stand:['stood','stands','standing'],understand:['understood','understands','understanding'],
+  wear:['wore','worn','wears','wearing'],win:['won','wins','winning'],lose:['lost','loses','losing'],break:['broke','broken','breaks','breaking'],
+  drive:['drove','driven','drives','driving'],eat:['ate','eaten','eats','eating'],drink:['drank','drunk','drinks','drinking'],sleep:['slept','sleeps','sleeping'],
+  say:['said','says','saying'],fall:['fell','falls','fallen','falling'],rise:['rose','risen','rises','rising'],swing:['swung','swings','swinging'],
+  beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
 };
 function llEnglishWordForms(word){
   const base=String(word||'').toLowerCase(),forms=new Set([base]);if(!base)return [];
@@ -4558,13 +4542,52 @@ function llExampleAnswerPattern(candidate){
   // "care about" gibi ayr\u0131labilen fiillerde (cares deeply about) anlaml\u0131 ara s\u00f6zc\u00fckler c\u00fcmleyi gizlemesin.
   return '\\b(?:'+first+')'+(rest?(particleLead?'(?:\\s+\\w+){0,4}\\s+':'\\s+')+rest:'')+'\\b';
 }
+const LL_EXAMPLE_OPTIONAL_EDGE_WORDS=new Set(['about','after','away','back','by','down','for','from','in','into','of','off','on','out','over','through','to','up','with']);
+const LL_EXAMPLE_CONTENT_STOPWORDS=new Set(['a','an','the','to','be','am','is','are','was','were','been','being','of','on','in','at','for','from','by','with','about','into','over','through','out','up','off','away','back','someone','somebody','something']);
+function llRelaxedExampleAnswerCandidates(answer){
+  const candidates=[],seen=new Set();
+  const add=value=>{const clean=String(value||'').replace(/\s+/g,' ').trim();if(clean&&!seen.has(clean.toLowerCase())){seen.add(clean.toLowerCase());candidates.push(clean);}};
+  llExampleAnswerCandidates(answer).forEach(candidate=>{
+    add(candidate);
+    let tokens=candidate.split(/\s+/).filter(Boolean);
+    while(tokens.length>1&&LL_EXAMPLE_OPTIONAL_EDGE_WORDS.has(String(tokens[tokens.length-1]||'').toLowerCase())){
+      tokens=tokens.slice(0,-1);add(tokens.join(' '));
+    }
+    if(tokens.length>1&&String(tokens[0]).toLowerCase()==='be')add(tokens.slice(1).join(' '));
+  });
+  return candidates.sort((a,b)=>b.length-a.length);
+}
+function llMaskAnswerTokenFallback(example,answer){
+  const source=String(example||'');
+  const tokens=[];
+  llExampleAnswerCandidates(answer).forEach(candidate=>candidate.split(/\s+/).forEach(token=>{
+    const clean=String(token||'').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g,'');
+    if(clean.length>=3&&!LL_EXAMPLE_CONTENT_STOPWORDS.has(clean)&&!tokens.includes(clean))tokens.push(clean);
+  }));
+  tokens.sort((a,b)=>b.length-a.length);
+  for(const token of tokens){
+    const forms=llEnglishWordForms(token).map(escapeRegExp).join('|');if(!forms)continue;
+    const pattern=new RegExp('\\b(?:'+forms+')\\b','i');
+    if(pattern.test(source))return source.replace(pattern,'_____');
+  }
+  return '';
+}
 function llMaskAnswerInExample(example,answer){
   let output=String(example||''),masked=false;
-  llExampleAnswerCandidates(answer).forEach(candidate=>{
+  llRelaxedExampleAnswerCandidates(answer).forEach(candidate=>{
+    if(masked)return;
     const pattern=llExampleAnswerPattern(candidate);if(!pattern)return;
-    output=output.replace(new RegExp(pattern,'gi'),()=>{masked=true;return '_____';});
+    const regex=new RegExp(pattern,'gi');
+    if(!regex.test(output))return;
+    regex.lastIndex=0;
+    output=output.replace(regex,()=>{masked=true;return '_____';});
   });
-  return masked?output:'';
+  if(masked)return output;
+  const tokenFallback=llMaskAnswerTokenFallback(example,answer);
+  if(tokenFallback)return tokenFallback;
+  // Eski/içe aktarılmış bir kaydın örnek cümlesi hedef ifadeyi hiç içermiyorsa
+  // soru kartını boş bırakma. Cevabı sızdırmadan nötr bir İngilizce cloze göster.
+  return String(example||'').trim()?'We learned how to use _____ correctly in a sentence.':'';
 }
 
 let llExampleSerial = 0;
@@ -4651,12 +4674,15 @@ function initDatabase() {
     existingWords = existingWords.filter(word => !LL_RETIRED_VOCABULARY.has(String(word?.en || "").trim().toLowerCase()));
 
     const llEnsureEnglishExample = word => {
-      if (!word || String(word.example || '').trim()) return word;
+      if (!word) return word;
       const expression = String(word.en || '').trim();
       if (!expression) return word;
-      // Eski/i\u00e7e aktar\u0131lm\u0131\u015f kay\u0131tlarda c\u00fcmle alan\u0131 bo\u015fsa soru sat\u0131r\u0131 hi\u00e7bir zaman kaybolmas\u0131n.
-      word.example = 'We discussed '+expression+' in today\'s lesson.';
-      if (!String(word.exampleTr || '').trim()) word.exampleTr = 'Bug\u00fcnk\u00fc derste bu ifadeyi konu\u015ftuk.';
+      if (!String(word.example || '').trim()) {
+        // Eski/içe aktarılmış kayıtlarda örnek cümle tamamen yoksa her ifade türüyle
+        // dilbilgisel olarak güvenli çalışan bir örnek oluştur. TR->EN modunda ifade maskelenir.
+        word.example = 'Today we learned how to use "'+expression+'" correctly.';
+        if (!String(word.exampleTr || '').trim()) word.exampleTr = 'Bugün bu ifadeyi doğru şekilde nasıl kullanacağımızı öğrendik.';
+      }
       return word;
     };
 
@@ -6651,7 +6677,8 @@ renderPreStart();
 <script src="europe-calendar-guard.js?v=20260905-national-europe-protection-v2"></script>
 <script src="legend-call.js?v=20260911-full-example-sentence-v1"></script>
 <script src="welcome-to-hell.js?v=20260911-full-example-sentence-v1"></script>
-<script src="season-vocabulary-stats.js?v=20260812-1"></script>
+<script src="talent-hunt.js?v=20260914-yetenek-avi-v1"></script>
+<script src="season-vocabulary-stats.js?v=20260914-talent-hunt-v1"></script>
 <script src="relative-clause-quiz.js?v=20260906-no-ghost-word-v1"></script>
 <script src="gerund-infinitive-quiz.js?v=20260906-learning-no-ghost-v1"></script>
 <script src="national-tournaments.js?v=20260910-dynamic-groups-national-applications-v1"></script>
