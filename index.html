@@ -4527,7 +4527,10 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 const LL_EXAMPLE_IRREGULAR_FORMS={
-  be:['am','is','are','was','were','been','being'],come:['came','comes','coming'],get:['got','gets','getting'],fall:['fell','falls','fallen','falling'],go:['went','goes','gone','going'],keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],swing:['swung','swings','swinging'],beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
+  be:['am','is','are','was','were','been','being',"isn't","aren't","wasn't","weren't"],
+  bring:['brought','brings','bringing'],
+  break:['broke','broken','breaks','breaking'],
+  come:['came','comes','coming'],get:['got','gets','getting'],fall:['fell','falls','fallen','falling'],go:['went','goes','gone','going'],keep:['kept','keeps','keeping'],pay:['paid','pays','paying'],lead:['led','leads','leading'],take:['took','takes','taken','taking'],make:['made','makes','making'],run:['ran','runs','running'],write:['wrote','writes','written','writing'],speak:['spoke','speaks','spoken','speaking'],see:['saw','sees','seen','seeing'],give:['gave','gives','given','giving'],find:['found','finds','finding'],hold:['held','holds','holding'],swing:['swung','swings','swinging'],beat:['beats','beaten','beating'],spread:['spreads','spreading'],boycott:['boycotted','boycotting','boycotts']
 };
 function llEnglishWordForms(word){
   const base=String(word||'').toLowerCase(),forms=new Set([base]);if(!base)return [];
@@ -6659,7 +6662,7 @@ renderPreStart();
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 <script src="europe-draw-cinematic.js?v=20260906-mandatory-career-draw-v1"></script>
 <script src="national-draw-cinematic.js?v=20260911-full-example-sentence-v1"></script>
-<script src="financial-crisis.js?v=20260916-financial-crisis-demo-card-select-v3"></script>
+<script src="financial-crisis.js?v=20260916-financial-crisis-production-v4"></script>
 <script src="team-league-navigation.js?v=20260916-team-league-nav-v1"></script>
 </body>
 </html>
