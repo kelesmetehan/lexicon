@@ -60,7 +60,7 @@ function llQueueTrophyAnimation(event){
 
 function llTrophyOtherCinematicOpen(){
   if(typeof document==='undefined')return true;
-  return !!globalThis.llPenaltySequenceActive||!!globalThis.llManagerSigningPending||!!document.querySelector('#ll-trophy-cinematic,#ll-achievement-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-relegation-cinematic,#ll-penalty-shootout');
+  return !!globalThis.llPenaltySequenceActive||!!globalThis.llFinancialCrisisSequenceActive||!!globalThis.llManagerSigningPending||!!document.querySelector('#ll-trophy-cinematic,#ll-achievement-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-relegation-cinematic,#ll-penalty-shootout,#ll-financial-crisis-overlay');
 }
 
 function llTrophySpawnParticles(root,count,colors){
@@ -119,6 +119,8 @@ function llCloseTrophyAnimation(){
   document.getElementById('ll-trophy-cinematic')?.remove();
   document.body?.classList.remove('ll-cinematic-open');
   window.setTimeout(()=>{
+    const dieShown=typeof globalThis.llTryShowQueuedDieCinematic==='function'&&globalThis.llTryShowQueuedDieCinematic();
+    if(dieShown)return;
     const trophyShown=llTryShowQueuedTrophyAnimation();
     if(trophyShown)return;
     const after=llTrophyAfterQueueAction;

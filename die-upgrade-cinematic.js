@@ -9,6 +9,38 @@
     'Forvet':'\u26BD'
   };
 
+  /* Cinematic arbitration: die/star reveals must never open above another
+     achievement, trophy, signing or penalty overlay.  Requests are queued
+     instead of being dropped, so every earned reveal is still shown. */
+  var LL_DIE_CINEMATIC_QUEUE=[];
+  var LL_DIE_CINEMATIC_RETRY=null;
+
+  function llDieCinematicBlocked(){
+    if(typeof document==='undefined')return true;
+    if(globalThis.llPenaltySequenceActive||globalThis.llFinancialCrisisSequenceActive||globalThis.llManagerSigningPending)return true;
+    return !!document.querySelector('#ll-trophy-cinematic,#ll-achievement-cinematic,#ll-pack-cinematic,#ll-manager-signing,.ll-signing-cinematic,#ll-relegation-cinematic,#ll-penalty-shootout');
+  }
+
+  function llQueueDieCinematic(kind,args){
+    var key=kind+'|'+JSON.stringify(args||[]);
+    if(!LL_DIE_CINEMATIC_QUEUE.some(function(item){return item.key===key;}))LL_DIE_CINEMATIC_QUEUE.push({kind:kind,args:args||[],key:key});
+    llScheduleDieCinematicRetry();
+    return true;
+  }
+
+  function llScheduleDieCinematicRetry(){
+    if(LL_DIE_CINEMATIC_RETRY||!LL_DIE_CINEMATIC_QUEUE.length||typeof window==='undefined')return;
+    LL_DIE_CINEMATIC_RETRY=window.setTimeout(function(){LL_DIE_CINEMATIC_RETRY=null;llTryShowQueuedDieCinematic();},220);
+  }
+
+  function llTryShowQueuedDieCinematic(){
+    if(!LL_DIE_CINEMATIC_QUEUE.length)return false;
+    if(llDieCinematicBlocked()){llScheduleDieCinematicRetry();return false;}
+    var item=LL_DIE_CINEMATIC_QUEUE.shift();
+    if(item.kind==='star')return llRenderStarAscensionAnimation.apply(null,item.args);
+    return llRenderDieUpgradeAnimation.apply(null,item.args);
+  }
+
   function llDieUpgradeEscape(value){
     if(typeof llEscape==='function')return llEscape(value);
     return String(value==null?'':value).replace(/[&<>"']/g,function(char){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];});
@@ -23,8 +55,8 @@
     var style=document.createElement('style');
     style.id=LL_DIE_UPGRADE_STYLE_ID;
     style.textContent=`
-      .ll-trophy-cinematic.die-upgrade{background:radial-gradient(circle at 50% 37%,rgba(34,211,238,.24),rgba(2,6,23,.96) 61%,#000);}
-      .ll-trophy-cinematic.die-upgrade .ll-trophy-stage{width:min(460px,calc(100vw - 32px));padding:30px 32px 28px;border:1px solid rgba(103,232,249,.42);border-radius:24px;background:linear-gradient(155deg,rgba(8,47,73,.94),rgba(15,23,42,.98) 62%);box-shadow:0 30px 90px rgba(0,0,0,.74),0 0 54px rgba(34,211,238,.18);}
+      .ll-trophy-cinematic.die-upgrade{background:radial-gradient(circle at 50% 37%,rgba(34,211,238,.24),transparent 46%),#020617;backdrop-filter:none;}
+      .ll-trophy-cinematic.die-upgrade .ll-trophy-stage{width:min(460px,calc(100vw - 32px));padding:30px 32px 28px;border:1px solid rgba(103,232,249,.42);border-radius:24px;background:linear-gradient(155deg,#082f49,#0f172a 62%);box-shadow:0 30px 90px rgba(0,0,0,.74),0 0 54px rgba(34,211,238,.18);}
       .ll-die-flip-stage{width:118px;height:118px;margin:0 auto 17px;position:relative;perspective:860px;filter:drop-shadow(0 17px 15px rgba(0,0,0,.36));}
       .ll-die-flip-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;animation:llDieUpgradeFlip 1.12s cubic-bezier(.18,.82,.22,1) both;}
       .ll-die-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.45);border-radius:23px;color:#111827;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:inset 0 2px 0 rgba(255,255,255,.52),inset 0 -7px 13px rgba(0,0,0,.26),0 11px 24px rgba(0,0,0,.32);overflow:hidden;}
@@ -47,9 +79,9 @@
       .ll-trophy-cinematic.die-upgrade .ll-trophy-detail{background:rgba(8,47,73,.54);border-color:rgba(34,211,238,.30);color:#e0f7ff;}
       .ll-trophy-cinematic.die-upgrade .ll-trophy-continue{background:linear-gradient(135deg,#22d3ee,#0ea5e9)!important;border-color:#67e8f9!important;color:#062c36!important;font-weight:800;}
       @keyframes llDieUpgradeFlip{0%{transform:rotateY(0deg) rotateX(0deg) scale(.84);opacity:0}18%{opacity:1;transform:rotateY(0deg) rotateX(-5deg) scale(1.04)}52%{transform:rotateY(94deg) rotateX(5deg) scale(1.08)}100%{transform:rotateY(180deg) rotateX(0deg) scale(1)}}
-      .ll-trophy-cinematic.star-ascension{background:radial-gradient(circle at 50% 35%,rgba(250,204,21,.30),rgba(2,6,23,.97) 65%,#000);overflow:hidden;}
+      .ll-trophy-cinematic.star-ascension{background:radial-gradient(circle at 50% 35%,rgba(250,204,21,.24),transparent 47%),#020617;overflow:hidden;backdrop-filter:none;}
       .ll-trophy-cinematic.star-ascension::before{content:'';position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.16) 50%,transparent 65%);animation:llDieStarSweep 2.4s ease-in-out infinite;pointer-events:none;}
-      .ll-trophy-cinematic.star-ascension .ll-trophy-stage{padding:36px 40px;border:1px solid rgba(250,204,21,.35);border-radius:22px;background:linear-gradient(160deg,rgba(120,53,15,.22),rgba(2,6,23,.4));box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 60px rgba(250,204,21,.18);}
+      .ll-trophy-cinematic.star-ascension .ll-trophy-stage{padding:36px 40px;border:1px solid rgba(250,204,21,.35);border-radius:22px;background:linear-gradient(160deg,#3a2508,#0f172a 62%,#071b1e);box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 60px rgba(250,204,21,.18);}
       .ll-trophy-cinematic.star-ascension .ll-trophy-icon{display:none;}
       .ll-star-ascension-row{display:flex;justify-content:center;gap:6px;margin-bottom:10px;position:relative;}
       .ll-star-ascension-row span{font-size:34px;display:inline-block;opacity:0;transform:scale(.3) rotate(-25deg);filter:drop-shadow(0 0 6px rgba(250,204,21,.55));animation:llDieStarPop .5s cubic-bezier(.2,.8,.2,1) forwards;}
@@ -77,13 +109,17 @@
     document.body.classList.remove('ll-cinematic-open');
     if(completed&&typeof llShowStarAscensionAnimation==='function'){
       window.setTimeout(function(){llShowStarAscensionAnimation(fromStar,toStar,teamName);},120);
-    }else if(typeof llTryShowQueuedTrophyAnimation==='function'){
-      window.setTimeout(llTryShowQueuedTrophyAnimation,180);
+    }else{
+      window.setTimeout(function(){
+        if(llTryShowQueuedDieCinematic())return;
+        if(typeof llTryShowQueuedTrophyAnimation==='function'&&llTryShowQueuedTrophyAnimation())return;
+        if(typeof globalThis.llTryShowQueuedAchievements==='function')globalThis.llTryShowQueuedAchievements();
+      },180);
     }
   }
 
-  function llShowStarAscensionAnimation(fromStar,toStar,teamName){
-    if(typeof document==='undefined'||document.getElementById('ll-trophy-cinematic'))return false;
+  function llRenderStarAscensionAnimation(fromStar,toStar,teamName){
+    if(typeof document==='undefined'||llDieCinematicBlocked())return false;
     llEnsureDieUpgradeCinematicCss();
     var starRow=Array.from({length:6},function(_,index){
       var star=index+1,filled=star<=toStar,isNew=star===toStar;
@@ -97,9 +133,15 @@
     return true;
   }
 
-  function llShowDieUpgradeAnimation(position,fromStar,toStar,progressCount,options){
+  function llShowStarAscensionAnimation(fromStar,toStar,teamName){
+    if(typeof document==='undefined')return false;
+    if(llDieCinematicBlocked())return llQueueDieCinematic('star',[fromStar,toStar,teamName]);
+    return llRenderStarAscensionAnimation(fromStar,toStar,teamName);
+  }
+
+  function llRenderDieUpgradeAnimation(position,fromStar,toStar,progressCount,options){
     options=options||{};
-    if(typeof document==='undefined'||document.getElementById('ll-trophy-cinematic'))return false;
+    if(typeof document==='undefined'||llDieCinematicBlocked())return false;
     llEnsureDieUpgradeCinematicCss();
     var icon=LL_DIE_UPGRADE_ICONS[position]||'\u{1F3B2}';
     var fromRange=llDieUpgradeRange(fromStar),toRange=llDieUpgradeRange(toStar);
@@ -112,6 +154,13 @@
     if(!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches&&typeof navigator.vibrate==='function')window.setTimeout(function(){navigator.vibrate([18,28,42]);},460);
     window.setTimeout(function(){root&&root.querySelector('.ll-trophy-continue')?.focus();},1140);
     return true;
+  }
+
+  function llShowDieUpgradeAnimation(position,fromStar,toStar,progressCount,options){
+    options=options||{};
+    if(typeof document==='undefined')return false;
+    if(llDieCinematicBlocked())return llQueueDieCinematic('die',[position,fromStar,toStar,progressCount,options]);
+    return llRenderDieUpgradeAnimation(position,fromStar,toStar,progressCount,options);
   }
 
   window.llUpgradePositionDie=function(position){
@@ -140,6 +189,7 @@
     return true;
   };
 
+  window.llTryShowQueuedDieCinematic=llTryShowQueuedDieCinematic;
   window.llShowDieUpgradeAnimation=llShowDieUpgradeAnimation;
   window.llShowStarAscensionAnimation=llShowStarAscensionAnimation;
   window.llCloseDieUpgradeAnimation=llCloseDieUpgradeAnimation;
