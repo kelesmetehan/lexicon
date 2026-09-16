@@ -2,7 +2,8 @@
 (function(){
   'use strict';
 
-  const VERSION=2;
+  const VERSION=3;
+  const DEMO_VERSION=2;
   const QUIZ_SIZE=20;
   const BONUS_AP=30;
   const BONUS_LP=50;
@@ -51,6 +52,7 @@
     if(!sys.plans||typeof sys.plans!=='object')sys.plans={};
     if(!Array.isArray(sys.events))sys.events=[];
     if(typeof sys.demoUsed!=='boolean')sys.demoUsed=false;
+    if(!Number.isFinite(Number(sys.demoVersion)))sys.demoVersion=sys.demoUsed?1:0;
     if(sys.lastCrisisSeason!=null)sys.lastCrisisSeason=Math.max(1,Math.floor(num(sys.lastCrisisSeason)));
     return sys;
   }
@@ -64,7 +66,7 @@
   }
   function demoAvailable(state=stateNow()){
     const sys=ensureSystem(state);
-    return !!state&&!!sys&&!sys.demoUsed&&!demoEvent&&!latestUnfinishedEvent(state)&&occupiedSlots(state).length>0;
+    return !!state&&!!sys&&num(sys.demoVersion,0)<DEMO_VERSION&&!demoEvent&&!latestUnfinishedEvent(state)&&occupiedSlots(state).length>0;
   }
   function makeDemoQueue(){
     const words=typeof globalThis.loadUserWords==='function'?loadUserWords():[];
@@ -75,7 +77,7 @@
   function createDemoEvent(state=stateNow()){
     if(!state||!demoAvailable(state))return null;
     const slots=occupiedSlots(state);if(!slots.length)return null;
-    const risk=slots[Math.floor(Math.random()*slots.length)];
+    const only=slots.length===1?slots[0]:null;
     demoEvent={
       id:`financial-crisis-demo-${Date.now()}`,
       demo:true,
@@ -84,18 +86,24 @@
       status:'pending',
       createdAt:new Date().toISOString(),
       team:state.playerTeam,
-      riskPosition:risk.position,
-      riskCardId:risk.cardId,
+      riskPosition:only?.position||null,
+      riskCardId:only?.cardId||null,
       visibleCards:slots.map(x=>({...x})),
       quiz:null,
       result:null
     };
     return demoEvent;
   }
+  function selectDemoRisk(position,state=stateNow()){
+    const event=demoEvent;if(!state||!event||!event.demo||event.status!=='pending')return false;
+    const slot=(event.visibleCards||occupiedSlots(state)).find(x=>x.position===position&&currentTeam(state)?.cards?.[x.position]===x.cardId);
+    if(!slot)return false;
+    event.riskPosition=slot.position;event.riskCardId=slot.cardId;return true;
+  }
   function markDemoUsed(state=stateNow()){
     if(!state)return;
-    const sys=ensureSystem(state);if(!sys||sys.demoUsed)return;
-    sys.demoUsed=true;save();
+    const sys=ensureSystem(state);if(!sys)return;
+    sys.demoUsed=true;sys.demoVersion=DEMO_VERSION;save();
   }
   function occupiedSlots(state=stateNow()){
     if(!state)return [];
@@ -158,6 +166,8 @@
   }
   function simpleCardHtml(slot,event,state){
     const team=currentTeam(state),isRisk=slot.position===event.riskPosition&&slot.cardId===event.riskCardId;
+    const selectable=!!event.demo&&event.status==='pending';
+    const selectAttr=selectable?` role="button" tabindex="0" onclick="llFinancialCrisisSelectDemoCard('${encodeURIComponent(slot.position)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();llFinancialCrisisSelectDemoCard('${encodeURIComponent(slot.position)}')}"`:'';
     let inner='';
     try{
       if(typeof globalThis.llCardHtml==='function')inner=llCardHtml(slot.cardId,state.playerTeam,'Kart yok');
@@ -166,7 +176,8 @@
       let card=null;try{card=globalThis.llCard?.(slot.cardId);}catch{}
       inner=`<div class="ll-ability ${esc(card?.rarity||'')}"><b>${esc(card?.name||slot.cardId)}</b><br><span>${esc(card?.trigger||'')}</span><br><span>${esc(card?.effect||'')}</span><span class="ll-ability-performance">${esc(contractText(team,slot.position))}</span></div>`;
     }
-    return `<div class="ll-fc-slot ${isRisk?'risk':''}" style="--fc-delay:${event.visibleCards.indexOf(slot)*.12}s"><div class="ll-slot-head"><span class="ll-position">${posIcon(slot.position)} ${esc(slot.position)}</span>${isRisk?'<span class="ll-fc-risk-badge">SATIŞ RİSKİ</span>':''}</div>${inner}</div>`;
+    const badge=isRisk?`<span class="ll-fc-risk-badge">${event.demo?'SEÇİLDİ · ':''}SATIŞ RİSKİ</span>`:(selectable?'<span class="ll-fc-select-badge">SEÇ</span>':'');
+    return `<div class="ll-fc-slot ${isRisk?'risk':''} ${selectable?'selectable':''}" style="--fc-delay:${event.visibleCards.indexOf(slot)*.12}s"${selectAttr}><div class="ll-slot-head"><span class="ll-position">${posIcon(slot.position)} ${esc(slot.position)}</span>${badge}</div>${inner}</div>`;
   }
 
   function injectStyles(){
@@ -176,7 +187,7 @@
       .ll-fc-dialog{position:relative;width:min(980px,100%);padding:24px;border:1px solid rgba(248,113,113,.52);border-radius:22px;background:radial-gradient(circle at 50% 0,rgba(239,68,68,.15),transparent 38%),linear-gradient(155deg,rgba(10,15,24,.97),rgba(21,14,18,.98));box-shadow:0 30px 100px rgba(0,0,0,.72),0 0 55px rgba(239,68,68,.14);overflow:hidden}
       .ll-fc-dialog:before{content:'';position:absolute;inset:-45%;pointer-events:none;background:repeating-conic-gradient(from 12deg,rgba(248,113,113,.045) 0 1deg,transparent 1deg 16deg);animation:llFcRotate 26s linear infinite}
       .ll-fc-content{position:relative;z-index:1}.ll-fc-kicker{color:#fca5a5;font-size:10px;font-weight:950;letter-spacing:2.2px;text-transform:uppercase}.ll-fc-title{margin:5px 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(38px,8vw,64px);font-weight:700;line-height:.95;color:#fff1f2;text-shadow:0 0 24px rgba(239,68,68,.25)}
-      .ll-fc-copy{max-width:720px;color:#cbd5e1;font-size:13px;line-height:1.6}.ll-fc-copy strong{color:#fecaca}.ll-fc-demo-note{margin-top:10px;padding:9px 11px;border:1px solid rgba(56,189,248,.28);border-radius:11px;background:rgba(8,47,73,.34);color:#bae6fd;font-size:11px;font-weight:800}.ll-fc-demo-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,.12)}.ll-fc-demo-row .ll-muted{font-size:10px}.ll-fc-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}.ll-fc-slot{position:relative;padding:12px;border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(15,23,42,.72);opacity:0;transform:translateY(18px) scale(.97);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards}.ll-fc-slot.risk{border-color:rgba(248,113,113,.8);box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 30px rgba(239,68,68,.15);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards,llFcRisk 1.8s ease-in-out calc(var(--fc-delay) + .6s) infinite}.ll-fc-risk-badge{padding:4px 7px;border-radius:999px;background:rgba(127,29,29,.72);border:1px solid rgba(248,113,113,.58);color:#fecaca;font-size:8px;font-weight:950;letter-spacing:.8px}.ll-fc-slot .ll-ability{width:100%;text-align:left}.ll-fc-actions{display:flex;gap:10px;align-items:stretch;margin-top:18px}.ll-fc-actions .ll-btn{flex:1}.ll-fc-primary{background:linear-gradient(135deg,#dc2626,#f97316)!important;border-color:rgba(254,202,202,.5)!important;color:white!important}.ll-fc-skip{width:100%;margin-top:9px!important;border-color:rgba(248,113,113,.34)!important;color:#fecaca!important;background:rgba(69,10,10,.34)!important}.ll-fc-warning{margin-top:9px;color:#fca5a5;font-size:10px;text-align:center}
+      .ll-fc-copy{max-width:720px;color:#cbd5e1;font-size:13px;line-height:1.6}.ll-fc-copy strong{color:#fecaca}.ll-fc-demo-note{margin-top:10px;padding:9px 11px;border:1px solid rgba(56,189,248,.28);border-radius:11px;background:rgba(8,47,73,.34);color:#bae6fd;font-size:11px;font-weight:800}.ll-fc-demo-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,.12)}.ll-fc-demo-row .ll-muted{font-size:10px}.ll-fc-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}.ll-fc-slot{position:relative;padding:12px;border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(15,23,42,.72);opacity:0;transform:translateY(18px) scale(.97);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards}.ll-fc-slot.risk{border-color:rgba(248,113,113,.8);box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 30px rgba(239,68,68,.15);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards,llFcRisk 1.8s ease-in-out calc(var(--fc-delay) + .6s) infinite}.ll-fc-slot.selectable{cursor:pointer;transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}.ll-fc-slot.selectable:hover{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 2px rgba(56,189,248,.08)}.ll-fc-slot.selectable:focus{outline:2px solid rgba(56,189,248,.72);outline-offset:2px}.ll-fc-risk-badge,.ll-fc-select-badge{padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.8px}.ll-fc-risk-badge{background:rgba(127,29,29,.72);border:1px solid rgba(248,113,113,.58);color:#fecaca}.ll-fc-select-badge{background:rgba(8,47,73,.7);border:1px solid rgba(56,189,248,.45);color:#bae6fd}.ll-fc-slot .ll-ability{width:100%;text-align:left}.ll-fc-actions{display:flex;gap:10px;align-items:stretch;margin-top:18px}.ll-fc-actions .ll-btn{flex:1}.ll-fc-primary{background:linear-gradient(135deg,#dc2626,#f97316)!important;border-color:rgba(254,202,202,.5)!important;color:white!important}.ll-fc-skip{width:100%;margin-top:9px!important;border-color:rgba(248,113,113,.34)!important;color:#fecaca!important;background:rgba(69,10,10,.34)!important}.ll-fc-warning{margin-top:9px;color:#fca5a5;font-size:10px;text-align:center}
       .ll-fc-quiz{background:radial-gradient(circle at 50% 0,rgba(220,38,38,.13),transparent 40%),linear-gradient(180deg,#090d13,#10141b)}.ll-fc-quiz .ll-question{border-color:rgba(248,113,113,.5);box-shadow:inset 0 0 40px rgba(127,29,29,.12)}.ll-fc-quiz .ll-btn.primary{background:linear-gradient(135deg,#dc2626,#f97316)!important}.ll-fc-result{max-width:720px;margin:0 auto;text-align:center}.ll-fc-result-icon{font-size:64px;margin:5px 0 10px}.ll-fc-result-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(34px,7vw,53px);font-weight:700}.ll-fc-result.danger .ll-fc-result-title{color:#fca5a5}.ll-fc-result.warning .ll-fc-result-title{color:#fde68a}.ll-fc-result.safe .ll-fc-result-title{color:#99f6e4}.ll-fc-result.bonus .ll-fc-result-title{color:#fde68a}.ll-fc-result-detail{margin:12px auto 0;padding:14px;border:1px solid rgba(255,255,255,.10);border-radius:13px;background:rgba(15,23,42,.66);color:#cbd5e1;line-height:1.6}
       @keyframes llFcFade{from{opacity:0}to{opacity:1}}@keyframes llFcRotate{to{transform:rotate(360deg)}}@keyframes llFcCardIn{to{opacity:1;transform:none}}@keyframes llFcRisk{0%,100%{box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 23px rgba(239,68,68,.12)}50%{box-shadow:0 0 0 2px rgba(248,113,113,.28),0 0 42px rgba(239,68,68,.30)}}
       @media(max-width:760px){#${OVERLAY_ID}{align-items:start;padding:12px}.ll-fc-dialog{padding:18px 13px;margin-top:3vh}.ll-fc-cards{grid-template-columns:1fr}.ll-fc-actions{flex-direction:column}.ll-fc-title{font-size:44px}}@media(prefers-reduced-motion:reduce){.ll-fc-dialog:before,.ll-fc-slot,.ll-fc-slot.risk{animation:none;opacity:1;transform:none}}
@@ -195,23 +206,28 @@
     if(document.getElementById(OVERLAY_ID))return true;
     if(otherCinematicOpen()){setTimeout(()=>{const latest=activeEvent();if(latest?.status==='pending'&&isDashboardVisible())renderCrisisOverlay(latest);},260);return false;}
     if(!isDashboardVisible())return false;
-    if(!riskCardStillPresent(event,state)){
+    const hasRisk=!!event.riskPosition&&!!event.riskCardId;
+    if(hasRisk&&!riskCardStillPresent(event,state)){
       const slots=occupiedSlots(state);
       if(!slots.length){
         event.status='done';event.cancelledReason='no-cards';
         if(event.demo)demoEvent=null;else save();
         return false;
       }
-      const risk=slots[Math.floor(Math.random()*slots.length)];event.riskPosition=risk.position;event.riskCardId=risk.cardId;event.visibleCards=slots.map(x=>({...x}));
-      if(!event.demo)save();
+      if(event.demo){event.riskPosition=null;event.riskCardId=null;event.visibleCards=slots.map(x=>({...x}));}
+      else{const risk=slots[Math.floor(Math.random()*slots.length)];event.riskPosition=risk.position;event.riskCardId=risk.cardId;event.visibleCards=slots.map(x=>({...x}));save();}
+    }else if(!hasRisk&&!event.demo){
+      const slots=occupiedSlots(state);if(!slots.length)return false;
+      const risk=slots[Math.floor(Math.random()*slots.length)];event.riskPosition=risk.position;event.riskCardId=risk.cardId;event.visibleCards=slots.map(x=>({...x}));save();
     }
     setSequenceActive(true);injectStyles();document.body?.classList.add('ll-cinematic-open');
-    const demo=!!event.demo;
+    const demo=!!event.demo,selected=!!event.riskPosition&&!!event.riskCardId;
     const kicker=demo?`🧪 GÜVENLİ DEMO · SEZON ${event.season}`:`YÖNETİM BİLDİRİMİ · SEZON ${event.season}`;
-    const demoNote=demo?`<div class="ll-fc-demo-note">Bu bir testtir. Kartların, maç hakların, AP/LP değerlerin ve gerçek Mali Kriz takvimin değişmeyecek.</div>`:'';
+    const demoNote=demo?`<div class="ll-fc-demo-note">Bu bir testtir. Kartların, maç hakların, AP/LP değerlerin ve gerçek Mali Kriz takvimin değişmeyecek.${selected?' Seçtiğin kart için senaryo çalıştırılacak.':' <b>Önce test etmek istediğin karta tıkla.</b>'}</div>`:'';
     const skipLabel=demo?'Geç · Kart Kaybını Simüle Et':'Geç · Riskteki Kartı Kaybet';
-    const warning=demo?`Gerçek krizde Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`:`Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`;
-    const overlay=document.createElement('div');overlay.id=OVERLAY_ID;overlay.innerHTML=`<section class="ll-fc-dialog" role="dialog" aria-modal="true" aria-label="Mali kriz"><div class="ll-fc-content"><div class="ll-fc-kicker">${kicker}</div><div class="ll-fc-title">🚨 MALİ KRİZ</div><div class="ll-fc-copy">Kulüp yönetimi acil mali önlem kararı aldı. Kadrodaki kartlardan biri satış riski altında. <strong>Bir kart satılacak. Krizi aşmaya çalış.</strong><br>20 soruluk sınavda <b>15 veya daha fazla</b> doğru kartı kayıpsız korur.</div>${demoNote}<div class="ll-fc-cards">${(event.visibleCards||occupiedSlots(state)).map(slot=>simpleCardHtml(slot,event,state)).join('')}</div><div class="ll-fc-actions"><button class="ll-btn ll-fc-primary" type="button" onclick="llFinancialCrisisStartQuiz()">Krizi Çöz · 20 Soru</button></div><button class="ll-btn ll-fc-skip" type="button" onclick="llFinancialCrisisSkip()">${skipLabel}</button><div class="ll-fc-warning">${warning}</div></div></section>`;
+    const warning=demo&&!selected?'Önce kartlardan birini seç.':demo?`Gerçek krizde Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`:`Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`;
+    const disabled=demo&&!selected?' disabled style="opacity:.42;pointer-events:none"':'';
+    const overlay=document.createElement('div');overlay.id=OVERLAY_ID;overlay.innerHTML=`<section class="ll-fc-dialog" role="dialog" aria-modal="true" aria-label="Mali kriz"><div class="ll-fc-content"><div class="ll-fc-kicker">${kicker}</div><div class="ll-fc-title">🚨 MALİ KRİZ</div><div class="ll-fc-copy">Kulüp yönetimi acil mali önlem kararı aldı. Kadrodaki kartlardan biri satış riski altında. <strong>Bir kart satılacak. Krizi aşmaya çalış.</strong><br>20 soruluk sınavda <b>15 veya daha fazla</b> doğru kartı kayıpsız korur.</div>${demoNote}<div class="ll-fc-cards">${(event.visibleCards||occupiedSlots(state)).map(slot=>simpleCardHtml(slot,event,state)).join('')}</div><div class="ll-fc-actions"><button class="ll-btn ll-fc-primary" type="button" onclick="llFinancialCrisisStartQuiz()"${disabled}>Krizi Çöz · 20 Soru</button></div><button class="ll-btn ll-fc-skip" type="button" onclick="llFinancialCrisisSkip()"${disabled}>${skipLabel}</button><div class="ll-fc-warning">${warning}</div></div></section>`;
     document.body.appendChild(overlay);return true;
   }
 
@@ -241,6 +257,7 @@
   }
   function startQuiz(){
     const state=stateNow(),event=activeEvent(state);if(!state||!event||event.status!=='pending')return;
+    if(event.demo&&(!event.riskPosition||!event.riskCardId)){alert('Önce test etmek istediğin kartı seç.');return;}
     if(!event.quiz){
       const queue=event.demo?makeDemoQueue():(typeof globalThis.llPickQuizWords==='function'?llPickQuizWords(QUIZ_SIZE):[]);
       if(!Array.isArray(queue)||queue.length<QUIZ_SIZE){alert(`Mali Kriz sınavı için ${QUIZ_SIZE} kullanılabilir kelime gerekiyor. Mevcut: ${queue?.length||0}. Kartın henüz etkilenmedi.`);return;}
@@ -301,6 +318,7 @@
   }
   function skip(){
     const event=activeEvent();if(!event||event.status!=='pending')return;
+    if(event.demo&&(!event.riskPosition||!event.riskCardId)){alert('Önce test etmek istediğin kartı seç.');return;}
     applyOutcome(event,'sold',null,'skip');removeOverlay();renderResult(event);
   }
   function renderResult(event){
@@ -337,6 +355,11 @@
     row.innerHTML=`<button class="ll-btn" type="button" onclick="llFinancialCrisisStartDemo()">🧪 Mali Krizi Test Et</button><span class="ll-muted">Tek seferlik güvenli demo · gerçek kariyer değerlerini değiştirmez.</span>`;
     squad.parentElement.appendChild(row);return true;
   }
+  function selectDemoCard(encodedPosition){
+    let position='';try{position=decodeURIComponent(String(encodedPosition||''));}catch{position=String(encodedPosition||'');}
+    if(!selectDemoRisk(position))return;
+    removeOverlay();renderCrisisOverlay(demoEvent);
+  }
   function startDemo(){
     const state=stateNow();if(!state)return;
     if(latestUnfinishedEvent(state)){alert('Önce aktif Mali Kriz olayını tamamla.');return;}
@@ -366,11 +389,12 @@
   }
 
   globalThis.llFinancialCrisisStartDemo=startDemo;
+  globalThis.llFinancialCrisisSelectDemoCard=selectDemoCard;
   globalThis.llFinancialCrisisStartQuiz=startQuiz;
   globalThis.llFinancialCrisisSkip=skip;
   globalThis.llFinancialCrisisReveal=function(){const event=activeEvent(),quiz=event?.quiz;if(!event||event.status!=='quiz'||!quiz||quiz.completed)return;quiz.revealed=true;if(!event.demo)save();renderQuiz(event);};
   globalThis.llFinancialCrisisRate=rate;
   globalThis.llFinancialCrisisContinue=continueAfterResult;
-  globalThis.llFinancialCrisisTestApi={VERSION,QUIZ_SIZE,BONUS_AP,BONUS_LP,chanceForGap,outcomeForScore,triggerWeeks,ensureSystem,buildSeasonPlan,maybeScheduleAfterLeagueMatch,applyOutcome,demoAvailable,createDemoEvent,makeDemoQueue};
+  globalThis.llFinancialCrisisTestApi={VERSION,DEMO_VERSION,QUIZ_SIZE,BONUS_AP,BONUS_LP,chanceForGap,outcomeForScore,triggerWeeks,ensureSystem,buildSeasonPlan,maybeScheduleAfterLeagueMatch,applyOutcome,demoAvailable,createDemoEvent,selectDemoRisk,makeDemoQueue};
   install();
 })();
