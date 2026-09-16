@@ -1844,7 +1844,21 @@ const NATIVE_USER_DATA = [
   {en:"The future lies in X", tr:"gelecek X'te yatıyor", example:"Many investors believe the future lies in independent game studios.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"It takes more than X to Y", tr:"Y yapmak için yalnızca X yeterli değildir", example:"It takes more than a good idea to build a successful company.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"X can grow into Y", tr:"X zamanla Y'ye dönüşebilir", example:"A promising project can grow into a global business.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"provide a chance to + V", tr:"... yapma fırsatı sağlamak", example:"Industry events provide a chance to meet experienced publishers.", pos:"verb phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"provide a chance to + V", tr:"... yapma fırsatı sağlamak", example:"Industry events provide a chance to meet experienced publishers.", pos:"verb phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+
+  // Kelime listesi — fixed phrases ve word-family girdileri
+  {en:"human guinea pig", tr:"denek / yeni bir şeyi ilk deneyen kişi", example:"I was the human guinea pig for the team's new testing process.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"vice versa", tr:"tam tersi de geçerli / bunun tersi de", example:"Good communication builds trust, and vice versa.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"thread the needle", tr:"çok dikkat ve beceri gerektiren zor bir işi başarmak", example:"The team had to thread the needle between releasing quickly and keeping the product stable.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"the whole picture", tr:"olayın bütünü / tüm gerçekler / genel tablo", example:"One test result does not show the whole picture.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"campaigner", tr:"bir konuda değişim yaratmak için çalışan kişi / kampanyacı", example:"She is a campaigner for safer streets.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"campaign", tr:"kampanya / kampanya yürütmek", example:"The group started a campaign to reduce plastic waste.", pos:"v/n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"cruelty", tr:"acımasızlık / zalimlik", example:"The charity works to prevent cruelty to animals.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"cruelly", tr:"acımasızca / zalimce", example:"He was treated cruelly by the people around him.", pos:"adv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"effective", tr:"etkili / istenen sonucu veren", example:"This method is effective at finding common bugs.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"effectiveness", tr:"etkililik / etkinlik", example:"We measured the effectiveness of the new training program.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"ineffective", tr:"etkisiz / işe yaramayan", example:"The first solution was ineffective, so we tried another approach.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"speaking of which", tr:"bundan söz etmişken / hazır konusu açılmışken", example:"We need to update the test plan. Speaking of which, did you review the latest version?", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -2488,7 +2502,21 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Birçok yatırımcı geleceğin bağımsız oyun stüdyolarında yattığına inanıyor.",
   "Başarılı bir şirket kurmak için yalnızca iyi bir fikir yeterli değildir.",
   "Gelecek vadeden bir proje zamanla küresel bir işletmeye dönüşebilir.",
-  "Sektör etkinlikleri deneyimli yayıncılarla tanışma fırsatı sağlar."
+  "Sektör etkinlikleri deneyimli yayıncılarla tanışma fırsatı sağlar.",
+  // Kelime listesi — fixed phrases ve word-family girdileri
+  "Takımın yeni test sürecini ilk deneyen kişi bendim.",
+  "İyi iletişim güven oluşturur; bunun tersi de geçerlidir.",
+  "Ekip, hızlı yayın yapmak ile ürünü kararlı tutmak arasında çok dikkatli bir denge kurmak zorundaydı.",
+  "Tek bir test sonucu olayın bütününü göstermez.",
+  "O, daha güvenli sokaklar için çalışan bir kampanyacıdır.",
+  "Grup plastik atığı azaltmak için bir kampanya başlattı.",
+  "Hayır kurumu hayvanlara karşı acımasızlığı önlemek için çalışıyor.",
+  "Çevresindeki insanlar ona acımasızca davrandı.",
+  "Bu yöntem yaygın hataları bulmada etkilidir.",
+  "Yeni eğitim programının etkililiğini ölçtük.",
+  "İlk çözüm etkisizdi, bu yüzden başka bir yaklaşım denedik.",
+  "Test planını güncellememiz gerekiyor. Bundan söz etmişken, en son sürümü inceledin mi?"
+
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "ingredient":"n","struggling":"adj","strict":"adj",
