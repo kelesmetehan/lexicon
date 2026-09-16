@@ -503,10 +503,6 @@ function llRenderDashboard(){
   const compLabel=comp==='league'?llLeagueLabel(key):comp==='cup'?llDomesticCupLabelForFixture(f,s):comp==='playoff'?`${llLeagueLabel('first')} Play-Off`:comp==='ucl'?'Şampiyonlar Ligi':comp==='uel'?'Avrupa Ligi':comp==='uecl'?'Konferans Ligi':(f.superCupName||'Süper Kupa'),importance=llV2MatchImportance(f,key);const isEuropeFixture=['ucl','uel','uecl'].includes(comp),euroRows=isEuropeFixture?llV2SortEuropeTable(comp):[],displayedRank=isEuropeFixture?euroRows.findIndex(row=>row.team===s.playerTeam)+1:llSortTable(key).findIndex(row=>row.team===s.playerTeam)+1,sidebarStandings=isEuropeFixture?`<div class="ll-card"><div class="ll-card-title">${llV2EuroLabel(comp)} · Puan Durumu</div>${llV2EuropeTableHtml(comp)}</div>`:llTableHtml(key);
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">${llTeamLogo(def,'brand')}</div><div><div class="ll-title">${llEscape(s.playerTeam)}</div><div class="ll-muted">Sezon ${s.season} · ${llLeagueLabel(key)} · ${s.week}. hafta</div></div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings('${key}')">Lig Tablosu</button><button class="ll-btn" onclick="llRenderStandings('${key==='super'?'first':'super'}')">Diğer Lig</button><button class="ll-btn" onclick="llRenderCompetitionCenter('europe','${s.europe?.type||'ucl'}')">Avrupa Kupaları</button><button class="ll-btn" onclick="llRenderSeasonArchive()">Sezon Arşivi</button><button class="ll-btn" onclick="llRenderCardArchive()">Kart Arşivi</button>${llIsTransferWindow(s.week)?'<button class="ll-btn gold" onclick="llRenderShop()">Transfer Merkezi</button>':''}<button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div><div class="ll-metrics"><div class="ll-metric"><strong>${s.ap}</strong><span>AP</span></div><div class="ll-metric"><strong>${s.lp}</strong><span>LP</span></div><div class="ll-metric"><strong>${llStars(team.stars)}</strong><span>Yıldız</span></div><div class="ll-metric"><strong>${displayedRank||'—'}${displayedRank?'.':''}</strong><span>${isEuropeFixture?'Avrupa Sırası':'Sıra'}</span></div></div><div class="ll-grid"><div><div class="ll-card ${importance?'ll-big-match':''}">${importance?`<div class="ll-match-importance">${importance}</div>`:''}<div class="ll-card-title">${compLabel} · ${f.roundLabel||''}</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b></div><div class="ll-vs">VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(oppName)}</b></div></div><button class="ll-btn primary" style="width:100%;margin-top:13px" onclick="llStartMatchPreparation()">10 Kelimelik Maça Başla</button></div><div class="ll-card" style="margin-top:12px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>${llRealCardSynergyHtml(s.playerTeam)}<button class="ll-btn" style="width:100%;margin-top:12px" ${team.stars>=6?'disabled':''} onclick="llUpgradeStars()">${team.stars>=6?'Maksimum 6 yıldız':`Yıldızı Yükselt · ${llV2UpgradeCost(team.stars)} LP`}</button></div><div style="margin-top:12px">${llV2SeasonGoalsHtml(false)}</div>${llV2RewardTable()}</div><div>${sidebarStandings}</div></div></div></div>`;
   const transferBanner=llTransferWindowBanner(s.week);if(transferBanner)llArea().innerHTML=llArea().innerHTML.replace('<div class="ll-grid">',`${transferBanner}<div class="ll-grid">`);
-  // Yetenek Avı is scheduled for weeks 10 and 24. Call the module hook from
-  // the core dashboard as a fallback, so later/alternate dashboard render paths
-  // cannot accidentally omit the offer banner. The module itself prevents duplicates.
-  try{globalThis.llTalentDecorateDashboard?.();}catch(error){try{globalThis.llQuizDiagnostic?.('talent_hunt_core_dashboard_error',{message:String(error?.message||error),week:Number(s.week)||0,season:Number(s.season)||0});}catch{}}
 }
 
 function llFinishLeagueQuiz(){const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;const comp=q.fixture?.competition||llPlayerFixture()?.competition||'league',reward=LL_COMP_REWARDS[comp]||LL_COMP_REWARDS.league,baseAp=q.correct*reward.ap,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;const completed=!q.skipped&&q.index>=q.queue.length;let bonus='none';if(completed&&q.correct===10){bonus='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct===9)bonus='reroll';q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=bonus;q.totalAnswered=Number.isFinite(q.totalAnswered)?q.totalAnswered:q.index;llSave();llRenderQuizReward();}
@@ -568,6 +564,37 @@ function llV2InitCup(state){
   const domestic=llShuffle([...state.leagues.super,...state.leagues.first]),preliminary=domestic.slice(0,12),byes=domestic.slice(12),field=[...preliminary,...byes.flatMap(team=>[team,null])];
   state.cup={round:0,field,alive:true,winner:null,pending:null,formatVersion:2,history:{0:[...field]}};
 }
+function llV2CupRecordedWinner(result){
+  if(!result)return null;
+  if(result.knockoutWinner)return result.knockoutWinner;
+  if(result.penaltyShootout?.winner)return result.penaltyShootout.winner;
+  const hg=Number(result.homeGoals),ag=Number(result.awayGoals);
+  if(Number.isFinite(hg)&&Number.isFinite(ag)&&hg!==ag)return hg>ag?result.home:result.away;
+  return null;
+}
+function llV2LegacyCupAdvancers(state,round,currentField=[]){
+  const c=state?.cup,previous=c?.history?.[round];
+  if(!Array.isArray(previous)||!previous.length)return null;
+  const current=new Set((currentField||[]).filter(Boolean)),results=(state.results||[]).filter(r=>r.competition==='cup'&&llV2CupResultRound(r)===round),advancers=[];
+  for(let i=0;i<previous.length;i+=2){
+    const a=previous[i]||null,b=previous[i+1]||null;
+    if(!a&&!b)continue;
+    if(!a||!b){advancers.push(a||b);continue;}
+    const result=[...results].reverse().find(r=>(r.home===a&&r.away===b)||(r.home===b&&r.away===a));
+    let winner=llV2CupRecordedWinner(result);
+    /* Very old AI cup results could finish level without persisting the random
+       tie-break winner. If exactly one side is already present in the saved
+       next-round field, that saved entrant is the only historically supported
+       winner; never invent a different club. */
+    if(!winner){
+      const aPresent=current.has(a),bPresent=current.has(b);
+      if(aPresent!==bPresent)winner=aPresent?a:b;
+    }
+    if(!winner)return null;
+    advancers.push(winner);
+  }
+  return advancers;
+}
 function llV2RepairCupProgress(state){
   const c=state?.cup;if(!c||c.pending||c.winner||!c.alive||!Array.isArray(c.field))return;
   if(c.round===0){
@@ -578,10 +605,22 @@ function llV2RepairCupProgress(state){
   const openingPlayed=played.some(r=>Number(r.week)<=LL_CUP_WEEKS[0]),maxProcessed=Math.min(LL_CUP_ROUNDS.length,played.length+(openingPlayed?0:1));
   const expectedCurrent=64>>Math.min(c.round,5),skippedPlayerRound=c.round>maxProcessed,malformedSize=c.field.length!==expectedCurrent;
   if(!skippedPlayerRound&&!malformedSize){c.history=c.history||{};if(!c.history[c.round])c.history[c.round]=[...c.field];c.formatVersion=2;return;}
-  const targetRound=skippedPlayerRound?maxProcessed:c.round,expectedSize=64>>Math.min(targetRound,5),domestic=[...state.leagues.super,...state.leagues.first];
-  const candidates=[...new Set([...c.field.filter(Boolean),...llShuffle(domestic)])].filter(n=>n!==player),field=[player,...candidates.slice(0,Math.max(0,expectedSize-1))];
-  c.round=targetRound;c.field=llShuffle(field);c.pending=null;c.formatVersion=2;c.history=c.history||{};c.history[targetRound]=[...c.field];
-  if(state.pendingFixture?.competition==='cup')state.pendingFixture=null;
+  const targetRound=skippedPlayerRound?maxProcessed:c.round,expectedSize=64>>Math.min(targetRound,5);
+  c.history=c.history||{};
+  let verified=null;
+  if(targetRound>0)verified=llV2LegacyCupAdvancers(state,targetRound-1,c.field);
+  /* Old repair code filled a damaged round with random domestic clubs. That
+     could create the same class of bug as the old European knockout logic:
+     a team could appear in a later round without winning the previous one.
+     Repair only from recorded/derivable previous-round winners. If history is
+     insufficient, preserve the current bracket rather than fabricating clubs. */
+  if(Array.isArray(verified)&&verified.length===expectedSize){
+    c.round=targetRound;c.field=[...verified];c.pending=null;c.formatVersion=2;c.history[targetRound]=[...verified];
+    if(state.pendingFixture?.competition==='cup')state.pendingFixture=null;
+    return;
+  }
+  if(!c.history[c.round])c.history[c.round]=[...c.field];
+  c.formatVersion=2;
 }
 function llV2EnsureSpecial(){const s=lexLeague.state;if(s.pendingFixture||s.seasonEnded)return;if(s.playoff){llV2EnsurePlayoff();return;}llV2EnsureCup();if(s.pendingFixture)return;llV2EnsureEurope();}
 function llV2EnsureCup(){const s=lexLeague.state;llV2RepairCupProgress(s);const c=s.cup;if(!c||c.round>=LL_CUP_WEEKS.length||s.week<LL_CUP_WEEKS[c.round]||c.pending)return;c.history=c.history||{};c.history[c.round]=[...c.field];const next=[];let playerPair=null;for(let i=0;i<c.field.length;i+=2){const a=c.field[i],b=c.field[i+1];if(!a&&!b)continue;if(!a||!b){next.push(a||b);continue;}if(a===s.playerTeam||b===s.playerTeam){playerPair=[a,b];continue;}next.push(llV2SimFixture({home:a,away:b},'cup'));}if(playerPair){c.pending={next,pair:playerPair};s.pendingFixture={home:playerPair[0],away:playerPair[1],competition:'cup',roundLabel:LL_CUP_ROUNDS[c.round]};}else{c.field=next;c.round++;if(c.field.length===1){c.winner=c.field[0];c.alive=false;}}}
