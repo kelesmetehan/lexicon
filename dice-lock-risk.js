@@ -33,6 +33,30 @@
   }
   function dieValue(correct) { return clamp(correct, 1, 6); }
 
+  function competitionLabel(fixture) {
+    const raw = String(fixture?.competitionLabel || fixture?.competition || '').trim();
+    if (raw) return raw;
+    const key = String(fixture?.competition || '').toLowerCase();
+    if (key === 'league') return 'Lig maçı';
+    if (key === 'cup') return 'Kupa maçı';
+    if (key === 'europe') return 'Avrupa maçı';
+    if (key === 'national') return 'Milli maç';
+    return 'Maç';
+  }
+  function fixtureMeta(state = stateNow(), fixture = fixtureNow()) {
+    const home = fixture?.home || state?.playerTeam || 'Ev Sahibi';
+    const away = fixture?.away || 'Rakip';
+    const round = fixture?.roundLabel ? String(fixture.roundLabel) : (state ? `${num(state.week, 1)}. Hafta` : '');
+    const metaParts = [round, competitionLabel(fixture)].filter(Boolean);
+    return {
+      home,
+      away,
+      versus: `${home} vs ${away}`,
+      meta: metaParts.join(' · '),
+      full: [`${home} vs ${away}`, ...metaParts].filter(Boolean).join(' · ')
+    };
+  }
+
   function buildSchedule() {
     const pool = [];
     for (let week = 2; week <= 33; week++) if (!EXCLUDED_WEEKS.has(week)) pool.push(week);
@@ -101,45 +125,150 @@
     const style = document.createElement('style');
     style.id = 'll-dice-lock-risk-styles';
     style.textContent = `
-      .ll-risk-banner{position:relative;overflow:hidden;margin-top:13px;padding:17px;border:1px solid rgba(245,158,11,.58);border-radius:15px;background:radial-gradient(circle at 88% 12%,rgba(245,158,11,.20),transparent 32%),linear-gradient(135deg,#21170b,#2d1b0b 56%,#111014);box-shadow:0 14px 34px rgba(100,55,5,.24),inset 0 0 26px rgba(251,191,36,.06);animation:llRiskIn .5s cubic-bezier(.18,.92,.28,1.1) both}.ll-risk-banner:before{content:'';position:absolute;inset:-80% -30%;background:linear-gradient(110deg,transparent 42%,rgba(255,238,178,.16) 50%,transparent 58%);transform:translateX(-80%);animation:llRiskSheen 3.6s linear infinite}.ll-risk-banner>*{position:relative;z-index:1}.ll-risk-kicker{font-size:9px;font-weight:950;letter-spacing:.12em;color:#fcd34d;text-transform:uppercase}.ll-risk-title{margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:31px;font-weight:800;color:#fff1c2}.ll-risk-slogan{margin-top:4px;font-size:16px;font-weight:950;color:#fff;text-transform:uppercase;letter-spacing:.025em}.ll-risk-copy{max-width:720px;margin-top:7px;color:#d6c3a1;font-size:12px;line-height:1.55}.ll-risk-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px}.ll-risk-pos{padding:11px 9px;border:1px solid rgba(251,191,36,.28);border-radius:12px;background:rgba(36,24,9,.7);color:#ffefbd;font-weight:900;cursor:pointer;transition:.18s ease}.ll-risk-pos:hover{transform:translateY(-2px);border-color:rgba(251,191,36,.7);box-shadow:0 8px 22px rgba(120,72,8,.18)}.ll-risk-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.ll-risk-actions .ll-btn{flex:1}.ll-risk-accept{background:linear-gradient(135deg,#b45309,#f59e0b)!important;color:#fff!important;border-color:rgba(254,243,199,.4)!important}.ll-risk-demo{margin-top:10px;padding:9px 11px;border:1px dashed rgba(56,189,248,.35);border-radius:11px;background:rgba(8,47,73,.25);color:#bae6fd;font-size:11px}.ll-risk-demo .ll-btn{margin-top:7px;width:100%}.ll-risk-die-stage{display:flex;align-items:center;justify-content:center;min-height:150px;margin:10px 0 15px}.ll-risk-die{--risk-scale:1;display:flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:19px;border:2px solid rgba(253,230,138,.82);background:linear-gradient(145deg,#fbbf24,#b45309);color:#1c1205;font-size:48px;font-weight:1000;box-shadow:0 18px 42px rgba(180,83,9,.28),inset 0 0 18px rgba(255,255,255,.2);transform:scale(var(--risk-scale));transition:transform .42s cubic-bezier(.18,.95,.25,1.2),filter .25s ease}.ll-risk-die.pulse{animation:llRiskDiePulse .58s cubic-bezier(.18,.95,.25,1.3)}.ll-risk-die-caption{margin-top:13px;text-align:center;color:#fcd34d;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.ll-risk-final{position:relative;max-width:720px;margin:0 auto;padding:33px 22px;text-align:center;border:1px solid rgba(245,158,11,.48);border-radius:20px;background:radial-gradient(circle at 50% 8%,rgba(245,158,11,.18),transparent 45%),linear-gradient(180deg,#23170b,#101014);box-shadow:0 25px 65px rgba(0,0,0,.48)}.ll-risk-final .ll-risk-die{margin:22px auto}.ll-risk-match-badge{margin-top:11px;padding:10px 12px;border:1px solid rgba(245,158,11,.36);border-radius:11px;background:rgba(69,39,5,.28);color:#fde68a;font-size:11px;line-height:1.45}.ll-risk-locked .ll-die{box-shadow:0 0 0 2px rgba(245,158,11,.35),0 15px 30px rgba(180,83,9,.18)!important}.ll-risk-locked .ll-die-info:after{content:'KİLİTLİ';display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(180,83,9,.24);color:#fcd34d;font-size:8px;font-weight:950;letter-spacing:.08em}.ll-risk-last-word{margin:0 auto 10px;max-width:500px;padding:8px 10px;border:1px solid rgba(245,158,11,.32);border-radius:10px;background:rgba(120,53,15,.18);color:#fde68a;font-size:11px;font-weight:800}
-      @keyframes llRiskIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}@keyframes llRiskSheen{to{transform:translateX(85%)}}@keyframes llRiskDiePulse{0%{transform:scale(var(--risk-scale)) rotate(0)}40%{transform:scale(calc(var(--risk-scale) + .22)) rotate(-5deg);filter:brightness(1.35)}72%{transform:scale(calc(var(--risk-scale) + .08)) rotate(3deg)}100%{transform:scale(var(--risk-scale)) rotate(0)}}
-      @media(max-width:650px){.ll-risk-pos-grid{grid-template-columns:1fr}.ll-risk-title{font-size:27px}.ll-risk-slogan{font-size:13px}}
+      .ll-risk-banner{--risk:#f59e0b;--risk2:#fbbf24;--risk3:#f97316;position:relative;isolation:isolate;overflow:hidden;margin:0 0 13px;padding:16px;border:1px solid rgba(251,191,36,.62);border-radius:15px;background:radial-gradient(circle at 85% 0,rgba(245,158,11,.25),transparent 38%),linear-gradient(135deg,#24140a,#35200d 52%,#181114);box-shadow:0 12px 32px rgba(120,60,10,.28),inset 0 0 26px rgba(251,191,36,.08);animation:llRiskBannerIn .55s cubic-bezier(.18,.92,.28,1.1) both}
+      .ll-risk-banner:before{content:'';position:absolute;inset:0;background:linear-gradient(108deg,transparent 22%,rgba(255,220,128,.14) 48%,transparent 72%);transform:translateX(-125%);animation:llRiskSheen 4s linear infinite}
+      .ll-risk-banner>*{position:relative;z-index:1}
+      .ll-risk-tag{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#ffe4b5}
+      .ll-risk-tag b{padding:4px 8px;border-radius:999px;color:#27170a;background:linear-gradient(135deg,#fbbf24,#f59e0b);font-size:9px}
+      .ll-risk-match-meta{opacity:.92}
+      .ll-risk-title{margin-top:6px;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:29px;line-height:1;color:#ffefcc;text-shadow:0 0 19px rgba(245,158,11,.28)}
+      .ll-risk-title span{display:inline-block;animation:llRiskTitlePop 1.8s ease-in-out infinite}
+      .ll-risk-slogan{margin-top:6px;font-size:15px;font-weight:950;color:#fff4de;text-transform:uppercase;letter-spacing:.04em}
+      .ll-risk-copy{max-width:700px;margin-top:8px;color:#e6c7a2;font-size:12px;line-height:1.55}
+      .ll-risk-copy strong{color:#fff6e5}
+      .ll-risk-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px}
+      .ll-risk-pos{padding:11px 9px;border:1px solid rgba(251,191,36,.28);border-radius:12px;background:linear-gradient(180deg,rgba(53,34,12,.88),rgba(27,18,11,.86));color:#ffefbd;font-weight:900;cursor:pointer;transition:.18s ease}
+      .ll-risk-pos:hover{transform:translateY(-2px);border-color:rgba(251,191,36,.7);box-shadow:0 8px 22px rgba(120,72,8,.18)}
+      .ll-risk-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+      .ll-risk-actions .ll-btn{flex:1;min-width:170px}
+      .ll-risk-accept{background:linear-gradient(135deg,#b45309,#f59e0b)!important;color:#fffaf0!important;border-color:rgba(254,243,199,.4)!important}
+      .ll-risk-demo{margin:0 0 13px;padding:16px;border:1px dashed rgba(56,189,248,.46);border-radius:15px;background:radial-gradient(circle at 85% 0,rgba(56,189,248,.16),transparent 38%),linear-gradient(135deg,#0b2334,#101827 60%,#15151b);box-shadow:0 12px 26px rgba(8,47,73,.24)}
+      .ll-risk-demo .ll-risk-title{font-size:26px;color:#e0f2fe;text-shadow:none}
+      .ll-risk-demo .ll-risk-copy,.ll-risk-demo .ll-risk-slogan,.ll-risk-demo .ll-risk-tag{color:#cceefe}
+      .ll-risk-demo .ll-risk-tag b{background:linear-gradient(135deg,#67e8f9,#38bdf8);color:#062c36}
+      .ll-risk-demo .ll-risk-accept{background:linear-gradient(135deg,#0891b2,#38bdf8)!important;border-color:rgba(186,230,253,.5)!important;color:#082f49!important}
+      .ll-risk-banner-embers,.ll-risk-quiz-embers,.ll-risk-lock-embers{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+      .ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i{position:absolute;left:var(--x);bottom:-18px;width:var(--size);height:calc(var(--size)*1.38);border-radius:50% 50% 50% 0;background:radial-gradient(circle at 30% 25%,#fff9d1 0 14%,#ffcd57 31%,#ff9d28 61%,rgba(255,91,27,0) 76%);box-shadow:0 0 11px rgba(255,164,39,.82);opacity:0;animation:llRiskEmber var(--duration) linear var(--delay) infinite}
+      .ll-risk-die-stage{display:flex;align-items:center;justify-content:center;min-height:150px;margin:8px 0 14px}
+      .ll-risk-die{--risk-scale:1;display:flex;align-items:center;justify-content:center;width:96px;height:96px;border-radius:21px;border:2px solid rgba(253,230,138,.86);background:linear-gradient(145deg,#fbbf24,#b45309);color:#1c1205;font-size:52px;font-weight:1000;box-shadow:0 18px 42px rgba(180,83,9,.28),inset 0 0 18px rgba(255,255,255,.2);transform:scale(var(--risk-scale));transition:transform .42s cubic-bezier(.18,.95,.25,1.2),filter .25s ease}
+      .ll-risk-die.pulse{animation:llRiskDiePulse .58s cubic-bezier(.18,.95,.25,1.3)}
+      .ll-risk-die-caption{margin-top:13px;text-align:center;color:#fcd34d;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+      .ll-risk-last-word{margin:0 auto 10px;max-width:500px;padding:8px 10px;border:1px solid rgba(245,158,11,.32);border-radius:10px;background:rgba(120,53,15,.18);color:#fde68a;font-size:11px;font-weight:800}
+      .ll-risk-quiz-theme{position:relative;isolation:isolate;overflow:hidden;border-radius:24px;background:radial-gradient(ellipse at 6% 92%,rgba(191,116,21,.22),transparent 37%),radial-gradient(ellipse at 92% 10%,rgba(255,160,38,.14),transparent 38%),#100d0f;box-shadow:0 0 0 1px rgba(255,176,54,.24),0 30px 74px rgba(0,0,0,.52),0 0 78px rgba(198,128,20,.14)}
+      .ll-risk-quiz-theme .ll-panel{position:relative;isolation:isolate;overflow:hidden;border:1px solid rgba(251,191,36,.82);border-radius:24px;background:radial-gradient(circle at 87% 8%,rgba(245,158,11,.22),transparent 31%),radial-gradient(circle at 8% 102%,rgba(180,105,20,.25),transparent 42%),linear-gradient(145deg,rgba(30,16,18,.96),rgba(66,39,18,.94) 54%,rgba(20,16,19,.97));box-shadow:inset 0 0 0 1px rgba(255,214,116,.08),0 0 28px rgba(238,153,25,.16),inset 0 0 55px rgba(255,180,55,.08)}
+      .ll-risk-quiz-theme .ll-panel:before{content:'';position:absolute;inset:-35%;z-index:0;background:repeating-conic-gradient(from 200deg at 54% 106%,rgba(255,180,54,.12) 0deg 1deg,transparent 1.8deg 13deg);opacity:.58;animation:llRiskQuizRays 18s linear infinite}
+      .ll-risk-quiz-theme .ll-panel:after{content:'';position:absolute;left:-12%;right:-12%;bottom:-16px;height:112px;z-index:0;background:radial-gradient(ellipse at 18% 96%,rgba(255,179,34,.26),transparent 38%),radial-gradient(ellipse at 52% 100%,rgba(255,208,65,.18),transparent 36%),radial-gradient(ellipse at 84% 94%,rgba(220,126,26,.22),transparent 42%);filter:blur(7px);animation:llRiskQuizGlow 2.8s ease-in-out infinite}
+      .ll-risk-quiz-theme .ll-panel>*{position:relative;z-index:1}
+      .ll-risk-quiz-theme .ll-topbar{border-bottom-color:rgba(255,205,83,.18)}
+      .ll-risk-quiz-theme .ll-title em{color:#fbbf24;text-shadow:0 0 16px rgba(245,158,11,.42)}
+      .ll-risk-quiz-theme .ll-stars{color:#fcd34d}
+      .ll-risk-quiz-theme .ll-progress{background:rgba(255,173,116,.14)}
+      .ll-risk-quiz-theme .ll-progress>div{background:linear-gradient(90deg,#b45309,#f59e0b,#fcd34d);box-shadow:0 0 14px rgba(245,158,11,.52)}
+      .ll-risk-quiz-theme .ll-question{border:2px solid transparent;border-left-color:rgba(245,158,11,.92);border-bottom-color:rgba(245,158,11,.86);border-top-color:rgba(251,191,36,.55);border-right-color:rgba(56,189,248,.42);background:radial-gradient(circle at 93% 4%,rgba(56,189,248,.08),transparent 25%),radial-gradient(circle at 10% 99%,rgba(244,146,26,.15),transparent 34%),repeating-linear-gradient(137deg,rgba(255,205,155,.035) 0 1px,transparent 1px 13px),linear-gradient(145deg,rgba(39,29,27,.96),rgba(16,22,24,.97));box-shadow:-8px 0 22px rgba(240,145,20,.12),8px 0 25px rgba(29,116,229,.08),inset 0 0 42px rgba(0,0,0,.40)}
+      .ll-risk-quiz-theme .ll-question-word,.ll-risk-quiz-theme .ll-answer{color:#fff1cf}
+      .ll-risk-quiz-theme .ll-position{color:#f7c766}
+      .ll-risk-quiz-theme .ll-btn.primary{background:linear-gradient(135deg,#b45309,#f59e0b)!important;border-color:rgba(255,225,184,.42)!important;color:#fff8ec!important}
+      .ll-risk-quiz-theme .ll-btn.danger{border-color:rgba(255,165,84,.25)!important;background:rgba(80,45,20,.45)!important}
+      .ll-risk-fixture-chip{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:8px 11px;border:1px solid rgba(251,191,36,.28);border-radius:999px;background:rgba(77,49,9,.28);font-size:11px;color:#fde68a}
+      .ll-risk-fixture-chip b{color:#fff4cf}
+      .ll-risk-final{position:relative;isolation:isolate;max-width:760px;min-height:460px;margin:0 auto;overflow:hidden;padding:38px 23px 30px;text-align:center;border:1px solid rgba(251,191,36,.55);border-radius:22px;background:radial-gradient(ellipse at 50% 20%,rgba(196,120,25,.28),transparent 54%),linear-gradient(180deg,#2a1808,#100e12 88%);box-shadow:0 24px 65px rgba(0,0,0,.55),0 0 45px rgba(189,114,22,.12)}
+      .ll-risk-final:before{content:'';position:absolute;inset:-30%;z-index:-1;background:repeating-conic-gradient(from 0deg at 50% 48%,rgba(255,181,61,.10) 0deg 1deg,transparent 1.6deg 13deg);opacity:.68;animation:llRiskRays 16s linear infinite}
+      .ll-risk-score{font-size:11px;letter-spacing:.14em;color:#e8c997;text-transform:uppercase}
+      .ll-risk-score b{font-size:17px;color:#ffdd9b}
+      .ll-risk-result-title{font-family:'Cormorant Garamond',serif;font-size:38px;line-height:1.03;font-weight:700;color:#ffefcc;text-shadow:0 0 22px rgba(245,158,11,.30);animation:llRiskRise .55s ease .28s both}
+      .ll-risk-quote{margin:9px auto 18px;max-width:530px;color:#e3bf92;font-size:13px;font-style:italic;animation:llRiskRise .55s ease .42s both}
+      .ll-risk-reward{display:inline-block;min-width:min(460px,100%);padding:13px 18px;border:1px solid rgba(251,191,36,.28);border-radius:13px;background:rgba(245,158,11,.10);color:#f7e0bb;font-size:13px;animation:llRiskRise .55s ease .56s both}
+      .ll-risk-reward b{display:block;margin-bottom:3px;color:#fcd34d;font-family:'Cormorant Garamond',serif;font-size:20px}
+      .ll-risk-choice{margin-top:21px;animation:llRiskRise .55s ease .7s both}
+      .ll-risk-choice .ll-btn{min-width:260px}
+      .ll-risk-lock-flip-stage{width:126px;height:126px;margin:18px auto 14px;position:relative;perspective:860px;filter:drop-shadow(0 17px 15px rgba(0,0,0,.36));animation:llRiskRise .55s ease .18s both}
+      .ll-risk-lock-flip-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;animation:llRiskLockFlip 1.08s cubic-bezier(.18,.82,.22,1) both}
+      .ll-risk-lock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.45);border-radius:24px;color:#1f1206;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:inset 0 2px 0 rgba(255,255,255,.52),inset 0 -7px 13px rgba(0,0,0,.26),0 11px 24px rgba(0,0,0,.32);overflow:hidden}
+      .ll-risk-lock-face::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.35),transparent 42%,rgba(0,0,0,.11));pointer-events:none}
+      .ll-risk-lock-face.front{transform:rotateY(0deg);background:linear-gradient(145deg,#fde68a,#f59e0b)}
+      .ll-risk-lock-face.back{transform:rotateY(180deg);background:linear-gradient(145deg,#fbbf24,#b45309)}
+      .ll-risk-lock-label{position:absolute;top:10px;left:0;right:0;text-align:center;font-size:9px;font-weight:900;letter-spacing:1.35px;opacity:.7}
+      .ll-risk-lock-icon{position:relative;z-index:1;font-size:34px;line-height:1;margin-top:5px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.19))}
+      .ll-risk-lock-value{position:relative;z-index:1;margin-top:6px;font-size:28px;font-weight:1000;letter-spacing:.4px}
+      .ll-risk-lock-sub{margin-top:4px;font-size:11px;font-weight:900;color:#3b2207;opacity:.82}
+      .ll-risk-match-badge{margin-top:11px;padding:10px 12px;border:1px solid rgba(245,158,11,.36);border-radius:11px;background:rgba(69,39,5,.28);color:#fde68a;font-size:11px;line-height:1.45}
+      .ll-risk-locked .ll-die{box-shadow:0 0 0 2px rgba(245,158,11,.35),0 15px 30px rgba(180,83,9,.18)!important}
+      .ll-risk-locked .ll-die-info:after{content:'KİLİTLİ';display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(180,83,9,.24);color:#fcd34d;font-size:8px;font-weight:950;letter-spacing:.08em}
+      @keyframes llRiskBannerIn{from{opacity:0;transform:translateY(15px) scale(.97)}to{opacity:1;transform:none}}
+      @keyframes llRiskSheen{to{transform:translateX(135%)}}
+      @keyframes llRiskTitlePop{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.08)}}
+      @keyframes llRiskDiePulse{0%{transform:scale(var(--risk-scale)) rotate(0)}40%{transform:scale(calc(var(--risk-scale) + .22)) rotate(-5deg);filter:brightness(1.35)}72%{transform:scale(calc(var(--risk-scale) + .08)) rotate(3deg)}100%{transform:scale(var(--risk-scale)) rotate(0)}}
+      @keyframes llRiskQuizRays{to{transform:rotate(1turn)}}
+      @keyframes llRiskQuizGlow{0%,100%{opacity:.6;transform:translateY(0) scale(.94)}50%{opacity:1;transform:translateY(-7px) scale(1.05)}}
+      @keyframes llRiskEmber{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.35)}10%{opacity:.90}64%{opacity:.68}100%{opacity:0;transform:translateX(calc(-50% + var(--dx))) translateY(var(--dy)) scale(.18) rotate(150deg)}}
+      @keyframes llRiskRays{to{transform:rotate(1turn)}}
+      @keyframes llRiskRise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
+      @keyframes llRiskLockFlip{0%{transform:rotateY(0deg) rotateX(0deg) scale(.84);opacity:0}18%{opacity:1;transform:rotateY(0deg) rotateX(-5deg) scale(1.04)}52%{transform:rotateY(94deg) rotateX(5deg) scale(1.08)}100%{transform:rotateY(180deg) rotateX(0deg) scale(1)}}
+      @media(max-width:650px){.ll-risk-pos-grid{grid-template-columns:1fr}.ll-risk-title{font-size:27px}.ll-risk-slogan{font-size:13px}.ll-risk-result-title{font-size:32px}.ll-risk-reward{min-width:100%}.ll-risk-actions{flex-direction:column}.ll-risk-final{min-height:420px;padding:30px 14px 24px}}
+      @media(prefers-reduced-motion:reduce){.ll-risk-banner:before,.ll-risk-title span,.ll-risk-die.pulse,.ll-risk-quiz-theme .ll-panel:before,.ll-risk-quiz-theme .ll-panel:after,.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i,.ll-risk-lock-flip-inner,.ll-risk-final:before{animation:none!important}.ll-risk-lock-flip-inner{transform:rotateY(180deg)}.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i{opacity:.35;transform:translateX(-50%) translateY(-48px)}}
     `;
     document.head.appendChild(style);
   }
 
-  function bannerHtml(event, state) {
+  function createRiskEmbers(scope = document) {
+    scope.querySelectorAll('.ll-risk-banner-embers,.ll-risk-quiz-embers,.ll-risk-lock-embers').forEach(host => {
+      if (host.dataset.embersReady === '1') return;
+      host.dataset.embersReady = '1';
+      const isBanner = host.classList.contains('ll-risk-banner-embers');
+      const isLock = host.classList.contains('ll-risk-lock-embers');
+      const count = isBanner ? 18 : isLock ? 30 : 26;
+      for (let i = 0; i < count; i++) {
+        const ember = document.createElement('i');
+        ember.style.setProperty('--x', `${isBanner ? 3 + Math.random() * 94 : 30 + Math.random() * 40}%`);
+        ember.style.setProperty('--dx', `${(Math.random() - .5) * (isBanner ? 105 : 190)}px`);
+        ember.style.setProperty('--dy', `${-(isBanner ? 115 + Math.random() * 105 : 80 + Math.random() * 180)}px`);
+        ember.style.setProperty('--size', `${isBanner ? 2.4 + Math.random() * 3.6 : 3 + Math.random() * 5}px`);
+        ember.style.setProperty('--duration', `${isBanner ? 1.6 + Math.random() * 1.8 : 1.8 + Math.random() * 1.7}s`);
+        ember.style.setProperty('--delay', `${-Math.random() * 3.1}s`);
+        host.appendChild(ember);
+      }
+    });
+  }
+
+function bannerHtml(event, state) {
     if (!event || !['offered', 'position'].includes(event.status)) return '';
     const positionButtons = positions().map(position => `<button class="ll-risk-pos" onclick="llDiceLockChoosePosition('${esc(position)}')">${icon(position)} ${esc(position)}<br><span style="font-size:9px;opacity:.72">BU ZARI RİSKE AT</span></button>`).join('');
-    return `<div class="ll-risk-banner" data-dice-lock-risk><div class="ll-risk-kicker">⚠ MAÇ ÖNCESİ RİSK</div><div class="ll-risk-title">🎲 Zarı Kilitle</div><div class="ll-risk-slogan">Taraftar arkanda. Riski al.</div><div class="ll-risk-copy"><strong>Bir mevki seç.</strong> 6 kelimeyi çöz. Doğru sayın, seçtiğin mevkinin bu maçtaki <strong>doğrudan zar değeri</strong> olur. Bu zar daha sonra reroll edilemez ve +1 bonusundan etkilenmez.</div><div class="ll-risk-pos-grid">${positionButtons}</div><div class="ll-risk-actions"><button class="ll-btn" onclick="llDiceLockSkip()">Güvenli Oyna · Geç</button></div></div>`;
+    const info = fixtureMeta(state, fixtureNow());
+    const tagLabel = event.demo ? 'Tek Seferlik Demo' : 'Maç Öncesi Risk';
+    return `<div class="ll-risk-banner" data-dice-lock-risk><div class="ll-risk-banner-embers" aria-hidden="true"></div><div class="ll-risk-tag"><b>${tagLabel}</b><span class="ll-risk-match-meta">${esc(info.versus)} · ${esc(info.meta || 'Özel maç')}</span></div><div class="ll-risk-title"><span>🎲</span> Zarı Kilitle</div><div class="ll-risk-slogan">Taraftar arkanda. Riski al.</div><div class="ll-risk-copy"><strong>Bir mevki seç.</strong> 6 kelimeyi çöz. Doğru sayın, seçtiğin mevkinin bu maçtaki <strong>doğrudan zar değeri</strong> olur. Bu zar daha sonra reroll edilemez ve +1 bonusundan etkilenmez.</div><div class="ll-risk-pos-grid">${positionButtons}</div><div class="ll-risk-actions"><button class="ll-btn" onclick="llDiceLockSkip()">Güvenli Oyna · Geç</button></div></div>`;
   }
 
-  function demoHtml(state) {
+function demoHtml(state) {
     if (!state || state[DEMO_FLAG]) return '';
-    return `<div class="ll-risk-demo" data-dice-lock-demo><b>🧪 Tek Seferlik Demo</b><br>Zarı Kilitle'yi mevcut maçta bir kez test et. Sezonluk 4 teklif hakkından düşmez.<button class="ll-btn" onclick="llDiceLockStartDemo()">Zarı Kilitle Demo'yu Başlat</button></div>`;
+    const info = fixtureMeta(state, fixtureNow());
+    return `<div class="ll-risk-demo" data-dice-lock-demo><div class="ll-risk-tag"><b>Tek Seferlik Demo</b><span class="ll-risk-match-meta">${esc(info.versus)} · ${esc(info.meta || 'Özel maç')}</span></div><div class="ll-risk-title">🧪 Zarı Kilitle Demo</div><div class="ll-risk-slogan">Aynı temada test et, maçı hisset.</div><div class="ll-risk-copy">Zarı Kilitle'yi mevcut maçta bir kez test et. Bu kullanım <strong>sezonluk 4 teklif hakkından düşmez.</strong> Sonuç yine gerçek şekilde bu maça uygulanır.</div><div class="ll-risk-actions"><button class="ll-btn ll-risk-accept" onclick="llDiceLockStartDemo()">Zarı Kilitle Demo'yu Başlat</button></div></div>`;
   }
 
-  function decorateDashboard() {
+function decorateDashboard() {
     const state = stateNow(), fixture = fixtureNow(), root = area();
     if (!state || !fixture || !root) return;
     ensureSystem(state);
     let event = currentEvent(state, fixture);
     if (!event) event = maybeCreateEvent(state, fixture);
+    const next = root.querySelector('.ll-next-match'), card = next?.closest('.ll-card');
     if (event && !root.querySelector('[data-dice-lock-risk]')) {
       const html = bannerHtml(event, state);
       if (html) {
-        const next = root.querySelector('.ll-next-match'), card = next?.closest('.ll-card');
-        if (next) next.insertAdjacentHTML('beforebegin', html); else if (card) card.insertAdjacentHTML('beforeend', html); else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', html);
+        if (next) next.insertAdjacentHTML('beforebegin', html);
+        else if (card) card.insertAdjacentHTML('afterbegin', html);
+        else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', html);
       }
     }
-    if (!state[DEMO_FLAG] && !root.querySelector('[data-dice-lock-demo]')) {
-      const next = root.querySelector('.ll-next-match'), card = next?.closest('.ll-card');
-      if (card) card.insertAdjacentHTML('beforeend', demoHtml(state)); else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', demoHtml(state));
+    if (!event && !state[DEMO_FLAG] && !root.querySelector('[data-dice-lock-demo]')) {
+      if (next) next.insertAdjacentHTML('beforebegin', demoHtml(state));
+      else if (card) card.insertAdjacentHTML('afterbegin', demoHtml(state));
+      else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', demoHtml(state));
     }
+    setTimeout(() => createRiskEmbers(root), 20);
     save();
   }
 
-  function startDemo() {
+function startDemo() {
     const state = stateNow(), fixture = fixtureNow();
     if (!state || !fixture || state[DEMO_FLAG]) return;
     const record = seasonRecord(state), key = fixtureKey(state, fixture);
@@ -204,12 +333,14 @@
     const spoken=text=>`<div class="pronounce-line"><span>${typeof globalThis.llEnglishWordHtml==='function'?llEnglishWordHtml(word,text):esc(text)}</span>${typeof globalThis.llPronounceButton==='function'?llPronounceButton(word.en):''}</div>`;
     const questionHtml=askTrToEn?esc(question):spoken(question), answerHtml=askTrToEn?spoken(answer):esc(answer), fullExampleHtml=quiz.revealed&&typeof globalThis.llFullExampleSentenceHtml==='function'?llFullExampleSentenceHtml(word):'';
     const currentValue=dieValue(quiz.correct), pct=(quiz.index/WORD_COUNT)*100, scale=(.88 + currentValue*.055).toFixed(3), finalWord=quiz.index===WORD_COUNT-1;
-    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">🎲 Zarı <em>Kilitle</em></div><div class="ll-muted">${icon(event.position)} ${esc(event.position)} · ${quiz.index+1}/${WORD_COUNT} · doğru sayısı = kilitli zar</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-risk-die-stage"><div><div class="ll-risk-die ${quiz.lastCorrect?'pulse':''}" style="--risk-scale:${scale}">${currentValue}</div><div class="ll-risk-die-caption">Şu an kilitlenecek zar: ${currentValue}</div></div></div>${finalWord&&quiz.correct===5?'<div class="ll-risk-last-word">🔥 SON KELİME · Doğru bilirsen zarın doğrudan 6 olacak.</div>':''}<div class="ll-question" onclick="llDiceLockReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llDiceLockRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llDiceLockRate(true)">✓ Bildim</button></div></div></div>`;
+    const info = fixtureMeta();
+    area().innerHTML=`<div class="ll-shell ll-quiz-card ll-risk-quiz-theme"><div class="ll-panel"><div class="ll-risk-quiz-embers"></div><div class="ll-risk-fixture-chip"><span>🎯 <b>${esc(info.versus)}</b></span><span>${esc(info.meta || 'Özel maç')}</span></div><div class="ll-topbar"><div><div class="ll-title">🎲 Zarı <em>Kilitle</em></div><div class="ll-muted">${icon(event.position)} ${esc(event.position)} · ${quiz.index+1}/${WORD_COUNT} · doğru sayısı = kilitli zar</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-risk-die-stage"><div><div class="ll-risk-die ${quiz.lastCorrect?'pulse':''}" style="--risk-scale:${scale}">${currentValue}</div><div class="ll-risk-die-caption">Şu an kilitlenecek zar: ${currentValue}</div></div></div>${finalWord&&quiz.correct===5?'<div class="ll-risk-last-word">🔥 SON KELİME · Doğru bilirsen zarın doğrudan 6 olacak.</div>':''}<div class="ll-question" onclick="llDiceLockReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llDiceLockRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llDiceLockRate(true)">✓ Bildim</button></div></div></div></div>`;
     quiz.lastCorrect=false;
+    setTimeout(() => createRiskEmbers(area()), 20);
     try { globalThis.markNewWordFrame?.(word, area().querySelector('.ll-question')); } catch {}
   }
 
-  function rateQuiz(correct) {
+function rateQuiz(correct) {
     const state=stateNow(), event=currentEvent(state), quiz=event?.quiz;
     if(!state||!event||!quiz||!quiz.revealed||quiz.completed||quiz.answerBusy)return;
     const index=num(quiz.index),ref=quiz.queue?.[index]; if(!ref)return;
@@ -225,10 +356,13 @@
     quiz.completed=true;quiz.totalAnswered=quiz.index;event.lockedValue=dieValue(quiz.correct);event.status='completed';event.completedAt=new Date().toISOString();save();renderOutcome(event);
   }
   function renderOutcome(event) {
-    const value=dieValue(event.quiz?.correct),scale=(.88+value*.055).toFixed(3);
-    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-risk-final"><div class="ll-risk-kicker">${event.demo?'🧪 DEMO · ':''}SONUÇ · ${num(event.quiz?.correct)}/${WORD_COUNT} DOĞRU</div><div class="ll-risk-title">ZAR KİLİTLENDİ</div><div class="ll-risk-die pulse" style="--risk-scale:${scale}">${value}</div><div style="font-size:17px;font-weight:950;color:#fff1c2">${icon(event.position)} ${esc(event.position)} zarı bu maç <b>${value}</b>.</div><div class="ll-risk-copy" style="margin:12px auto 0">Bu değer doğrudan uygulanır. +1 maç bonusu ve reroll bu zarı değiştiremez.${event.demo?' Demo sezonluk teklif hakkını tüketmez.':''}</div><button class="ll-btn ll-risk-accept" style="margin-top:18px;min-width:240px" onclick="llDiceLockContinue()">Normal Maç Sınavına Geç</button></div></div>`;
+    const value = dieValue(event.quiz?.correct);
+    const info = fixtureMeta();
+    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-risk-final"><div class="ll-risk-lock-embers"></div><div class="ll-risk-score">${event.demo?'🧪 DEMO · ':''}SONUÇ · <b>${num(event.quiz?.correct)}/${WORD_COUNT}</b> DOĞRU</div><div class="ll-risk-lock-flip-stage" aria-label="${esc(event.position)} zarı kilitlendi"><div class="ll-risk-lock-flip-inner"><div class="ll-risk-lock-face front"><span class="ll-risk-lock-label">RİSK</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">?</span><span class="ll-risk-lock-sub">Seçilen mevki</span></div><div class="ll-risk-lock-face back"><span class="ll-risk-lock-label">KİLİTLENDİ</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">${value}</span><span class="ll-risk-lock-sub">Doğrudan zar</span></div></div></div><div class="ll-risk-result-title">Zar Kilitlendi</div><div class="ll-risk-quote">“Taraftar arkanda. Riski aldın. Şimdi sonucu sahaya taşı.”</div><div class="ll-risk-reward"><b>${icon(event.position)} ${esc(event.position)} · ${value}</b>Bu maçta seçtiğin mevkinin zarı doğrudan <strong>${value}</strong> olarak uygulanır. Reroll ve 10/10 +1 bonusu bu zarı değiştiremez.${event.demo?' Demo kullanımı sezonluk teklif hakkını tüketmez.':''}</div><div class="ll-risk-match-badge"><b>🎯 ${esc(info.versus)}</b><br>${esc(info.meta || 'Özel maç')} · Bu sonuç yalnızca bu maça uygulanır.</div><div class="ll-risk-choice"><button class="ll-btn ll-risk-accept" onclick="llDiceLockContinue()">Normal Maç Sınavına Geç</button></div></div></div>`;
+    setTimeout(() => createRiskEmbers(area()), 20);
   }
-  function continueNormalQuiz() {
+
+function continueNormalQuiz() {
     const event=currentEvent(); if(!event||event.status!=='completed')return; event.normalQuizStartedAt=new Date().toISOString();save(); globalThis.llStartMatchPreparation?.();
   }
   function skipEvent() {
