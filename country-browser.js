@@ -6,7 +6,14 @@
     return `<select class="ll-btn" style="cursor:pointer" onchange="llCBSelectCountry(this.value,'${tab}','${tier}')">${llCBCountries().map(code=>{const meta=llCBMeta(code);return `<option value="${code}" ${code===activeCode?'selected':''}>${meta.flag||''} ${llEscape(meta.country||code)}</option>`;}).join('')}</select>`;
   }
   function llCBSortRows(state,code,tier){return Object.values(state.standings?.[code]?.[tier]||{}).sort((a,b)=>Number(b.Pts)-Number(a.Pts)||Number(b.GD)-Number(a.GD)||Number(b.GF)-Number(a.GF)||String(a.team).localeCompare(String(b.team),'tr'));}
-  function llCBLogo(name){return typeof llTeamLogo==='function'?llTeamLogo(name,'table'):'⚽';}
+  function llCBLogo(name){
+    if(typeof llTeamLogo!=='function')return '⚽';
+    // Pass the full domestic registry record when available. This prevents
+    // foreign-league clubs from being mistaken for generic Europe-pool teams
+    // and preserves their real logoId/logo URL after promotion/relegation.
+    const team=typeof llDomesticTeamDef==='function'?llDomesticTeamDef(name):null;
+    return llTeamLogo(team||name,'table');
+  }
   function llCBLeagueTable(state,code,tier){
     const rows=llCBSortRows(state,code,tier),meta=llCBMeta(code),qualifications=tier==='tier1'&&typeof llV2Qualifications==='function'&&rows.length?llV2Qualifications(rows,state.cups?.[code]?.winner||null):null;
     const zones=qualifications?{ucl:new Set(qualifications.ucl||[]),uel:new Set(qualifications.uel||[]),uecl:new Set(qualifications.uecl||[])}:null;

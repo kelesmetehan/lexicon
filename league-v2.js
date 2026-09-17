@@ -335,17 +335,35 @@ function llV2MatchImportance(f,key){
 }
 
 function llTeamDef(name){
+  // Multi-league registry is the authoritative source for every domestic club.
+  // This matters for country-browser screens: previously only the player's
+  // original LL_ALL_TEAMS list and UCL pool were checked, so clubs such as
+  // Famalicão, Estoril or Benfica B fell back to letter badges despite having
+  // real logoId/logo data in european-leagues-pools.js.
+  const registry=(typeof LL_TEAM_REGISTRY==='object'&&LL_TEAM_REGISTRY)
+    ?(LL_TEAM_REGISTRY[name]||((typeof llCanonicalTeamName==='function')?LL_TEAM_REGISTRY[llCanonicalTeamName(name)]:null))
+    :null;
+  if(registry)return registry;
+  if(typeof llDomesticTeamDef==='function'){
+    const domesticRegistry=llDomesticTeamDef(name);
+    if(domesticRegistry)return domesticRegistry;
+  }
   const domestic=LL_ALL_TEAMS.find(t=>t.name===name);if(domestic)return domestic;
-  const euro=UCL_TEAMS.find(t=>t.name===name),logoId=LL_EURO_LOGO_IDS[name];return euro?{name:euro.name,short:euro.short,stars:euro.pot===1?6:euro.pot===2?5:euro.pot===3?4:3,icon:euro.flag,logo:logoId?`https://tmssl.akamaized.net/images/wappen/head/${logoId}.png`:''}:{name,short:name,stars:3,icon:'🌍',logo:''};
+  const euro=UCL_TEAMS.find(t=>t.name===name),logoId=LL_EURO_LOGO_IDS[name];return euro?{name:euro.name,short:euro.short,stars:euro.pot===1?6:euro.pot===2?5:euro.pot===3?4:3,icon:euro.flag,logo:logoId?`https://tmssl.akamaized.net/images/wappen/head/${logoId}.png`:'',logoId:logoId||null}:{name,short:name,stars:3,icon:'🌍',logo:''};
 }
 function llTeamLogo(teamOrName,variant=''){
   const team=typeof teamOrName==='string'?llTeamDef(teamOrName):teamOrName;if(!team)return '';
   const short=llEscape(String(team.short||team.name||'TK').replace(/[^\p{L}\p{N}]/gu,'').slice(0,3).toUpperCase()||'TK');
   const label=llEscape(String(team.name||team.short||'Takım'));
-  const logoSrc=globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name]||team.logo;
+  const savedLogoId=String(team.logo||'').match(/\/head\/(\d+)\.(?:png|jpg|webp)(?:\?|$)/i)?.[1];
+  const logoId=Number(team.logoId||savedLogoId||0);
+  const domesticPath=globalThis.LL_DOMESTIC_COMPLETE_LOGO_FILES?.[logoId]||(globalThis.LL_DOMESTIC_COMPLETE_LOGO_IDS?.has(logoId)?`assets/team-logos/domestic-complete/${logoId}.png`:'');
+  const officialEuropePath=globalThis.LL_EUROPE_OFFICIAL_LOGO_FILES?.[logoId]||'';
+  const logoSrc=(typeof llLocalTeamLogo==='function'?llLocalTeamLogo(team.name):globalThis.LL_LOCAL_TEAM_LOGOS?.[team.name])||domesticPath||officialEuropePath||team.logo;
+  const cacheSafeSrc=/^assets\//.test(logoSrc||'')?`${logoSrc}${logoSrc.includes('?')?'&':'?'}v=20260917-portugal-logo-fix-v1`:logoSrc;
   const fallback=`<span class="ll-team-logo-fallback ${variant}" aria-label="${label} arması yerine takım kısaltması">${short}</span>`;
   if(!logoSrc)return `<span class="ll-team-logo-wrap ${variant} logo-missing">${fallback}</span>`;
-  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${logoSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
+  return `<span class="ll-team-logo-wrap ${variant}"><img class="ll-team-logo ${variant}" src="${cacheSafeSrc}" alt="${label} logosu" loading="eager" decoding="async" referrerpolicy="no-referrer" onerror="this.classList.add('is-failed');this.setAttribute('aria-hidden','true');this.parentElement.classList.add('logo-missing')">${fallback}</span>`;
 }
 function llRange(stars){return stars<=1?[1,4]:stars===2?[1,5]:stars===3?[2,6]:stars===4?[3,6]:[4,6];}
 function llRangeText(stars){const [a,b]=llRange(stars);return `${a}-${b}`;}
