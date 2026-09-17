@@ -2,7 +2,7 @@
 (function(global){
 'use strict';
 
-const VERSION=1;
+const VERSION=2;
 const DEMO_SESSION_KEY='llInteractivePenaltyDemoUsed';
 const MAX_SUDDEN_DEATH_ROUNDS=40;
 let runtime=null;
@@ -15,26 +15,42 @@ function save(){try{global.llSave?.();}catch(_){}}
 function deep(value){try{return JSON.parse(JSON.stringify(value));}catch(_){return value;}}
 function reduceMotion(){return !!global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;}
 function teamLogo(name,variant='match'){try{return global.llTeamLogo?.(name,variant)||'⚽';}catch(_){return '⚽';}}
-function fixtureNow(){try{return global.lexLeague?.match?.fixture||global.lexLeague?.quiz?.fixture||global.llPlayerFixture?.()||null;}catch(_){return null;}}
+function fixtureNow(){try{return global.lexLeague?.match?.fixture||global.lexLeague?.quiz?.fixture||stateNow()?.pendingFixture||global.llPlayerFixture?.()||null;}catch(_){return null;}}
 function playerTeam(){return global.lexLeague?.match?.player||stateNow()?.playerTeam||'Sen';}
 function opponentTeam(){const match=global.lexLeague?.match;if(match?.opponent)return match.opponent;const state=stateNow(),fixture=fixtureNow();if(fixture&&state?.playerTeam)return fixture.home===state.playerTeam?fixture.away:fixture.home;return 'Rakip';}
 function starsFor(name){try{return Math.max(1,Math.min(6,num(stateNow()?.teams?.[name]?.stars||global.llTeamDef?.(name)?.stars,3)));}catch(_){return 3;}}
 function opponentChance(player,opponent){try{if(typeof global.llV12PenaltyChance==='function')return Math.max(.60,Math.min(.84,num(global.llV12PenaltyChance(stateNow(),opponent,player),.72)));}catch(_){}return Math.max(.60,Math.min(.84,.72+(starsFor(opponent)-starsFor(player))*.03));}
-function isNationalMatch(match,state){
+function activeNationalRecord(state=stateNow()){
+  try{return global.llNationalTournamentTestApi?.activeNationalRecord?.(state)||null;}catch(_){return null;}
+}
+function nationalType(match,state){
   const fx=match?.fixture||{};
-  if(fx.nationalTournament||fx.league==='national'||fx.nationalFixtureId||fx.competition==='national')return true;
-  try{const rec=global.llNationalTournamentTestApi?.activeNationalRecord?.(state);return !!(rec&&match?.player===rec.selectedTeam);}catch(_){return false;}
+  return String(fx.nationalType||activeNationalRecord(state)?.type||'').toLowerCase();
+}
+function nationalTypeLabel(type){return type==='wc'?'FIFA DÜNYA KUPASI':type==='euro'?'EURO':'MİLLİ TURNUVA';}
+function nationalStageLabel(stage){const map={group:'GRUP',r32:'SON 32',r16:'SON 16',qf:'ÇEYREK FİNAL',sf:'YARI FİNAL',final:'FİNAL',third:'ÜÇÜNCÜLÜK MAÇI'};return map[String(stage||'').toLowerCase()]||String(stage||'ELEME').toUpperCase();}
+function requirementKicker(rt){
+  const req=rt?.requirement;if(req?.kind!=='national')return '90 DAKİKA YETMEDİ';
+  return `${nationalTypeLabel(req.nationalType)} · ${nationalStageLabel(req.stage)}`;
+}
+function isNationalMatch(match,state){
+  const fx=match?.fixture||{},type=String(fx.nationalType||'').toLowerCase();
+  if(type==='wc'||type==='euro'||fx.nationalTournament||fx.league==='national'||fx.nationalFixtureId||fx.competition==='national')return true;
+  try{const rec=activeNationalRecord(state);return !!(rec&&match?.player===rec.selectedTeam);}catch(_){return false;}
 }
 function nationalStage(match,state){
   const fx=match?.fixture||{};
-  if(fx.nationalStage)return fx.nationalStage;
-  try{return global.llNationalTournamentTestApi?.activeNationalRecord?.(state)?.edition?.stage||'group';}catch(_){return 'group';}
+  if(fx.nationalStage)return String(fx.nationalStage).toLowerCase();
+  try{return String(activeNationalRecord(state)?.edition?.stage||'group').toLowerCase();}catch(_){return 'group';}
 }
 function shootoutRequirement(match,state){
   if(!match||match.committed||!match.resolution)return null;
   const pg=num(match.resolution.scoreA),og=num(match.resolution.scoreB),fx=match.fixture||{},comp=fx.competition||'league';
   if(isNationalMatch(match,state)){
-    const stage=nationalStage(match,state);if(stage&&stage!=='group'&&pg===og)return {kind:'national',comp:'national',stage,label:fx.roundLabel||stage};
+    const stage=nationalStage(match,state),type=nationalType(match,state);
+    // EURO/WC group matches may finish level. Every knockout/third-place/final
+    // draw must be resolved by the interactive word-by-word shootout.
+    if(stage&&stage!=='group'&&pg===og)return {kind:'national',comp:'national',nationalType:type||'national',stage,label:fx.roundLabel||nationalStageLabel(stage)};
     return null;
   }
   if(comp==='supercup'||comp==='playoff')return pg===og?{kind:'single',comp,stage:fx.roundLabel||'',label:fx.roundLabel||comp}:null;
@@ -99,7 +115,7 @@ function boardHtml(rt){
 function versusHtml(rt){return `<div class="ll-ip-versus"><div class="ll-ip-team">${teamLogo(rt.playerTeam,'table')}<span>${esc(rt.playerTeam)}</span></div><div class="ll-ip-vs">PENALTILAR</div><div class="ll-ip-team away"><span>${esc(rt.opponentTeam)}</span>${teamLogo(rt.opponentTeam,'table')}</div></div>`;}
 function shell(inner){return `<div class="ll-shell ll-quiz-card"><div class="ll-ip-shell"><div class="ll-ip-spotlights"></div>${inner}</div></div>`;}
 function renderIntro(){
-  if(!runtime)return;area().innerHTML=shell(`<div class="ll-ip-kicker">90 DAKİKA YETMEDİ</div><div class="ll-ip-title">Kader Penaltılarda</div>${versusHtml(runtime)}<div class="ll-ip-intro-card"><div class="ll-ip-intro-icon">⚽</div><div class="ll-ip-sub"><b>Her kelime bir penaltı.</b><br>Bildim dersen gol. Bilemedim dersen penaltın kaçar. Rakibin atışı ise sen karar verdikten sonra ortaya çıkar.</div><button class="ll-btn primary" onclick="llPenaltyQuizBegin()">Penaltılara Başla</button>${runtime.demo?'<div class="ll-ip-demo-box">Demo modu · maç/kariyer sonucu değişmez, kelime istatistikleri kaydedilmez.</div>':''}</div>`);
+  if(!runtime)return;area().innerHTML=shell(`<div class="ll-ip-kicker">${esc(requirementKicker(runtime))}</div><div class="ll-ip-title">Kader Penaltılarda</div>${versusHtml(runtime)}<div class="ll-ip-intro-card"><div class="ll-ip-intro-icon">⚽</div><div class="ll-ip-sub"><b>Her kelime bir penaltı.</b><br>Bildim dersen gol. Bilemedim dersen penaltın kaçar. Rakibin atışı ise sen karar verdikten sonra ortaya çıkar.</div><button class="ll-btn primary" onclick="llPenaltyQuizBegin()">Penaltılara Başla</button>${runtime.demo?'<div class="ll-ip-demo-box">Demo modu · maç/kariyer sonucu değişmez, kelime istatistikleri kaydedilmez.</div>':''}</div>`);
 }
 function ensureQueue(rt,count=6){
   if(!rt)return false;rt.queue=Array.isArray(rt.queue)?rt.queue:[];const have=rt.queue.length-rt.wordIndex;if(have>=count)return true;
@@ -153,7 +169,7 @@ function rate(correct){
 function renderSuddenDeathIntro(){
   const rt=runtime;if(!rt)return;rt.phase='sudden-intro';area().innerHTML=shell(`${versusHtml(rt)}${boardHtml(rt)}<div class="ll-ip-sudden"><strong>ANI ÖLÜM</strong><span>Artık her kelime son kelimen olabilir.</span></div>`);setTimeout(()=>{if(runtime!==rt)return;rt.round=rt.kicks.length+1;rt.phase='question';rt.busy=false;renderQuestion();},reduceMotion()?350:1450);
 }
-function makeShootout(rt){return {player:rt.playerPens,opponent:rt.opponentPens,scoreA:rt.playerPens,scoreB:rt.opponentPens,winner:rt.playerPens>rt.opponentPens?rt.playerTeam:rt.opponentTeam,playerTeam:rt.playerTeam,opponentTeam:rt.opponentTeam,suddenDeath:rt.kicks.some(k=>k.suddenDeath),interactive:true,quizCorrect:rt.knowledgeCorrect,quizAnswered:rt.kicks.length,kicks:deep(rt.kicks)};}
+function makeShootout(rt){return {player:rt.playerPens,opponent:rt.opponentPens,scoreA:rt.playerPens,scoreB:rt.opponentPens,home:rt.playerPens,away:rt.opponentPens,winner:rt.playerPens>rt.opponentPens?rt.playerTeam:rt.opponentTeam,playerTeam:rt.playerTeam,opponentTeam:rt.opponentTeam,suddenDeath:rt.kicks.some(k=>k.suddenDeath),interactive:true,quizCorrect:rt.knowledgeCorrect,quizAnswered:rt.kicks.length,kicks:deep(rt.kicks)};}
 function renderFinal(){
   const rt=runtime;if(!rt)return;const won=rt.playerPens>rt.opponentPens;area().innerHTML=shell(`<div class="ll-ip-kicker">PENALTI ATIŞLARI TAMAMLANDI</div>${versusHtml(rt)}${boardHtml(rt)}<div class="ll-ip-final-card"><div class="ll-ip-final-word ${won?'win':'loss'}">${won?'KAZANDIN!':'ELENDİN'}</div><div class="ll-ip-final-score">Penaltılar <b>${rt.playerPens} – ${rt.opponentPens}</b></div><div class="ll-ip-final-copy">${won?'Son kelimeye kadar kontrol sendeydi. Seri senin lehine bitti.':'Penaltı serisi rakibin lehine sonuçlandı.'}${rt.demo?' Bu yalnızca demoydu; kariyer kaydına işlenmedi.':''}</div><button class="ll-btn primary" onclick="llPenaltyQuizFinishCommit()">${rt.demo?'Dashboarda Dön':'Maç Sonucunu Gör'}</button></div>`);
 }
@@ -162,7 +178,7 @@ function remapShootoutForArgs(rt,first,second){
   const source=rt.shootout||makeShootout(rt),same=first===rt.playerTeam&&second===rt.opponentTeam,reverse=first===rt.opponentTeam&&second===rt.playerTeam;
   if(!same&&!reverse)return null;if(same)return deep(source);
   const kicks=source.kicks.map(k=>({number:k.number,playerScored:k.opponentScored,opponentScored:k.playerScored,playerScore:k.opponentScore,opponentScore:k.playerScore,suddenDeath:!!k.suddenDeath}));
-  return {...deep(source),player:source.opponent,opponent:source.player,scoreA:source.opponent,scoreB:source.player,playerTeam:first,opponentTeam:second,kicks};
+  return {...deep(source),player:source.opponent,opponent:source.player,scoreA:source.opponent,scoreB:source.player,home:source.opponent,away:source.player,playerTeam:first,opponentTeam:second,kicks};
 }
 function commitCompleted(){
   const rt=runtime;if(!rt||rt.phase!=='final')return;if(rt.demo){runtime=null;global.llPenaltySequenceActive=false;global.llRenderDashboard?.();return;}
@@ -181,7 +197,12 @@ function startInteractive(context){
 function abortToAutomatic(message){const rt=runtime;if(!rt)return;const base=rt.baseCommit,isDemo=rt.demo;runtime=null;global.llPenaltySequenceActive=false;if(message&&typeof global.alert==='function')global.alert(message);if(isDemo){global.llRenderDashboard?.();return;}base?.();}
 
 function demo(){
-  if(runtime)return;const state=stateNow();if(!state)return;try{global.sessionStorage?.setItem(DEMO_SESSION_KEY,'1');}catch(_){}const player=state.playerTeam||playerTeam(),opponent=opponentTeam();if(!startInteractive({demo:true,playerTeam:player,opponentTeam:opponent,fixture:fixtureNow()})){global.alert?.('Penaltı demosu için en az 5 kullanılabilir kelime gerekiyor.');}
+  if(runtime)return;const state=stateNow();if(!state)return;try{global.sessionStorage?.setItem(DEMO_SESSION_KEY,'1');}catch(_){}
+  const fx=fixtureNow(),rec=activeNationalRecord(state),isNational=!!(fx&&(fx.nationalTournament||fx.competition==='national'||fx.league==='national'||fx.nationalFixtureId));
+  const player=isNational&&rec?.selectedTeam?rec.selectedTeam:(state.playerTeam||playerTeam());
+  const opponent=fx?(fx.home===player?fx.away:fx.home):opponentTeam();
+  const req=isNational?{kind:'national',comp:'national',nationalType:String(fx?.nationalType||rec?.type||'national').toLowerCase(),stage:String(fx?.nationalStage||rec?.edition?.stage||'group').toLowerCase(),label:fx?.roundLabel||''}:null;
+  if(!startInteractive({demo:true,playerTeam:player,opponentTeam:opponent||opponentTeam(),fixture:fx,requirement:req})){global.alert?.('Penaltı demosu için en az 5 kullanılabilir kelime gerekiyor.');}
 }
 function injectDemoButton(){
   if(typeof document==='undefined'||runtime)return;let used=false;try{used=global.sessionStorage?.getItem(DEMO_SESSION_KEY)==='1';}catch(_){}if(used)return;const root=area();if(!root||root.querySelector('[data-penalty-quiz-demo]'))return;const next=root.querySelector('.ll-next-match'),card=next?.closest('.ll-card');if(!card)return;const box=document.createElement('div');box.className='ll-ip-demo-box';box.setAttribute('data-penalty-quiz-demo','');box.innerHTML='<b>🥅 Tek Seferlik Penaltı Demo</b><br>Yeni kelime-penaltı sistemini kariyer sonucunu değiştirmeden test et.<button class="ll-btn" type="button" onclick="llPenaltyQuizDemo()">Penaltı Demo\'yu Başlat</button>';card.appendChild(box);

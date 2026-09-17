@@ -1,0 +1,37 @@
+LEXICON LEAGUE — 2026-09-17 update audit
+
+1) Team logo audit / hardening
+- Foreign domestic league pools scanned: 272 clubs across ENG, GER, ESP, FRA, ITA, NED, POR.
+- Missing logo URL metadata: 0.
+- Missing logoId metadata: 0.
+- Portugal: 18 Liga Portugal + 18 Liga Portugal 2 = 36/36 clubs have real crest metadata.
+- Logo rendering no longer depends only on the old Europe/UCL pool.
+- llTeamDef now resolves teams through LL_TEAM_REGISTRY / domestic registry.
+- llTeamLogo now tries a source chain: local mapped asset -> domestic/europe official local mapping -> configured real logo URL -> logoId-derived remote variants -> initials only as final fallback.
+- This also protects promoted/relegated foreign clubs that were previously able to fall back to letter badges.
+
+2) English example audit / repair
+- Built-in vocabulary entries checked: 594.
+- Built-in entries with blank English example: 0.
+- Built-in example-translation entries checked: 594; blank translation entries: 0.
+- User-added/imported/localStorage words are now repaired when loaded if their English example is blank.
+- Common expressions such as "need" / "require" receive natural fallback examples.
+- TR→EN masking no longer leaves the example area blank when an existing custom example does not literally contain the stored English expression; a safe masked fallback sentence is shown.
+
+3) Interactive penalties — EURO / World Cup
+- National group-stage draws remain draws; interactive penalties do NOT run in the group stage.
+- World Cup knockout ties trigger the same interactive word-by-word penalty flow.
+- EURO knockout ties trigger the same interactive word-by-word penalty flow.
+- Supported stages include R32/R16/QF/SF/third-place/final as applicable.
+- Existing national tournament commit flow receives the interactive shootout result; it is not simulated a second time.
+- National penalty intro displays tournament + stage (for example FIFA DÜNYA KUPASI · SON 16 / EURO · ÇEYREK FİNAL).
+- Penalty demo can also resolve the current pending national fixture context.
+
+Validation
+- All 51 project JavaScript files passed node --check.
+- index.html inline JavaScript passed node --check.
+- Penalty gate tests:
+  * WC group draw -> no shootout
+  * WC R16 draw -> interactive shootout
+  * EURO QF draw -> interactive shootout
+  * EURO final non-draw -> no shootout
