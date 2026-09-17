@@ -156,7 +156,7 @@ const LL_V14_SUPPLEMENTAL_TEAMS=[
   llV14Club('FC Porto','POR',6,720),
   llV14Club('Sporting CP','POR',5,336),
   llV14Club('SL Benfica','POR',5,294),
-  llV14Club('SC Braga','POR',3,2425),
+  llV14Club('SC Braga','POR',4,1075),
   llV14Club('Club Brugge KV','BEL',5,2282),
   llV14Club('Royal Antwerp FC','BEL',3,1747),
   llV14Club('Union Saint-Gilloise','BEL',4,201),
@@ -234,7 +234,11 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   const player=canonical(state?.playerTeam),registryCountry=typeof LL_TEAM_REGISTRY==='object'?LL_TEAM_REGISTRY[player]?.country:null;
   // Oynanabilir ligi olan ülkelerin temsilcileri yalnızca kendi sezon sonu
   // kontenjanından gelir. Sabit havuz, oyunda ligi olmayan ülkeler içindir.
-  const dynamicCountryCodes=typeof LL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:['TUR','ENG','GER','ESP','FRA','ITA','NED'],dynamicCountries=new Set(dynamicCountryCodes),blocked=new Set([...qualifiers.map(canonical),...reserved]);
+  const dynamicCountryCodes=typeof LL_COUNTRY_CODES!=='undefined'&&Array.isArray(LL_COUNTRY_CODES)?LL_COUNTRY_CODES:['TUR','ENG','GER','ESP','FRA','ITA','NED','POR'],dynamicCountries=new Set(dynamicCountryCodes),blocked=new Set([...qualifiers.map(canonical),...reserved]);
+  // A country added in the middle of an existing career is intentionally
+  // grandfathered for the already-created UEFA season. From the following
+  // season, its fixed pool clubs are blocked and only domestic qualifiers enter.
+  const countryIsDynamic=country=>country&&(typeof llMLCountryUsesDynamicEurope==='function'?llMLCountryUsesDynamicEurope(state,country):dynamicCountries.has(country));
   const pinned=[];
   for(const name of llV14PinnedTeams(state,type)){
     const key=canonical(name);if(!name||blocked.has(key))continue;
@@ -242,13 +246,13 @@ function llV14ForeignTeams(state,type,qualifiers,reserved=new Set()){
   }
   const fixed=[];
   for(const name of llV14EuroPool(type)){
-    const key=canonical(name);if(dynamicCountries.has(llV14TeamCountry(name))||blocked.has(key))continue;
+    const key=canonical(name);if(countryIsDynamic(llV14TeamCountry(name))||blocked.has(key))continue;
     blocked.add(key);fixed.push(name);
   }
   const needed=Math.max(0,36-qualifiers.length),combined=[...pinned,...fixed];
   for(const name of [...LL_V14_RECONCILIATION_RESERVES,...LL_V14_SUPPLEMENTAL_TEAMS.map(team=>team.name)]){
     if(combined.length>=needed)break;
-    const key=canonical(name);if(!name||blocked.has(key)||dynamicCountries.has(llV14TeamCountry(name)))continue;
+    const key=canonical(name);if(!name||blocked.has(key)||countryIsDynamic(llV14TeamCountry(name)))continue;
     blocked.add(key);combined.push(name);
   }
   if(combined.length<needed){const label=typeof llV2EuroLabel==='function'?llV2EuroLabel(type):String(type||'Avrupa kupas\u0131');console.warn(`${label} sabit havuzu ${needed-combined.length} ger\u00e7ek kul\u00fcp eksik kald\u0131.`);}

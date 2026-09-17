@@ -1,6 +1,6 @@
 /* Country observer: uses already-simulated multi-league data. It never runs a new simulation. */
 (function(){
-  function llCBCountries(){return typeof LL_COUNTRY_CODES!=='undefined'?LL_COUNTRY_CODES:['TUR','ENG','GER','ESP','FRA','ITA','NED'];}
+  function llCBCountries(){return typeof LL_COUNTRY_CODES!=='undefined'?LL_COUNTRY_CODES:['TUR','ENG','GER','ESP','FRA','ITA','NED','POR'];}
   function llCBMeta(code){return (typeof LL_COUNTRY_META!=='undefined'&&LL_COUNTRY_META[code])||{country:code,flag:'🌍',tier1Label:'1. Kademe',tier2Label:'2. Kademe'};}
   function llCBSelectorHtml(activeCode,tab='league',tier='tier1'){
     return `<select class="ll-btn" style="cursor:pointer" onchange="llCBSelectCountry(this.value,'${tab}','${tier}')">${llCBCountries().map(code=>{const meta=llCBMeta(code);return `<option value="${code}" ${code===activeCode?'selected':''}>${meta.flag||''} ${llEscape(meta.country||code)}</option>`;}).join('')}</select>`;
@@ -8,8 +8,13 @@
   function llCBSortRows(state,code,tier){return Object.values(state.standings?.[code]?.[tier]||{}).sort((a,b)=>Number(b.Pts)-Number(a.Pts)||Number(b.GD)-Number(a.GD)||Number(b.GF)-Number(a.GF)||String(a.team).localeCompare(String(b.team),'tr'));}
   function llCBLogo(name){return typeof llTeamLogo==='function'?llTeamLogo(name,'table'):'⚽';}
   function llCBLeagueTable(state,code,tier){
-    const rows=llCBSortRows(state,code,tier),meta=llCBMeta(code);
-    return `<div class="ll-card"><div class="ll-card-title">${meta.flag||''} ${llEscape(typeof llMLLeagueLabel==='function'?llMLLeagueLabel(code,tier):(tier==='tier1'?meta.tier1Label:meta.tier2Label))} · Canlı Puan Durumu</div><div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-compact-standings-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>`<tr><td>${index+1}</td><td><span class="ll-standing-team">${llCBLogo(row.team)}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars">${Number(state.teams?.[row.team]?.stars||1)}★</span></span></td><td>${Number(row.P)||0}</td><td>${Number(row.W)||0}</td><td>${Number(row.D)||0}</td><td>${Number(row.L)||0}</td><td>${Number(row.GF)||0}</td><td>${Number(row.GA)||0}</td><td>${Number(row.GD)||0}</td><td><b>${Number(row.Pts)||0}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+    const rows=llCBSortRows(state,code,tier),meta=llCBMeta(code),qualifications=tier==='tier1'&&typeof llV2Qualifications==='function'&&rows.length?llV2Qualifications(rows,state.cups?.[code]?.winner||null):null;
+    const zones=qualifications?{ucl:new Set(qualifications.ucl||[]),uel:new Set(qualifications.uel||[]),uecl:new Set(qualifications.uecl||[])}:null;
+    const zoneType=team=>!zones?'':zones.ucl.has(team)?'ucl':zones.uel.has(team)?'uel':zones.uecl.has(team)?'uecl':'';
+    const zoneClass=team=>{const type=zoneType(team);return type?`${type}-zone `:'';};
+    const zoneColor=team=>({ucl:'#8b5cf6',uel:'#f97316',uecl:'#14b8a6'}[zoneType(team)]||'');
+    const legend=tier==='tier1'?`<div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span></div>`:'';
+    return `<div class="ll-card"><div class="ll-card-title">${meta.flag||''} ${llEscape(typeof llMLLeagueLabel==='function'?llMLLeagueLabel(code,tier):(tier==='tier1'?meta.tier1Label:meta.tier2Label))} · Canlı Puan Durumu</div><div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-compact-standings-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>{const color=zoneColor(row.team);return `<tr class="${zoneClass(row.team)}"><td${color?` style="box-shadow:inset 5px 0 ${color};padding-left:13px"`:''}>${index+1}</td><td><span class="ll-standing-team">${llCBLogo(row.team)}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars">${Number(state.teams?.[row.team]?.stars||1)}★</span></span></td><td>${Number(row.P)||0}</td><td>${Number(row.W)||0}</td><td>${Number(row.D)||0}</td><td>${Number(row.L)||0}</td><td>${Number(row.GF)||0}</td><td>${Number(row.GA)||0}</td><td>${Number(row.GD)||0}</td><td><b>${Number(row.Pts)||0}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}</div>`;
   }
   function llCBCupRoundName(cup,round,field){
     const count=(field||[]).filter(Boolean).length;
