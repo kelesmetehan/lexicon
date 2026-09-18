@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = 1;
+  const VERSION = 2;
   const WORD_COUNT = 6;
   const OFFERS_PER_SEASON = 4;
   const EXCLUDED_WEEKS = new Set([1, 10, 24, 34]);
@@ -33,14 +33,14 @@
   function dieValue(correct) { return clamp(correct, 1, 6); }
 
   function competitionLabel(fixture) {
-    const raw = String(fixture?.competitionLabel || fixture?.competition || '').trim();
-    if (raw) return raw;
+    const label = String(fixture?.competitionLabel || '').trim();
+    if (label) return label;
     const key = String(fixture?.competition || '').toLowerCase();
     if (key === 'league') return 'Lig maçı';
     if (key === 'cup') return 'Kupa maçı';
     if (key === 'europe') return 'Avrupa maçı';
     if (key === 'national') return 'Milli maç';
-    return 'Maç';
+    return key ? key : 'Maç';
   }
   function fixtureMeta(state = stateNow(), fixture = fixtureNow()) {
     const home = fixture?.home || state?.playerTeam || 'Ev Sahibi';
@@ -194,6 +194,32 @@
       .ll-risk-match-badge{margin-top:11px;padding:10px 12px;border:1px solid rgba(245,158,11,.36);border-radius:11px;background:rgba(69,39,5,.28);color:#fde68a;font-size:11px;line-height:1.45}
       .ll-risk-locked .ll-die{box-shadow:0 0 0 2px rgba(245,158,11,.35),0 15px 30px rgba(180,83,9,.18)!important}
       .ll-risk-locked .ll-die-info:after{content:'KİLİTLİ';display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(180,83,9,.24);color:#fcd34d;font-size:8px;font-weight:950;letter-spacing:.08em}
+      .ll-risk-upgrade-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 45%,rgba(245,158,11,.20),transparent 32%),rgba(4,4,7,.92);backdrop-filter:blur(7px);overflow:hidden;animation:llRiskUpgradeFadeIn .18s ease both}
+      .ll-risk-upgrade-overlay:before{content:'';position:absolute;inset:-35%;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,194,74,.11) 0deg 1.1deg,transparent 1.8deg 11deg);animation:llRiskUpgradeRays 4.2s linear infinite}
+      .ll-risk-upgrade-overlay:after{content:'';position:absolute;width:min(76vw,560px);height:min(76vw,560px);border-radius:50%;border:1px solid rgba(251,191,36,.22);box-shadow:0 0 80px rgba(245,158,11,.18),inset 0 0 90px rgba(245,158,11,.08);animation:llRiskUpgradeHalo 1.35s ease-out both}
+      .ll-risk-upgrade-overlay.maxed{background:radial-gradient(circle at 50% 45%,rgba(250,204,21,.30),transparent 30%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.05),transparent 42%),rgba(4,4,7,.94);animation:llRiskUpgradeMaxShake .42s ease .88s both,llRiskUpgradeFadeIn .18s ease both}
+      .ll-risk-upgrade-card{position:relative;z-index:2;width:min(92vw,620px);text-align:center;color:#fff7df;isolation:isolate}
+      .ll-risk-upgrade-kicker{font-size:11px;font-weight:1000;letter-spacing:.22em;text-transform:uppercase;color:#fcd34d;text-shadow:0 0 16px rgba(245,158,11,.5);animation:llRiskUpgradeRise .36s ease both}
+      .ll-risk-upgrade-title{margin-top:7px;font-family:'Cormorant Garamond',serif;font-size:clamp(30px,7vw,56px);line-height:.98;font-weight:800;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 0 30px rgba(245,158,11,.38);animation:llRiskUpgradeRise .45s cubic-bezier(.2,.9,.2,1) .08s both}
+      .ll-risk-upgrade-sub{margin-top:9px;font-size:12px;font-weight:850;color:#e8c58e;letter-spacing:.04em;animation:llRiskUpgradeRise .4s ease .16s both}
+      .ll-risk-upgrade-stage{position:relative;width:220px;height:220px;margin:22px auto 12px;display:grid;place-items:center;perspective:900px;filter:drop-shadow(0 22px 24px rgba(0,0,0,.55))}
+      .ll-risk-upgrade-ring,.ll-risk-upgrade-ring:before,.ll-risk-upgrade-ring:after{position:absolute;content:'';inset:18px;border-radius:50%;border:2px solid rgba(251,191,36,.35);box-shadow:0 0 28px rgba(245,158,11,.18)}
+      .ll-risk-upgrade-ring{animation:llRiskUpgradeRing 1.28s cubic-bezier(.18,.82,.2,1) both}
+      .ll-risk-upgrade-ring:before{inset:18px;border-style:dashed;animation:llRiskUpgradeSpinRing 2.4s linear infinite}
+      .ll-risk-upgrade-ring:after{inset:-18px;border-color:rgba(255,255,255,.12);animation:llRiskUpgradeRingOuter 1.28s ease-out both}
+      .ll-risk-upgrade-die{position:relative;width:126px;height:126px;transform-style:preserve-3d;animation:llRiskUpgradeDie 1.28s cubic-bezier(.16,.88,.18,1.08) both}
+      .ll-risk-upgrade-die:before{content:'✦';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:27px;border:2px solid rgba(255,245,205,.62);background:linear-gradient(145deg,#6f3b08,#b86a0b 58%,#6a3406);color:#ffe8a5;font-size:34px;font-weight:1000;line-height:1;transform:rotateY(180deg) translateZ(2px);backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:inset 0 3px 0 rgba(255,255,255,.24),inset 0 -13px 24px rgba(35,14,0,.34),0 0 35px rgba(245,158,11,.22);text-shadow:0 0 18px rgba(255,225,130,.45)}
+      .ll-risk-upgrade-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:27px;border:2px solid rgba(255,245,205,.78);backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;color:#261506;font-size:70px;font-weight:1000;line-height:1;box-shadow:inset 0 3px 0 rgba(255,255,255,.58),inset 0 -13px 24px rgba(88,36,0,.28),0 0 44px rgba(245,158,11,.28)}
+      .ll-risk-upgrade-face:after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.42),transparent 37%,rgba(94,40,0,.14));pointer-events:none}
+      .ll-risk-upgrade-face.old{background:linear-gradient(145deg,#d4a33c,#8f4d08);transform:translateZ(3px);animation:llRiskUpgradeOldFace .18s ease .58s both}
+      .ll-risk-upgrade-face.new{background:linear-gradient(145deg,#fff1a7,#f59e0b 62%,#b45309);transform:translateZ(4px);opacity:0;text-shadow:0 2px 0 rgba(255,255,255,.2);animation:llRiskUpgradeNewFace .22s ease .78s both}
+      .ll-risk-upgrade-overlay.hold .ll-risk-upgrade-face.new{font-size:64px}
+      .ll-risk-upgrade-burst{position:absolute;inset:0;pointer-events:none}
+      .ll-risk-upgrade-burst i{position:absolute;left:50%;top:50%;width:5px;height:20px;border-radius:999px;background:linear-gradient(#fff7c2,#f59e0b);box-shadow:0 0 12px rgba(251,191,36,.95);transform-origin:50% 108px;opacity:0;animation:llRiskUpgradeSpark .78s ease-out calc(.66s + var(--d)) both;transform:translate(-50%,-50%) rotate(var(--r)) translateY(-86px) scale(.4)}
+      .ll-risk-upgrade-value{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:800;color:#fff0c7;animation:llRiskUpgradeValue .52s cubic-bezier(.2,.9,.18,1.15) .76s both}
+      .ll-risk-upgrade-value b{color:#fbbf24;font-size:1.18em}
+      .ll-risk-upgrade-max{margin-top:7px;font-size:12px;font-weight:1000;letter-spacing:.17em;text-transform:uppercase;color:#fde68a;text-shadow:0 0 18px rgba(250,204,21,.6);animation:llRiskUpgradeMaxText .56s cubic-bezier(.2,.9,.18,1.2) .9s both}
+      .ll-risk-upgrade-overlay.exiting{animation:llRiskUpgradeFadeOut .22s ease both}
       @keyframes llRiskBannerIn{from{opacity:0;transform:translateY(15px) scale(.97)}to{opacity:1;transform:none}}
       @keyframes llRiskSheen{to{transform:translateX(135%)}}
       @keyframes llRiskTitlePop{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.08)}}
@@ -204,8 +230,23 @@
       @keyframes llRiskRays{to{transform:rotate(1turn)}}
       @keyframes llRiskRise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
       @keyframes llRiskLockFlip{0%{transform:rotateY(0deg) rotateX(0deg) scale(.84);opacity:0}18%{opacity:1;transform:rotateY(0deg) rotateX(-5deg) scale(1.04)}52%{transform:rotateY(94deg) rotateX(5deg) scale(1.08)}100%{transform:rotateY(180deg) rotateX(0deg) scale(1)}}
+      @keyframes llRiskUpgradeFadeIn{from{opacity:0}to{opacity:1}}
+      @keyframes llRiskUpgradeFadeOut{to{opacity:0;transform:scale(1.018)}}
+      @keyframes llRiskUpgradeRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+      @keyframes llRiskUpgradeRays{to{transform:rotate(1turn)}}
+      @keyframes llRiskUpgradeHalo{0%{opacity:0;transform:scale(.45)}34%{opacity:1}100%{opacity:.2;transform:scale(1.24)}}
+      @keyframes llRiskUpgradeRing{0%{opacity:0;transform:scale(.38) rotate(-18deg)}36%{opacity:1;transform:scale(1.08) rotate(5deg)}100%{opacity:.5;transform:scale(1) rotate(0)}}
+      @keyframes llRiskUpgradeRingOuter{0%{opacity:0;transform:scale(.6)}58%{opacity:.8}100%{opacity:0;transform:scale(1.55)}}
+      @keyframes llRiskUpgradeSpinRing{to{transform:rotate(1turn)}}
+      @keyframes llRiskUpgradeDie{0%{opacity:0;transform:translateY(44px) rotateX(-34deg) rotateY(0deg) scale(.58)}22%{opacity:1;transform:translateY(0) rotateX(6deg) rotateY(0deg) scale(.95)}44%{transform:translateY(-9px) rotateX(-8deg) rotateY(88deg) scale(1.13)}58%{transform:translateY(-6px) rotateX(2deg) rotateY(180deg) scale(1.28)}76%{transform:translateY(-2px) rotateX(3deg) rotateY(286deg) scale(1.30)}88%{transform:translateY(0) rotateX(0) rotateY(374deg) scale(1.11)}100%{transform:translateY(0) rotateX(0) rotateY(360deg) scale(1)}}
+      @keyframes llRiskUpgradeOldFace{from{opacity:1}to{opacity:0}}
+      @keyframes llRiskUpgradeNewFace{from{opacity:0;filter:brightness(1.8)}to{opacity:1;filter:brightness(1)}}
+      @keyframes llRiskUpgradeSpark{0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) translateY(-68px) scale(.25)}22%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) translateY(-142px) scale(.9)}}
+      @keyframes llRiskUpgradeValue{from{opacity:0;transform:translateY(10px) scale(.82)}to{opacity:1;transform:none}}
+      @keyframes llRiskUpgradeMaxText{0%{opacity:0;transform:scale(.72);letter-spacing:.28em}70%{opacity:1;transform:scale(1.09)}100%{opacity:1;transform:scale(1)}}
+      @keyframes llRiskUpgradeMaxShake{0%,100%{transform:none}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
       @media(max-width:650px){.ll-risk-pos-grid{grid-template-columns:1fr}.ll-risk-title{font-size:27px}.ll-risk-slogan{font-size:13px}.ll-risk-result-title{font-size:32px}.ll-risk-reward{min-width:100%}.ll-risk-actions{flex-direction:column}.ll-risk-final{min-height:420px;padding:30px 14px 24px}}
-      @media(prefers-reduced-motion:reduce){.ll-risk-banner:before,.ll-risk-title span,.ll-risk-die.pulse,.ll-risk-quiz-theme .ll-panel:before,.ll-risk-quiz-theme .ll-panel:after,.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i,.ll-risk-lock-flip-inner,.ll-risk-final:before{animation:none!important}.ll-risk-lock-flip-inner{transform:rotateY(180deg)}.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i{opacity:.35;transform:translateX(-50%) translateY(-48px)}}
+      @media(prefers-reduced-motion:reduce){.ll-risk-banner:before,.ll-risk-title span,.ll-risk-die.pulse,.ll-risk-quiz-theme .ll-panel:before,.ll-risk-quiz-theme .ll-panel:after,.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i,.ll-risk-lock-flip-inner,.ll-risk-final:before,.ll-risk-upgrade-overlay:before,.ll-risk-upgrade-overlay:after,.ll-risk-upgrade-ring,.ll-risk-upgrade-ring:before,.ll-risk-upgrade-ring:after,.ll-risk-upgrade-die,.ll-risk-upgrade-burst i,.ll-risk-upgrade-kicker,.ll-risk-upgrade-title,.ll-risk-upgrade-sub,.ll-risk-upgrade-value,.ll-risk-upgrade-max{animation:none!important}.ll-risk-lock-flip-inner{transform:rotateY(180deg)}.ll-risk-upgrade-die{transform:none}.ll-risk-upgrade-face.old{display:none}.ll-risk-upgrade-face.new{opacity:1;animation:none!important}.ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i{opacity:.35;transform:translateX(-50%) translateY(-48px)}}
     `;
     document.head.appendChild(style);
   }
@@ -302,21 +343,66 @@ function decorateDashboard() {
     const questionHtml=askTrToEn?esc(question):spoken(question), answerHtml=askTrToEn?spoken(answer):esc(answer), fullExampleHtml=quiz.revealed&&typeof globalThis.llFullExampleSentenceHtml==='function'?llFullExampleSentenceHtml(word):'';
     const currentValue=dieValue(quiz.correct), pct=(quiz.index/WORD_COUNT)*100, scale=(.88 + currentValue*.055).toFixed(3), finalWord=quiz.index===WORD_COUNT-1;
     const info = fixtureMeta();
-    area().innerHTML=`<div class="ll-shell ll-quiz-card ll-risk-quiz-theme"><div class="ll-panel"><div class="ll-risk-quiz-embers"></div><div class="ll-risk-fixture-chip"><span>🎯 <b>${esc(info.versus)}</b></span><span>${esc(info.meta || 'Özel maç')}</span></div><div class="ll-topbar"><div><div class="ll-title">🎲 Zarı <em>Kilitle</em></div><div class="ll-muted">${icon(event.position)} ${esc(event.position)} · ${quiz.index+1}/${WORD_COUNT} · doğru sayısı = kilitli zar</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-risk-die-stage"><div><div class="ll-risk-die ${quiz.lastCorrect?'pulse':''}" style="--risk-scale:${scale}">${currentValue}</div><div class="ll-risk-die-caption">Şu an kilitlenecek zar: ${currentValue}</div></div></div>${finalWord&&quiz.correct===5?'<div class="ll-risk-last-word">🔥 SON KELİME · Doğru bilirsen zarın doğrudan 6 olacak.</div>':''}<div class="ll-question" onclick="llDiceLockReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llDiceLockRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llDiceLockRate(true)">✓ Bildim</button></div></div></div></div>`;
+    area().innerHTML=`<div class="ll-shell ll-quiz-card ll-risk-quiz-theme"><div class="ll-panel"><div class="ll-risk-quiz-embers"></div><div class="ll-risk-fixture-chip"><span>🎯 <b>${esc(info.versus)}</b></span><span>${esc(info.meta || 'Özel maç')}</span></div><div class="ll-topbar"><div><div class="ll-title">🎲 Zarı <em>Kilitle</em></div><div class="ll-muted">${icon(event.position)} ${esc(event.position)} · ${quiz.index+1}/${WORD_COUNT} · doğru sayısı = kilitli zar</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${WORD_COUNT}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-risk-die-stage"><div><div class="ll-risk-die" style="--risk-scale:${scale}">${currentValue}</div><div class="ll-risk-die-caption">Şu an kilitlenecek zar: ${currentValue}</div></div></div>${finalWord&&quiz.correct===5?'<div class="ll-risk-last-word">🔥 SON KELİME · Doğru bilirsen zarın doğrudan 6 olacak.</div>':''}<div class="ll-question" onclick="llDiceLockReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llDiceLockRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llDiceLockRate(true)">✓ Bildim</button></div></div></div></div>`;
     quiz.lastCorrect=false;
     setTimeout(() => createRiskEmbers(area()), 20);
     try { globalThis.markNewWordFrame?.(word, area().querySelector('.ll-question')); } catch {}
+  }
+
+
+  function playDieUpgradeCinematic(event, fromValue, toValue, done) {
+    const finish = typeof done === 'function' ? done : function(){};
+    if (typeof document === 'undefined') { finish(); return; }
+    document.querySelectorAll('.ll-risk-upgrade-overlay').forEach(node => node.remove());
+    const upgraded = toValue > fromValue;
+    const maxed = upgraded && toValue === 6;
+    const overlay = document.createElement('div');
+    overlay.className = `ll-risk-upgrade-overlay${maxed ? ' maxed' : ''}${upgraded ? '' : ' hold'}`;
+    const sparks = Array.from({length:maxed ? 28 : 20}, (_, i) => {
+      const r = Math.round((360 / (maxed ? 28 : 20)) * i + ((i % 3) - 1) * 4);
+      const d = ((i % 7) * .018).toFixed(3);
+      return `<i style="--r:${r}deg;--d:${d}s"></i>`;
+    }).join('');
+    const headline = maxed ? 'MAKSİMUM ZAR!' : upgraded ? 'ZAR GÜÇLENİYOR' : 'ZAR ENERJİ TOPLADI';
+    const valueLine = upgraded
+      ? `<span>${fromValue}</span> <span style="opacity:.55">→</span> <b>${toValue}</b>`
+      : `<span>${fromValue}</span> <span style="opacity:.65">·</span> <b>+1 DOĞRU</b>`;
+    const sub = maxed
+      ? 'Son sınır aşıldı. Seçtiğin mevki artık 6.'
+      : upgraded
+        ? `${icon(event?.position)} ${esc(event?.position)} zarı yeni seviyesine çıkıyor.`
+        : 'İlk doğru cevap geldi. Bir sonraki doğru zar değerini yükseltecek.';
+    overlay.innerHTML = `<div class="ll-risk-upgrade-card"><div class="ll-risk-upgrade-kicker">✓ DOĞRU CEVAP</div><div class="ll-risk-upgrade-title">${headline}</div><div class="ll-risk-upgrade-sub">${sub}</div><div class="ll-risk-upgrade-stage"><div class="ll-risk-upgrade-ring"></div><div class="ll-risk-upgrade-burst">${sparks}</div><div class="ll-risk-upgrade-die"><div class="ll-risk-upgrade-face old">${fromValue}</div><div class="ll-risk-upgrade-face new">${toValue}</div></div></div><div class="ll-risk-upgrade-value">${valueLine}</div>${maxed?'<div class="ll-risk-upgrade-max">🔥 ZAR 6 · TAM GÜÇ</div>':''}</div>`;
+    document.body.appendChild(overlay);
+    try { if (navigator.vibrate) navigator.vibrate(maxed ? [35,35,70] : [25,25,45]); } catch {}
+    const reduced = !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const hold = reduced ? 520 : (maxed ? 2050 : 1700);
+    setTimeout(() => {
+      overlay.classList.add('exiting');
+      setTimeout(() => { overlay.remove(); finish(); }, reduced ? 30 : 220);
+    }, hold);
   }
 
 function rateQuiz(correct) {
     const state=stateNow(), event=currentEvent(state), quiz=event?.quiz;
     if(!state||!event||!quiz||!quiz.revealed||quiz.completed||quiz.answerBusy)return;
     const index=num(quiz.index),ref=quiz.queue?.[index]; if(!ref)return;
-    quiz.answerBusy=true; if(correct)quiz.correct++; quiz.lastCorrect=!!correct; quiz.index=index+1; quiz.shown=num(quiz.shown)+1; quiz.revealed=false;
+    const beforeCorrect=num(quiz.correct), fromValue=dieValue(beforeCorrect);
+    quiz.answerBusy=true;
+    if(correct)quiz.correct++;
+    const toValue=dieValue(quiz.correct);
+    quiz.lastCorrect=false;
+    quiz.index=index+1;
+    quiz.shown=num(quiz.shown)+1;
+    quiz.revealed=false;
     try{globalThis.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:fixtureNow(),quiz,answerIndex:index,eventType:'dice-lock-risk'});}catch{}
     try{globalThis.llPersistQuizWordRating?.(ref,quiz,!!correct,{markUsed:false});}catch{}
     try{markWordUsed(ref,state);}catch{}
-    quiz.answerBusy=false; save(); if(quiz.index>=quiz.queue.length)finishQuiz(event);else renderQuiz(event);
+    quiz.answerBusy=false;
+    save();
+    const advance=()=>{ if(quiz.index>=quiz.queue.length)finishQuiz(event);else renderQuiz(event); };
+    if(correct) playDieUpgradeCinematic(event,fromValue,toValue,advance);
+    else advance();
   }
 
   function finishQuiz(event) {
