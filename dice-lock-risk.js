@@ -6,7 +6,6 @@
   const WORD_COUNT = 6;
   const OFFERS_PER_SEASON = 4;
   const EXCLUDED_WEEKS = new Set([1, 10, 24, 34]);
-  const DEMO_FLAG = 'diceLockRiskDemoUsed';
 
   function num(value, fallback = 0) { value = Number(value); return Number.isFinite(value) ? value : fallback; }
   function clamp(value, min, max) { return Math.max(min, Math.min(max, num(value))); }
@@ -79,6 +78,12 @@
     if (!Array.isArray(record.schedule) || !record.schedule.length) record.schedule = buildSchedule();
     if (!Array.isArray(record.events)) record.events = [];
     if (!record.checked || typeof record.checked !== 'object') record.checked = {};
+    const obsoleteDemoKeys = record.events.filter(event => event?.demo === true).map(event => event.key).filter(Boolean);
+    if (obsoleteDemoKeys.length) {
+      record.events = record.events.filter(event => event?.demo !== true);
+      obsoleteDemoKeys.forEach(key => { delete record.checked[key]; });
+    }
+    if (Object.prototype.hasOwnProperty.call(state, 'diceLockRiskDemoUsed')) delete state.diceLockRiskDemoUsed;
     return record;
   }
   function seasonRecord(state = stateNow()) { return ensureSystem(state); }
@@ -114,7 +119,7 @@
     const event = {
       key, season: num(state.season, 1), week: num(state.week, 1), competition: fixture.competition || 'league',
       home: fixture.home, away: fixture.away, team: state.playerTeam, status: 'offered', position: null,
-      quiz: null, lockedValue: null, appliedToMatch: false, matchCommitted: false, demo: false, createdAt: new Date().toISOString()
+      quiz: null, lockedValue: null, appliedToMatch: false, matchCommitted: false, createdAt: new Date().toISOString()
     };
     record.events.push(event);
     return event;
@@ -142,11 +147,6 @@
       .ll-risk-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
       .ll-risk-actions .ll-btn{flex:1;min-width:170px}
       .ll-risk-accept{background:linear-gradient(135deg,#b45309,#f59e0b)!important;color:#fffaf0!important;border-color:rgba(254,243,199,.4)!important}
-      .ll-risk-demo{margin:0 0 13px;padding:16px;border:1px dashed rgba(56,189,248,.46);border-radius:15px;background:radial-gradient(circle at 85% 0,rgba(56,189,248,.16),transparent 38%),linear-gradient(135deg,#0b2334,#101827 60%,#15151b);box-shadow:0 12px 26px rgba(8,47,73,.24)}
-      .ll-risk-demo .ll-risk-title{font-size:26px;color:#e0f2fe;text-shadow:none}
-      .ll-risk-demo .ll-risk-copy,.ll-risk-demo .ll-risk-slogan,.ll-risk-demo .ll-risk-tag{color:#cceefe}
-      .ll-risk-demo .ll-risk-tag b{background:linear-gradient(135deg,#67e8f9,#38bdf8);color:#062c36}
-      .ll-risk-demo .ll-risk-accept{background:linear-gradient(135deg,#0891b2,#38bdf8)!important;border-color:rgba(186,230,253,.5)!important;color:#082f49!important}
       .ll-risk-banner-embers,.ll-risk-quiz-embers,.ll-risk-lock-embers{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
       .ll-risk-banner-embers i,.ll-risk-quiz-embers i,.ll-risk-lock-embers i{position:absolute;left:var(--x);bottom:-18px;width:var(--size);height:calc(var(--size)*1.38);border-radius:50% 50% 50% 0;background:radial-gradient(circle at 30% 25%,#fff9d1 0 14%,#ffcd57 31%,#ff9d28 61%,rgba(255,91,27,0) 76%);box-shadow:0 0 11px rgba(255,164,39,.82);opacity:0;animation:llRiskEmber var(--duration) linear var(--delay) infinite}
       .ll-risk-die-stage{display:flex;align-items:center;justify-content:center;min-height:150px;margin:8px 0 14px}
@@ -234,14 +234,8 @@ function bannerHtml(event, state) {
     if (!event || !['offered', 'position'].includes(event.status)) return '';
     const positionButtons = positions().map(position => `<button class="ll-risk-pos" onclick="llDiceLockChoosePosition('${esc(position)}')">${icon(position)} ${esc(position)}<br><span style="font-size:9px;opacity:.72">BU ZARI RİSKE AT</span></button>`).join('');
     const info = fixtureMeta(state, fixtureNow());
-    const tagLabel = event.demo ? 'Tek Seferlik Demo' : 'Maç Öncesi Risk';
+    const tagLabel = 'Maç Öncesi Risk';
     return `<div class="ll-risk-banner" data-dice-lock-risk><div class="ll-risk-banner-embers" aria-hidden="true"></div><div class="ll-risk-tag"><b>${tagLabel}</b><span class="ll-risk-match-meta">${esc(info.versus)} · ${esc(info.meta || 'Özel maç')}</span></div><div class="ll-risk-title"><span>🎲</span> Zarı Kilitle</div><div class="ll-risk-slogan">Taraftar arkanda. Riski al.</div><div class="ll-risk-copy"><strong>Bir mevki seç.</strong> 6 kelimeyi çöz. Doğru sayın, seçtiğin mevkinin bu maçtaki <strong>doğrudan zar değeri</strong> olur. Bu zar daha sonra reroll edilemez ve +1 bonusundan etkilenmez.</div><div class="ll-risk-pos-grid">${positionButtons}</div><div class="ll-risk-actions"><button class="ll-btn" onclick="llDiceLockSkip()">Güvenli Oyna · Geç</button></div></div>`;
-  }
-
-function demoHtml(state) {
-    if (!state || state[DEMO_FLAG]) return '';
-    const info = fixtureMeta(state, fixtureNow());
-    return `<div class="ll-risk-demo" data-dice-lock-demo><div class="ll-risk-tag"><b>Tek Seferlik Demo</b><span class="ll-risk-match-meta">${esc(info.versus)} · ${esc(info.meta || 'Özel maç')}</span></div><div class="ll-risk-title">🧪 Zarı Kilitle Demo</div><div class="ll-risk-slogan">Aynı temada test et, maçı hisset.</div><div class="ll-risk-copy">Zarı Kilitle'yi mevcut maçta bir kez test et. Bu kullanım <strong>sezonluk 4 teklif hakkından düşmez.</strong> Sonuç yine gerçek şekilde bu maça uygulanır.</div><div class="ll-risk-actions"><button class="ll-btn ll-risk-accept" onclick="llDiceLockStartDemo()">Zarı Kilitle Demo'yu Başlat</button></div></div>`;
   }
 
 function decorateDashboard() {
@@ -259,34 +253,8 @@ function decorateDashboard() {
         else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', html);
       }
     }
-    if (!event && !state[DEMO_FLAG] && !root.querySelector('[data-dice-lock-demo]')) {
-      if (next) next.insertAdjacentHTML('beforebegin', demoHtml(state));
-      else if (card) card.insertAdjacentHTML('afterbegin', demoHtml(state));
-      else root.querySelector('.ll-panel')?.insertAdjacentHTML('beforeend', demoHtml(state));
-    }
     setTimeout(() => createRiskEmbers(root), 20);
     save();
-  }
-
-function startDemo() {
-    const state = stateNow(), fixture = fixtureNow();
-    if (!state || !fixture || state[DEMO_FLAG]) return;
-    const record = seasonRecord(state), key = fixtureKey(state, fixture);
-    let event = eventByKey(state, key);
-    if (event && !event.demo && !['skipped', 'cancelled'].includes(event.status)) {
-      document.querySelector('[data-dice-lock-risk]')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    if (!event) {
-      event = { key, season:num(state.season,1), week:num(state.week,1), competition:fixture.competition||'league', home:fixture.home, away:fixture.away, team:state.playerTeam, status:'offered', position:null, quiz:null, lockedValue:null, appliedToMatch:false, matchCommitted:false, demo:true, createdAt:new Date().toISOString() };
-      record.events.push(event);
-    } else {
-      event.position=null; event.quiz=null; event.lockedValue=null; event.appliedToMatch=false; event.matchCommitted=false;
-    }
-    event.demo = true; event.status = 'offered';
-    state[DEMO_FLAG] = true; save();
-    if (typeof globalThis.llRenderDashboard === 'function') llRenderDashboard();
-    setTimeout(() => document.querySelector('[data-dice-lock-risk]')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }), 30);
   }
 
   function choosePosition(position) {
@@ -358,7 +326,7 @@ function rateQuiz(correct) {
   function renderOutcome(event) {
     const value = dieValue(event.quiz?.correct);
     const info = fixtureMeta();
-    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-risk-final"><div class="ll-risk-lock-embers"></div><div class="ll-risk-score">${event.demo?'🧪 DEMO · ':''}SONUÇ · <b>${num(event.quiz?.correct)}/${WORD_COUNT}</b> DOĞRU</div><div class="ll-risk-lock-flip-stage" aria-label="${esc(event.position)} zarı kilitlendi"><div class="ll-risk-lock-flip-inner"><div class="ll-risk-lock-face front"><span class="ll-risk-lock-label">RİSK</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">?</span><span class="ll-risk-lock-sub">Seçilen mevki</span></div><div class="ll-risk-lock-face back"><span class="ll-risk-lock-label">KİLİTLENDİ</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">${value}</span><span class="ll-risk-lock-sub">Doğrudan zar</span></div></div></div><div class="ll-risk-result-title">Zar Kilitlendi</div><div class="ll-risk-quote">“Taraftar arkanda. Riski aldın. Şimdi sonucu sahaya taşı.”</div><div class="ll-risk-reward"><b>${icon(event.position)} ${esc(event.position)} · ${value}</b>Bu maçta seçtiğin mevkinin zarı doğrudan <strong>${value}</strong> olarak uygulanır. Reroll ve 10/10 +1 bonusu bu zarı değiştiremez.${event.demo?' Demo kullanımı sezonluk teklif hakkını tüketmez.':''}</div><div class="ll-risk-match-badge"><b>🎯 ${esc(info.versus)}</b><br>${esc(info.meta || 'Özel maç')} · Bu sonuç yalnızca bu maça uygulanır.</div><div class="ll-risk-choice"><button class="ll-btn ll-risk-accept" onclick="llDiceLockContinue()">Normal Maç Sınavına Geç</button></div></div></div>`;
+    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-risk-final"><div class="ll-risk-lock-embers"></div><div class="ll-risk-score">SONUÇ · <b>${num(event.quiz?.correct)}/${WORD_COUNT}</b> DOĞRU</div><div class="ll-risk-lock-flip-stage" aria-label="${esc(event.position)} zarı kilitlendi"><div class="ll-risk-lock-flip-inner"><div class="ll-risk-lock-face front"><span class="ll-risk-lock-label">RİSK</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">?</span><span class="ll-risk-lock-sub">Seçilen mevki</span></div><div class="ll-risk-lock-face back"><span class="ll-risk-lock-label">KİLİTLENDİ</span><span class="ll-risk-lock-icon">${icon(event.position)}</span><span class="ll-risk-lock-value">${value}</span><span class="ll-risk-lock-sub">Doğrudan zar</span></div></div></div><div class="ll-risk-result-title">Zar Kilitlendi</div><div class="ll-risk-quote">“Taraftar arkanda. Riski aldın. Şimdi sonucu sahaya taşı.”</div><div class="ll-risk-reward"><b>${icon(event.position)} ${esc(event.position)} · ${value}</b>Bu maçta seçtiğin mevkinin zarı doğrudan <strong>${value}</strong> olarak uygulanır. Reroll ve 10/10 +1 bonusu bu zarı değiştiremez.</div><div class="ll-risk-match-badge"><b>🎯 ${esc(info.versus)}</b><br>${esc(info.meta || 'Özel maç')} · Bu sonuç yalnızca bu maça uygulanır.</div><div class="ll-risk-choice"><button class="ll-btn ll-risk-accept" onclick="llDiceLockContinue()">Normal Maç Sınavına Geç</button></div></div></div>`;
     setTimeout(() => createRiskEmbers(area()), 20);
   }
 
@@ -375,7 +343,7 @@ function continueNormalQuiz() {
   }
   function attachRewardToMatch(match) {
     const event=eventForMatch(match); if(!event||!match)return;
-    match.diceLockRisk={key:event.key,position:event.position,value:dieValue(event.lockedValue),correct:num(event.quiz?.correct),demo:!!event.demo};
+    match.diceLockRisk={key:event.key,position:event.position,value:dieValue(event.lockedValue),correct:num(event.quiz?.correct)};
   }
   function applyLockToDice(match,dice) {
     const lock=match?.diceLockRisk;if(!lock||!Array.isArray(dice))return dice;
@@ -387,7 +355,7 @@ function continueNormalQuiz() {
     const playerSide=root.querySelector('.ll-battle .ll-dice-side');
     playerSide?.querySelectorAll('.ll-die-row').forEach(row=>{const label=row.querySelector('.ll-die-pos')?.textContent||'';if(label.includes(lock.position))row.classList.add('ll-risk-locked');});
     if(root.querySelector('[data-dice-lock-match]'))return;
-    const html=`<div class="ll-risk-match-badge" data-dice-lock-match><b>🎲 Zarı Kilitle · ${lock.correct}/${WORD_COUNT}</b><br>${icon(lock.position)} ${esc(lock.position)} zarı bu maç doğrudan <b>${lock.value}</b> · reroll ve +1 etkisiz${lock.demo?' · demo':''}.</div>`;
+    const html=`<div class="ll-risk-match-badge" data-dice-lock-match><b>🎲 Zarı Kilitle · ${lock.correct}/${WORD_COUNT}</b><br>${icon(lock.position)} ${esc(lock.position)} zarı bu maç doğrudan <b>${lock.value}</b> · reroll ve +1 etkisiz.</div>`;
     const notice=root.querySelector('.ll-notice');if(notice)notice.insertAdjacentHTML('afterend',html);else root.querySelector('.ll-panel')?.insertAdjacentHTML('afterbegin',html);
   }
 
@@ -395,6 +363,8 @@ function continueNormalQuiz() {
     const base=globalThis[name];if(typeof base!=='function'||base[flag])return false;const wrapped=builder(base);wrapped[flag]=true;wrapped[`${flag}Base`]=base;globalThis[name]=wrapped;return true;
   }
   function install() {
+    try { document.querySelectorAll('[data-dice-lock-demo]').forEach(node => node.remove()); } catch {}
+    try { delete globalThis.llDiceLockStartDemo; } catch { globalThis.llDiceLockStartDemo = undefined; }
     injectStyles();
     wrap('llV2RepairState',base=>function(state){const result=base.apply(this,arguments);if(result)ensureSystem(result);return result;});
     wrap('llRenderDashboard',base=>function(){const result=base.apply(this,arguments);decorateDashboard();return result;});
@@ -409,7 +379,6 @@ function continueNormalQuiz() {
 
   globalThis.llDiceLockChoosePosition=choosePosition;
   globalThis.llDiceLockSkip=skipEvent;
-  globalThis.llDiceLockStartDemo=startDemo;
   globalThis.llDiceLockReveal=function(){const event=currentEvent(),quiz=event?.quiz;if(!quiz||quiz.completed)return;quiz.revealed=true;save();renderQuiz(event);};
   globalThis.llDiceLockRate=rateQuiz;
   globalThis.llDiceLockContinue=continueNormalQuiz;

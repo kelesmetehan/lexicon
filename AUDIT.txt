@@ -25,7 +25,6 @@ LEXICON LEAGUE — 2026-09-17 update audit
 - Supported stages include R32/R16/QF/SF/third-place/final as applicable.
 - Existing national tournament commit flow receives the interactive shootout result; it is not simulated a second time.
 - National penalty intro displays tournament + stage (for example FIFA DÜNYA KUPASI · SON 16 / EURO · ÇEYREK FİNAL).
-- Penalty demo can also resolve the current pending national fixture context.
 
 Validation
 - All 51 project JavaScript files passed node --check.

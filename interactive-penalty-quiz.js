@@ -3,9 +3,13 @@
 'use strict';
 
 const VERSION=2;
-const DEMO_SESSION_KEY='llInteractivePenaltyDemoUsed';
 const MAX_SUDDEN_DEATH_ROUNDS=40;
 let runtime=null;
+
+// Remove leftovers from the retired one-off penalty test UI on existing saves/sessions.
+try{global.sessionStorage?.removeItem('llInteractivePenaltyDemoUsed');}catch(_){}
+try{delete global.llPenaltyQuizDemo;}catch(_){global.llPenaltyQuizDemo=undefined;}
+try{document.querySelectorAll('[data-penalty-quiz-demo]').forEach(node=>node.remove());}catch(_){}
 
 function num(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback;}
 function esc(value){return typeof global.llEscape==='function'?global.llEscape(String(value??'')):String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -98,7 +102,6 @@ function injectStyles(){
     .ll-ip-round-score{max-width:420px;margin:15px auto 0;text-align:center;padding:9px 12px;border-radius:999px;border:1px solid rgba(94,234,212,.22);background:rgba(2,13,18,.78);font-size:12px;color:#cbd5e1;animation:llIpResult .35s ease 1.55s both}.ll-ip-round-score b{font-size:19px;color:#fff;margin:0 8px}
     .ll-ip-sudden{max-width:620px;margin:110px auto 0;text-align:center}.ll-ip-sudden strong{display:block;font-family:'Cormorant Garamond',serif;font-size:52px;color:#fbbf24;text-shadow:0 0 25px rgba(245,158,11,.4);animation:llIpSudden .75s ease both}.ll-ip-sudden span{display:block;margin-top:8px;color:#fde68a;font-size:13px;letter-spacing:.08em}
     .ll-ip-final-word{font-family:'Cormorant Garamond',serif;font-size:clamp(46px,8vw,70px);font-weight:900}.ll-ip-final-word.win{color:#6ee7b7;text-shadow:0 0 28px rgba(16,185,129,.35)}.ll-ip-final-word.loss{color:#fca5a5;text-shadow:0 0 28px rgba(239,68,68,.25)}.ll-ip-final-score{margin-top:12px;font-size:20px;color:#e2e8f0}.ll-ip-final-score b{font-size:34px;color:#fff}.ll-ip-final-copy{margin:10px auto 0;max-width:560px;color:#94a3b8;line-height:1.55;font-size:12px}
-    .ll-ip-demo-box{margin-top:10px;padding:10px 12px;border:1px dashed rgba(45,212,191,.34);border-radius:12px;background:rgba(6,78,76,.11);font-size:11px;color:#99f6e4}.ll-ip-demo-box .ll-btn{width:100%;margin-top:7px}
     @keyframes llIpLights{from{opacity:.55;filter:blur(0)}to{opacity:1;filter:blur(1px)}}@keyframes llIpBallPulse{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.13) rotate(6deg)}}@keyframes llIpKickReveal{to{opacity:1;transform:scale(1);box-shadow:0 18px 42px rgba(0,0,0,.32)}}@keyframes llIpGoalBall{0%{transform:translateX(-50%) translateY(0) scale(1)}60%{transform:translateX(18px) translateY(-78px) scale(.72)}100%{transform:translateX(22px) translateY(-64px) scale(.58)}}@keyframes llIpMissLeft{to{transform:translateX(-112px) translateY(-73px) scale(.65) rotate(-30deg)}}@keyframes llIpMissRight{to{transform:translateX(72px) translateY(-74px) scale(.65) rotate(30deg)}}@keyframes llIpSaved{0%{transform:translateX(-50%) translateY(0)}65%{transform:translateX(-18px) translateY(-55px) scale(.78)}100%{transform:translateX(-8px) translateY(-45px) scale(.72)}}@keyframes llIpResult{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes llIpSudden{0%{opacity:0;transform:scale(.65)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
     @media(max-width:640px){.ll-ip-shell{padding:17px 11px;min-height:640px}.ll-ip-versus{gap:7px}.ll-ip-team{font-size:12px}.ll-ip-team .ll-team-logo,.ll-ip-team img{width:31px;height:31px}.ll-ip-kick-stage{grid-template-columns:1fr 1fr;gap:7px}.ll-ip-kick-card{min-height:205px;padding:11px 7px}.ll-ip-goal-frame{width:115px;height:70px}.ll-ip-actions{grid-template-columns:1fr}.ll-ip-board-row{grid-template-columns:80px minmax(130px,1fr) 42px}.ll-ip-dot{width:17px;height:17px;flex-basis:17px}.ll-ip-intro-card,.ll-ip-final-card{margin-top:62px}}
     @media(prefers-reduced-motion:reduce){.ll-ip-spotlights,.ll-ip-intro-icon,.ll-ip-kick-card,.ll-ip-ball,.ll-ip-kick-result,.ll-ip-kick-reason,.ll-ip-round-score,.ll-ip-sudden strong{animation:none!important;opacity:1!important;transform:none!important}.ll-ip-kick-card{opacity:1}}
@@ -115,7 +118,7 @@ function boardHtml(rt){
 function versusHtml(rt){return `<div class="ll-ip-versus"><div class="ll-ip-team">${teamLogo(rt.playerTeam,'table')}<span>${esc(rt.playerTeam)}</span></div><div class="ll-ip-vs">PENALTILAR</div><div class="ll-ip-team away"><span>${esc(rt.opponentTeam)}</span>${teamLogo(rt.opponentTeam,'table')}</div></div>`;}
 function shell(inner){return `<div class="ll-shell ll-quiz-card"><div class="ll-ip-shell"><div class="ll-ip-spotlights"></div>${inner}</div></div>`;}
 function renderIntro(){
-  if(!runtime)return;area().innerHTML=shell(`<div class="ll-ip-kicker">${esc(requirementKicker(runtime))}</div><div class="ll-ip-title">Kader Penaltılarda</div>${versusHtml(runtime)}<div class="ll-ip-intro-card"><div class="ll-ip-intro-icon">⚽</div><div class="ll-ip-sub"><b>Her kelime bir penaltı.</b><br>Bildim dersen gol. Bilemedim dersen penaltın kaçar. Rakibin atışı ise sen karar verdikten sonra ortaya çıkar.</div><button class="ll-btn primary" onclick="llPenaltyQuizBegin()">Penaltılara Başla</button>${runtime.demo?'<div class="ll-ip-demo-box">Demo modu · maç/kariyer sonucu değişmez, kelime istatistikleri kaydedilmez.</div>':''}</div>`);
+  if(!runtime)return;area().innerHTML=shell(`<div class="ll-ip-kicker">${esc(requirementKicker(runtime))}</div><div class="ll-ip-title">Kader Penaltılarda</div>${versusHtml(runtime)}<div class="ll-ip-intro-card"><div class="ll-ip-intro-icon">⚽</div><div class="ll-ip-sub"><b>Her kelime bir penaltı.</b><br>Bildim dersen gol. Bilemedim dersen penaltın kaçar. Rakibin atışı ise sen karar verdikten sonra ortaya çıkar.</div><button class="ll-btn primary" onclick="llPenaltyQuizBegin()">Penaltılara Başla</button></div>`);
 }
 function ensureQueue(rt,count=6){
   if(!rt)return false;rt.queue=Array.isArray(rt.queue)?rt.queue:[];const have=rt.queue.length-rt.wordIndex;if(have>=count)return true;
@@ -128,7 +131,7 @@ function ensureQueue(rt,count=6){
 function wordForCurrent(rt){if(!ensureQueue(rt,1))return null;const ref=rt.queue[rt.wordIndex];let word=null;try{word=(global.loadUserWords?.()||[]).find(item=>item.id===ref.id)||null;}catch(_){}return word?{ref,word}:null;}
 function markWordUsed(ref,state){if(!ref||!state)return;const used=new Set(ref.cycleStart?[]:(state.usedWords||[]));used.add(ref.id);state.usedWords=[...used];}
 function persistAnswer(rt,correct,ref){
-  if(rt.demo||!ref)return;const state=stateNow();if(!state)return;
+  if(!ref)return;const state=stateNow();if(!state)return;
   const quiz={queue:rt.queue,index:rt.wordIndex,correct:rt.knowledgeCorrect,revealed:true,shown:rt.wordIndex+1,eventType:'penalty-shootout'};
   try{global.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:rt.fixture,quiz,answerIndex:rt.wordIndex,eventType:'penalty-shootout'});}catch(_){}
   try{global.llPersistQuizWordRating?.(ref,quiz,!!correct,{markUsed:false});}catch(_){}
@@ -171,7 +174,7 @@ function renderSuddenDeathIntro(){
 }
 function makeShootout(rt){return {player:rt.playerPens,opponent:rt.opponentPens,scoreA:rt.playerPens,scoreB:rt.opponentPens,home:rt.playerPens,away:rt.opponentPens,winner:rt.playerPens>rt.opponentPens?rt.playerTeam:rt.opponentTeam,playerTeam:rt.playerTeam,opponentTeam:rt.opponentTeam,suddenDeath:rt.kicks.some(k=>k.suddenDeath),interactive:true,quizCorrect:rt.knowledgeCorrect,quizAnswered:rt.kicks.length,kicks:deep(rt.kicks)};}
 function renderFinal(){
-  const rt=runtime;if(!rt)return;const won=rt.playerPens>rt.opponentPens;area().innerHTML=shell(`<div class="ll-ip-kicker">PENALTI ATIŞLARI TAMAMLANDI</div>${versusHtml(rt)}${boardHtml(rt)}<div class="ll-ip-final-card"><div class="ll-ip-final-word ${won?'win':'loss'}">${won?'KAZANDIN!':'ELENDİN'}</div><div class="ll-ip-final-score">Penaltılar <b>${rt.playerPens} – ${rt.opponentPens}</b></div><div class="ll-ip-final-copy">${won?'Son kelimeye kadar kontrol sendeydi. Seri senin lehine bitti.':'Penaltı serisi rakibin lehine sonuçlandı.'}${rt.demo?' Bu yalnızca demoydu; kariyer kaydına işlenmedi.':''}</div><button class="ll-btn primary" onclick="llPenaltyQuizFinishCommit()">${rt.demo?'Dashboarda Dön':'Maç Sonucunu Gör'}</button></div>`);
+  const rt=runtime;if(!rt)return;const won=rt.playerPens>rt.opponentPens;area().innerHTML=shell(`<div class="ll-ip-kicker">PENALTI ATIŞLARI TAMAMLANDI</div>${versusHtml(rt)}${boardHtml(rt)}<div class="ll-ip-final-card"><div class="ll-ip-final-word ${won?'win':'loss'}">${won?'KAZANDIN!':'ELENDİN'}</div><div class="ll-ip-final-score">Penaltılar <b>${rt.playerPens} – ${rt.opponentPens}</b></div><div class="ll-ip-final-copy">${won?'Son kelimeye kadar kontrol sendeydi. Seri senin lehine bitti.':'Penaltı serisi rakibin lehine sonuçlandı.'}</div><button class="ll-btn primary" onclick="llPenaltyQuizFinishCommit()">Maç Sonucunu Gör</button></div>`);
 }
 function finishInteractive(){const rt=runtime;if(!rt)return;rt.phase='final';rt.busy=false;rt.shootout=makeShootout(rt);renderFinal();}
 function remapShootoutForArgs(rt,first,second){
@@ -181,7 +184,7 @@ function remapShootoutForArgs(rt,first,second){
   return {...deep(source),player:source.opponent,opponent:source.player,scoreA:source.opponent,scoreB:source.player,home:source.opponent,away:source.player,playerTeam:first,opponentTeam:second,kicks};
 }
 function commitCompleted(){
-  const rt=runtime;if(!rt||rt.phase!=='final')return;if(rt.demo){runtime=null;global.llPenaltySequenceActive=false;global.llRenderDashboard?.();return;}
+  const rt=runtime;if(!rt||rt.phase!=='final')return;
   const base=rt.baseCommit,original=global.llV12PenaltyShootout;if(typeof base!=='function'){runtime=null;global.llPenaltySequenceActive=false;return;}
   rt.phase='committing';
   global.llV12PenaltyShootout=function(state,first,second){const mapped=remapShootoutForArgs(rt,first,second);return mapped||original.apply(this,arguments);};
@@ -191,38 +194,21 @@ function begin(){const rt=runtime;if(!rt||!['intro','sudden-intro'].includes(rt.
 function buildOpponentPlan(player,opponent){const chance=opponentChance(player,opponent),plan=[];for(let i=0;i<5+MAX_SUDDEN_DEATH_ROUNDS+2;i++)plan.push(Math.random()<chance);return {chance,plan};}
 function startInteractive(context){
   if(runtime)return false;const state=stateNow(),player=context.playerTeam||playerTeam(),opponent=context.opponentTeam||opponentTeam(),built=buildOpponentPlan(player,opponent);
-  runtime={version:VERSION,demo:!!context.demo,baseCommit:context.baseCommit||null,requirement:context.requirement||null,fixture:context.fixture||fixtureNow(),playerTeam:player,opponentTeam:opponent,opponentChance:built.chance,opponentPlan:built.plan,kicks:[],playerPens:0,opponentPens:0,knowledgeCorrect:0,round:1,phase:'intro',revealed:false,busy:false,queue:[],wordIndex:0};
+  runtime={version:VERSION,baseCommit:context.baseCommit||null,requirement:context.requirement||null,fixture:context.fixture||fixtureNow(),playerTeam:player,opponentTeam:opponent,opponentChance:built.chance,opponentPlan:built.plan,kicks:[],playerPens:0,opponentPens:0,knowledgeCorrect:0,round:1,phase:'intro',revealed:false,busy:false,queue:[],wordIndex:0};
   if(!ensureQueue(runtime,5)){runtime=null;return false;}global.llPenaltySequenceActive=true;renderIntro();return true;
 }
-function abortToAutomatic(message){const rt=runtime;if(!rt)return;const base=rt.baseCommit,isDemo=rt.demo;runtime=null;global.llPenaltySequenceActive=false;if(message&&typeof global.alert==='function')global.alert(message);if(isDemo){global.llRenderDashboard?.();return;}base?.();}
-
-function demo(){
-  if(runtime)return;const state=stateNow();if(!state)return;try{global.sessionStorage?.setItem(DEMO_SESSION_KEY,'1');}catch(_){}
-  const fx=fixtureNow(),rec=activeNationalRecord(state),isNational=!!(fx&&(fx.nationalTournament||fx.competition==='national'||fx.league==='national'||fx.nationalFixtureId));
-  const player=isNational&&rec?.selectedTeam?rec.selectedTeam:(state.playerTeam||playerTeam());
-  const opponent=fx?(fx.home===player?fx.away:fx.home):opponentTeam();
-  const req=isNational?{kind:'national',comp:'national',nationalType:String(fx?.nationalType||rec?.type||'national').toLowerCase(),stage:String(fx?.nationalStage||rec?.edition?.stage||'group').toLowerCase(),label:fx?.roundLabel||''}:null;
-  if(!startInteractive({demo:true,playerTeam:player,opponentTeam:opponent||opponentTeam(),fixture:fx,requirement:req})){global.alert?.('Penaltı demosu için en az 5 kullanılabilir kelime gerekiyor.');}
-}
-function injectDemoButton(){
-  if(typeof document==='undefined'||runtime)return;let used=false;try{used=global.sessionStorage?.getItem(DEMO_SESSION_KEY)==='1';}catch(_){}if(used)return;const root=area();if(!root||root.querySelector('[data-penalty-quiz-demo]'))return;const next=root.querySelector('.ll-next-match'),card=next?.closest('.ll-card');if(!card)return;const box=document.createElement('div');box.className='ll-ip-demo-box';box.setAttribute('data-penalty-quiz-demo','');box.innerHTML='<b>🥅 Tek Seferlik Penaltı Demo</b><br>Yeni kelime-penaltı sistemini kariyer sonucunu değiştirmeden test et.<button class="ll-btn" type="button" onclick="llPenaltyQuizDemo()">Penaltı Demo\'yu Başlat</button>';card.appendChild(box);
-}
+function abortToAutomatic(message){const rt=runtime;if(!rt)return;const base=rt.baseCommit;runtime=null;global.llPenaltySequenceActive=false;if(message&&typeof global.alert==='function')global.alert(message);base?.();}
 
 injectStyles();
 const BASE_COMMIT=global.llCommitCurrentMatch;
 if(typeof BASE_COMMIT==='function')global.llCommitCurrentMatch=function(){
   if(runtime)return false;const state=stateNow(),match=global.lexLeague?.match,requirement=shootoutRequirement(match,state);if(!requirement)return BASE_COMMIT.apply(this,arguments);
-  const started=startInteractive({demo:false,baseCommit:BASE_COMMIT,requirement,fixture:match.fixture,playerTeam:match.player,opponentTeam:match.opponent});
+  const started=startInteractive({baseCommit:BASE_COMMIT,requirement,fixture:match.fixture,playerTeam:match.player,opponentTeam:match.opponent});
   if(!started)return BASE_COMMIT.apply(this,arguments);return false;
 };
-const BASE_DASH=global.llRenderDashboard;
-if(typeof BASE_DASH==='function')global.llRenderDashboard=function(){const result=BASE_DASH.apply(this,arguments);setTimeout(injectDemoButton,0);return result;};
-
 global.llPenaltyQuizBegin=begin;
 global.llPenaltyQuizReveal=reveal;
 global.llPenaltyQuizRate=rate;
 global.llPenaltyQuizFinishCommit=commitCompleted;
-global.llPenaltyQuizDemo=demo;
 global.llInteractivePenaltyTestApi={VERSION,shootoutRequirement,isNationalMatch,nationalStage,opponentChance,isDecided:rt=>isDecided(rt),makeShootout:rt=>makeShootout(rt)};
-setTimeout(injectDemoButton,0);
 })(globalThis);
