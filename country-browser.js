@@ -14,6 +14,32 @@
     const team=typeof llDomesticTeamDef==='function'?llDomesticTeamDef(name):null;
     return llTeamLogo(team||name,'table');
   }
+  function llCBLastLeagueChampion(state,code,tier){
+    // Primary source: the shared champion registry populated at season end.
+    if(typeof llV13DomesticCompetition==='function'&&typeof llV13LastChampion==='function'){
+      const competition=llV13DomesticCompetition(code,tier);
+      const record=llV13LastChampion(state,competition);
+      if(record)return record;
+    }
+    // Backward compatibility for saves created before the champion registry existed.
+    const history=[...(state.seasonHistory||[])].sort((a,b)=>Number(b.season)-Number(a.season));
+    for(const entry of history){
+      const summary=entry?.countrySummaries?.[code];
+      const rows=summary?.[tier==='tier1'?'tier1Rows':'tier2Rows']||entry?.leagueRows?.[code]?.[tier]||[];
+      if(rows.length){
+        const sorted=[...rows].sort((a,b)=>Number(b.Pts)-Number(a.Pts)||Number(b.GD)-Number(a.GD)||Number(b.GF)-Number(a.GF));
+        const team=sorted[0]?.team;
+        if(team)return {season:Number(entry.season),competition:`domestic:${String(code).toUpperCase()}:${tier}`,team,source:'archive'};
+      }
+    }
+    return null;
+  }
+  function llCBChampionBadge(state,code,tier){
+    const record=llCBLastLeagueChampion(state,code,tier);
+    if(typeof llV13ChampionBadge==='function')return llV13ChampionBadge(record);
+    if(!record)return '<span class="ll-last-champion empty">Son şampiyon: Henüz belirlenmedi</span>';
+    return `<span class="ll-last-champion">${llCBLogo(record.team)}<span>Son şampiyon: <b>${llEscape(record.team)}</b> · S${Number(record.season)}</span></span>`;
+  }
   function llCBLeagueTable(state,code,tier){
     const rows=llCBSortRows(state,code,tier),meta=llCBMeta(code),qualifications=tier==='tier1'&&typeof llV2Qualifications==='function'&&rows.length?llV2Qualifications(rows,state.cups?.[code]?.winner||null):null;
     const zones=qualifications?{ucl:new Set(qualifications.ucl||[]),uel:new Set(qualifications.uel||[]),uecl:new Set(qualifications.uecl||[])}:null;
@@ -21,7 +47,7 @@
     const zoneClass=team=>{const type=zoneType(team);return type?`${type}-zone `:'';};
     const zoneColor=team=>({ucl:'#8b5cf6',uel:'#f97316',uecl:'#14b8a6'}[zoneType(team)]||'');
     const legend=tier==='tier1'?`<div class="ll-zone-legend"><span><i class="ll-zone-dot ucl"></i>Şampiyonlar Ligi</span><span><i class="ll-zone-dot uel"></i>Avrupa Ligi</span><span><i class="ll-zone-dot uecl"></i>Konferans Ligi</span></div>`:'';
-    return `<div class="ll-card"><div class="ll-card-title">${meta.flag||''} ${llEscape(typeof llMLLeagueLabel==='function'?llMLLeagueLabel(code,tier):(tier==='tier1'?meta.tier1Label:meta.tier2Label))} · Canlı Puan Durumu</div><div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-compact-standings-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>{const color=zoneColor(row.team);return `<tr class="${zoneClass(row.team)}"><td${color?` style="box-shadow:inset 5px 0 ${color};padding-left:13px"`:''}>${index+1}</td><td><span class="ll-standing-team">${llCBLogo(row.team)}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars">${Number(state.teams?.[row.team]?.stars||1)}★</span></span></td><td>${Number(row.P)||0}</td><td>${Number(row.W)||0}</td><td>${Number(row.D)||0}</td><td>${Number(row.L)||0}</td><td>${Number(row.GF)||0}</td><td>${Number(row.GA)||0}</td><td>${Number(row.GD)||0}</td><td><b>${Number(row.Pts)||0}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}</div>`;
+    return `<div class="ll-card"><div class="ll-card-title ll-with-last-champion"><span>${meta.flag||''} ${llEscape(typeof llMLLeagueLabel==='function'?llMLLeagueLabel(code,tier):(tier==='tier1'?meta.tier1Label:meta.tier2Label))} · Canlı Puan Durumu</span>${llCBChampionBadge(state,code,tier)}</div><div class="ll-table-wrap ll-standings-wrap"><table class="ll-table ll-standings-table ll-compact-standings-table"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map((row,index)=>{const color=zoneColor(row.team);return `<tr class="${zoneClass(row.team)}"><td${color?` style="box-shadow:inset 5px 0 ${color};padding-left:13px"`:''}>${index+1}</td><td><span class="ll-standing-team">${llCBLogo(row.team)}<span class="ll-standing-team-name" title="${llEscape(row.team)}">${llEscape(row.team)}</span><span class="ll-standing-stars">${Number(state.teams?.[row.team]?.stars||1)}★</span></span></td><td>${Number(row.P)||0}</td><td>${Number(row.W)||0}</td><td>${Number(row.D)||0}</td><td>${Number(row.L)||0}</td><td>${Number(row.GF)||0}</td><td>${Number(row.GA)||0}</td><td>${Number(row.GD)||0}</td><td><b>${Number(row.Pts)||0}</b></td></tr>`;}).join('')}</tbody></table></div>${legend}</div>`;
   }
   function llCBCupRoundName(cup,round,field){
     const count=(field||[]).filter(Boolean).length;
