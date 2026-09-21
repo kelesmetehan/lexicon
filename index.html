@@ -4567,11 +4567,7 @@ function llMaskAnswerInExample(example,answer){
     const pattern=llExampleAnswerPattern(candidate);if(!pattern)return;
     output=output.replace(new RegExp(pattern,'gi'),()=>{masked=true;return '_____';});
   });
-  if(masked)return output;
-  // Imported/custom words sometimes have an English example that uses a
-  // different inflection or does not literally contain the saved expression.
-  // TR→EN questions must still show an example instead of an empty area.
-  return String(answer||'').trim()?`The expression "_____" came up during our discussion.`:'';
+  return masked?output:'';
 }
 
 let llExampleSerial = 0;
@@ -4647,49 +4643,6 @@ function llRepairStoredWordEncoding(word) {
   return word;
 }
 
-function llBuildMissingEnglishExample(word) {
-  const expression=String(word?.en||'').trim();
-  if(!expression)return '';
-  const key=expression.toLowerCase();
-  const exact={
-    'need':'We need more time to finish the task.',
-    'require':'This task may require more time than expected.',
-    'depend on':'The result may depend on the final test.',
-    'fit for':'This tool is fit for this type of work.',
-    'be supposed to':'We are supposed to finish this task today.'
-  };
-  return exact[key]||`The expression "${expression}" came up during our discussion.`;
-}
-function llBuildMissingEnglishExampleTr(word) {
-  const expression=String(word?.en||'').trim().toLowerCase();
-  const exact={
-    'need':'Görevi bitirmek için daha fazla zamana ihtiyacımız var.',
-    'require':'Bu görev beklenenden daha fazla zaman gerektirebilir.',
-    'depend on':'Sonuç son teste bağlı olabilir.',
-    'fit for':'Bu araç bu tür bir iş için uygundur.',
-    'be supposed to':'Bu görevi bugün bitirmemiz bekleniyor.'
-  };
-  if(exact[expression])return exact[expression];
-  const meaning=String(word?.tr||'').trim();
-  return meaning?`Konuşmamız sırasında "${meaning}" anlamındaki ifade geçti.`:'Konuşmamız sırasında bu ifade geçti.';
-}
-function llEnsureEnglishExample(word) {
-  if(!word||typeof word!=='object')return word;
-  if(!String(word.example||'').trim()){
-    word.example=llBuildMissingEnglishExample(word);
-    if(!String(word.exampleTr||'').trim())word.exampleTr=llBuildMissingEnglishExampleTr(word);
-    word.exampleAutoRepaired=true;
-  }
-  return word;
-}
-function llRepairMissingEnglishExamples(words,persist=false) {
-  if(!Array.isArray(words))return {words:[],repaired:0};
-  let repaired=0;
-  words.forEach(word=>{const before=String(word?.example||'').trim();llEnsureEnglishExample(word);if(!before&&String(word?.example||'').trim())repaired++;});
-  if(persist&&repaired){try{localStorage.setItem(DB_KEY,JSON.stringify(words));}catch(e){console.error(e);}}
-  return {words,repaired};
-}
-
 function initDatabase() {
   try {
     let existingWords = [];
@@ -4699,6 +4652,16 @@ function initDatabase() {
 
     // Kullanıcının kaldırmayı seçtiği yerleşik kelimeler eski kariyerlerde de geri gelmez.
     existingWords = existingWords.filter(word => !LL_RETIRED_VOCABULARY.has(String(word?.en || "").trim().toLowerCase()));
+
+    const llEnsureEnglishExample = word => {
+      if (!word || String(word.example || '').trim()) return word;
+      const expression = String(word.en || '').trim();
+      if (!expression) return word;
+      // Eski/i\u00e7e aktar\u0131lm\u0131\u015f kay\u0131tlarda c\u00fcmle alan\u0131 bo\u015fsa soru sat\u0131r\u0131 hi\u00e7bir zaman kaybolmas\u0131n.
+      word.example = 'We discussed '+expression+' in today\'s lesson.';
+      if (!String(word.exampleTr || '').trim()) word.exampleTr = 'Bug\u00fcnk\u00fc derste bu ifadeyi konu\u015ftuk.';
+      return word;
+    };
 
     existingWords.forEach(word => {
       llRepairStoredWordEncoding(word);
@@ -4748,23 +4711,17 @@ function initDatabase() {
 function loadUserWords() {
   try {
     const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-    // Repair old/imported custom records immediately as well as at startup.
-    // This covers words added after initDatabase ran in the current session.
-    llRepairMissingEnglishExamples(allWords,true);
     const userWords = allWords.filter(w => w && w.source === 'user');
     if (userWords.length >= 10) return userWords;
   } catch (e) { console.error(e); }
   if (LL_RUNTIME_WORD_FALLBACK.length < 10) {
     initDatabase();
     try {
-      const repairedAll = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-      llRepairMissingEnglishExamples(repairedAll,true);
-      const repairedWords = repairedAll.filter(w => w && w.source === 'user');
+      const repairedWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(w => w && w.source === 'user');
       if (repairedWords.length >= 10) return repairedWords;
     } catch (e) { console.error(e); }
   }
   if (LL_RUNTIME_WORD_FALLBACK.length < 10) LL_RUNTIME_WORD_FALLBACK = llBuildRuntimeNativePool();
-  llRepairMissingEnglishExamples(LL_RUNTIME_WORD_FALLBACK,false);
   return LL_RUNTIME_WORD_FALLBACK;
 }function markNewWordFrame(word,element){const corrects=llNewWordCorrectCount(word);if(!element||corrects>=LL_NEW_WORD_CORRECT_TARGET)return;element.classList.add('is-new-word');element.insertAdjacentHTML('afterbegin',`<div class="new-word-badge">YEN\u0130 KEL\u0130ME \u00b7 ${corrects}/${LL_NEW_WORD_CORRECT_TARGET} DO\u011eRU</div>`);try{llMarkFirstExposure(word);}catch{}}
 
@@ -6664,19 +6621,19 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20260917-logo-chain-v2"></script>
+<script src="league-v2.js?v=20260906-week-results-summary-v1"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20260811-manager-signing-transition-3"></script>
 <script src="europe-knockout-center.js?v=20260916-bracket-integrity-v2"></script>
 <script src="europe-knockout-tiebreak.js?v=20260723-1"></script>
-<script src="europe-team-pools.js?v=20260917-portugal-europe-v1"></script>
-<script src="european-leagues-pools.js?v=20260917-portugal-leagues-v1"></script>
+<script src="europe-team-pools.js?v=20260809-local-europe-logos-2"></script>
+<script src="european-leagues-pools.js?v=20260831-reserve-promotion-v1"></script>
 <script src="last-champions.js?v=20260723-2"></script>
 <script src="penalty-shootout-animation.js?v=20260907-supercup-penalty-minimal-v1"></script>
 <script src="ai-opponent-strategy.js?v=20260807-reroll-chain-1"></script>
-<script src="multi-league-engine.js?v=20260917-portugal-migration-v2"></script>
+<script src="multi-league-engine.js?v=20260906-reserve-save-repair-v2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
-<script src="country-browser.js?v=20260918-foreign-last-champion-v1"></script>
+<script src="country-browser.js?v=20260803-2"></script>
 <script src="diagnostics.js?v=20260906-learning-priority-v1"></script>
 <script src="trophy-cinematic.js?v=20260916-financial-crisis-lock-v1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
@@ -6691,23 +6648,21 @@ renderPreStart();
 <script src="team-star-decline.js?v=20260804-2"></script>
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20260911-desired-club-applications-v1"></script>
-<script src="manager-profile-overview.js?v=20260918-national-trophies-v1"></script>
+<script src="manager-profile-overview.js?v=20260804-2"></script>
 <script src="board-confidence-reputation.js?v=20260911-full-example-sentence-v1"></script>
 <script src="manager-offer-fit.js?v=20260831-reserve-promotion-v1"></script>
 <script src="europe-calendar-guard.js?v=20260905-national-europe-protection-v2"></script>
 <script src="legend-call.js?v=20260911-full-example-sentence-v1"></script>
 <script src="welcome-to-hell.js?v=20260911-full-example-sentence-v1"></script>
-<script src="dice-lock-risk.js?v=20260918-cinematic-upgrade-v3"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260906-no-ghost-word-v1"></script>
 <script src="gerund-infinitive-quiz.js?v=20260906-learning-no-ghost-v1"></script>
-<script src="national-tournaments.js?v=20260918-national-stars-v1"></script>
+<script src="national-tournaments.js?v=20260910-dynamic-groups-national-applications-v1"></script>
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
 <script src="europe-draw-cinematic.js?v=20260906-mandatory-career-draw-v1"></script>
-<script src="national-draw-cinematic.js?v=20260918-national-stars-v1"></script>
-<script src="financial-crisis.js?v=20260916-financial-crisis-production-v4"></script>
+<script src="national-draw-cinematic.js?v=20260911-full-example-sentence-v1"></script>
+<script src="financial-crisis.js?v=20260921-all-slotted-cards-v5"></script>
 <script src="team-league-navigation.js?v=20260916-team-league-nav-v1"></script>
-<script src="interactive-penalty-quiz.js?v=20260918-no-demo-v4"></script>
 </body>
 </html>

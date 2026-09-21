@@ -2,8 +2,7 @@
 (function(){
   'use strict';
 
-  const VERSION=3;
-  const DEMO_VERSION=2;
+  const VERSION=2;
   const QUIZ_SIZE=20;
   const BONUS_AP=30;
   const BONUS_LP=50;
@@ -11,7 +10,6 @@
   const SYSTEM_KEY='financialCrisis';
   const OVERLAY_ID='ll-financial-crisis-overlay';
   const STYLE_ID='ll-financial-crisis-style';
-  let demoEvent=null;
 
   function num(value,fallback=0){value=Number(value);return Number.isFinite(value)?value:fallback;}
   function stateNow(){return globalThis.lexLeague?.state||null;}
@@ -51,8 +49,6 @@
     sys.version=VERSION;
     if(!sys.plans||typeof sys.plans!=='object')sys.plans={};
     if(!Array.isArray(sys.events))sys.events=[];
-    if(typeof sys.demoUsed!=='boolean')sys.demoUsed=false;
-    if(!Number.isFinite(Number(sys.demoVersion)))sys.demoVersion=sys.demoUsed?1:0;
     if(sys.lastCrisisSeason!=null)sys.lastCrisisSeason=Math.max(1,Math.floor(num(sys.lastCrisisSeason)));
     return sys;
   }
@@ -61,55 +57,31 @@
     for(let i=sys.events.length-1;i>=0;i--){const e=sys.events[i];if(e&&['pending','quiz','result'].includes(e.status))return e;}
     return null;
   }
-  function activeEvent(state=stateNow()){
-    return demoEvent||latestUnfinishedEvent(state);
-  }
-  function demoAvailable(state=stateNow()){
-    const sys=ensureSystem(state);
-    return !!state&&!!sys&&num(sys.demoVersion,0)<DEMO_VERSION&&!demoEvent&&!latestUnfinishedEvent(state)&&occupiedSlots(state).length>0;
-  }
-  function makeDemoQueue(){
-    const words=typeof globalThis.loadUserWords==='function'?loadUserWords():[];
-    const pool=Array.isArray(words)?words.filter(word=>word&&word.id):[];
-    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
-    return pool.slice(0,QUIZ_SIZE).map(word=>({id:word.id,askTrToEn:Math.random()>.5,demo:true}));
-  }
-  function createDemoEvent(state=stateNow()){
-    if(!state||!demoAvailable(state))return null;
-    const slots=occupiedSlots(state);if(!slots.length)return null;
-    const only=slots.length===1?slots[0]:null;
-    demoEvent={
-      id:`financial-crisis-demo-${Date.now()}`,
-      demo:true,
-      season:Math.max(1,Math.floor(num(state.season,1))),
-      completedWeek:Math.max(1,Math.floor(num(state.week,1))),
-      status:'pending',
-      createdAt:new Date().toISOString(),
-      team:state.playerTeam,
-      riskPosition:only?.position||null,
-      riskCardId:only?.cardId||null,
-      visibleCards:slots.map(x=>({...x})),
-      quiz:null,
-      result:null
-    };
-    return demoEvent;
-  }
-  function selectDemoRisk(position,state=stateNow()){
-    const event=demoEvent;if(!state||!event||!event.demo||event.status!=='pending')return false;
-    const slot=(event.visibleCards||occupiedSlots(state)).find(x=>x.position===position&&currentTeam(state)?.cards?.[x.position]===x.cardId);
-    if(!slot)return false;
-    event.riskPosition=slot.position;event.riskCardId=slot.cardId;return true;
-  }
-  function markDemoUsed(state=stateNow()){
-    if(!state)return;
-    const sys=ensureSystem(state);if(!sys)return;
-    sys.demoUsed=true;sys.demoVersion=DEMO_VERSION;save();
-  }
+  /*
+   * Mali Kriz aday havuzu sözleşme durumundan bağımsızdır.
+   * Slotta kart varsa remaining=0 olsa bile kriz ekranında gösterilir ve
+   * satış riski için seçilebilir. Bu kural normal maç kart aktifliğini etkilemez.
+   */
   function occupiedSlots(state=stateNow()){
     if(!state)return [];
     let team=null;try{team=typeof globalThis.llTeamState==='function'?llTeamState(state.playerTeam):state.teams?.[state.playerTeam];}catch{team=state.teams?.[state.playerTeam];}
     if(!team)return [];
-    return positions().filter(pos=>!!team.cards?.[pos]).map(pos=>({position:pos,cardId:team.cards[pos]}));
+    try{if(typeof globalThis.llEnsureTeamContracts==='function')llEnsureTeamContracts(team);}catch{}
+    return positions()
+      .filter(pos=>!!team.cards?.[pos])
+      .map(pos=>{
+        const cardId=team.cards[pos];
+        const contract=team.cardContracts?.[pos];
+        const remaining=contract&&contract.cardId===cardId?Math.max(0,num(contract.remaining)):null;
+        const total=contract&&contract.cardId===cardId?Math.max(0,num(contract.total)):null;
+        return {
+          position:pos,
+          cardId,
+          remaining,
+          total,
+          contractExpired:remaining===0
+        };
+      });
   }
   function buildSeasonPlan(state=stateNow()){
     const sys=ensureSystem(state);if(!sys)return null;
@@ -166,8 +138,6 @@
   }
   function simpleCardHtml(slot,event,state){
     const team=currentTeam(state),isRisk=slot.position===event.riskPosition&&slot.cardId===event.riskCardId;
-    const selectable=!!event.demo&&event.status==='pending';
-    const selectAttr=selectable?` role="button" tabindex="0" onclick="llFinancialCrisisSelectDemoCard('${encodeURIComponent(slot.position)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();llFinancialCrisisSelectDemoCard('${encodeURIComponent(slot.position)}')}"`:'';
     let inner='';
     try{
       if(typeof globalThis.llCardHtml==='function')inner=llCardHtml(slot.cardId,state.playerTeam,'Kart yok');
@@ -176,8 +146,7 @@
       let card=null;try{card=globalThis.llCard?.(slot.cardId);}catch{}
       inner=`<div class="ll-ability ${esc(card?.rarity||'')}"><b>${esc(card?.name||slot.cardId)}</b><br><span>${esc(card?.trigger||'')}</span><br><span>${esc(card?.effect||'')}</span><span class="ll-ability-performance">${esc(contractText(team,slot.position))}</span></div>`;
     }
-    const badge=isRisk?`<span class="ll-fc-risk-badge">${event.demo?'SEÇİLDİ · ':''}SATIŞ RİSKİ</span>`:(selectable?'<span class="ll-fc-select-badge">SEÇ</span>':'');
-    return `<div class="ll-fc-slot ${isRisk?'risk':''} ${selectable?'selectable':''}" style="--fc-delay:${event.visibleCards.indexOf(slot)*.12}s"${selectAttr}><div class="ll-slot-head"><span class="ll-position">${posIcon(slot.position)} ${esc(slot.position)}</span>${badge}</div>${inner}</div>`;
+    return `<div class="ll-fc-slot ${isRisk?'risk':''}" style="--fc-delay:${event.visibleCards.indexOf(slot)*.12}s"><div class="ll-slot-head"><span class="ll-position">${posIcon(slot.position)} ${esc(slot.position)}</span>${isRisk?'<span class="ll-fc-risk-badge">SATIŞ RİSKİ</span>':''}</div>${inner}</div>`;
   }
 
   function injectStyles(){
@@ -187,7 +156,7 @@
       .ll-fc-dialog{position:relative;width:min(980px,100%);padding:24px;border:1px solid rgba(248,113,113,.52);border-radius:22px;background:radial-gradient(circle at 50% 0,rgba(239,68,68,.15),transparent 38%),linear-gradient(155deg,rgba(10,15,24,.97),rgba(21,14,18,.98));box-shadow:0 30px 100px rgba(0,0,0,.72),0 0 55px rgba(239,68,68,.14);overflow:hidden}
       .ll-fc-dialog:before{content:'';position:absolute;inset:-45%;pointer-events:none;background:repeating-conic-gradient(from 12deg,rgba(248,113,113,.045) 0 1deg,transparent 1deg 16deg);animation:llFcRotate 26s linear infinite}
       .ll-fc-content{position:relative;z-index:1}.ll-fc-kicker{color:#fca5a5;font-size:10px;font-weight:950;letter-spacing:2.2px;text-transform:uppercase}.ll-fc-title{margin:5px 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(38px,8vw,64px);font-weight:700;line-height:.95;color:#fff1f2;text-shadow:0 0 24px rgba(239,68,68,.25)}
-      .ll-fc-copy{max-width:720px;color:#cbd5e1;font-size:13px;line-height:1.6}.ll-fc-copy strong{color:#fecaca}.ll-fc-demo-note{margin-top:10px;padding:9px 11px;border:1px solid rgba(56,189,248,.28);border-radius:11px;background:rgba(8,47,73,.34);color:#bae6fd;font-size:11px;font-weight:800}.ll-fc-demo-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,.12)}.ll-fc-demo-row .ll-muted{font-size:10px}.ll-fc-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}.ll-fc-slot{position:relative;padding:12px;border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(15,23,42,.72);opacity:0;transform:translateY(18px) scale(.97);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards}.ll-fc-slot.risk{border-color:rgba(248,113,113,.8);box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 30px rgba(239,68,68,.15);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards,llFcRisk 1.8s ease-in-out calc(var(--fc-delay) + .6s) infinite}.ll-fc-slot.selectable{cursor:pointer;transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}.ll-fc-slot.selectable:hover{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 2px rgba(56,189,248,.08)}.ll-fc-slot.selectable:focus{outline:2px solid rgba(56,189,248,.72);outline-offset:2px}.ll-fc-risk-badge,.ll-fc-select-badge{padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.8px}.ll-fc-risk-badge{background:rgba(127,29,29,.72);border:1px solid rgba(248,113,113,.58);color:#fecaca}.ll-fc-select-badge{background:rgba(8,47,73,.7);border:1px solid rgba(56,189,248,.45);color:#bae6fd}.ll-fc-slot .ll-ability{width:100%;text-align:left}.ll-fc-actions{display:flex;gap:10px;align-items:stretch;margin-top:18px}.ll-fc-actions .ll-btn{flex:1}.ll-fc-primary{background:linear-gradient(135deg,#dc2626,#f97316)!important;border-color:rgba(254,202,202,.5)!important;color:white!important}.ll-fc-skip{width:100%;margin-top:9px!important;border-color:rgba(248,113,113,.34)!important;color:#fecaca!important;background:rgba(69,10,10,.34)!important}.ll-fc-warning{margin-top:9px;color:#fca5a5;font-size:10px;text-align:center}
+      .ll-fc-copy{max-width:720px;color:#cbd5e1;font-size:13px;line-height:1.6}.ll-fc-copy strong{color:#fecaca}.ll-fc-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}.ll-fc-slot{position:relative;padding:12px;border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(15,23,42,.72);opacity:0;transform:translateY(18px) scale(.97);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards}.ll-fc-slot.risk{border-color:rgba(248,113,113,.8);box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 30px rgba(239,68,68,.15);animation:llFcCardIn .48s cubic-bezier(.2,.88,.3,1.15) var(--fc-delay) forwards,llFcRisk 1.8s ease-in-out calc(var(--fc-delay) + .6s) infinite}.ll-fc-risk-badge{padding:4px 7px;border-radius:999px;background:rgba(127,29,29,.72);border:1px solid rgba(248,113,113,.58);color:#fecaca;font-size:8px;font-weight:950;letter-spacing:.8px}.ll-fc-slot .ll-ability{width:100%;text-align:left}.ll-fc-actions{display:flex;gap:10px;align-items:stretch;margin-top:18px}.ll-fc-actions .ll-btn{flex:1}.ll-fc-primary{background:linear-gradient(135deg,#dc2626,#f97316)!important;border-color:rgba(254,202,202,.5)!important;color:white!important}.ll-fc-skip{width:100%;margin-top:9px!important;border-color:rgba(248,113,113,.34)!important;color:#fecaca!important;background:rgba(69,10,10,.34)!important}.ll-fc-warning{margin-top:9px;color:#fca5a5;font-size:10px;text-align:center}
       .ll-fc-quiz{background:radial-gradient(circle at 50% 0,rgba(220,38,38,.13),transparent 40%),linear-gradient(180deg,#090d13,#10141b)}.ll-fc-quiz .ll-question{border-color:rgba(248,113,113,.5);box-shadow:inset 0 0 40px rgba(127,29,29,.12)}.ll-fc-quiz .ll-btn.primary{background:linear-gradient(135deg,#dc2626,#f97316)!important}.ll-fc-result{max-width:720px;margin:0 auto;text-align:center}.ll-fc-result-icon{font-size:64px;margin:5px 0 10px}.ll-fc-result-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(34px,7vw,53px);font-weight:700}.ll-fc-result.danger .ll-fc-result-title{color:#fca5a5}.ll-fc-result.warning .ll-fc-result-title{color:#fde68a}.ll-fc-result.safe .ll-fc-result-title{color:#99f6e4}.ll-fc-result.bonus .ll-fc-result-title{color:#fde68a}.ll-fc-result-detail{margin:12px auto 0;padding:14px;border:1px solid rgba(255,255,255,.10);border-radius:13px;background:rgba(15,23,42,.66);color:#cbd5e1;line-height:1.6}
       @keyframes llFcFade{from{opacity:0}to{opacity:1}}@keyframes llFcRotate{to{transform:rotate(360deg)}}@keyframes llFcCardIn{to{opacity:1;transform:none}}@keyframes llFcRisk{0%,100%{box-shadow:0 0 0 2px rgba(239,68,68,.10),0 0 23px rgba(239,68,68,.12)}50%{box-shadow:0 0 0 2px rgba(248,113,113,.28),0 0 42px rgba(239,68,68,.30)}}
       @media(max-width:760px){#${OVERLAY_ID}{align-items:start;padding:12px}.ll-fc-dialog{padding:18px 13px;margin-top:3vh}.ll-fc-cards{grid-template-columns:1fr}.ll-fc-actions{flex-direction:column}.ll-fc-title{font-size:44px}}@media(prefers-reduced-motion:reduce){.ll-fc-dialog:before,.ll-fc-slot,.ll-fc-slot.risk{animation:none;opacity:1;transform:none}}
@@ -204,37 +173,20 @@
   function renderCrisisOverlay(event){
     const state=stateNow();if(!state||!event||event.status!=='pending'||typeof document==='undefined')return false;
     if(document.getElementById(OVERLAY_ID))return true;
-    if(otherCinematicOpen()){setTimeout(()=>{const latest=activeEvent();if(latest?.status==='pending'&&isDashboardVisible())renderCrisisOverlay(latest);},260);return false;}
+    if(otherCinematicOpen()){setTimeout(()=>{const latest=latestUnfinishedEvent();if(latest?.status==='pending'&&isDashboardVisible())renderCrisisOverlay(latest);},260);return false;}
     if(!isDashboardVisible())return false;
-    const hasRisk=!!event.riskPosition&&!!event.riskCardId;
-    if(hasRisk&&!riskCardStillPresent(event,state)){
-      const slots=occupiedSlots(state);
-      if(!slots.length){
-        event.status='done';event.cancelledReason='no-cards';
-        if(event.demo)demoEvent=null;else save();
-        return false;
-      }
-      if(event.demo){event.riskPosition=null;event.riskCardId=null;event.visibleCards=slots.map(x=>({...x}));}
-      else{const risk=slots[Math.floor(Math.random()*slots.length)];event.riskPosition=risk.position;event.riskCardId=risk.cardId;event.visibleCards=slots.map(x=>({...x}));save();}
-    }else if(!hasRisk&&!event.demo){
-      const slots=occupiedSlots(state);if(!slots.length)return false;
+    if(!riskCardStillPresent(event,state)){
+      const slots=occupiedSlots(state);if(!slots.length){event.status='done';event.cancelledReason='no-cards';save();return false;}
       const risk=slots[Math.floor(Math.random()*slots.length)];event.riskPosition=risk.position;event.riskCardId=risk.cardId;event.visibleCards=slots.map(x=>({...x}));save();
     }
     setSequenceActive(true);injectStyles();document.body?.classList.add('ll-cinematic-open');
-    const demo=!!event.demo,selected=!!event.riskPosition&&!!event.riskCardId;
-    const kicker=demo?`🧪 GÜVENLİ DEMO · SEZON ${event.season}`:`YÖNETİM BİLDİRİMİ · SEZON ${event.season}`;
-    const demoNote=demo?`<div class="ll-fc-demo-note">Bu bir testtir. Kartların, maç hakların, AP/LP değerlerin ve gerçek Mali Kriz takvimin değişmeyecek.${selected?' Seçtiğin kart için senaryo çalıştırılacak.':' <b>Önce test etmek istediğin karta tıkla.</b>'}</div>`:'';
-    const skipLabel=demo?'Geç · Kart Kaybını Simüle Et':'Geç · Riskteki Kartı Kaybet';
-    const warning=demo&&!selected?'Önce kartlardan birini seç.':demo?`Gerçek krizde Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`:`Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.`;
-    const disabled=demo&&!selected?' disabled style="opacity:.42;pointer-events:none"':'';
-    const overlay=document.createElement('div');overlay.id=OVERLAY_ID;overlay.innerHTML=`<section class="ll-fc-dialog" role="dialog" aria-modal="true" aria-label="Mali kriz"><div class="ll-fc-content"><div class="ll-fc-kicker">${kicker}</div><div class="ll-fc-title">🚨 MALİ KRİZ</div><div class="ll-fc-copy">Kulüp yönetimi acil mali önlem kararı aldı. Kadrodaki kartlardan biri satış riski altında. <strong>Bir kart satılacak. Krizi aşmaya çalış.</strong><br>20 soruluk sınavda <b>15 veya daha fazla</b> doğru kartı kayıpsız korur.</div>${demoNote}<div class="ll-fc-cards">${(event.visibleCards||occupiedSlots(state)).map(slot=>simpleCardHtml(slot,event,state)).join('')}</div><div class="ll-fc-actions"><button class="ll-btn ll-fc-primary" type="button" onclick="llFinancialCrisisStartQuiz()"${disabled}>Krizi Çöz · 20 Soru</button></div><button class="ll-btn ll-fc-skip" type="button" onclick="llFinancialCrisisSkip()"${disabled}>${skipLabel}</button><div class="ll-fc-warning">${warning}</div></div></section>`;
+    const overlay=document.createElement('div');overlay.id=OVERLAY_ID;overlay.innerHTML=`<section class="ll-fc-dialog" role="dialog" aria-modal="true" aria-label="Mali kriz"><div class="ll-fc-content"><div class="ll-fc-kicker">YÖNETİM BİLDİRİMİ · SEZON ${event.season}</div><div class="ll-fc-title">🚨 MALİ KRİZ</div><div class="ll-fc-copy">Kulüp yönetimi acil mali önlem kararı aldı. Kadrodaki kartlardan biri satış riski altında. <strong>Bir kart satılacak. Krizi aşmaya çalış.</strong><br>20 soruluk sınavda <b>15 veya daha fazla</b> doğru kartı kayıpsız korur.</div><div class="ll-fc-cards">${(event.visibleCards||occupiedSlots(state)).map(slot=>simpleCardHtml(slot,event,state)).join('')}</div><div class="ll-fc-actions"><button class="ll-btn ll-fc-primary" type="button" onclick="llFinancialCrisisStartQuiz()">Krizi Çöz · 20 Soru</button></div><button class="ll-btn ll-fc-skip" type="button" onclick="llFinancialCrisisSkip()">Geç · Riskteki Kartı Kaybet</button><div class="ll-fc-warning">Geç seçeneği ${esc(riskCardName(event))} kartını doğrudan slottan çıkarır.</div></div></section>`;
     document.body.appendChild(overlay);return true;
   }
 
-  function recordWordShown(ref,state,quiz,event=null){
+  function recordWordShown(ref,state,quiz){
     if(!ref||!state||!quiz)return;if(!Array.isArray(quiz.shownWordRefs))quiz.shownWordRefs=[];
     const key=`${num(quiz.index)}:${ref.id}`;if(quiz.shownWordRefs.includes(key))return;quiz.shownWordRefs.push(key);
-    if(event?.demo)return;
     if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];state.recentQuizWords=[...state.recentQuizWords.filter(id=>id!==ref.id),ref.id].slice(-30);
   }
   function markWordUsed(ref,state){if(!ref||!state)return;const used=new Set(ref.cycleStart?[]:(state.usedWords||[]));used.add(ref.id);state.usedWords=[...used];}
@@ -244,7 +196,7 @@
     if(quiz.index>=quiz.queue.length){finishQuiz(event);return;}
     const ref=quiz.queue[quiz.index],words=typeof globalThis.loadUserWords==='function'?loadUserWords():[],word=words.find(item=>item.id===ref.id);
     if(!word){quiz.index++;save();renderQuiz(event);return;}
-    recordWordShown(ref,state,quiz,event);
+    recordWordShown(ref,state,quiz);
     const askTrToEn=!!ref.askTrToEn,question=askTrToEn?String(word.tr||'').split(',')[0].trim():word.en,answer=askTrToEn?word.en:word.tr;
     let example='';if(word.example)example=askTrToEn&&typeof globalThis.llMaskAnswerInExample==='function'?llMaskAnswerInExample(word.example,word.en):word.example;
     const exampleHtml=example&&typeof globalThis.llExampleSentenceHtml==='function'?llExampleSentenceHtml(word,example,`financial-${quiz.index}-${word.id}`):'';
@@ -252,45 +204,31 @@
     const questionHtml=askTrToEn?esc(question):spoken(question),answerHtml=askTrToEn?spoken(answer):esc(answer);
     const fullExampleHtml=quiz.revealed&&typeof globalThis.llFullExampleSentenceHtml==='function'?llFullExampleSentenceHtml(word):'';
     const pct=(quiz.index/QUIZ_SIZE)*100;
-    area().innerHTML=`<div class="ll-shell ll-quiz-card ll-fc-quiz"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">${event.demo?'🧪 Demo · ':''}Mali <em>Kriz</em></div><div class="ll-muted">${quiz.index+1}/${QUIZ_SIZE} · Riskteki kart: ${esc(riskCardName(event))}${event.demo?' · Güvenli test':''}</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${QUIZ_SIZE}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llFinancialCrisisReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llFinancialCrisisRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llFinancialCrisisRate(true)">✓ Bildim</button></div></div></div>`;
+    area().innerHTML=`<div class="ll-shell ll-quiz-card ll-fc-quiz"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">Mali <em>Kriz</em></div><div class="ll-muted">${quiz.index+1}/${QUIZ_SIZE} · Riskteki kart: ${esc(riskCardName(event))}</div></div><div class="ll-stars">Doğru: ${quiz.correct}/${QUIZ_SIZE}</div></div><div class="ll-progress"><div style="width:${pct}%"></div></div><div class="ll-question" onclick="llFinancialCrisisReveal()"><div><div class="ll-position">${askTrToEn?'TÜRKÇE → İNGİLİZCE':'İNGİLİZCE → TÜRKÇE'}</div><div class="ll-question-word">${questionHtml}</div>${exampleHtml}${quiz.revealed?`<div class="ll-answer">${answerHtml}${fullExampleHtml}</div>`:'<div class="ll-muted" style="margin-top:25px">Cevabı açmak için karta tıkla</div>'}</div></div><div class="ll-quiz-actions" style="${quiz.revealed?'':'opacity:.35;pointer-events:none'}"><button type="button" class="ll-btn danger" onclick="llFinancialCrisisRate(false)">✕ Bilmiyorum</button><button type="button" class="ll-btn primary" onclick="llFinancialCrisisRate(true)">✓ Bildim</button></div></div></div>`;
     try{if(typeof globalThis.markNewWordFrame==='function')markNewWordFrame(word,area().querySelector('.ll-question'));}catch{}
   }
   function startQuiz(){
-    const state=stateNow(),event=activeEvent(state);if(!state||!event||event.status!=='pending')return;
-    if(event.demo&&(!event.riskPosition||!event.riskCardId)){alert('Önce test etmek istediğin kartı seç.');return;}
+    const state=stateNow(),event=latestUnfinishedEvent(state);if(!state||!event||event.status!=='pending')return;
     if(!event.quiz){
-      const queue=event.demo?makeDemoQueue():(typeof globalThis.llPickQuizWords==='function'?llPickQuizWords(QUIZ_SIZE):[]);
+      const queue=typeof globalThis.llPickQuizWords==='function'?llPickQuizWords(QUIZ_SIZE):[];
       if(!Array.isArray(queue)||queue.length<QUIZ_SIZE){alert(`Mali Kriz sınavı için ${QUIZ_SIZE} kullanılabilir kelime gerekiyor. Mevcut: ${queue?.length||0}. Kartın henüz etkilenmedi.`);return;}
       event.quiz={queue,index:0,correct:0,revealed:false,completed:false,shownWordRefs:[],answerBusy:false};
     }
-    event.status='quiz';event.startedAt=event.startedAt||new Date().toISOString();if(!event.demo)save();renderQuiz(event);
+    event.status='quiz';event.startedAt=event.startedAt||new Date().toISOString();save();renderQuiz(event);
   }
   function rate(correct){
-    const state=stateNow(),event=activeEvent(state),quiz=event?.quiz;if(!state||!event||event.status!=='quiz'||!quiz||!quiz.revealed||quiz.answerBusy)return;
+    const state=stateNow(),event=latestUnfinishedEvent(state),quiz=event?.quiz;if(!state||!event||event.status!=='quiz'||!quiz||!quiz.revealed||quiz.answerBusy)return;
     const index=num(quiz.index),ref=quiz.queue?.[index];if(!ref)return;quiz.answerBusy=true;if(correct)quiz.correct++;quiz.index=index+1;quiz.revealed=false;
-    if(!event.demo){
-      try{globalThis.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:null,quiz,answerIndex:index,eventType:'financial-crisis'});}catch{}
-      try{if(typeof globalThis.llPersistQuizWordRating==='function')llPersistQuizWordRating(ref,quiz,!!correct,{markUsed:false});}catch{}
-      try{markWordUsed(ref,state);}catch{}
-      save();
-    }
-    quiz.answerBusy=false;if(quiz.index>=QUIZ_SIZE)finishQuiz(event);else renderQuiz(event);
+    try{globalThis.llRecordSeasonVocabularyAnswer?.({correct:!!correct,fixture:null,quiz,answerIndex:index,eventType:'financial-crisis'});}catch{}
+    try{if(typeof globalThis.llPersistQuizWordRating==='function')llPersistQuizWordRating(ref,quiz,!!correct,{markUsed:false});}catch{}
+    try{markWordUsed(ref,state);}catch{}
+    quiz.answerBusy=false;save();if(quiz.index>=QUIZ_SIZE)finishQuiz(event);else renderQuiz(event);
   }
 
   function applyOutcome(event,outcomeKey,correct=null,source='quiz'){
     const state=stateNow(),team=currentTeam(state);if(!state||!team||!event)return null;
     const pos=event.riskPosition,cardId=event.riskCardId,stillThere=team.cards?.[pos]===cardId;
     let beforeContract=null,afterContract=null,removed=false,bonusAp=0,bonusLp=0;
-    if(event.demo){
-      const contract=team.cardContracts?.[pos];
-      if(contract)beforeContract={cardId:contract.cardId,remaining:num(contract.remaining),total:num(contract.total)};
-      if(outcomeKey==='sold')removed=stillThere;
-      else if(outcomeKey==='rights-reset'&&beforeContract)afterContract={...beforeContract,remaining:0};
-      else if(beforeContract)afterContract={...beforeContract};
-      if(outcomeKey==='bonus'){bonusAp=BONUS_AP;bonusLp=BONUS_LP;}
-      event.result={key:outcomeKey,correct:correct==null?null:num(correct),source:`demo-${source}`,cardId,cardName:riskCardName(event),position:pos,removed,beforeContract,afterContract,bonusAp,bonusLp,resolvedAt:new Date().toISOString(),simulated:true};
-      event.status='result';event.resolvedAt=event.result.resolvedAt;markDemoUsed(state);return event.result;
-    }
     try{if(typeof globalThis.llEnsureTeamContracts==='function')llEnsureTeamContracts(team);}catch{}
     const contract=team.cardContracts?.[pos];if(contract)beforeContract={cardId:contract.cardId,remaining:num(contract.remaining),total:num(contract.total)};
     if(outcomeKey==='sold'){
@@ -310,62 +248,28 @@
   function finishQuiz(event){
     const quiz=event?.quiz;if(!event||!quiz||quiz.completed)return;quiz.completed=true;quiz.completedAt=new Date().toISOString();
     const outcome=outcomeForScore(quiz.correct);applyOutcome(event,outcome.key,quiz.correct,'quiz');
-    if(!event.demo){
-      const state=stateNow();if(state?.achievementStats){state.achievementStats.words=num(state.achievementStats.words)+num(quiz.correct);}
-      save();
-    }
-    renderResult(event);
+    const state=stateNow();if(state?.achievementStats){state.achievementStats.words=num(state.achievementStats.words)+num(quiz.correct);}
+    save();renderResult(event);
   }
   function skip(){
-    const event=activeEvent();if(!event||event.status!=='pending')return;
-    if(event.demo&&(!event.riskPosition||!event.riskCardId)){alert('Önce test etmek istediğin kartı seç.');return;}
+    const event=latestUnfinishedEvent();if(!event||event.status!=='pending')return;
     applyOutcome(event,'sold',null,'skip');removeOverlay();renderResult(event);
   }
   function renderResult(event){
     const result=event?.result;if(!event||event.status!=='result'||!result)return;
     removeOverlay();setSequenceActive(true);injectStyles();
-    const demo=!!event.demo||!!result.simulated,skipped=String(result.source||'').includes('skip');
-    const out=outcomeForScore(result.correct==null?0:result.correct);
-    let display=skipped?{...out,title:'KART SATILDI',tone:'danger',description:'Krizi çözmeden geçtin. Riskteki kart doğrudan slottan çıkarıldı.'}:out;
-    if(demo){
-      if(result.key==='sold')display={...display,title:'DEMO · KART SATILIRDI',description:'Gerçek Mali Krizde riskteki kart slottan çıkarılırdı. Demo olduğu için kartın korunuyor.'};
-      else if(result.key==='rights-reset')display={...display,title:'DEMO · MAÇ HAKKI SIFIRLANIRDI',description:'Gerçek Mali Krizde kart kalır, mevcut maç hakkı sıfırlanırdı. Demo olduğu için hiçbir değer değişmedi.'};
-      else if(result.key==='safe')display={...display,title:'DEMO · KRİZ AŞILIRDI',description:'Gerçek Mali Krizde kart ve maç hakların aynen korunurdu.'};
-      else if(result.key==='bonus')display={...display,title:'DEMO · TAM BAŞARI',description:`Gerçek Mali Krizde kart korunur ve +${BONUS_AP} AP · +${BONUS_LP} LP kazanırdın. Demo olduğu için puanların değişmedi.`};
-    }
-    const contractLine=result.key==='rights-reset'&&result.beforeContract?`${result.beforeContract.remaining}/${result.beforeContract.total} → 0/${result.beforeContract.total} maç hakkı`:result.key==='sold'?`${esc(result.position)} slotu ${demo?'boşalırdı':'boşaltıldı'}.`:result.key==='bonus'?`+${result.bonusAp} AP · +${result.bonusLp} LP`:'Kart ve maç hakları korundu.';
+    const out=outcomeForScore(result.correct==null?0:result.correct),skipped=result.source==='skip';
+    const display=skipped?{...out,title:'KART SATILDI',tone:'danger',description:'Krizi çözmeden geçtin. Riskteki kart doğrudan slottan çıkarıldı.'}:out;
+    const contractLine=result.key==='rights-reset'&&result.beforeContract?`${result.beforeContract.remaining}/${result.beforeContract.total} → 0/${result.beforeContract.total} maç hakkı`:result.key==='sold'?`${esc(result.position)} slotu boşaltıldı.`:result.key==='bonus'?`+${result.bonusAp} AP · +${result.bonusLp} LP`:'Kart ve maç hakları korundu.';
     const icon=result.key==='sold'?'💸':result.key==='rights-reset'?'⚠️':result.key==='bonus'?'🏆':'🛡️';
     const scoreText=skipped?'Sınava girilmedi':`${num(result.correct)} / ${QUIZ_SIZE} doğru`;
-    const demoNote=demo?`<div class="ll-fc-demo-note" style="margin:14px auto 0;max-width:560px">Güvenli demo tamamlandı. Kariyerindeki kartlar, maç hakları, AP/LP, kelime ilerlemesi ve gerçek Mali Kriz zamanlaması değiştirilmedi.</div>`:'';
-    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel ll-fc-result ${display.tone}"><div class="ll-fc-kicker">${demo?'🧪 GÜVENLİ DEMO · ':''}MALİ KRİZ SONUCU · ${esc(scoreText)}</div><div class="ll-fc-result-icon">${icon}</div><div class="ll-fc-result-title">${esc(display.title)}</div><div class="ll-fc-result-detail"><b>${esc(result.cardName)}</b> · ${posIcon(result.position)} ${esc(result.position)}<br>${esc(display.description)}<br><b>${esc(contractLine)}</b></div>${demoNote}<button class="ll-btn primary" style="margin-top:18px;min-width:210px" onclick="llFinancialCrisisContinue()">Devam Et</button></div></div>`;
+    area().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel ll-fc-result ${display.tone}"><div class="ll-fc-kicker">MALİ KRİZ SONUCU · ${esc(scoreText)}</div><div class="ll-fc-result-icon">${icon}</div><div class="ll-fc-result-title">${esc(display.title)}</div><div class="ll-fc-result-detail"><b>${esc(result.cardName)}</b> · ${posIcon(result.position)} ${esc(result.position)}<br>${esc(display.description)}<br><b>${esc(contractLine)}</b></div><button class="ll-btn primary" style="margin-top:18px;min-width:210px" onclick="llFinancialCrisisContinue()">Devam Et</button></div></div>`;
   }
   function continueAfterResult(){
-    const event=activeEvent();if(!event||event.status!=='result')return;
-    event.status='done';event.finishedAt=new Date().toISOString();
-    if(event.demo)demoEvent=null;else save();
-    setSequenceActive(false);removeOverlay();
+    const event=latestUnfinishedEvent();if(!event||event.status!=='result')return;
+    event.status='done';event.finishedAt=new Date().toISOString();save();setSequenceActive(false);removeOverlay();
     if(typeof globalThis.llRenderDashboard==='function')llRenderDashboard();
-    if(!event.demo)setTimeout(()=>{try{if(globalThis.llTryShowQueuedDieCinematic?.())return;if(globalThis.llTryShowQueuedTrophyAnimation?.())return;globalThis.llTryShowQueuedAchievements?.();}catch{}},80);
-  }
-  function injectDemoButton(){
-    const state=stateNow();if(typeof document==='undefined'||!demoAvailable(state)||!isDashboardVisible())return false;
-    if(document.getElementById('ll-financial-crisis-demo-row'))return true;
-    const squad=area()?.querySelector('.ll-squad');if(!squad||!squad.parentElement)return false;
-    const row=document.createElement('div');row.id='ll-financial-crisis-demo-row';row.className='ll-fc-demo-row';
-    row.innerHTML=`<button class="ll-btn" type="button" onclick="llFinancialCrisisStartDemo()">🧪 Mali Krizi Test Et</button><span class="ll-muted">Tek seferlik güvenli demo · gerçek kariyer değerlerini değiştirmez.</span>`;
-    squad.parentElement.appendChild(row);return true;
-  }
-  function selectDemoCard(encodedPosition){
-    let position='';try{position=decodeURIComponent(String(encodedPosition||''));}catch{position=String(encodedPosition||'');}
-    if(!selectDemoRisk(position))return;
-    removeOverlay();renderCrisisOverlay(demoEvent);
-  }
-  function startDemo(){
-    const state=stateNow();if(!state)return;
-    if(latestUnfinishedEvent(state)){alert('Önce aktif Mali Kriz olayını tamamla.');return;}
-    if(!demoAvailable(state)){alert('Bu güvenli demo bu kariyerde zaten kullanıldı veya şu anda kullanılamıyor.');return;}
-    const event=createDemoEvent(state);if(!event)return;
-    renderCrisisOverlay(event);
+    setTimeout(()=>{try{if(globalThis.llTryShowQueuedDieCinematic?.())return;if(globalThis.llTryShowQueuedTrophyAnimation?.())return;globalThis.llTryShowQueuedAchievements?.();}catch{}},80);
   }
   function showPendingAfterDashboard(){
     const state=stateNow(),event=latestUnfinishedEvent(state);if(!state||!event)return;
@@ -384,17 +288,15 @@
       if(state&&match&&!already&&match.committed&&competition==='league'){buildSeasonPlan(state);maybeScheduleAfterLeagueMatch(state,completedWeek);save();}
       return result;
     });
-    wrap('llRenderDashboard',base=>function(){const state=stateNow();if(state){ensureSystem(state);buildSeasonPlan(state);}const result=base.apply(this,arguments);showPendingAfterDashboard();if(!activeEvent(state))injectDemoButton();return result;});
+    wrap('llRenderDashboard',base=>function(){const state=stateNow();if(state){ensureSystem(state);buildSeasonPlan(state);}const result=base.apply(this,arguments);showPendingAfterDashboard();return result;});
     const initial=stateNow();if(initial){ensureSystem(initial);buildSeasonPlan(initial);}
   }
 
-  globalThis.llFinancialCrisisStartDemo=startDemo;
-  globalThis.llFinancialCrisisSelectDemoCard=selectDemoCard;
   globalThis.llFinancialCrisisStartQuiz=startQuiz;
   globalThis.llFinancialCrisisSkip=skip;
-  globalThis.llFinancialCrisisReveal=function(){const event=activeEvent(),quiz=event?.quiz;if(!event||event.status!=='quiz'||!quiz||quiz.completed)return;quiz.revealed=true;if(!event.demo)save();renderQuiz(event);};
+  globalThis.llFinancialCrisisReveal=function(){const event=latestUnfinishedEvent(),quiz=event?.quiz;if(!event||event.status!=='quiz'||!quiz||quiz.completed)return;quiz.revealed=true;save();renderQuiz(event);};
   globalThis.llFinancialCrisisRate=rate;
   globalThis.llFinancialCrisisContinue=continueAfterResult;
-  globalThis.llFinancialCrisisTestApi={VERSION,DEMO_VERSION,QUIZ_SIZE,BONUS_AP,BONUS_LP,chanceForGap,outcomeForScore,triggerWeeks,ensureSystem,buildSeasonPlan,maybeScheduleAfterLeagueMatch,applyOutcome,demoAvailable,createDemoEvent,selectDemoRisk,makeDemoQueue};
+  globalThis.llFinancialCrisisTestApi={VERSION,QUIZ_SIZE,BONUS_AP,BONUS_LP,chanceForGap,outcomeForScore,triggerWeeks,ensureSystem,buildSeasonPlan,maybeScheduleAfterLeagueMatch,applyOutcome,occupiedSlots};
   install();
 })();
