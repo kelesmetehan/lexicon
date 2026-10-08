@@ -1,0 +1,73 @@
+/* Keep the same game controls and data; only reflow their presentation. */
+body.cm-game .ll-topbar{flex-wrap:wrap;gap:10px}
+body.cm-game .ll-actions{flex-wrap:wrap}
+body.cm-game .ll-grid>*{min-width:0}
+body.cm-game .ll-comp-tabs{flex-wrap:wrap}
+body.cm-game .ll-comp-tab{white-space:normal;flex:1 1 100px}
+body.cm-game .ll-modal-card{overflow-wrap:anywhere}
+body.cm-game .ll-table-wrap{min-width:0}
+body.cm-game [style*="overflow:auto"],body.cm-game [style*="overflow-y:auto"],body.cm-game [style*="overflow: auto"],body.cm-game [style*="overflow-y: auto"]{max-height:none!important;overflow:visible!important}
+@media(max-width:849px){
+ body.cm-game .cm-rail{position:relative;inset:auto;width:100%;padding:6px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;z-index:1}
+ body.cm-game .cm-rail .cm-line{grid-column:span 3;padding:1px 4px;text-align:left;font-size:12px;line-height:1.2}
+ body.cm-game .cm-rail .cm-line br{display:none}
+ body.cm-game .cm-rail .cm-date{grid-column:span 2;text-align:right}
+ body.cm-game .cm-rail .cm-foot{display:none}
+ body.cm-game .cm-rail .ll-btn{font-size:12px;min-height:44px;padding:5px 2px}
+ body.cm-game .container,body.cm-game .container.league-wide{margin:0!important;width:100%!important}
+ body.cm-game::after{left:0}
+ body.cm-game .cm-status{margin-left:0}
+ body.cm-game .ll-panel{padding:8px;min-height:calc(100svh - 100px)}
+ body.cm-game .ll-grid{grid-template-columns:minmax(0,1fr)}
+ body.cm-game .ll-topbar{padding:10px 6px;min-height:76px;flex-direction:column}
+ body.cm-game .ll-topbar>.ll-btn,body.cm-game .ll-topbar>.ll-sub{position:static;max-width:none;display:block}
+ body.cm-game .ll-topbar .ll-actions{justify-content:center;gap:5px}
+ body.cm-game .ll-title,body.cm-game .ll-title em{font-size:22px;line-height:1.15}
+ body.cm-game .ll-btn,body.cm-game .ll-comp-tab{min-height:42px;font-size:13px;padding:8px 10px;white-space:normal}
+ body.cm-game .ll-muted,body.cm-game .ll-sub,body.cm-game .ll-notice{font-size:13px;line-height:1.45}
+ body.cm-game .ll-next-match{grid-template-columns:minmax(0,1fr) 45px minmax(0,1fr);padding:10px 4px;gap:5px}
+ body.cm-game .ll-club{min-width:0;overflow-wrap:anywhere}
+ body.cm-game .ll-club b{font-size:17px}
+ body.cm-game .ll-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.cm-game .ll-squad,body.cm-game .ll-save-grid,body.cm-game .ll-backup-guide,body.cm-game .ll-forecast-cards{grid-template-columns:minmax(0,1fr)}
+ body.cm-game .ll-save-card:last-child{grid-column:auto}
+ body.cm-game .ll-battle{grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);gap:4px}
+ body.cm-game .ll-die-row{min-height:140px;padding:8px 3px;display:flex;flex-direction:column;gap:5px;justify-content:flex-start}
+ body.cm-game .ll-die-card{max-width:none;white-space:normal;overflow-wrap:anywhere}
+ body.cm-game .ll-pair{height:140px}
+ body.cm-game .ll-panel:has(>.ll-battle){display:flex;flex-direction:column}
+ body.cm-game .ll-panel:has(>.ll-battle)>.ll-forecast,body.cm-game .ll-panel:has(>.ll-battle)>.ll-trigger-log{order:1}
+ body.cm-game .ll-carded-outcome-head{flex-wrap:wrap;gap:8px}
+ body.cm-game .ll-carded-outcome-score{font-size:36px;min-width:80px}
+ body.cm-game .ll-modal{padding:8px;min-height:100svh}
+ body.cm-game .ll-modal-card{padding:14px;min-width:0;width:100%;max-width:100%}
+ body.cm-game .ll-derby-modal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.cm-game .ll-question-example{max-width:100%}
+ body.cm-game .ll-shell.ll-quiz-card .ll-question{min-height:310px;padding:25px 12px}
+ body.cm-game .ll-table{min-width:0!important;width:100%}
+ /* Compact standings: one aligned row per club, with secondary figures
+    on a small second line. Reset legacy fixed cell widths/container rules. */
+ body.cm-game table.cm-league-table{display:block;width:100%;min-width:0!important;font-family:var(--cm-font);font-variant-numeric:tabular-nums;border-collapse:collapse}
+ body.cm-game .cm-league-table thead,body.cm-game .cm-league-table tbody{display:block;width:100%;position:static;clip-path:none;height:auto;overflow:visible}
+ body.cm-game .cm-league-table tr{display:grid;grid-template-columns:22px minmax(70px,3.6fr) repeat(var(--cm-stat-count,6),minmax(22px,1fr));gap:0;align-items:center;width:100%;margin:0;padding:3px 0;border:0;border-bottom:1px solid #8ba2b522;border-radius:0;min-height:34px}
+ body.cm-game .cm-league-table thead tr{min-height:28px;padding:0;background:linear-gradient(#5e80a8,#345780);border-radius:4px 4px 0 0}
+ body.cm-game .cm-league-table tbody tr:nth-child(odd){background:#0e1c2be8}
+ body.cm-game .cm-league-table tbody tr:nth-child(even){background:#1b2f41e8}
+ body.cm-game .cm-league-table tr.player,body.cm-game .cm-league-table tr.ll-team-league-focus{background:#29413c!important;box-shadow:inset 3px 0 #ffff00!important}
+ body.cm-game .cm-league-table tr>th,body.cm-game .cm-league-table tr>td{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto;padding:4px 1px!important;border:0;border-radius:0;background:none;font-family:var(--cm-font);font-size:12px;line-height:1.2;text-align:center!important;white-space:nowrap;overflow:visible;text-overflow:clip;letter-spacing:0;color:#f2f5f8}
+ body.cm-game .cm-league-table tr>th{font-size:11px}
+ body.cm-game .cm-league-table tr>.cm-stat-team{text-align:left!important;padding-left:4px!important}
+ body.cm-game .cm-league-table tr>.cm-stat-extra{display:none!important}
+ body.cm-game .cm-league-table tr>.cm-stat-details{display:block!important;grid-column:2/-1;padding:0 4px 3px!important;font-size:10px;line-height:1.3;text-align:left!important;color:#adbecd;white-space:normal;overflow-wrap:normal;word-break:normal}
+ body.cm-game .cm-league-table .cm-stat-points{color:#ffff80;font-weight:700;background:#ffffff07}
+ body.cm-game .cm-league-table .ll-standing-team{display:flex;align-items:center;gap:4px;min-width:0;width:100%;flex-wrap:nowrap}
+ body.cm-game .cm-league-table .ll-standing-team-name{min-width:0;font-size:12px;line-height:1.25;white-space:normal;overflow-wrap:normal;word-break:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+ body.cm-game .cm-league-table .ll-team-logo,body.cm-game .cm-league-table .ll-team-logo-wrap.table{width:15px!important;height:15px!important;flex:0 0 15px}
+ body.cm-game .cm-league-table .ll-standing-stars{display:none!important}
+ body.cm-game .cm-league-table .ll-rank-movement{font-size:8px;margin-left:0}
+ body.cm-game .ll-table-wrap,body.cm-game .ll-standings-wrap,body.cm-game .ll-europe-table-wrap{padding:3px!important}
+ body.cm-game .ll-table:not(.cm-league-table){table-layout:auto;font-size:11px}
+ body.cm-game .ll-table:not(.cm-league-table) th,body.cm-game .ll-table:not(.cm-league-table) td{white-space:normal;overflow-wrap:normal;padding:5px 3px;font-size:11px}
+}
+/* Additional detail cells are a mobile presentation only. */
+body.cm-game .cm-league-table .cm-stat-details{display:none}

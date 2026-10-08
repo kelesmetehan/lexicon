@@ -1,0 +1,48 @@
+/* Preview refinements: a clearer live projection and richer preparation cards. */
+body.cm-game .ll-btn,body.cm-game .ll-comp-tab{font-size:13px;min-height:29px;padding:5px 15px}
+body.cm-game .cm-rail .ll-btn{font-size:13px;min-height:48px;padding:8px 3px}
+body.cm-game .ll-forecast{display:flex;flex-direction:column;gap:9px;background:linear-gradient(145deg,#132942ed,#101d2cdd);border-color:#8394a68c}
+body.cm-game .ll-forecast>.ll-carded-outcome{order:-1;margin:0;padding:17px 18px;border-radius:6px;border:1px solid #70d1ba;background:radial-gradient(ellipse at right,#21807455,transparent 65%),linear-gradient(110deg,#113b40,#112b43);box-shadow:inset 0 1px #b9f9dc30,0 3px 12px #00182970}
+body.cm-game .ll-carded-outcome-head{gap:18px;align-items:center}
+body.cm-game .ll-carded-outcome-head b{color:#faffda;font-size:15px;letter-spacing:.15px}
+body.cm-game .ll-carded-outcome-head>div:first-child>div{font-size:13px!important;color:#e4f1f4;line-height:1.45;max-width:590px}
+body.cm-game .ll-carded-outcome-score{font-size:39px;line-height:1.1;color:#83ffcf;min-width:110px;text-align:center;text-shadow:0 2px #001c25}
+body.cm-game .ll-forecast-card{background:linear-gradient(120deg,#19324dcc,#152438dd);border-color:#7990a04d;color:#e6edf3}
+body.cm-game .ll-forecast-card.inactive{opacity:.8}
+body.cm-game .ll-forecast-card.triggered{border-left:3px solid #57ddaa;background:linear-gradient(100deg,#164438aa,#152c3ddd)}
+body.cm-game .ll-forecast-row{background:#a2bed00c;border-bottom:1px solid #c9ddec19}
+body.cm-game .ll-forecast-row:nth-child(even){background:#a2bed01c}
+body.cm-game .ll-trigger-log{background:linear-gradient(145deg,#132942e8,#101d2cde);padding:12px;border:1px solid #8b9cac70;border-radius:5px}
+body.cm-game .ll-chain-step{background:#2137489c;border-color:#91a4ae47}
+body.cm-game .ll-shell.ll-quiz-card .ll-question{position:relative;isolation:isolate;min-height:350px;padding:32px 25px;border-radius:9px;border:1px solid #8ba6c2;background:radial-gradient(ellipse at 85% 15%,#1c77a944,transparent 53%),radial-gradient(ellipse at 8% 100%,#44338955,transparent 52%),linear-gradient(130deg,#101d35f5,#132d47f0 55%,#0c192bf5);box-shadow:inset 0 1px #bde4fc25,inset 0 0 70px #01112780,0 8px 26px #00162950}
+body.cm-game .ll-shell.ll-quiz-card .ll-question-word{color:#fff6d8;font-size:clamp(33px,3.1vw,48px);text-shadow:0 2px 2px #07111f}
+body.cm-game .ll-shell.ll-quiz-card .ll-answer{color:#7aedd6;border-top-color:#7bd3d94d}
+body.cm-game .ll-shell.ll-quiz-card .ll-position{color:#a9d6ef;font-size:12px;letter-spacing:1px}
+body.cm-game .ll-shell.ll-quiz-card .ll-progress{height:6px;background:#102331;border-radius:3px;box-shadow:inset 0 1px #091929}
+body.cm-game .ll-shell.ll-quiz-card .ll-progress>div{background:linear-gradient(90deg,#2baaba,#83f0d0);box-shadow:0 0 12px #54d6cf66}
+body.cm-game .ll-shell.ll-quiz-card .ll-quiz-actions .ll-btn{min-height:34px;font-size:14px}
+body.cm-game .ll-slot{background:radial-gradient(ellipse at 100% 0,#3b83ac28,transparent 60%),linear-gradient(135deg,#152b42e6,#112237ed);border-color:#7895ae73}
+body.cm-game .ll-card:not(.ll-big-match){background:linear-gradient(130deg,#14283de0,#122332db);border-color:#7895ae59}
+body.cm-game .ll-slot .ll-card{background:#11243788;border-color:#779caf40}
+body.cm-game .ll-panel:has(.ll-squad){display:flex;flex-direction:column}
+body.cm-game .ll-panel:has(.ll-squad)>*{order:3}
+body.cm-game .ll-panel:has(.ll-squad)>.ll-topbar{order:0}
+body.cm-game .ll-panel:has(.ll-squad)>.ll-metrics{order:1}
+body.cm-game .ll-panel:has(.ll-squad)>.ll-grid{order:2}
+body.cm-game[data-cm-surface=club] .ll-shell.ll-quiz-card .ll-question{background:radial-gradient(ellipse at top right,#3d957c55,transparent 60%),linear-gradient(130deg,#102c2bf5,#17463af0 55%,#112933f5);border-color:#95c6af;box-shadow:inset 0 1px #f5ffe630,inset 0 0 55px #09232170,0 8px 26px #00162950}
+/* Original competition backgrounds are restored by cm-game.js. The photo
+   underlay inherits them instead of covering them with the domestic stadium. */
+body.cm-game.ll-euro-match-day::after{background-image:inherit;background-position:center;background-size:cover}
+body.cm-game.ll-euro-match-day .ll-forecast{border-color:var(--ll-euro-border)}
+body.cm-game.ll-euro-match-ucl{--cm-competition-photo:url('assets/europe-match-themes/champions-league-desktop-v2.png')}
+body.cm-game.ll-euro-match-uel{--cm-competition-photo:url('assets/europe-match-themes/europa-league-desktop-v2.png')}
+body.cm-game.ll-euro-match-uecl{--cm-competition-photo:url('assets/europe-match-themes/conference-league-desktop-v2.png')}
+body.cm-game.ll-euro-match-day:not(.ll-euro-match-wc):not(.ll-euro-match-euro) .ll-panel{background:rgba(6,15,31,.36)!important;backdrop-filter:none}
+body.cm-game.ll-euro-match-day:not(.ll-euro-match-wc):not(.ll-euro-match-euro) .ll-question{background-image:linear-gradient(#07142422,#07142455),var(--cm-competition-photo);background-position:center;background-size:cover;border-color:var(--ll-euro-accent);box-shadow:inset 0 0 25px #01071560,0 3px 20px #01071970}
+body.cm-game.ll-euro-match-day .ll-shell .ll-topbar{border-color:var(--ll-euro-border);background:linear-gradient(100deg,#071b3be8,#143b67da)}
+body.cm-game .ll-modal{position:absolute;bottom:auto;min-height:100%;align-items:start;padding:20px 20px 30px 108px}
+body.cm-game .ll-modal-card{width:min(940px,100%);max-height:none;overflow:visible;background:linear-gradient(135deg,#14283df7,#102033fa);border-color:#7895ae80;border-radius:8px}
+body.cm-game .ll-draw-pool{max-height:none;overflow:visible}
+body.cm-game .ll-derby-modal-grid .ll-btn.gold{color:#ffff00!important}
+@media(max-width:700px){body.cm-game .ll-modal{padding:10px 10px 20px 80px}}
+@media(max-width:850px){body.cm-game .ll-carded-outcome-score{font-size:32px;min-width:90px}body.cm-game .ll-carded-outcome-head b{font-size:13px}body.cm-game .ll-shell.ll-quiz-card .ll-question{min-height:320px;padding:28px 15px}}

@@ -1,0 +1,60 @@
+/* CM reference pass: compact controls, photo underlay, document-level scrolling. */
+html{scrollbar-width:none;overflow-y:auto}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}
+body.cm-game{--cm-photo:url('https://www.vissel-kobe.co.jp/special/season2026/assets/common/img/seats-exterior-img08.jpg');--cm-blue:#446487;--cm-yellow:#ffff00;--cm-white:#f6f6f4;background:#1c2726;overflow-x:auto;font-size:13px}
+body.cm-game::after{content:'';position:fixed;inset:0 0 0 88px;background-image:linear-gradient(#11170f55,#0d160d33),var(--cm-photo);background-position:center;background-size:cover;pointer-events:none;z-index:-1}
+body.cm-game .container{position:relative;z-index:0}
+body.cm-game .ll-panel{background:rgba(23,28,22,.54);border:1px solid #9a9e9080;border-radius:6px;box-shadow:inset 0 0 0 2px #11191377;padding:7px;min-height:calc(100vh - 26px)}
+body.cm-game .ll-topbar{margin:-3px -3px 7px;min-height:68px;border:1px solid #728cab;border-radius:8px;box-shadow:inset 0 1px 1px #a7bbca50,0 2px 1px #061329;background:repeating-linear-gradient(0deg,#ffffff03 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,#00000006 0 1px,transparent 1px 4px),linear-gradient(110deg,#0d2475,#14357b);text-align:center}
+body.cm-game .ll-title,body.cm-game .ll-title em{font-size:23px;line-height:1.05;font-family:var(--cm-font);font-weight:400;color:#ffff00;text-shadow:1px 2px 1px #10162480}
+body.cm-game .ll-topbar .ll-muted{color:#ffff00;font-size:12px;margin-top:5px}
+body.cm-game .ll-topbar>.ll-btn{position:absolute;left:8px;max-width:130px}
+body.cm-game .ll-btn,body.cm-game .ll-comp-tab{color:#f5f7fc!important;font-family:var(--cm-font);font-weight:400;font-size:12px;line-height:1.1;min-height:24px;padding:4px 13px;border-radius:6px;border:1px solid #20375a;border-top-color:#9eb0c6;border-left-color:#6d85a4;background:linear-gradient(#5e80a8 0%,#5275a0 32%,#3e628f 62%,#355780 100%);box-shadow:inset 0 1px 1px #bac8d45a,inset 0 -1px 1px #192e55,1px 1px 1px #101e3690;text-shadow:0 1px 1px #18315a;transform:none;letter-spacing:0}
+body.cm-game .ll-btn.primary,body.cm-game .ll-comp-tab.active,body.cm-game .ll-btn[aria-current=page],body.cm-game .ll-btn[aria-pressed=true]{color:#ffff00!important}
+body.cm-game .ll-btn.gold:not(.primary){color:#f5f7fc!important}
+body.cm-game .ll-btn:disabled{color:#acadb0!important;opacity:.65}
+body.cm-game .ll-btn:hover:not(:disabled){color:#ffff00!important;background:linear-gradient(#6689af,#476994);transform:none}
+body.cm-game .ll-btn:active:not(:disabled){background:linear-gradient(#324d72,#587ca0);box-shadow:inset 1px 1px 2px #1e3050}
+body.cm-game .cm-rail{width:88px;padding:12px 3px 7px;border-left:1px solid #718ba6;border-right:2px solid #122848;gap:4px;background:repeating-linear-gradient(0deg,#112e4920 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,#112e4920 0 1px,transparent 1px 4px),linear-gradient(100deg,#6683a2,#3f5b7d 60%,#324c72)}
+body.cm-game .cm-rail .cm-line{border:0;padding:5px 0 12px;color:#ffff00;font-size:12px;line-height:1.3}
+body.cm-game .cm-rail .ll-btn{width:100%;min-height:44px;padding:8px 3px;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.06;border-radius:5px;background:repeating-linear-gradient(0deg,#12264113 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,#12264113 0 1px,transparent 1px 4px),linear-gradient(120deg,#607c9e,#3a587f);border-top:2px solid #94a9bf;border-left:1px solid #7c98b2;border-right:1px solid #2b4164;border-bottom:1px solid #263d5f;box-shadow:inset 1px 0 1px #b7c5d12e,1px 1px 1px #243d6090}
+body.cm-game .cm-rail .ll-btn[aria-current=page]{background:linear-gradient(#3a577a,#527094)}
+body.cm-game .cm-rail .cm-foot{font-size:10px;color:#fff000;line-height:1.2}
+body.cm-game .cm-rail .cm-foot a{color:#d6e3ef;font-size:10px}
+body.cm-game .ll-next-match{background:#17211742;border:1px solid #b2b2a54d;border-radius:5px;box-shadow:inset 0 0 0 2px #aeb9a512;min-height:135px}
+body.cm-game .ll-club b{font-size:18px;color:#fff;text-shadow:1px 2px 2px #000}
+body.cm-game .ll-club-rank{color:#e9eadf;font-size:11px}
+body.cm-game .ll-vs{font-size:35px;color:#fff000;text-shadow:1px 2px 2px #000}
+body.cm-game .ll-forecast,body.cm-game .ll-trigger-log,body.cm-game .ll-event-log,body.cm-game .ll-table-wrap,body.cm-game .ll-standings-wrap,body.cm-game .ll-europe-table-wrap{max-height:none!important;height:auto!important;overflow:visible!important;overflow-y:visible!important;overflow-x:visible!important;contain:none;overscroll-behavior:auto}
+body.cm-game .ll-forecast{background:#1a20178a;border:1px solid #a2a69a70;border-radius:5px;padding:9px;margin-top:7px!important;box-shadow:inset 0 0 0 3px #838b7020}
+body.cm-game .ll-forecast-card,body.cm-game .ll-notice,body.cm-game .ll-card,body.cm-game .ll-slot,body.cm-game .ll-metric,body.cm-game .ll-chain-step,body.cm-game .ll-team-league-location{background:#1e241b66;border:1px solid #b6b7a83b;border-radius:4px;box-shadow:none}
+body.cm-game .ll-forecast-side{background:transparent;border-radius:3px}
+body.cm-game .ll-card-title{font-size:14px;color:#ffff00;line-height:1.15;font-weight:400}
+body.cm-game .ll-forecast-card{padding:7px;margin:4px 0}
+body.cm-game .ll-muted,body.cm-game .ll-sub,body.cm-game .ll-notice,body.cm-game .ll-chain-text{font-size:12px;color:#f4f4ed;line-height:1.3}
+body.cm-game .ll-die-row{background:#19241e75;border:1px solid #b4b7a43e;border-radius:4px}
+body.cm-game .ll-die-row.selected{border-color:#ffec00;box-shadow:inset 0 0 0 1px #ffec0055}
+body.cm-game .ll-match-controls{background:#1e291e66;border:1px solid #b7b9a352;border-radius:4px}
+body.cm-game .ll-forecast-score{font-size:16px}
+body.cm-game .ll-team-league-location{padding:6px 9px;margin:6px 0;font-size:12px}
+body.cm-game .ll-team-league-location strong,body.cm-game .ll-team-league-rank{color:#ffff00}
+body.cm-game .ll-team-league-link{text-decoration:none!important}
+body.cm-game .ll-table-wrap{border:1px solid #bcbda260;border-radius:5px;background:#1c211937;padding:7px;box-shadow:inset 0 0 0 3px #7e88731f}
+body.cm-game .ll-table{border-collapse:separate;border-spacing:0;width:100%;min-width:0;font-family:var(--cm-font);font-size:14px;line-height:1.15}
+body.cm-game .ll-table th{font-size:12px;font-weight:400;color:#fff;background:linear-gradient(#5c80ac,#345787);border-top:1px solid #95a7b8;border-right:1px solid #9facbf50;border-bottom:1px solid #283f60;padding:2px 6px;height:20px;position:static;text-align:center;white-space:nowrap}
+body.cm-game .ll-table th:first-child{border-radius:6px 0 0 0}body.cm-game .ll-table th:last-child{border-radius:0 6px 0 0;border-right:0}
+body.cm-game .ll-table th:nth-child(2){text-align:left}
+body.cm-game .ll-table td{padding:2px 6px;height:23px;border-bottom:0;border-right:1px dashed #d4d4bf35;color:#fff;white-space:nowrap;text-align:center;font-weight:400}
+body.cm-game .ll-table td:nth-child(2){text-align:left}
+body.cm-game .ll-table td:last-child{border-right:0}
+body.cm-game .ll-table tbody tr:nth-child(odd){background:#171d1840}body.cm-game .ll-table tbody tr:nth-child(even){background:#a8ada00f}
+body.cm-game .ll-table tr.player,body.cm-game .ll-table tr.ll-team-league-focus{background:#9b992722!important;box-shadow:none!important}
+body.cm-game .ll-table tr.player td{color:#fff!important}body.cm-game .ll-table tr.player .ll-standing-team-name,body.cm-game .ll-team-league-focus .ll-standing-team-name{color:#ffff00!important}
+body.cm-game .ll-table .ll-standing-team{gap:5px}.cm-game .ll-table .ll-standing-team-name{font-size:14px;line-height:1.1}
+body.cm-game .ll-table .ll-team-logo{width:17px;height:17px;flex:0 0 17px}.cm-game .ll-table .ll-standing-stars{font-size:11px;opacity:.7}
+body.cm-game .ll-table .ll-team-logo-wrap.table{width:17px;height:17px;flex:0 0 17px}
+body.cm-game .ll-comp-tabs{gap:0;border:0;background:linear-gradient(#6783a1,#294a73);border-radius:6px}
+body.cm-game .ll-comp-tab{border-radius:0;flex:1}.cm-game .ll-comp-tab:first-child{border-radius:6px 0 0 6px}.cm-game .ll-comp-tab:last-child{border-radius:0 6px 6px 0}
+body.cm-game .cm-status{font-size:11px;color:#d9e5ef;border:1px solid #71849e;border-radius:5px;min-height:22px;background:linear-gradient(#587ca4,#2e4c76)}
+@media(min-width:850px){body.cm-game .ll-panel:has(>.ll-battle){grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr);gap:7px}body.cm-game .ll-panel:has(>.ll-battle)>.ll-forecast{max-height:none;align-self:start;grid-row:4/7}body.cm-game .ll-panel:has(>.ll-battle)>.ll-match-controls{grid-row:5;align-self:start}body.cm-game .ll-panel:has(>.ll-battle)>.ll-trigger-log{grid-column:2;grid-row:4/7;align-self:start}body.cm-game .ll-panel:has(>.ll-battle){grid-template-rows:auto auto auto auto auto 1fr}body.cm-game .ll-battle{grid-template-columns:1fr 46px 1fr}body.cm-game .ll-die-card{white-space:normal;overflow:visible;max-width:none}body.cm-game .ll-forecast-cards{grid-template-columns:1fr 1fr}body.cm-game .ll-forecast-card{font-size:11px}body.cm-game .ll-forecast-card .ll-muted{font-size:11px}}
+@media(max-width:1100px){body.cm-game .ll-forecast-cards{grid-template-columns:1fr}}
+@media(max-width:700px){body.cm-game .cm-rail{width:70px}body.cm-game .container,body.cm-game .container.league-wide{margin-left:70px!important}body.cm-game::after{left:70px}body.cm-game .cm-status{margin-left:70px}body.cm-game .cm-rail .ll-btn{font-size:11px;min-height:43px}body.cm-game .ll-table{min-width:570px}body.cm-game .ll-topbar{padding-top:32px}body.cm-game .ll-topbar>.ll-btn{top:5px;left:5px}.cm-game .ll-title,.cm-game .ll-title em{font-size:19px}}
