@@ -7,6 +7,12 @@ body.cm-game .ll-comp-tab{white-space:normal;flex:1 1 100px}
 body.cm-game .ll-modal-card{overflow-wrap:anywhere}
 body.cm-game .ll-table-wrap{min-width:0}
 body.cm-game [style*="overflow:auto"],body.cm-game [style*="overflow-y:auto"],body.cm-game [style*="overflow: auto"],body.cm-game [style*="overflow-y: auto"]{max-height:none!important;overflow:visible!important}
+/* Keep the open transfer period immediately below the dashboard header. */
+body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner){display:flex;flex-direction:column}
+body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-topbar{order:0}
+body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-transfer-banner{order:1}
+body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-metrics{order:2}
+body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-grid{order:3}
 @media(max-width:849px){
  body.cm-game .cm-rail{position:relative;inset:auto;width:100%;padding:6px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;z-index:1}
  body.cm-game .cm-rail .cm-line{grid-column:span 3;padding:1px 4px;text-align:left;font-size:12px;line-height:1.2}
@@ -44,6 +50,7 @@ body.cm-game [style*="overflow:auto"],body.cm-game [style*="overflow-y:auto"],bo
  body.cm-game .ll-derby-modal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  body.cm-game .ll-question-example{max-width:100%}
  body.cm-game .ll-shell.ll-quiz-card .ll-question{min-height:310px;padding:25px 12px}
+ body.cm-game .ll-shell.ll-quiz-card .ll-question:has(>.new-word-badge){padding-top:55px}
  body.cm-game .ll-table{min-width:0!important;width:100%}
  /* Compact standings: one aligned row per club, with secondary figures
     on a small second line. Reset legacy fixed cell widths/container rules. */
@@ -66,8 +73,8 @@ body.cm-game [style*="overflow:auto"],body.cm-game [style*="overflow-y:auto"],bo
  body.cm-game .cm-league-table .ll-standing-stars{display:none!important}
  body.cm-game .cm-league-table .ll-rank-movement{font-size:8px;margin-left:0}
  body.cm-game .ll-table-wrap,body.cm-game .ll-standings-wrap,body.cm-game .ll-europe-table-wrap{padding:3px!important}
- body.cm-game .ll-table:not(.cm-league-table){table-layout:auto;font-size:11px}
- body.cm-game .ll-table:not(.cm-league-table) th,body.cm-game .ll-table:not(.cm-league-table) td{white-space:normal;overflow-wrap:normal;padding:5px 3px;font-size:11px}
+ body.cm-game .ll-table:not(.cm-league-table){table-layout:fixed;width:100%;min-width:0!important;font-size:11px}
+ body.cm-game .ll-table:not(.cm-league-table) th,body.cm-game .ll-table:not(.cm-league-table) td{width:auto!important;white-space:normal;overflow-wrap:anywhere;padding:5px 3px;font-size:11px;line-height:1.35}
 }
 /* Additional detail cells are a mobile presentation only. */
 body.cm-game .cm-league-table .cm-stat-details{display:none}
