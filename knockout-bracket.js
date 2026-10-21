@@ -223,7 +223,7 @@
 
   function bracketHtml(cfg) {
     if (!cfg?.stages?.length || !cfg.stages[0].matches.length) return '';
-    const col=242, cardW=204, cardH=70, step=91, pad=20, head=82, len=cfg.stages.length;
+    const col=224, cardW=188, cardH=58, step=78, pad=18, head=70, len=cfg.stages.length;
     const first=Math.max(1,cfg.stages[0].matches.length);
     const stageCentres=[];
     for (let s=0;s<len;s++) {
@@ -238,7 +238,7 @@
       }
       stageCentres.push(ys);
     }
-    const width=pad*2+col*len-25,height=Math.max(head+cardH+16,head+first*step+30);
+    const width=pad*2+col*len-34,height=Math.max(head+cardH+14,head+first*step+24);
     const paths=[];let nodes='';
     cfg.stages.forEach((stage,i)=>{
       const x=pad+i*col;
@@ -261,7 +261,7 @@
       });
     });
     const endX=pad+(len-1)*col+cardW;
-    nodes+=`<div class="ll-bracket-trophy" style="left:${endX+8}px;top:${stageCentres[len-1][0]-13}px" aria-label="Şampiyonluk">🏆</div>`;
+    nodes+=`<div class="ll-bracket-trophy" style="left:${endX+6}px;top:${stageCentres[len-1][0]-10}px" aria-label="Şampiyonluk">🏆</div>`;
     return `<section class="ll-knockout-bracket" aria-label="${safe(cfg.title)} eşleşme ağacı">
       <div class="ll-bracket-head"><div><strong>${safe(cfg.title)} · Eleme Ağacı</strong><small>${cfg.detail || 'Son 16 · Çeyrek Final · Yarı Final · Final'}</small></div><span>← Kaydır →</span></div>
       <div class="ll-bracket-scroll" tabindex="0" aria-label="Eşleşme ağacını yatay kaydır"><div class="ll-bracket-canvas" style="width:${width}px;height:${height}px"><svg class="ll-bracket-lines" viewBox="0 0 ${width} ${height}" aria-hidden="true">${paths.join('')}</svg>${nodes}</div></div>${cfg.extra||''}

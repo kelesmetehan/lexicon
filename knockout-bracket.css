@@ -1,47 +1,100 @@
 /* Shared knockout tree for World Cup, EURO, European club cups and local cups. */
-.ll-knockout-bracket{margin:16px 0 18px;background:radial-gradient(ellipse at 86% 10%,rgba(25,102,235,.35),transparent 53%),linear-gradient(125deg,#020c32,#05216a 53%,#010a29);color:#ebf8ff;border:1px solid rgba(41,196,255,.47);border-radius:15px;box-shadow:inset 0 0 52px rgba(0,35,114,.5),0 8px 26px rgba(0,0,0,.17);overflow:hidden}
-.ll-bracket-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 18px 10px;border-bottom:1px solid rgba(119,214,255,.14)}
-.ll-bracket-head strong{display:block;font-size:18px;letter-spacing:.02em;color:#67e8f9}
-.ll-bracket-head small{display:block;font-size:12px;color:#b2d6f8;margin-top:4px}
-.ll-bracket-head>span{font-size:11px;white-space:nowrap;color:#a8caff;opacity:.85}
-.ll-bracket-scroll{overflow:auto;max-width:100%;overscroll-behavior-x:contain;scrollbar-color:#329add #092453;scrollbar-width:thin}
-.ll-bracket-canvas{position:relative;min-height:180px}
+.ll-knockout-bracket{
+  margin:12px 0 16px;
+  background:linear-gradient(180deg,rgba(49,66,87,.96) 0%,rgba(34,43,52,.98) 100%);
+  color:var(--text,#ededed);
+  border:1px solid #687c90;
+  border-radius:4px;
+  box-shadow:inset 0 1px 0 rgba(179,197,214,.22),0 1px 2px rgba(0,0,0,.35);
+  overflow:hidden;
+  font-family:var(--cm-font,Arial Rounded MT Bold,Tahoma,sans-serif);
+}
+.ll-bracket-head{
+  display:flex;align-items:center;justify-content:space-between;gap:15px;
+  padding:8px 12px 7px;
+  background:linear-gradient(180deg,#153779 0%,#0d2c67 55%,#0c275b 100%);
+  border-bottom:1px solid #61798e;
+}
+.ll-bracket-head strong{
+  display:block;
+  font-family:var(--cm-font,Arial Rounded MT Bold,Tahoma,sans-serif);
+  font-size:16px;
+  font-weight:400;
+  letter-spacing:0;
+  color:var(--gold,#ffef00);
+  line-height:1.15;
+  text-shadow:0 1px 1px rgba(0,0,0,.55);
+}
+.ll-bracket-head small{
+  display:block;
+  font-size:11px;
+  color:#e4edf4;
+  margin-top:4px;
+  line-height:1.25;
+}
+.ll-bracket-head>span{font-size:11px;white-space:nowrap;color:#d9e5ef;opacity:.96}
+.ll-bracket-scroll{overflow:auto;max-width:100%;overscroll-behavior-x:contain;scrollbar-color:#617a96 #1f2c40;scrollbar-width:thin;background:linear-gradient(180deg,#203246 0%,#263444 100%)}
+.ll-bracket-canvas{position:relative;min-height:180px;background:repeating-linear-gradient(180deg,rgba(255,255,255,.018) 0 1px,transparent 1px 37px)}
 .ll-bracket-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.ll-bracket-wire{fill:none;stroke:#61cfff;stroke-width:1.8;stroke-linejoin:round;filter:drop-shadow(0 0 2px #177ce8);opacity:.8}
-.ll-bracket-wire.ll-bracket-dashed{stroke-dasharray:4 4;opacity:.53}
-.ll-bracket-round-title{position:absolute;text-align:center;color:#5dd8fb;font-size:12px;font-weight:800;text-transform:uppercase;white-space:nowrap;letter-spacing:.045em;padding-bottom:8px;border-bottom:1px solid rgba(95,216,251,.6)}
-.ll-bracket-match{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:3px;height:70px;border:1px solid rgba(103,206,255,.4);border-radius:8px;background:linear-gradient(110deg,rgba(8,31,89,.98),rgba(10,40,102,.96));padding:5px 9px;box-shadow:0 2px 9px rgba(0,0,0,.25);font-size:11px;overflow:hidden}
-.ll-bracket-match.ll-bracket-player{border-color:#f9cb59;box-shadow:0 0 0 1px rgba(251,191,36,.36),0 0 17px rgba(251,191,36,.13)}
-.ll-bracket-match.ll-bracket-empty{border-style:dashed;opacity:.62}
-.ll-bracket-team{display:flex;align-items:center;gap:6px;min-width:0;height:22px;max-width:100%;overflow:hidden;white-space:nowrap;color:#e8f2ff;font-weight:600}
+.ll-bracket-wire{fill:none;stroke:#8db6da;stroke-width:1.65;stroke-linejoin:round;opacity:.92}
+.ll-bracket-wire.ll-bracket-dashed{stroke-dasharray:4 3;opacity:.62}
+.ll-bracket-round-title{
+  position:absolute;text-align:center;color:#fff000;
+  font-family:var(--cm-font,Arial Rounded MT Bold,Tahoma,sans-serif);
+  font-size:12px;font-weight:400;text-transform:uppercase;white-space:nowrap;letter-spacing:0;
+  padding:4px 0 5px;border-top:1px solid #6784a2;border-bottom:1px solid #6784a2;
+  background:linear-gradient(180deg,rgba(60,89,123,.3),rgba(41,62,88,.05));
+  text-shadow:0 1px 1px rgba(0,0,0,.55);
+}
+.ll-bracket-match{
+  position:absolute;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:1px;
+  height:58px;border:1px solid #62798d;border-radius:3px;
+  background:linear-gradient(180deg,#2c3a49 0%,#263241 54%,#1f2a37 100%);
+  padding:5px 22px 5px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 1px rgba(0,0,0,.3);
+  font-size:12px;overflow:hidden;color:#f2f5f8;
+}
+.ll-bracket-match.ll-bracket-player{border-color:#c5b24d;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,239,0,.16)}
+.ll-bracket-match.ll-bracket-empty{border-style:solid;opacity:.82;background:linear-gradient(180deg,#24313f 0%,#202a37 100%)}
+.ll-bracket-team{
+  display:flex;align-items:center;gap:6px;min-width:0;height:20px;max-width:100%;overflow:hidden;white-space:nowrap;
+  color:#f1f4f8;font-family:var(--cm-font,Arial Rounded MT Bold,Tahoma,sans-serif);font-size:13px;font-weight:400;line-height:1;
+}
 .ll-bracket-team>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ll-bracket-team img,.ll-bracket-team .ll-team-logo,.ll-bracket-team .ll-national-logo-wrap{flex:0 0 21px;width:21px!important;height:21px!important;object-fit:contain;max-width:21px}
-.ll-bracket-team .ll-team-logo-fallback{font-size:15px!important}
-.ll-bracket-team.ll-bracket-winner{color:#82ffce;font-weight:900}
-.ll-bracket-team.ll-bracket-tbd{color:#92a9ce;font-size:10px;font-style:italic;font-weight:400}
-.ll-bracket-score{position:absolute;right:6px;bottom:2px;font-size:9px;line-height:1.1;color:#b9eaff;background:#061e58;padding:2px 4px;border-radius:3px}
-.ll-bracket-trophy{position:absolute;font-size:24px;filter:drop-shadow(0 0 8px rgba(255,220,92,.55))}
-.ll-bracket-third{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:13px 19px;border-top:1px solid rgba(132,204,255,.19);font-size:12px}
-.ll-bracket-third strong{color:#e9c96b}.ll-bracket-third span{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
-.ll-bracket-playoffs{margin:0 14px 12px;border-top:1px solid rgba(132,204,255,.22);padding:12px 5px;font-size:12px;color:#b6dfff}
-.ll-bracket-playoffs summary{cursor:pointer;font-weight:700}.ll-bracket-playoff-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;padding-top:11px}
-.ll-bracket-playoff-list>span{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px;background:rgba(10,29,73,.78);border:1px solid rgba(91,190,240,.22);border-radius:6px}
-.ll-bracket-playoff-list .ll-bracket-team{display:inline-flex;width:auto}.ll-bracket-playoff-list small{color:#8bdaff}
-@media(max-width:650px){.ll-bracket-head{padding:11px 12px}.ll-bracket-head strong{font-size:15px}.ll-knockout-bracket{margin:11px 0}.ll-bracket-scroll{scroll-snap-type:x proximity}}
+.ll-bracket-team img,.ll-bracket-team .ll-team-logo,.ll-bracket-team .ll-national-logo-wrap{flex:0 0 18px;width:18px!important;height:18px!important;object-fit:contain;max-width:18px}
+.ll-bracket-team .ll-team-logo-fallback{font-size:13px!important}
+.ll-bracket-team.ll-bracket-winner{color:#fff59a}
+.ll-bracket-team.ll-bracket-tbd{color:#b5c2cf;font-size:12px;font-style:normal;font-weight:400}
+.ll-bracket-score{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  font-family:var(--cm-font,Arial Rounded MT Bold,Tahoma,sans-serif);
+  font-size:12px;line-height:1;color:#fff000;background:none;padding:0;border-radius:0;text-shadow:0 1px 1px rgba(0,0,0,.6)
+}
+.ll-bracket-trophy{position:absolute;font-size:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.ll-bracket-third{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid #61798e;font-size:12px;background:#283341}
+.ll-bracket-third strong{color:var(--gold,#ffef00);font-weight:400}.ll-bracket-third span{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ll-bracket-playoffs{margin:0 10px 10px;border-top:1px solid #61798e;padding:10px 2px 0;font-size:12px;color:#e2e7ec}
+.ll-bracket-playoffs summary{cursor:pointer;font-weight:400;color:var(--gold,#ffef00)}
+.ll-bracket-playoff-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;padding-top:9px}
+.ll-bracket-playoff-list>span{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px;background:linear-gradient(180deg,#2a3846,#232f3c);border:1px solid #62798d;border-radius:3px}
+.ll-bracket-playoff-list .ll-bracket-team{display:inline-flex;width:auto}
+.ll-bracket-playoff-list small{color:#b7c8d8}
+@media(max-width:650px){.ll-bracket-head{padding:7px 9px}.ll-bracket-head strong{font-size:14px}.ll-knockout-bracket{margin:10px 0}.ll-bracket-scroll{scroll-snap-type:x proximity}}
 
 /* Career menu, tournament tabs and preserved league result screens. */
-.ll-bracket-hub-tabs,.ll-bracket-view-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:13px 0;padding:10px;border-radius:12px;background:rgba(9,25,56,.5);border:1px solid rgba(125,199,239,.18)}
+.ll-bracket-hub-tabs,.ll-bracket-view-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:13px 0;padding:8px;border-radius:4px;background:rgba(34,40,34,.72);border:1px solid #606a68}
 .ll-bracket-hub-tabs .ll-btn,.ll-bracket-view-tabs .ll-btn{font-size:12px;white-space:normal}
-.ll-bracket-view-tabs{margin-top:12px}
-.ll-bracket-wait{border:1px dashed rgba(110,185,231,.4);border-radius:12px;padding:20px;margin:14px 0;color:#bfd2ef;background:rgba(7,26,61,.65);font-size:13px}
-.ll-bracket-wait strong{display:block;margin-bottom:7px;color:#86d9ff;font-size:15px}
-.ll-bracket-wait p{margin:0;line-height:1.6}
+.ll-bracket-view-tabs{margin-top:10px}
+.ll-bracket-wait{border:1px solid #667b86;border-radius:4px;padding:12px 14px;margin:12px 0;color:#e2e2d9;background:rgba(34,40,34,.72);font-size:12px;line-height:1.45}
+.ll-bracket-wait strong{display:block;margin-bottom:6px;color:var(--gold,#ffef00);font-size:14px;font-weight:400}
+.ll-bracket-wait p{margin:0;line-height:1.5}
 .ll-bracket-center-view [hidden]{display:none!important}
 .ll-bracket-center-records>.ll-card:first-child{margin-top:8px!important}
 @media(max-width:600px){.ll-bracket-hub-tabs,.ll-bracket-view-tabs{gap:5px;padding:7px}.ll-bracket-hub-tabs .ll-btn,.ll-bracket-view-tabs .ll-btn{font-size:11px;padding:7px}}
 
 .ll-dashboard-bracket-preview{margin:13px 0 17px}
-.ll-dashboard-bracket-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:12px;padding:13px 16px;background:linear-gradient(100deg,rgba(6,36,88,.94),rgba(4,54,107,.76));border:1px solid rgba(79,182,245,.35)}
-.ll-dashboard-bracket-toolbar>div{display:flex;flex-direction:column;gap:4px}.ll-dashboard-bracket-toolbar strong{color:#8ce9ff;font-size:15px}.ll-dashboard-bracket-toolbar small{font-size:11px;color:#b2cbe8}
+.ll-dashboard-bracket-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:4px;padding:9px 12px;background:linear-gradient(180deg,#334860 0%,#24384f 100%);border:1px solid #687c90;box-shadow:inset 0 1px 0 rgba(179,197,214,.18)}
+.ll-dashboard-bracket-toolbar>div{display:flex;flex-direction:column;gap:3px}
+.ll-dashboard-bracket-toolbar strong{color:var(--gold,#ffef00);font-size:14px;font-weight:400}
+.ll-dashboard-bracket-toolbar small{font-size:11px;color:#e2e2d9}
 
-.ll-spectator-results .ll-cup-row{gap:8px;flex-wrap:wrap}.ll-spectator-results .ll-cup-row>small{font-size:10px;color:#93c5fd;min-width:100%;padding-left:4px}.ll-spectator-results .ll-bracket-team{font-size:12px}
+.ll-spectator-results .ll-cup-row{gap:8px;flex-wrap:wrap}.ll-spectator-results .ll-cup-row>small{font-size:10px;color:#d0dae4;min-width:100%;padding-left:4px}.ll-spectator-results .ll-bracket-team{font-size:12px}
