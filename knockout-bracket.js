@@ -352,21 +352,69 @@
   if(typeof renderDashboard==='function')global.llRenderDashboard=function(){
     const result=renderDashboard.apply(this,arguments);
     const area=typeof global.llArea==='function'?global.llArea():null;
-    const actions=area?.querySelector('.ll-shell .ll-topbar .ll-actions');
-    if(actions&&!actions.querySelector('[data-knockout-hub]'))actions.insertAdjacentHTML('beforeend','<button class="ll-btn gold" data-knockout-hub onclick="llRenderKnockoutHub()">🏆 Eleme Ağaçları</button>');
-    // Show the active knockout tree directly on the career dashboard as well;
-    // never replace the season's current match or league standings.
     const state=global.lexLeague?.state;
-    const metrics=area?.querySelector('.ll-shell > .ll-panel > .ll-metrics');
-    if(metrics&&state&&!area.querySelector('[data-dashboard-bracket]')){
-      const knockout=state.europe?.type&&state.europe.phase!=='league'&&state.europe.phase!=='eliminated'
-        ?global.llEuropeanKnockoutBracketHtml(state,state.europe.type):null;
-      const cupFixture=state.pendingFixture?.competition==='cup';
-      const activeTree=knockout||(cupFixture?global.llCupKnockoutBracketHtml(state):'');
-      const block=document.createElement('div');block.dataset.dashboardBracket='';block.className='ll-dashboard-bracket-preview';
-      block.innerHTML=`<div class="ll-dashboard-bracket-toolbar"><div><strong>🏆 Kupa Eşleşme Ağaçları</strong><small>Avrupa kupaları, yerel kupa, Dünya Kupası ve EURO</small></div><button class="ll-btn gold" onclick="llRenderKnockoutHub()">Tüm Eşleşmeleri Gör →</button></div>${activeTree||''}`;
-      metrics.insertAdjacentElement('afterend',block);
+    if(!area||!state)return result;
+
+    const actions=area.querySelector('.ll-shell .ll-topbar .ll-actions');
+    if(actions&&!actions.querySelector('[data-knockout-hub]')){
+      actions.insertAdjacentHTML('beforeend','<button class="ll-btn gold" data-knockout-hub onclick="llRenderKnockoutHub()">🏆 Eleme Ağaçları</button>');
     }
+
+    // Do NOT append a full-width bracket below the dashboard metrics. A prior
+    // implementation placed it above the match grid, leaving the right-hand
+    // standings panel unchanged. The live knockout tree belongs in that panel.
+    area.querySelectorAll('[data-dashboard-bracket]').forEach(node=>node.remove());
+    const grid=area.querySelector('.ll-shell > .ll-panel > .ll-grid');
+    const sidebar=grid?.children?.[1];
+    if(!sidebar)return result;
+
+    const fixture=typeof global.llPlayerFixture==='function'
+      ?global.llPlayerFixture():state.pendingFixture;
+    const competition=fixture?.competition;
+    const activeEuro=europeanTypes.includes(competition)&&(
+      fixture?.league==='euro-knockout'||
+      (state.europe?.type===competition&&['playoff','r16','qf','sf','final','winner'].includes(state.europe.phase))
+    );
+    const activeCup=competition==='cup';
+    if(!activeEuro&&!activeCup)return result;
+
+    const type=activeEuro?competition:'cup';
+    const tree=activeEuro
+      ?global.llEuropeanKnockoutBracketHtml(state,type)
+      :global.llCupKnockoutBracketHtml(state);
+    if(!tree)return result; // Never replace the standings with an empty bracket.
+
+    // The current edition's knockout tree replaces *only* the right-hand
+    // dashboard standings card. Everything else (match, squad, results menus)
+    // remains untouched. This also works when league-v2.js already injected
+    // a tree before our dashboard wrapper runs.
+    const current=sidebar.querySelector('.ll-knockout-bracket');
+    const cards=Array.from(sidebar.children).filter(node=>{
+      const title=node.querySelector?.('.ll-card-title')?.textContent||'';
+      return /puan durumu|puan tablosu/i.test(title);
+    });
+    if(current){
+      cards.forEach(node=>node.remove());
+      // If league-v2 rendered a knockout tree already, use it in place. Wrap
+      // it for a consistent dashboard preview and avoid duplicate trees.
+      if(!current.closest('.ll-dashboard-knockout-side')){
+        const holder=document.createElement('div');
+        holder.className='ll-dashboard-knockout-side';
+        holder.dataset.dashboardKnockoutSide=type;
+        holder.innerHTML=`<div class="ll-dashboard-bracket-side-toolbar"><span>🏆 ${activeEuro?safe(({ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'})[type]):'Yerel Kupa'} · Eşleşmeler</span><button class="ll-btn" onclick="llRenderKnockoutHub('${type}')">Tam Ağacı Aç →</button></div>`;
+        current.insertAdjacentElement('beforebegin',holder);
+        holder.appendChild(current);
+      }
+      return result;
+    }
+    const wrapper=document.createElement('div');
+    wrapper.className='ll-dashboard-knockout-side';
+    wrapper.dataset.dashboardKnockoutSide=type;
+    wrapper.innerHTML=`<div class="ll-dashboard-bracket-side-toolbar"><span>🏆 ${activeEuro?safe(({ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'})[type]):'Yerel Kupa'} · Eşleşmeler</span><button class="ll-btn" onclick="llRenderKnockoutHub('${type}')">Tam Ağacı Aç →</button></div>${tree}`;
+    if(cards.length){
+      cards[0].insertAdjacentElement('beforebegin',wrapper);
+      cards.forEach(node=>node.remove());
+    }else sidebar.insertAdjacentElement('afterbegin',wrapper);
     return result;
   };
 })(window);

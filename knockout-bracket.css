@@ -98,3 +98,12 @@
 .ll-dashboard-bracket-toolbar small{font-size:11px;color:#e2e2d9}
 
 .ll-spectator-results .ll-cup-row{gap:8px;flex-wrap:wrap}.ll-spectator-results .ll-cup-row>small{font-size:10px;color:#d0dae4;min-width:100%;padding-left:4px}.ll-spectator-results .ll-bracket-team{font-size:12px}
+
+/* Dashboard: the knockout tree takes the standings panel's place, never an extra row. */
+.ll-dashboard-knockout-side{min-width:0;width:100%}
+.ll-dashboard-bracket-side-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:7px 9px;background:linear-gradient(#203b58,#172c45);border:1px solid #667f95;border-radius:4px 4px 0 0;font-family:var(--cm-font,Tahoma,sans-serif);font-size:12px;color:#ffef00}
+.ll-dashboard-bracket-side-toolbar>.ll-btn{min-height:23px;padding:3px 9px}
+.ll-dashboard-knockout-side .ll-knockout-bracket{margin:0;border-radius:0 0 4px 4px;box-shadow:none}
+.ll-dashboard-knockout-side .ll-bracket-scroll{max-width:100%;-webkit-overflow-scrolling:touch}
+.ll-dashboard-knockout-side .ll-bracket-head{padding:7px 10px}
+@media(max-width:700px){.ll-dashboard-bracket-side-toolbar{font-size:11px}.ll-dashboard-bracket-side-toolbar>.ll-btn{font-size:11px}}
