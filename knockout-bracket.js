@@ -55,29 +55,131 @@
     return {title:wc?'Dünya Kupası':'Avrupa Şampiyonası',detail:`${safe(rec.year || '')} · Eleme aşaması`,stages,player:rec.selectedTeam,badge,extra:third?`<div class="ll-bracket-third"><strong>Üçüncülük Maçı</strong><span>${badge(third.home)} ${safe(third.home)} — ${badge(third.away)} ${safe(third.away)} ${third.played?`· ${safe(stageMatch(third).score)}`:''}</span></div>`:''};
   }
 
+  // Each European tournament has its own 36-team phase. The career engine only
+  // creates official knockout pairs for the competition managed by the player.
+  // Simulate and SAVE the other cups' independent knockout schedules, so the
+  // Europa/Conference trees do not depend on the player's qualification.
+  const europeanTypes=['ucl','uel','uecl'];
+  const europeanRounds=['playoff','r16','qf','sf','final'];
+  function otherCupsStore(state) {
+    if (!state.otherCupKnockouts || Number(state.otherCupKnockouts.season)!==Number(state.season)) {
+      state.otherCupKnockouts={season:state.season,competitions:{}};
+    }
+    return state.otherCupKnockouts.competitions;
+  }
+  function makePair(a,b,stage,index) {
+    return {id:`${stage}-${index+1}`,stage,a,b,legs:[],winner:null};
+  }
+  function simulatePair(pair,stage,legCount) {
+    const totalLegs=stage==='final'?1:2;
+    for(let i=(pair.legs||[]).filter(Boolean).length;i<Math.min(totalLegs,legCount);i++) {
+      const home=(stage==='final'||i===0)?pair.a:pair.b;
+      const away=home===pair.a?pair.b:pair.a;
+      const result=typeof global.llV2SimpleEuropeScore==='function'
+        ?global.llV2SimpleEuropeScore(home,away):{homeGoals:0,awayGoals:0};
+      pair.legs[i]={home,away,homeGoals:Number(result.homeGoals)||0,awayGoals:Number(result.awayGoals)||0,userMatch:false};
+    }
+    if(!pair.winner && pair.legs.filter(Boolean).length>=totalLegs){
+      const goals={[pair.a]:0,[pair.b]:0};
+      pair.legs.forEach(leg=>{goals[leg.home]+=leg.homeGoals;goals[leg.away]+=leg.awayGoals;});
+      // Equal aggregate goals are resolved without a speculative away-goals rule.
+      // Ranking is used as a stable fallback for AI-only cups.
+      pair.winner=goals[pair.a]===goals[pair.b]?pair.a:(goals[pair.a]>goals[pair.b]?pair.a:pair.b);
+    }
+  }
+  function spectatorKnockout(state,type,table) {
+    const store=otherCupsStore(state),season=Number(state.season),last=LL_EURO_LEAGUE_WEEKS[type].slice(-1)[0];
+    const sorted=global.llV2SortEuropeTable(type).map(row=>row.team);
+    if(sorted.length<24)return null;
+    let comp=store[type];
+    let changed=false;
+    if (!comp || comp.version!==2 || comp.leagueEnd!==last || !comp.stages?.playoff?.pairs?.length) {
+      const pairs=Array.from({length:8},(_,i)=>makePair(sorted[8+i],sorted[23-i],'playoff',i));
+      comp={version:2,season,leagueEnd:last,stages:{playoff:{stage:'playoff',pairs,complete:false},r16:{stage:'r16',pairs:sorted.slice(0,8).map((team,i)=>makePair(team,null,'r16',i)),complete:false}}};
+      store[type]=comp;changed=true;
+    }
+    // Two-legged rounds occupy two weekly slots. Final is one match.
+    const current=Number(state.week)||0;
+    for(let si=0;si<europeanRounds.length;si++){
+      const stage=europeanRounds[si],start=last+1+2*si;
+      let round=comp.stages[stage];
+      if(stage==='r16' && round && comp.stages.playoff?.complete && round.pairs.some(pair=>!pair.b)){
+        const winners=comp.stages.playoff.pairs.map(pair=>pair.winner);
+        round.pairs.forEach((pair,i)=>{pair.b=winners[7-i];});
+        changed=true;
+      }
+      if(!round){
+        const prior=comp.stages[europeanRounds[si-1]];
+        if(!prior?.complete)break;
+        const winners=prior.pairs.map(pair=>pair.winner);
+        if(winners.some(w=>!w))break;
+        let pairs;
+        if(stage==='r16')pairs=sorted.slice(0,8).map((team,i)=>makePair(team,winners[7-i],stage,i));
+        else pairs=Array.from({length:winners.length/2},(_,i)=>makePair(winners[2*i],winners[2*i+1],stage,i));
+        round={stage,pairs,complete:false};comp.stages[stage]=round;changed=true;
+      }
+      const legCount=current>=start?(stage==='final'?1:current>=start+1?2:1):0;
+      if(legCount>0){
+        const before=round.pairs.reduce((n,p)=>n+p.legs.filter(Boolean).length,0);
+        round.pairs.forEach(pair=>simulatePair(pair,stage,legCount));
+        const after=round.pairs.reduce((n,p)=>n+p.legs.filter(Boolean).length,0);
+        if(after!==before)changed=true;
+      }
+      if(!round.complete&&round.pairs.every(pair=>!!pair.winner)){round.complete=true;changed=true;}
+      if(!round.complete)break;
+    }
+    if(changed && typeof global.llSave==='function')global.llSave();
+    return comp;
+  }
   function europeanConfig(state, type) {
-    if (!['ucl','uel','uecl'].includes(type)) return null;
+    if (!europeanTypes.includes(type)) return null;
     const table=typeof global.llV2EnsureEuropeStandings==='function'?global.llV2EnsureEuropeStandings(state)?.[type]:null;
-    const target=typeof LL_EURO_LEAGUE_WEEKS!=='undefined'?LL_EURO_LEAGUE_WEEKS[type]?.length:0;
-    const comp=typeof global.llV11SyncEuropeKnockout==='function'?global.llV11SyncEuropeKnockout(type):null;
-    const results=(state.results || []).some(r=>r.season===state.season && r.competition===type && r.league==='euro-knockout');
+    const target=LL_EURO_LEAGUE_WEEKS[type]?.length||0;
+    const results=(state.results||[]).some(r=>Number(r.season)===Number(state.season)&&r.competition===type&&r.league==='euro-knockout');
     const inKnockout=state.europe?.type===type && ['playoff','r16','qf','sf','final','winner','eliminated'].includes(state.europe.phase);
-    if (!(target && Number(table?.playedRounds)>=target) && !results && !inKnockout) return null;
-    const stages=['r16','qf','sf','final'].map((key,index)=>({
-      key,label:labels[key],matches:Array.from({length:8>>index},(_,i)=>stageMatch(comp?.stages?.[key]?.pairs?.[i],{twoLegs:key!=='final'}))
+    if(!(target && Number(table?.playedRounds)>=target)&&!results&&!inKnockout)return null;
+    // Never fabricate a new draw for the player's career tournament: use
+    // existing live ties and recorded match results there.
+    const isPlayersCup=state.europe?.type===type;
+    const comp=isPlayersCup
+      ?(typeof global.llV11SyncEuropeKnockout==='function'?global.llV11SyncEuropeKnockout(type):null)
+      :spectatorKnockout(state,type,table);
+    const displayRounds=comp?.stages?.playoff?.pairs?.length?['playoff','r16','qf','sf','final']:['r16','qf','sf','final'];
+    const stages=displayRounds.map(key=>({
+      key,label:labels[key],matches:Array.from({length:key==='playoff'||key==='r16'?8:key==='qf'?4:key==='sf'?2:1},(_,i)=>stageMatch(comp?.stages?.[key]?.pairs?.[i],{twoLegs:key!=='final'}))
     }));
     const play=comp?.stages?.playoff?.pairs;
+    const anyDraw=!!(play?.length||comp?.stages?.r16?.pairs?.length);
+    // A seeded/playoff draw should be shown immediately after the league phase;
+    // blank Son 16 slots are appropriate only before playoff winners emerge.
     let extra='';
-    if (Array.isArray(play)&&play.length) {
-      extra=`<details class="ll-bracket-playoffs" ${state.europe?.type===type&&state.europe.phase==='playoff'?'open':''}><summary>Play-Off Eşleşmeleri</summary><div class="ll-bracket-playoff-list">`+play.map(pair=>{
+    if(Array.isArray(play)&&play.length){
+      extra=`<details class="ll-bracket-playoffs" ${!comp?.stages?.playoff?.complete?'open':''}><summary>Play-Off Eşleşmeleri (${play.length})</summary><div class="ll-bracket-playoff-list">`+play.map(pair=>{
         const m=stageMatch(pair,{twoLegs:true});
-        return `<span>${teamLine(m.home, null, false)} <b>—</b> ${teamLine(m.away, null, false)} ${m.score?`<small>${safe(m.score)}</small>`:''}</span>`;
+        return `<span>${teamLine(m.home,clubBadge,m.winner===m.home)} <b>—</b> ${teamLine(m.away,clubBadge,m.winner===m.away)} ${m.score?`<small>${safe(m.score)}</small>`:''}</span>`;
       }).join('')+'</div></details>';
     }
     const label={ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'}[type];
-    return {title:label,detail:'Lig aşamasının ardından eleme tablosu',stages,player:state.playerTeam,badge:clubBadge,extra};
+    const hint=!anyDraw?' · İlk eşleşmeler oluşuyor':isPlayersCup?' · Kariyer kura kayıtları':' · Diğer takımların simüle edilen maçları';
+    return {title:label,detail:'Lig aşamasının ardından eleme tablosu'+hint,stages,player:state.playerTeam,badge:clubBadge,extra};
   }
 
+  function spectatorResultsHtml(state,type) {
+    if(state.europe?.type===type)return '';
+    const comp=state.otherCupKnockouts?.season==state.season?state.otherCupKnockouts?.competitions?.[type]:null;
+    if(!comp)return '';
+    const body=europeanRounds.map(stage=>{
+      const pairs=comp.stages?.[stage]?.pairs;
+      if(!pairs?.length)return '';
+      const rows=pairs.map(pair=>{
+        const m=stageMatch(pair,{twoLegs:stage!=='final'});
+        const legs=(pair.legs||[]).filter(Boolean).map(leg=>`${safe(leg.home)} ${Number(leg.homeGoals)}-${Number(leg.awayGoals)} ${safe(leg.away)}`).join(' · ');
+        return `<div class="ll-cup-row"><span>${teamLine(pair.a,clubBadge,pair.winner===pair.a)}</span><span>${m.score?safe(m.score):'VS'}</span><span>${teamLine(pair.b,clubBadge,pair.winner===pair.b)}</span>${legs?`<small title="${safe(legs)}">${safe(legs)}</small>`:''}</div>`;
+      }).join('');
+      return `<details class="ll-round-card" ${stage==='playoff'&&!comp.stages.playoff.complete?'open':''}><summary>${safe(labels[stage])} · ${pairs.filter(pair=>pair.winner).length}/${pairs.length} tamamlandı</summary><div class="ll-cup-list ll-spectator-results">${rows}</div></details>`;
+    }).join('');
+    return `<div class="ll-card ll-spectator-results-card" style="margin-top:14px"><div class="ll-card-title">${safe(({ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'})[type])} · Diğer Takımların Eleme Sonuçları</div>${body}</div>`;
+  }
   function clubBadge(team) {
     return team && typeof global.llTeamLogo==='function'?global.llTeamLogo(team,'table'):'';
   }
@@ -130,7 +232,8 @@
       if (s===0) for(let i=0;i<matches.length;i++) ys.push(head+cardH/2+i*step);
       else for(let i=0;i<matches.length;i++) {
         const prior=stageCentres[s-1];
-        const a=prior[i*2], b=prior[i*2+1];
+        const sameCount=prior.length===matches.length;
+        const a=prior[sameCount?i:i*2], b=sameCount?a:prior[i*2+1];
         ys.push(a==null?head+cardH/2+i*step*(1<<s):(b==null?a:(a+b)/2));
       }
       stageCentres.push(ys);
@@ -147,8 +250,10 @@
         let dest=-1;
         const winner=m?.winner || (m?.home&&!m.away?m.home:null);
         if(winner) dest=after.matches.findIndex(next=>next && has([next],winner));
-        // Draw prospective paths only into undisclosed slots, never imply a false named pairing.
-        if(dest<0 && !after.matches[Math.floor(j/2)]) dest=Math.floor(j/2);
+        const slot=stage.matches.length===after.matches.length?j:Math.floor(j/2);
+        // The playoff winner feeds exactly one seeded R16 match; the
+        // normal remaining stages join pairs of previous winners.
+        if(dest<0 && (stage.key==='playoff'||!after.matches[slot])) dest=slot;
         if(dest<0 || dest>=after.matches.length) return;
         const x1=x+cardW,x2=x+col,mid=(x1+x2)/2,y1=stageCentres[i][j],y2=stageCentres[i+1][dest];
         const tentative=!winner;
@@ -168,18 +273,99 @@
   global.llEuropeanKnockoutBracketHtml=(state,type)=>bracketHtml(europeanConfig(state,type));
   global.llCupKnockoutBracketHtml=state=>bracketHtml(cupConfig(state));
 
-  // Only tournament center tabs are decorated. The football simulation and saves are untouched.
+  function bracketMenuActions(type) {
+    const options=[['ucl','Şampiyonlar Ligi'],['uel','Avrupa Ligi'],['uecl','Konferans Ligi'],['cup','Yerel Kupa'],['wc','Dünya Kupası'],['euro','Avrupa Şampiyonası'],['league','Lig Sonuçları']];
+    return `<nav class="ll-bracket-hub-tabs" aria-label="Turnuvalar">${options.map(([key,label])=>`<button class="ll-btn ${key===type?'primary':''}" onclick="llRenderKnockoutHub('${key}')">${safe(label)}</button>`).join('')}</nav>`;
+  }
+  function latestNational(state,type){
+    const seasons=state.nationalTournaments?.seasons||{};
+    return Object.values(seasons).filter(rec=>rec?.type===type&&rec.edition).sort((a,b)=>Number(b.year||0)-Number(a.year||0))[0]||null;
+  }
+  function unavailable(text){return `<div class="ll-bracket-wait"><strong>Henüz eleme aşamasına geçilmedi</strong><p>${safe(text)}</p></div>`;}
+  // Direct entry from the career's main dashboard. All seven categories stay
+  // available independently of the player's qualification.
+  global.llRenderKnockoutHub=function(type=null,view='tree'){
+    const state=global.lexLeague?.state;if(!state)return;
+    if(!type)type=state.europe?.type||'ucl';
+    if(!['ucl','uel','uecl','cup','wc','euro','league'].includes(type))type='ucl';
+    if(typeof global.llSetWide==='function')global.llSetWide(true);
+    const isEurope=europeanTypes.includes(type);
+    let tree='',records='',showTree=view!=='results'&&type!=='league';
+    if(isEurope){
+      tree=global.llEuropeanKnockoutBracketHtml(state,type);
+      if(!tree)tree=unavailable('Bu kupada lig aşaması tamamlanınca play-off ve üst tur eşleşmeleri burada açılacak.');
+      if(typeof global.llV2EuropeTableHtml==='function'&&typeof global.llV2EuropeFixturesHtml==='function'){
+        records=`<div class="ll-card"><div class="ll-card-title">Puan Durumu · ${safe(type.toUpperCase())}</div>${global.llV2EuropeTableHtml(type)}</div><div class="ll-card" style="margin-top:12px"><div class="ll-card-title">Lig ve Eleme Maç Sonuçları</div>${global.llV2EuropeFixturesHtml(type)}</div>${spectatorResultsHtml(state,type)}`;
+      }
+    } else if(type==='cup'){
+      tree=global.llCupKnockoutBracketHtml(state)||unavailable('Kupanın ilk tur eşleşmeleri henüz oluşmadı.');
+      if(typeof global.llV2CupRoundsHtml==='function')records=`<div class="ll-card"><div class="ll-card-title">Yerel Kupa · Tüm Tur Sonuçları</div>${global.llV2CupRoundsHtml()}</div>`;
+    } else if(type==='wc'||type==='euro'){
+      const rec=latestNational(state,type);
+      tree=rec?global.llNationalKnockoutBracketHtml(rec,team=>typeof global.llNationalTeamBadge==='function'?global.llNationalTeamBadge(team):''):'';
+      if(!tree)tree=unavailable('Milli turnuvanın grup aşaması tamamlanınca eleme ağacı açılır.');
+      records=`<div class="ll-bracket-wait">Grup tabloları ve milli maç sonuçları <button class="ll-btn" onclick="llRenderNationalTournaments('${type}')">Milli Turnuvalar ekranında</button> korunuyor.</div>`;
+    } else {
+      showTree=false;
+      const leagueKey=typeof global.llTeamLeague==='function'?global.llTeamLeague(state.playerTeam):'super';
+      records=`<div class="ll-bracket-view-tabs"><button class="ll-btn" onclick="llRenderCompetitionCenter('league','super')">Süper Lig</button><button class="ll-btn" onclick="llRenderCompetitionCenter('league','first')">TFF 1. Lig</button></div><div class="ll-card"><div class="ll-card-title">Lig Tablosu</div>${typeof global.llTableHtml==='function'?global.llTableHtml(leagueKey):''}</div><div class="ll-card" style="margin-top:12px"><div class="ll-card-title">Lig Maç Sonuçları</div>${typeof global.llV2LeagueFixturesHtml==='function'?global.llV2LeagueFixturesHtml(leagueKey):''}</div>`;
+    }
+    const heading=type==='league'?'Lig Sonuçları':type==='cup'?'Yerel Kupa':type==='wc'?'Dünya Kupası':type==='euro'?'Avrupa Şampiyonası':{ucl:'Şampiyonlar Ligi',uel:'Avrupa Ligi',uecl:'Konferans Ligi'}[type];
+    const viewTabs=type==='league'?'':`<div class="ll-bracket-view-tabs"><button class="ll-btn ${showTree?'primary':''}" onclick="llRenderKnockoutHub('${type}','tree')">🏆 Eşleşme Ağacı</button><button class="ll-btn ${!showTree?'primary':''}" onclick="llRenderKnockoutHub('${type}','results')">📊 Puan Durumu ve Sonuçlar</button></div>`;
+    global.llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel"><div class="ll-topbar"><div><div class="ll-title">🏆 Turnuva <em>Eleme Ağacı</em></div><div class="ll-muted">Sezon ${safe(state.season)} · ${safe(heading)} · Takımlar, eşleşmeler ve maç sonuçları</div></div><button class="ll-btn" onclick="llRenderDashboard()">← Dashboard</button></div>${bracketMenuActions(type)}${viewTabs}${showTree?tree:records}</div></div>`;
+  };
+
+  global.llBracketSwitchView=function(button,view){
+    const root=button?.closest('.ll-bracket-center-view');if(!root)return;
+    root.querySelectorAll('[data-bracket-view]').forEach(el=>{el.hidden=el.dataset.bracketView!==view;});
+    root.querySelectorAll('[data-bracket-target]').forEach(el=>{const selected=el.dataset.bracketTarget===view;el.classList.toggle('primary',selected);el.setAttribute('aria-pressed',String(selected));});
+  };
+
+  // Decorate the competition center. Bracket becomes its first screen only
+  // after a draw exists; its original league standings, fixtures and results
+  // stay in a separately selectable tab rather than being deleted.
   const base=global.llRenderCompetitionCenter;
-  if (typeof base==='function') global.llRenderCompetitionCenter=function(tab,key){
+  if(typeof base==='function')global.llRenderCompetitionCenter=function(tab,key){
     const result=base.apply(this,arguments);
     const state=global.lexLeague?.state;
-    if (!state || !['cup','europe'].includes(tab) || typeof global.llArea!=='function')return result;
-    const type=['ucl','uel','uecl'].includes(key)?key:(state.europe?.type||'ucl');
+    if(!state||!['cup','europe'].includes(tab)||typeof global.llArea!=='function')return result;
+    if(tab==='europe'&&key==='supercup')return result;
+    const type=europeanTypes.includes(key)?key:(state.europe?.type||'ucl');
     const html=tab==='cup'?global.llCupKnockoutBracketHtml(state):global.llEuropeanKnockoutBracketHtml(state,type);
-    if(html){
-      const panel=global.llArea()?.querySelector('.ll-panel');
-      const anchor=panel?.querySelector('.ll-cup-status');
-      if(anchor)anchor.insertAdjacentHTML('afterend',html);
+    const panel=global.llArea()?.querySelector('.ll-shell > .ll-panel');
+    if(!panel||panel.querySelector('.ll-bracket-center-view'))return result;
+    const status=panel.querySelector('.ll-cup-status');
+    if(!status)return result;
+    const rest=document.createElement('div');rest.className='ll-bracket-center-records';rest.dataset.bracketView='results';
+    let cursor=status.nextElementSibling;
+    while(cursor){const next=cursor.nextElementSibling;rest.appendChild(cursor);cursor=next;}
+    const frame=document.createElement('div');frame.className='ll-bracket-center-view';
+    frame.innerHTML=`<div class="ll-bracket-view-tabs"><button class="ll-btn ${html?'primary':''}" data-bracket-target="tree" aria-pressed="${!!html}" onclick="llBracketSwitchView(this,'tree')">🏆 Eşleşme Ağacı</button><button class="ll-btn ${html?'':'primary'}" data-bracket-target="results" aria-pressed="${!html}" onclick="llBracketSwitchView(this,'results')">📊 ${tab==='cup'?'Kupa':'Lig'} Sonuçları ve Fikstür</button><button class="ll-btn" onclick="llRenderKnockoutHub('${tab==='cup'?'cup':type}')">Tüm Turnuvalar ↗</button></div><div data-bracket-view="tree">${html||unavailable('Eleme eşleşmeleri henüz oluşmadı.')}</div>`;
+    if(tab==='europe')rest.insertAdjacentHTML('beforeend',spectatorResultsHtml(state,type));
+    frame.appendChild(rest);status.insertAdjacentElement('afterend',frame);
+    frame.querySelector('[data-bracket-view="tree"]').hidden=!html;
+    rest.hidden=!!html;
+    return result;
+  };
+
+  const renderDashboard=global.llRenderDashboard;
+  if(typeof renderDashboard==='function')global.llRenderDashboard=function(){
+    const result=renderDashboard.apply(this,arguments);
+    const area=typeof global.llArea==='function'?global.llArea():null;
+    const actions=area?.querySelector('.ll-shell .ll-topbar .ll-actions');
+    if(actions&&!actions.querySelector('[data-knockout-hub]'))actions.insertAdjacentHTML('beforeend','<button class="ll-btn gold" data-knockout-hub onclick="llRenderKnockoutHub()">🏆 Eleme Ağaçları</button>');
+    // Show the active knockout tree directly on the career dashboard as well;
+    // never replace the season's current match or league standings.
+    const state=global.lexLeague?.state;
+    const metrics=area?.querySelector('.ll-shell > .ll-panel > .ll-metrics');
+    if(metrics&&state&&!area.querySelector('[data-dashboard-bracket]')){
+      const knockout=state.europe?.type&&state.europe.phase!=='league'&&state.europe.phase!=='eliminated'
+        ?global.llEuropeanKnockoutBracketHtml(state,state.europe.type):null;
+      const cupFixture=state.pendingFixture?.competition==='cup';
+      const activeTree=knockout||(cupFixture?global.llCupKnockoutBracketHtml(state):'');
+      const block=document.createElement('div');block.dataset.dashboardBracket='';block.className='ll-dashboard-bracket-preview';
+      block.innerHTML=`<div class="ll-dashboard-bracket-toolbar"><div><strong>🏆 Kupa Eşleşme Ağaçları</strong><small>Avrupa kupaları, yerel kupa, Dünya Kupası ve EURO</small></div><button class="ll-btn gold" onclick="llRenderKnockoutHub()">Tüm Eşleşmeleri Gör →</button></div>${activeTree||''}`;
+      metrics.insertAdjacentElement('afterend',block);
     }
     return result;
   };

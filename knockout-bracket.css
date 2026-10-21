@@ -28,3 +28,20 @@
 .ll-bracket-playoff-list>span{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px;background:rgba(10,29,73,.78);border:1px solid rgba(91,190,240,.22);border-radius:6px}
 .ll-bracket-playoff-list .ll-bracket-team{display:inline-flex;width:auto}.ll-bracket-playoff-list small{color:#8bdaff}
 @media(max-width:650px){.ll-bracket-head{padding:11px 12px}.ll-bracket-head strong{font-size:15px}.ll-knockout-bracket{margin:11px 0}.ll-bracket-scroll{scroll-snap-type:x proximity}}
+
+/* Career menu, tournament tabs and preserved league result screens. */
+.ll-bracket-hub-tabs,.ll-bracket-view-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:13px 0;padding:10px;border-radius:12px;background:rgba(9,25,56,.5);border:1px solid rgba(125,199,239,.18)}
+.ll-bracket-hub-tabs .ll-btn,.ll-bracket-view-tabs .ll-btn{font-size:12px;white-space:normal}
+.ll-bracket-view-tabs{margin-top:12px}
+.ll-bracket-wait{border:1px dashed rgba(110,185,231,.4);border-radius:12px;padding:20px;margin:14px 0;color:#bfd2ef;background:rgba(7,26,61,.65);font-size:13px}
+.ll-bracket-wait strong{display:block;margin-bottom:7px;color:#86d9ff;font-size:15px}
+.ll-bracket-wait p{margin:0;line-height:1.6}
+.ll-bracket-center-view [hidden]{display:none!important}
+.ll-bracket-center-records>.ll-card:first-child{margin-top:8px!important}
+@media(max-width:600px){.ll-bracket-hub-tabs,.ll-bracket-view-tabs{gap:5px;padding:7px}.ll-bracket-hub-tabs .ll-btn,.ll-bracket-view-tabs .ll-btn{font-size:11px;padding:7px}}
+
+.ll-dashboard-bracket-preview{margin:13px 0 17px}
+.ll-dashboard-bracket-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:12px;padding:13px 16px;background:linear-gradient(100deg,rgba(6,36,88,.94),rgba(4,54,107,.76));border:1px solid rgba(79,182,245,.35)}
+.ll-dashboard-bracket-toolbar>div{display:flex;flex-direction:column;gap:4px}.ll-dashboard-bracket-toolbar strong{color:#8ce9ff;font-size:15px}.ll-dashboard-bracket-toolbar small{font-size:11px;color:#b2cbe8}
+
+.ll-spectator-results .ll-cup-row{gap:8px;flex-wrap:wrap}.ll-spectator-results .ll-cup-row>small{font-size:10px;color:#93c5fd;min-width:100%;padding-left:4px}.ll-spectator-results .ll-bracket-team{font-size:12px}
