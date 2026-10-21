@@ -5,7 +5,7 @@
   var DUE_EVERY = 7;
   var OFFICIAL = { league: true, cup: true, playoff: true, ucl: true, uel: true, uecl: true };
   var BANK = Array.isArray(global.LL_TENSE_BANK) ? global.LL_TENSE_BANK : [];
-  if (BANK.length !== 200) { throw new Error('Tense question bank requires exactly 200 validated questions.'); }
+  if (BANK.length !== 280) { throw new Error('Tense question bank requires exactly 280 validated questions.'); }
   function stateNow() { return global.lexLeague && global.lexLeague.state; }
   function fixtureNow() { return typeof global.llPlayerFixture === 'function' ? global.llPlayerFixture() : null; }
   function save() { if (typeof global.llSave === 'function') global.llSave(); }
@@ -28,7 +28,7 @@
     if (!Number.isFinite(state.tenseQuizOfficialMatches)) state.tenseQuizOfficialMatches = officialResults(state).length;
     if (!Number.isFinite(state.tenseQuizCursor)) state.tenseQuizCursor = 0;
     if (!Array.isArray(state.tenseQuizDeck)) state.tenseQuizDeck = [];
-    if (state.tenseQuizDeckOrderVersion !== 1) state.tenseQuizDeckOrderVersion = 1;
+    if (!Number.isInteger(state.tenseQuizDeckOrderVersion)) state.tenseQuizDeckOrderVersion = 1;
     if (!Array.isArray(state.tenseQuizLastTypes)) state.tenseQuizLastTypes = [];
     if (!state.tenseQuizHistory || typeof state.tenseQuizHistory !== 'object') state.tenseQuizHistory = {};
     if (!state.tenseQuizStats || typeof state.tenseQuizStats !== 'object') {
@@ -86,7 +86,7 @@
         return history.length < 2 || !(history[history.length - 1] === key && history[history.length - 2] === key);
       });
       if (!allowed.length) allowed = keys;
-      // Favour different tenses, without turning the quiz into a predictable five-item pattern.
+      // Favour different tenses, without turning the quiz into a predictable tense cycle.
       var alternatives = allowed.filter(function (key) { return history[history.length - 1] !== key; });
       if (alternatives.length) allowed = alternatives;
       var highest = Math.max.apply(Math, allowed.map(function (key) { return pools[key].length; }));
@@ -104,6 +104,21 @@
     state.tenseQuizDeck = state.tenseQuizDeck.filter(function (id, index, deck) {
       return validIds[id] && deck.indexOf(id) === index;
     });
+    // Existing saves keep their unanswered questions; weave the 80 new questions
+    // into that remaining deck so the new tenses appear without a full-cycle wait.
+    if (state.tenseQuizDeckOrderVersion < 2) {
+      if (state.tenseQuizDeck.length > 0) {
+        var queued = {};
+        state.tenseQuizDeck.forEach(function (id) { queued[id] = true; });
+        var pending = state.tenseQuizDeck.map(questionById).filter(Boolean);
+        var newcomers = BANK.filter(function (question) {
+          return Number(question.id.slice(2)) >= 201 && Number(question.id.slice(2)) <= 280 && !queued[question.id];
+        });
+        state.tenseQuizDeck = balancedShuffle(pending.concat(newcomers), state.tenseQuizLastTypes)
+          .map(function (question) { return question.id; });
+      }
+      state.tenseQuizDeckOrderVersion = 2;
+    }
     if (state.tenseQuizDeck.length >= QUESTION_COUNT) return;
     var queued = {};
     state.tenseQuizDeck.forEach(function (id) { queued[id] = true; });
@@ -426,7 +441,7 @@
 
   global.LL_TENSE_BANK = BANK;
   global.llTenseQuiz = {
-    version: 1,
+    version: 2,
     questionCount: QUESTION_COUNT,
     dueEvery: DUE_EVERY,
     bankSize: BANK.length,
