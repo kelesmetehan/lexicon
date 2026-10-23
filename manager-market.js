@@ -114,7 +114,19 @@ function llManagerTransitionFailure(state,message,details){
 function llCompleteManagerSigning(){
   if(globalThis.llManagerSeasonTransitioning)return;
   const state=globalThis.lexLeague?.state,market=state?.managerMarket,pending=state?.pendingManagerSigning;
-  const selectedTeam=market?.selectedTeam||pending?.team||null;
+  // A separate manager-job application may have already changed playerTeam and
+  // recorded a signed contract, even if a later market re-render reset the UI
+  // selection. Recover ONLY with matching season, from/to and career history.
+  const recordedTeam=state?.lastSeasonSummary?.nextManagerTeam;
+  const signedHistory=Array.isArray(state?.managerProfile?.history)
+    ?state.managerProfile.history.slice().reverse().find(entry=>
+       Number(entry.season)===Number(state.season)&&
+       entry.from===state?.lastSeasonSummary?.playerTeam&&
+       entry.to===recordedTeam&&
+       ['desired-application','application','stay','progress','prestige','safe'].includes(entry.kind))
+    :null;
+  const recoveredTeam=recordedTeam&&recordedTeam===state?.playerTeam&&signedHistory?recordedTeam:null;
+  const selectedTeam=market?.selectedTeam||pending?.team||recoveredTeam||null;
   globalThis.llDiagnosticEvent?.('MANAGER_SIGNING_TRANSITION_ENTERED',{hasState:!!state,seasonEnded:!!state?.seasonEnded,hasSummary:!!state?.lastSeasonSummary,marketStatus:market?.status||null,selectedTeam:selectedTeam});
   if(!state||!selectedTeam){
     const failure=llManagerTransitionFailure(state,'Imza secimi bulunamadi; yeni sezon baslatilmadi.',{reason:'missing-selected-team'});

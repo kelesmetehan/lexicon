@@ -2,9 +2,14 @@
 (async()=>{
   document.title='Lexicon League';
   // Keep the old launcher in source; the desktop navigation stays in management.
+  // The save-slot screen's 'Ana Menü' button must navigate to the real launcher.
+  // Routing back to llRenderDashboard loops to the slot/season-end screen.
   window.llGoMainMenu=function(){
-    if(lexLeague.state){lexLeague.active=true;llRenderDashboard();}
-    else renderLexiconLeagueLanding();
+    if(typeof llClearTransient==='function')llClearTransient();
+    if(typeof lexLeague!=='undefined')lexLeague.active=false;
+    if(typeof llSetWide==='function')llSetWide(false);
+    if(typeof renderPreStart==='function')renderPreStart();
+    else if(typeof renderLexiconLeagueLanding==='function')renderLexiconLeagueLanding();
   };
   const originalModal=llShowModal;
   window.llShowModal=function(content){

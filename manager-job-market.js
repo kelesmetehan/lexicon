@@ -395,6 +395,7 @@
     var profile=typeof globalThis.llManagerProfile==='function'?llManagerProfile(state):(state.managerProfile||{history:[]});if(!Array.isArray(profile.history))profile.history=[];
     profile.history.push({season:market.season,from:fromTeam,to:team,kind:'desired-application',fired:market.fired,winRate:market.winRate,reputation:profile.reputation,applicationScore:application.totalScore,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=team;
     globalThis.llManagerSigningPending=true;state.lastSeasonSummary.nextManagerTeam=team;state.playerTeam=team;
+    state.pendingManagerSigning={team:team,fromTeam:fromTeam,season:Number(state.season),marketSeason:Number(market.season),selectedAt:market.chosenAt,staying:false,kind:'desired-application'};
     if(team!==fromTeam&&typeof globalThis.llAchievementRecordTeamChange==='function')globalThis.llAchievementRecordTeamChange(fromTeam,team,state);
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(team,state)||state.playerCountry;
     if(typeof globalThis.llMLAttachLegacyAliases==='function')llMLAttachLegacyAliases(state);
@@ -427,6 +428,7 @@
     profile.history.push({season:market.season,from:fromTeam,to:team,kind:'application',fired:market.fired,winRate:market.winRate,reputation:profile.reputation,applicationScore:application.totalScore,starUpgradeRefundLp:market.starUpgradeRefundLp});profile.currentTeam=team;
     globalThis.llManagerSigningPending=true;
     state.lastSeasonSummary.nextManagerTeam=team;state.playerTeam=team;
+    state.pendingManagerSigning={team:team,fromTeam:fromTeam,season:Number(state.season),marketSeason:Number(market.season),selectedAt:market.chosenAt,staying:false,kind:'application'};
     if(team!==fromTeam&&typeof globalThis.llAchievementRecordTeamChange==='function')globalThis.llAchievementRecordTeamChange(fromTeam,team,state);
     if(typeof globalThis.llMLCountryForTeam==='function')state.playerCountry=llMLCountryForTeam(team,state)||state.playerCountry;
     if(typeof globalThis.llMLAttachLegacyAliases==='function')llMLAttachLegacyAliases(state);
