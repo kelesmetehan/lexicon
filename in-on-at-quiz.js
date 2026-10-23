@@ -1,9 +1,9 @@
-/* IN / ON / AT Challenge: 300 unique practice cards, 8 every 7 official matches.
+/* IN / ON / AT Challenge: 300 unique practice cards, 8 every 9 official matches.
    Other grammar challenges have priority; collisions are deferred. */
 (function (global) {
   'use strict';
   var QUESTION_COUNT = 8;
-  var DUE_EVERY = 7;
+  var DUE_EVERY = 9;
   var OFFICIAL = { league: true, cup: true, playoff: true, ucl: true, uel: true, uecl: true };
   var BANK = Array.isArray(global.LL_IN_ON_AT_BANK) ? global.LL_IN_ON_AT_BANK : [];
   if (BANK.length !== 300) { throw new Error('In / On / At question bank requires exactly 300 validated questions.'); }
