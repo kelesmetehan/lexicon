@@ -1,15 +1,19 @@
 /* Production presentation only. No sample states or save schema changes. */
 (async()=>{
   document.title='Lexicon League';
-  // Keep the old launcher in source; the desktop navigation stays in management.
-  // The save-slot screen's 'Ana Menü' button must navigate to the real launcher.
-  // Routing back to llRenderDashboard loops to the slot/season-end screen.
+  // The career navigation's 'Ana Menü' returns to the active career dashboard.
+  // The word-study launcher and the save-slot manager are separate screens.
   window.llGoMainMenu=function(){
-    if(typeof llClearTransient==='function')llClearTransient();
-    if(typeof lexLeague!=='undefined')lexLeague.active=false;
-    if(typeof llSetWide==='function')llSetWide(false);
-    if(typeof renderPreStart==='function')renderPreStart();
-    else if(typeof renderLexiconLeagueLanding==='function')renderLexiconLeagueLanding();
+    const state=typeof lexLeague!=='undefined'?lexLeague.state:null;
+    if(state){
+      lexLeague.active=true;
+      if(!state.starterPackClaimed&&typeof llRenderStarterShop==='function')llRenderStarterShop();
+      else if(state.seasonEnded&&typeof llRenderSeasonEnd==='function')llRenderSeasonEnd();
+      else if(typeof llRenderDashboard==='function')llRenderDashboard();
+      return;
+    }
+    if(typeof renderLexiconLeagueLanding==='function')renderLexiconLeagueLanding();
+    else if(typeof renderPreStart==='function')renderPreStart();
   };
   const originalModal=llShowModal;
   window.llShowModal=function(content){
@@ -68,24 +72,17 @@
         // these semantic headers. Other tables retain their native layout.
         if(!headers.includes('Takım')||!headers.includes('O')||!headers.includes('P'))return;
         table.classList.add('cm-league-table');
-        const extra=headers.map(h=>['AG','YG','Kart','AI AP'].includes(h));
-        table.style.setProperty('--cm-stat-count',String(headers.filter((h,i)=>!extra[i]&&h!=='#'&&h!=='Takım').length));
+        // Every standings statistic stays in its own column on mobile.
+        table.style.setProperty('--cm-stat-count',String(headers.filter(h=>h!=='#'&&h!=='Takım').length));
         function mark(cell,index){
-          cell.classList.toggle('cm-stat-extra',extra[index]);
           cell.classList.toggle('cm-stat-team',headers[index]==='Takım');
           cell.classList.toggle('cm-stat-rank',headers[index]==='#');
           cell.classList.toggle('cm-stat-points',headers[index]==='P');
         }
         heads.forEach(mark);
         table.querySelectorAll('tbody tr').forEach(row=>{
-          const cells=Array.from(row.cells).filter(cell=>!cell.classList.contains('cm-stat-details'));
-          if(cells.length!==headers.length)return;
-          cells.forEach(mark);
-          const details=cells.flatMap((cell,index)=>extra[index]?[headers[index]+': '+cell.textContent.trim()]:[]).join('  ·  ');
-          if(!details)return;
-          let detail=row.querySelector('.cm-stat-details');
-          if(!detail){detail=document.createElement('td');detail.className='cm-stat-details';detail.colSpan=headers.length;row.append(detail);}
-          if(detail.textContent!==details)detail.textContent=details;
+          const cells=Array.from(row.cells);
+          if(cells.length===headers.length)cells.forEach(mark);
         });
       });
       const title=llArea().querySelector('.ll-title')?.textContent||'';

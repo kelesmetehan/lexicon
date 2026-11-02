@@ -52,23 +52,23 @@ body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-
  body.cm-game .ll-shell.ll-quiz-card .ll-question{min-height:310px;padding:25px 12px}
  body.cm-game .ll-shell.ll-quiz-card .ll-question:has(>.new-word-badge){padding-top:55px}
  body.cm-game .ll-table{min-width:0!important;width:100%}
- /* Compact standings: one aligned row per club, with secondary figures
-    on a small second line. Reset legacy fixed cell widths/container rules. */
- body.cm-game table.cm-league-table{display:block;width:100%;min-width:0!important;font-family:var(--cm-font);font-variant-numeric:tabular-nums;border-collapse:collapse}
+ /* Every statistic, including AG/YG, stays in the same row. On extra-small
+    screens the standings card scrolls horizontally instead of wrapping. */
+ body.cm-game .ll-table-wrap,body.cm-game .ll-standings-wrap,body.cm-game .ll-europe-table-wrap{overflow-x:auto!important;overflow-y:visible!important;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+ body.cm-game table.cm-league-table{display:block;width:100%;min-width:max(100%,352px)!important;font-family:var(--cm-font);font-variant-numeric:tabular-nums;border-collapse:collapse}
+ body.cm-game table.cm-league-table.ll-domestic-table{min-width:max(100%,420px)!important}
  body.cm-game .cm-league-table thead,body.cm-game .cm-league-table tbody{display:block;width:100%;position:static;clip-path:none;height:auto;overflow:visible}
- body.cm-game .cm-league-table tr{display:grid;grid-template-columns:22px minmax(70px,3.6fr) repeat(var(--cm-stat-count,6),minmax(22px,1fr));gap:0;align-items:center;width:100%;margin:0;padding:3px 0;border:0;border-bottom:1px solid #8ba2b522;border-radius:0;min-height:34px}
+ body.cm-game .cm-league-table tr{display:grid;grid-template-columns:22px minmax(82px,3.6fr) repeat(var(--cm-stat-count,8),minmax(24px,1fr));gap:0;align-items:center;width:100%;margin:0;padding:3px 0;border:0;border-bottom:1px solid #8ba2b522;border-radius:0;min-height:34px}
  body.cm-game .cm-league-table thead tr{min-height:28px;padding:0;background:linear-gradient(#5e80a8,#345780);border-radius:4px 4px 0 0}
  body.cm-game .cm-league-table tbody tr:nth-child(odd){background:#0e1c2be8}
  body.cm-game .cm-league-table tbody tr:nth-child(even){background:#1b2f41e8}
  body.cm-game .cm-league-table tr.player,body.cm-game .cm-league-table tr.ll-team-league-focus{background:#29413c!important;box-shadow:inset 3px 0 #ffff00!important}
- body.cm-game .cm-league-table tr>th,body.cm-game .cm-league-table tr>td{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto;padding:4px 1px!important;border:0;border-radius:0;background:none;font-family:var(--cm-font);font-size:12px;line-height:1.2;text-align:center!important;white-space:nowrap;overflow:visible;text-overflow:clip;letter-spacing:0;color:#f2f5f8}
+ body.cm-game .cm-league-table tr>th,body.cm-game .cm-league-table tr>td{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto;padding:4px 1px!important;border:0;border-radius:0;background:none;font-family:var(--cm-font);font-size:12px;line-height:1.2;text-align:center!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0;color:#f2f5f8}
  body.cm-game .cm-league-table tr>th{font-size:11px}
  body.cm-game .cm-league-table tr>.cm-stat-team{text-align:left!important;padding-left:4px!important}
- body.cm-game .cm-league-table tr>.cm-stat-extra{display:none!important}
- body.cm-game .cm-league-table tr>.cm-stat-details{display:block!important;grid-column:2/-1;padding:0 4px 3px!important;font-size:10px;line-height:1.3;text-align:left!important;color:#adbecd;white-space:normal;overflow-wrap:normal;word-break:normal}
  body.cm-game .cm-league-table .cm-stat-points{color:#ffff80;font-weight:700;background:#ffffff07}
  body.cm-game .cm-league-table .ll-standing-team{display:flex;align-items:center;gap:4px;min-width:0;width:100%;flex-wrap:nowrap}
- body.cm-game .cm-league-table .ll-standing-team-name{min-width:0;font-size:12px;line-height:1.25;white-space:normal;overflow-wrap:normal;word-break:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+ body.cm-game .cm-league-table .ll-standing-team-name{min-width:0;font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;-webkit-line-clamp:unset}
  body.cm-game .cm-league-table .ll-team-logo,body.cm-game .cm-league-table .ll-team-logo-wrap.table{width:15px!important;height:15px!important;flex:0 0 15px}
  body.cm-game .cm-league-table .ll-standing-stars{display:none!important}
  body.cm-game .cm-league-table .ll-rank-movement{font-size:8px;margin-left:0}
@@ -76,5 +76,3 @@ body.cm-game .ll-panel:has(>.ll-topbar + .ll-metrics + .ll-transfer-banner)>.ll-
  body.cm-game .ll-table:not(.cm-league-table){table-layout:fixed;width:100%;min-width:0!important;font-size:11px}
  body.cm-game .ll-table:not(.cm-league-table) th,body.cm-game .ll-table:not(.cm-league-table) td{width:auto!important;white-space:normal;overflow-wrap:anywhere;padding:5px 3px;font-size:11px;line-height:1.35}
 }
-/* Additional detail cells are a mobile presentation only. */
-body.cm-game .cm-league-table .cm-stat-details{display:none}
