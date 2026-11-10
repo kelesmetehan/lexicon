@@ -1825,7 +1825,11 @@ const NATIVE_USER_DATA = [
   {en:"enthusiastic", tr:"hevesli / istekli", example:"She is enthusiastic about learning English.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"people in charge", tr:"yetkililer / sorumlu kişiler", example:"The people in charge will make the final decision.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"defect", tr:"kusur / üretim hatası / bozukluk", example:"The inspection revealed a manufacturing defect in the device.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
-  {en:"occurs", tr:"meydana gelir / oluşur / gerçekleşir (occur fiilinin 3. tekil çekimi)", example:"This issue occurs only when the device loses its network connection.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"}
+  {en:"occurs", tr:"meydana gelir / oluşur / gerçekleşir (occur fiilinin 3. tekil çekimi)", example:"This issue occurs only when the device loses its network connection.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"come after", tr:"peşinden gelmek / takip etmek / hedef almak", example:"The police came after the suspect when he ran away.", pos:"pv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"come forward", tr:"öne çıkmak / ortaya çıkıp bilgi vermek", example:"A witness came forward with new information about the case.", pos:"pv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"flattered", tr:"iltifat karşısında gururlanmış / onurlanmış", example:"I felt flattered when my manager praised my work.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"patting", tr:"hafifçe vurarak okşamak / sıvazlamak", example:"She was patting the dog gently on the head.", pos:"v", repetitions:0, interval:0, reviewCount:0, state:"learning"}
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -2450,7 +2454,11 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "İngilizce öğrenme konusunda hevesli.",
   "Yetkililer son kararı verecek.",
   "İnceleme, cihazda bir üretim kusuru olduğunu ortaya çıkardı.",
-  "Bu sorun yalnızca cihaz ağ bağlantısını kaybettiğinde meydana gelir."
+  "Bu sorun yalnızca cihaz ağ bağlantısını kaybettiğinde meydana gelir.",
+  "Şüpheli kaçınca polis onun peşine düştü.",
+  "Bir tanık davayla ilgili yeni bilgiler vermek için ortaya çıktı.",
+  "Yöneticim işimi övdüğünde gururlandım.",
+  "Köpeğin başını nazikçe okşuyordu."
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "ingredient":"n","struggling":"adj","strict":"adj",
@@ -2469,7 +2477,7 @@ const LL_WORD_POS_OVERRIDES=Object.freeze({
   "to nest / to stack":"v","the majority of people":"n","be dying for something":"idiom","sore loser / bad loser":"n","odd job":"n","on the fritz":"idiom","clean as a whistle":"idiom","be strapped for cash":"idiom","window pane":"n","pay through the nose":"idiom","distraction theory":"n","explicit monitoring":"n","ai skeptics":"n","ai novices":"n","ai explorers":"n","ai power users":"n","asked for":"pv","as soon as":"conj","on behalf of":"prep","if so":"phrase","kill two birds with one stone":"idiom","whether or":"conj","sick leave":"n","be humble":"phrase","you're a creeper":"phrase","be attracted to":"v","tend to + verb":"v"
 });
 const LL_PHRASAL_VERBS=new Set([
-  "be attracted to","be bounced out of","come across","come up with","dates back","fall flat","figure out","get along with someone","get back to someone","go through","keep up with","lead to","led to","made off","plug back in","power on","reach out","roll over","root for","run away","set up","sleep in","slip by","squeak out","stumble upon","switch back","tend to + verb","tend to someone/something","to fold away"
+  "be attracted to","be bounced out of","come across","come after","come forward","come up with","dates back","fall flat","figure out","get along with someone","get back to someone","go through","keep up with","lead to","led to","made off","plug back in","power on","reach out","roll over","root for","run away","set up","sleep in","slip by","squeak out","stumble upon","switch back","tend to + verb","tend to someone/something","to fold away"
 ]);
 const LL_RETIRED_VOCABULARY=new Set(["target","different store","luxury","expensive","outside","participant"]);
 function llInferWordPos(word){
