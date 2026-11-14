@@ -811,8 +811,28 @@
   .ll-progress > div { height:100%; background:linear-gradient(90deg,#0e7490,#2dd4bf); transition:width .25s; }
   .ll-question { min-height:240px; display:grid; place-items:center; text-align:center; padding:34px; border-radius:15px; background:var(--bg3); border:1px solid rgba(94,234,212,.16); cursor:pointer; }
   .ll-question-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,8vw,44px); line-height:1.15; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .ll-question.is-new-word, .flashcard.is-new-word { position:relative; border-color:rgba(201,168,76,.92); box-shadow:0 0 0 1px rgba(201,168,76,.22),0 0 26px rgba(201,168,76,.16); }
-  .new-word-badge { position:absolute; top:13px; left:13px; z-index:2; padding:5px 9px; border:1px solid rgba(201,168,76,.55); border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:800; letter-spacing:1.2px; pointer-events:none; }
+  .ll-question.is-new-word, .flashcard.is-new-word {
+    position:relative;
+    border:2px solid rgba(232,200,112,.96);
+    box-shadow:0 0 0 1px rgba(201,168,76,.34),0 0 0 4px rgba(201,168,76,.08),0 0 26px rgba(201,168,76,.18),inset 0 0 0 1px rgba(255,240,170,.08);
+  }
+  .new-word-badge {
+    position:absolute;
+    top:13px;
+    left:13px;
+    z-index:2;
+    padding:6px 11px;
+    border:1px solid rgba(255,240,170,.42);
+    border-radius:999px;
+    background:linear-gradient(135deg,rgba(232,200,112,.97),rgba(201,168,76,.95));
+    color:#24180a;
+    box-shadow:0 4px 14px rgba(201,168,76,.24),inset 0 1px 0 rgba(255,248,215,.45);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+    pointer-events:none;
+  }
   .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
   .ll-answer-example { display:block; max-width:620px; margin:14px auto 0; padding:10px 12px; border-radius:9px; background:rgba(94,234,212,.07); color:var(--text); font-family:'DM Sans',sans-serif; font-size:clamp(13px,3vw,16px); line-height:1.55; text-align:left; overflow-wrap:anywhere; word-break:normal; }
   .ll-answer-example-label { display:block; margin-bottom:4px; color:#5eead4; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
@@ -1842,6 +1862,18 @@ const NATIVE_USER_DATA = [
   {en:"nonsense", tr:"saçmalık / anlamsız sözler veya fikirler", example:"The document might be full of nonsense.", pos:"n / adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"consist of", tr:"-den oluşmak / meydana gelmek", example:"The project consists of three main phases.", pos:"pv", repetitions:0, interval:0, reviewCount:0, state:"learning"},
   {en:"be made up of", tr:"-den oluşmak / bir araya gelerek oluşmak", example:"Our team is made up of five engineers.", pos:"phrase", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"linguist", tr:"dil bilimci / dil uzmanı", example:"A linguist studied the structure of the ancient language.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"remnant", tr:"kalıntı / geriye kalan parça", example:"Only a small remnant of the old wall remains.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"prevalent", tr:"yaygın / sık görülen", example:"This problem is prevalent among older devices.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"taboo", tr:"tabu / konuşulması veya yapılması hoş karşılanmayan şey", example:"In some cultures, discussing money is considered taboo.", pos:"n / adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"superstitious", tr:"batıl inançlı", example:"My grandmother is superstitious about breaking mirrors.", pos:"adj", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"exceptions", tr:"istisnalar / kural dışı durumlar", example:"There are a few exceptions to this rule.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"circumstances", tr:"koşullar / şartlar / içinde bulunulan durum", example:"We had to change our plans because of unexpected circumstances.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"complaint", tr:"şikâyet / yakınma", example:"The customer filed a complaint about the service.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"revenue", tr:"gelir / hasılat", example:"The company reported higher revenue this year.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"competitor", tr:"rakip / yarışmacı", example:"Our main competitor launched a new product.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"purchase", tr:"satın almak / satın alma", example:"We decided to purchase a new laptop.", pos:"v / n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
+  {en:"mobility", tr:"hareketlilik / hareket kabiliyeti", example:"Regular exercise can improve joint mobility.", pos:"n", repetitions:0, interval:0, reviewCount:0, state:"learning"},
 ];
 
 // İngilizce örnek cümlelerin isteğe bağlı Türkçe karşılıkları.
@@ -2482,7 +2514,19 @@ const NATIVE_EXAMPLE_TRANSLATIONS = [
   "Uzmanlar el yazmasında gizlenmiş bir şifreyi çözmeye çalışıyor.",
   "Belge tamamen anlamsız sözlerle dolu olabilir.",
   "Proje üç ana aşamadan oluşur.",
-  "Ekibimiz beş mühendisten oluşuyor."
+  "Ekibimiz beş mühendisten oluşuyor.",
+  "Bir dil bilimci eski dilin yapısını inceledi.",
+  "Eski duvardan yalnızca küçük bir kalıntı kaldı.",
+  "Bu sorun eski cihazlarda yaygın olarak görülür.",
+  "Bazı kültürlerde para hakkında konuşmak tabu sayılır.",
+  "Büyükannem ayna kırılması konusunda batıl inançlıdır.",
+  "Bu kuralın birkaç istisnası vardır.",
+  "Beklenmedik koşullar nedeniyle planlarımızı değiştirmek zorunda kaldık.",
+  "Müşteri hizmetle ilgili bir şikâyette bulundu.",
+  "Şirket bu yıl daha yüksek gelir açıkladı.",
+  "Ana rakibimiz yeni bir ürün piyasaya sürdü.",
+  "Yeni bir dizüstü bilgisayar satın almaya karar verdik.",
+  "Düzenli egzersiz eklem hareketliliğini artırabilir.",
 ];
 const LL_WORD_POS_OVERRIDES=Object.freeze({
   "ingredient":"n","struggling":"adj","strict":"adj",
