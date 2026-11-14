@@ -811,27 +811,21 @@
   .ll-progress > div { height:100%; background:linear-gradient(90deg,#0e7490,#2dd4bf); transition:width .25s; }
   .ll-question { min-height:240px; display:grid; place-items:center; text-align:center; padding:34px; border-radius:15px; background:var(--bg3); border:1px solid rgba(94,234,212,.16); cursor:pointer; }
   .ll-question-word { width:100%; max-width:100%; min-width:0; font-family:'Cormorant Garamond',serif; font-size:clamp(28px,8vw,44px); line-height:1.15; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
-  .ll-question.is-new-word, .flashcard.is-new-word {
+  /* Yeni kelime vurgusu: buyuk kartin DIS CERCEVESI. */
+  .ll-question.is-new-word,
+  #fc-inner.flashcard.is-new-word,
+  #fc-inner.flashcard.is-new-word.revealed {
     position:relative;
-    border:2px solid rgba(232,200,112,.96);
-    box-shadow:0 0 0 1px rgba(201,168,76,.34),0 0 0 4px rgba(201,168,76,.08),0 0 26px rgba(201,168,76,.18),inset 0 0 0 1px rgba(255,240,170,.08);
+    border:3px solid #e8c870 !important;
+    box-shadow:0 0 0 1px rgba(255,225,132,.35),0 0 24px rgba(232,200,112,.18),inset 0 0 0 1px rgba(255,240,170,.06) !important;
   }
+  /* Sol ust etiket ilk sade gorunumunde kalir. */
   .new-word-badge {
-    position:absolute;
-    top:13px;
-    left:13px;
-    z-index:2;
-    padding:6px 11px;
-    border:1px solid rgba(255,240,170,.42);
-    border-radius:999px;
-    background:linear-gradient(135deg,rgba(232,200,112,.97),rgba(201,168,76,.95));
-    color:#24180a;
-    box-shadow:0 4px 14px rgba(201,168,76,.24),inset 0 1px 0 rgba(255,248,215,.45);
-    font-size:10px;
-    font-weight:900;
-    letter-spacing:1.1px;
-    text-transform:uppercase;
-    pointer-events:none;
+    position:absolute; top:13px; left:13px; z-index:2;
+    padding:5px 9px; border:1px solid rgba(201,168,76,.55);
+    border-radius:999px; background:rgba(201,168,76,.12);
+    color:var(--gold); font-size:10px; font-weight:800;
+    letter-spacing:1.2px; pointer-events:none;
   }
   .ll-answer { width:100%; max-width:100%; min-width:0; color:#5eead4; font-family:'Cormorant Garamond',serif; font-size:clamp(25px,7vw,35px); border-top:1px solid rgba(94,234,212,.18); padding-top:15px; margin-top:18px; overflow-wrap:anywhere; word-break:break-word; hyphens:auto; }
   .ll-answer-example { display:block; max-width:620px; margin:14px auto 0; padding:10px 12px; border-radius:9px; background:rgba(94,234,212,.07); color:var(--text); font-family:'DM Sans',sans-serif; font-size:clamp(13px,3vw,16px); line-height:1.55; text-align:left; overflow-wrap:anywhere; word-break:normal; }
