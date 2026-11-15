@@ -261,7 +261,13 @@ function llBuildStrictQuizQueue({normalPool,priorities,reviewRefs,target,usedIds
   }
   return {queue,blocked,simulatedUsed:[...simulatedUsed],simulatedRecent};
 }
-globalThis.llPickQuizWords=function(count=10){
+const llTwelveWordCorePicker=globalThis.llPickQuizWords;
+globalThis.llPickQuizWords=function(count=12){
+  if(Number(count)===12&&typeof llTwelveWordCorePicker==='function'){
+    const queue=llTwelveWordCorePicker(12);
+    llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:12,selected:queue.length,strictLoop:false,learningSchedule:true,ids:queue.map(ref=>ref.id),introPriorityCount:queue.filter(ref=>ref.introPriority).length,reviewPriorityCount:queue.filter(ref=>ref.learningPriority||ref.mistakePriority).length});
+    return queue;
+  }
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
   const state=llDiagnosticLeagueContext()?.state;if(!state)return [];
   if(!Array.isArray(state.usedWords))state.usedWords=[];if(!Array.isArray(state.recentQuizWords))state.recentQuizWords=[];

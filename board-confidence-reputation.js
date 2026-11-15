@@ -307,7 +307,7 @@ function pressState(state){
 function pressEligible(state,quiz){
   const info=criticalMatchInfo(fixtureNow(),state),answered=num(quiz?.totalAnswered,quiz?.index),board=ensureBoard(state),press=pressState(state);
   const enoughGap=num(board?.matchCount)-num(press.lastOfferMatch)>=PRESS_MIN_OFFICIAL_MATCH_GAP;
-  return !!(info.critical&&!quiz?.skipped&&answered>=10&&quiz?.queue?.length>=10&&press.offers<PRESS_MAX_OFFERS_PER_SEASON&&enoughGap);
+  return !!(info.critical&&!quiz?.skipped&&answered>=quiz?.queue?.length&&quiz?.queue?.length>=12&&press.offers<PRESS_MAX_OFFERS_PER_SEASON&&enoughGap);
 }
 function showPressOffer(normalPlusPos){
   const state=stateNow(),q=globalThis.lexLeague?.quiz,info=criticalMatchInfo(fixtureNow(),state);if(!state||!q||!info.critical){startMatchBase?.(normalPlusPos);return;}
@@ -315,7 +315,7 @@ function showPressOffer(normalPlusPos){
   // Teklif kabul/ret fark etmeksizin sayılır: aynı beş ek kelime ekranı art arda gelmez.
   press.offers++;press.lastOfferMatch=num(board?.matchCount);q.normalPlusPos=normalPlusPos||null;q.pressConferenceOffered=true;
   if(typeof globalThis.llSave==='function')llSave();
-  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div class="ll-press-icon">🎙️</div><span class="ll-rarity">ÇOK ÖNEMLİ MAÇ</span><div class="quiz-start-title" style="margin-top:8px">Basın <em>Toplantısı</em></div><div class="ll-sub">${esc(info.label)}</div><div class="ll-press-offer"><b>Bu maç çok kritik.</b><span>Basın toplantısına katılırsan normal 10 kelimelik döngünün devamındaki 5 kelime sorulur.</span><ul><li>5/5 doğru: Seçtiğin mevkinin zar üst sınırı bu maç için +1.</li><li>4/5 veya altı: Bonus yok; kelimeler öğrenilmiş sayılır.</li><li>Boost maç sonunda tamamen silinir.</li></ul></div><div class="ll-actions" style="justify-content:center;margin-top:18px"><button class="ll-btn gold" onclick="llStartPressConferenceQuiz()">Katıl · 5 Ek Kelime</button><button class="ll-btn" onclick="llSkipPressConference()">Geç · Normal Maça Devam</button></div></div></div>`;
+  llArea().innerHTML=`<div class="ll-shell ll-quiz-card"><div class="ll-panel" style="text-align:center"><div class="ll-press-icon">🎙️</div><span class="ll-rarity">ÇOK ÖNEMLİ MAÇ</span><div class="quiz-start-title" style="margin-top:8px">Basın <em>Toplantısı</em></div><div class="ll-sub">${esc(info.label)}</div><div class="ll-press-offer"><b>Bu maç çok kritik.</b><span>Basın toplantısına katılırsan normal 12 kelimelik döngünün devamındaki 5 kelime sorulur.</span><ul><li>5/5 doğru: Seçtiğin mevkinin zar üst sınırı bu maç için +1.</li><li>4/5 veya altı: Bonus yok; kelimeler öğrenilmiş sayılır.</li><li>Boost maç sonunda tamamen silinir.</li></ul></div><div class="ll-actions" style="justify-content:center;margin-top:18px"><button class="ll-btn gold" onclick="llStartPressConferenceQuiz()">Katıl · 5 Ek Kelime</button><button class="ll-btn" onclick="llSkipPressConference()">Geç · Normal Maça Devam</button></div></div></div>`;
 }
 function startPressQuiz(){
   const state=stateNow(),q=globalThis.lexLeague?.quiz;if(!state||!q)return;

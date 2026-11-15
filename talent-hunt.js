@@ -318,7 +318,7 @@
     const fallbackNote = card && actualRank !== outcome.level ? `<div class="ll-legend-tier-note">Bu mevkide ${outcome.level}★ havuzunda uygun/tekrarsız kart kalmadığı için en yakın kullanılabilir seviye getirildi.</div>` : '';
     const rewardHtml = hasCard
       ? `${cardDetailHtml(card)}<div class="ll-legend-tier-note">Kartı Al dersen ${esc(event.position)} kart yuvasına ücretsiz eklenir ve mevcut kartın yerini alır. Geç dersen bu teklif kaybolur.</div>${fallbackNote}<div class="ll-talent-outcome-actions"><button class="ll-btn ll-legend-accept" onclick="llTalentClaimReward()">Kartı Al · 0 AP</button><button class="ll-btn ll-talent-skip" onclick="llTalentSkipReward()">Geç</button></div>`
-      : `<div class="ll-legend-reward"><span>📋</span><div><b>${esc(tierText)}</b>${outcome.rarity ? 'Bu seviyede uygun ve tekrarsız bir kart bulunamadı.' : '14 doğru eşiğine ulaşılmadığı için kart çıkmadı.'}</div></div><div class="ll-talent-outcome-actions"><button class="ll-btn ll-legend-accept" onclick="llTalentContinueNormalQuiz()">Normal 10 Kelimelik Sınava Geç</button></div>`;
+      : `<div class="ll-legend-reward"><span>📋</span><div><b>${esc(tierText)}</b>${outcome.rarity ? 'Bu seviyede uygun ve tekrarsız bir kart bulunamadı.' : '14 doğru eşiğine ulaşılmadığı için kart çıkmadı.'}</div></div><div class="ll-talent-outcome-actions"><button class="ll-btn ll-legend-accept" onclick="llTalentContinueNormalQuiz()">Normal 12 Kelimelik Sınava Geç</button></div>`;
     area().innerHTML = `<div class="ll-shell ll-quiz-card"><div class="ll-legend-cine" style="--legend-glow:${outcome.level >= 3 ? 'rgba(232,200,112,.42)' : 'rgba(124,58,237,.30)'}"><div class="ll-legend-particles ll-talent-particles"></div><div class="ll-legend-score">SONUÇ &nbsp;<b>${q.correct} / ${WORD_COUNT}</b>&nbsp; DOĞRU</div><div class="ll-legend-cine-icon">${outcome.icon}</div><div class="ll-legend-cine-title">${esc(outcome.title)}</div><div class="ll-legend-quote">“${esc(outcome.quote)}”</div><div class="ll-legend-tier-note">${positionIcon(event.position)} ${esc(event.position)} · ${esc(tierText)} · +${num(q.apEarned)} AP</div>${rewardHtml}</div></div>`;
     setTimeout(spawnParticles, 20);
   }
@@ -375,7 +375,7 @@
     const q = globalThis.lexLeague?.quiz, root = area();
     if (!q?.talentHuntKey || !root || root.querySelector('[data-talent-sequence]')) return;
     const panel = root.querySelector('.ll-panel');
-    if (panel) panel.insertAdjacentHTML('afterbegin', '<div class="ll-legend-sequence" data-talent-sequence><b>🔎 Yetenek Avı tamamlandı.</b> Şimdi normal 10 kelimelik maç sınavındasın.</div>');
+    if (panel) panel.insertAdjacentHTML('afterbegin', '<div class="ll-legend-sequence" data-talent-sequence><b>🔎 Yetenek Avı tamamlandı.</b> Şimdi normal 12 kelimelik maç sınavındasın.</div>');
   }
 
   function wrap(name, builder, flag = '__talentHunt') {
