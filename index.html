@@ -7330,5 +7330,212 @@ renderPreStart();
 })(window);
 
 </script>
+<script>
+/* European qualification integrity hotfix: UCL / UEL / UECL.
+   Uses league phase ranks and completed prior-round winners, not a random top-36 fallback.
+   Existing user-played fixtures and outcomes are never rewritten. */
+(function(){
+'use strict';
+const TYPES=['ucl','uel','uecl'], STAGES=['playoff','r16','qf','sf','final'];
+const oldOpponent=llV3KnockoutOpponent;
+const oldSync=llV11SyncEuropeKnockout;
+function rows(type){return llV2SortEuropeTable(type).map(x=>x.team);}
+function competition(type){return llV11CompetitionKnockout(lexLeague.state,type);}
+function leagueDone(type){const state=lexLeague.state,table=llV2EnsureEuropeStandings(state)?.[type];return !!table&&Number(table.playedRounds)>=LL_EURO_LEAGUE_WEEKS[type].length;}
+function userResults(type,stage){return (lexLeague.state.results||[]).filter(r=>r.competition===type&&r.league==='euro-knockout'&&r.userMatch&&r.euroStage===stage);}
+function pairOf(stage,team){return stage?.pairs?.find(p=>p.a===team||p.b===team);}
+function playedUser(type,stage){return userResults(type,stage).length>0;}
+function seededPlayoff(type){
+ const rank=rows(type),pairs=Array.from({length:8},(_,i)=>({id:`playoff-${i+1}`,stage:'playoff',a:rank[8+i],b:rank[23-i],legs:[],winner:null}));
+ const state=lexLeague.state,e=state.europe;
+ // An already-recorded player's matchup has priority inside its eligible seed band.
+ if(e?.type===type&&Number(e.seedRank)>8&&Number(e.seedRank)<=24){
+   const past=userResults(type,'playoff')[0],opp=past?(past.home===state.playerTeam?past.away:past.home):(e.tie?.stage==='playoff'?e.tie.opponent:null);
+   const p=pairOf({pairs},state.playerTeam),other=pairOf({pairs},opp);
+   const playerRank=rank.indexOf(state.playerTeam)+1,oppRank=rank.indexOf(opp)+1;
+   const valid=playerRank>=9&&playerRank<=24&&(
+      (playerRank<=16&&oppRank>=17&&oppRank<=24)||(playerRank>=17&&playerRank<=24&&oppRank>=9&&oppRank<=16));
+   if(valid&&p&&other&&p!==other){
+     const old=p.a===state.playerTeam?p.b:p.a;
+     if(p.a===state.playerTeam)p.b=opp;else p.a=opp;
+     if(other.a===opp)other.a=old;else other.b=old;
+   }
+ }
+ return {stage:'playoff',pairs,complete:false};
+}
+function simulateAI(type,stageData,stage,maxLegs){
+ if(!stageData)return;
+ const player=lexLeague.state.playerTeam,needed=stage==='final'?1:2;
+ for(const p of stageData.pairs||[]){
+   if(!p.a||!p.b||p.a===player||p.b===player)continue;
+   if(!Array.isArray(p.legs))p.legs=[];
+   for(let n=p.legs.filter(Boolean).length;n<Math.min(maxLegs,needed);n++){
+     const home=n===0||stage==='final'?p.a:p.b,away=home===p.a?p.b:p.a;
+     const r=llV2SimpleEuropeScore(home,away);
+     p.legs[n]={home,away,homeGoals:Number(r.homeGoals)||0,awayGoals:Number(r.awayGoals)||0,userMatch:false};
+   }
+   if(!p.winner&&p.legs.filter(Boolean).length===needed){
+     const score={[p.a]:0,[p.b]:0};
+     p.legs.forEach(l=>{score[l.home]+=l.homeGoals;score[l.away]+=l.awayGoals;});
+     p.winner=score[p.a]===score[p.b]?p.a:score[p.a]>score[p.b]?p.a:p.b;
+   }
+ }
+ stageData.complete=!!stageData.pairs?.length&&stageData.pairs.every(p=>!!p.winner);
+}
+function intendedTeams(type,stage,comp){
+ const rank=rows(type);
+ if(stage==='playoff')return rank.slice(8,24);
+ const previous=comp.stages[STAGES[STAGES.indexOf(stage)-1]];
+ const winners=(previous?.pairs||[]).map(p=>p.winner);
+ if(!previous?.complete||winners.some(w=>!w))return null;
+ if(stage==='r16')return [...rank.slice(0,8),...winners];
+ return winners;
+}
+function validStage(type,stage,s){
+ const teams=intendedTeams(type,stage,competition(type));
+ if(!teams||!s?.pairs?.length)return false;
+ const flat=s.pairs.flatMap(p=>[p.a,p.b]);
+ return flat.length===teams.length&&new Set(flat).size===flat.length&&flat.every(t=>teams.includes(t));
+}
+function playedLegs(type,stage){
+ const state=lexLeague.state,e=state.europe;
+ const played=userResults(type,stage).length;
+ if(played)return Math.min(2,played);
+ if(e?.type!==type)return 0;
+ const now=STAGES.indexOf(e.phase),idx=STAGES.indexOf(stage);
+ if(now>idx||e.phase==='winner')return 2;
+ if(e.phase==='eliminated'){
+   const tagged=(state.results||[]).filter(r=>r.userMatch&&r.competition===type&&r.league==='euro-knockout');
+   if(tagged.some(r=>r.euroStage===stage))return 2;
+ }
+ if(e.phase===stage)return e.tie?.leg===2?1:0;
+ return 0;
+}
+function fixAhead(type){
+ if(!leagueDone(type))return;
+ const state=lexLeague.state,e=state.europe,comp=competition(type),rank=rows(type),player=state.playerTeam;
+ const doneStages=new Set((state.results||[]).filter(r=>r.competition===type&&r.league==='euro-knockout'&&r.userMatch).map(r=>r.euroStage));
+ if(!validStage(type,'playoff',comp.stages.playoff)){
+   if(!playedUser(type,'playoff'))comp.stages.playoff=seededPlayoff(type);
+   else {
+     const fresh=seededPlayoff(type);
+     // Keep the player's real match and score even for an older inconsistent save.
+     const oldPair=pairOf(comp.stages.playoff,player);
+     if(oldPair){const target=pairOf(fresh,player);if(target){target.legs=oldPair.legs||[];target.winner=oldPair.winner||null;}}
+     comp.stages.playoff=fresh;
+   }
+   // All later AI-only draws must be regenerated from this qualified field.
+   STAGES.slice(1).forEach(stage=>{if(!playedUser(type,stage))delete comp.stages[stage];});
+ }
+ // Player's already-completed playoff score/advancement is sourced from match history.
+ if(e?.type===type&&comp.stages.playoff){
+   const pair=pairOf(comp.stages.playoff,player),records=userResults(type,'playoff');
+   if(pair&&records.length){
+     for(const r of records){const n=Math.max(0,Math.min(1,(Number(r.euroLeg)||1)-1));pair.legs[n]={home:r.home,away:r.away,homeGoals:r.homeGoals,awayGoals:r.awayGoals,userMatch:true};}
+     if(records.length>=2){
+       const score={[pair.a]:0,[pair.b]:0};pair.legs.filter(Boolean).forEach(l=>{score[l.home]+=Number(l.homeGoals)||0;score[l.away]+=Number(l.awayGoals)||0;});
+       const playerAdvanced=e.phase!=='playoff'&&e.phase!=='eliminated' || e.phase==='winner';
+       pair.winner=e.phase==='eliminated'?(pair.a===player?pair.b:pair.a):playerAdvanced?player:(score[pair.a]>=score[pair.b]?pair.a:pair.b);
+     }
+   }
+ }
+ let legCount=playedLegs(type,'playoff');
+ // Direct r16 qualifiers need playoff winners before their opponent is drawn.
+ if(e?.type===type&&e.phase==='r16'&&!playedUser(type,'playoff'))legCount=2;
+ if(e?.type===type&&STAGES.indexOf(e.phase)>1)legCount=2;
+ simulateAI(type,comp.stages.playoff,'playoff',legCount);
+ // Validate all subsequent existing rounds; discard stale AI pairings only.
+ for(const stage of STAGES.slice(1)){
+   const current=comp.stages[stage];
+   if(current&&!validStage(type,stage,current)){
+     const playedPair=playedUser(type,stage)?pairOf(current,player):null;
+     const allowed=intendedTeams(type,stage,comp);
+     const keepPlayer=!!(playedPair&&allowed&&allowed.includes(playedPair.a)&&allowed.includes(playedPair.b));
+     if(keepPlayer){
+       const others=allowed.filter(t=>t!==playedPair.a&&t!==playedPair.b);
+       const newPairs=[playedPair];
+       for(let i=0;i<others.length/2;i++)newPairs.push({id:`${stage}-repair-${i+1}`,stage,a:others[i],b:others[others.length-1-i],legs:[],winner:null});
+       comp.stages[stage]={stage,pairs:newPairs,complete:false};
+     }else if(!playedPair){delete comp.stages[stage];}
+     // If a real match was played against an ineligible side, keep history intact.
+     STAGES.slice(STAGES.indexOf(stage)+1).forEach(later=>{if(!playedUser(type,later))delete comp.stages[later];});
+   }
+   if(comp.stages[stage]){
+     simulateAI(type,comp.stages[stage],stage,playedLegs(type,stage));
+   }
+ }
+}
+// A round cannot field a side that finished outside the top 24, nor an unqualified
+// team in later rounds. Retain genuine previously-played outcomes in older saves.
+llV11StagePool=function(type,stage,comp){
+ const rank=rows(type),qualified=intendedTeams(type,stage,comp);
+ if(stage==='playoff')return rank.slice(8,24);
+ return qualified||[];
+};
+llV11EnsureKnockoutStage=(function(base){return function(type,stage){
+  const comp=competition(type);
+  if(stage!=='playoff'&&!intendedTeams(type,stage,comp))return null;
+  if(comp.stages[stage]&&!validStage(type,stage,comp.stages[stage])&&!playedUser(type,stage))delete comp.stages[stage];
+  return base(type,stage);
+};})(llV11EnsureKnockoutStage);
+llV11SyncEuropeKnockout=function(type){
+ if(TYPES.includes(type))fixAhead(type);
+ const r=oldSync(type);
+ if(TYPES.includes(type)&&leagueDone(type)){
+   // After the live player stage has been created, repair only AI pairings which are not eligible.
+   const comp=competition(type);
+   for(const stage of STAGES.slice(1)){
+     if(comp.stages[stage]&&!validStage(type,stage,comp.stages[stage])&&!playedUser(type,stage))delete comp.stages[stage];
+   }
+ }
+ return r;
+};
+llV3KnockoutOpponent=function(stage){
+ const state=lexLeague.state,e=state.europe;
+ if(!e||!TYPES.includes(e.type)||!leagueDone(e.type))return oldOpponent(stage);
+ // Do not draw from all 36 teams when a seeded opponent was not found.
+ const comp=llV11SyncEuropeKnockout(e.type),qualified=intendedTeams(e.type,stage,comp);
+ if(!qualified)return null;
+ const previous=comp?.stages?.[STAGES[STAGES.indexOf(stage)-1]];
+ const eliminated=new Set((previous?.pairs||[]).filter(p=>p.winner).flatMap(p=>[p.a,p.b].filter(t=>t!==p.winner)));
+ const taken=new Set([state.playerTeam,...(e.usedOpponents||[])]);
+ const candidates=qualified.filter(t=>!taken.has(t)&&!eliminated.has(t));
+ if(!candidates.length)return null;
+ const ranking=rows(e.type),r=ranking.indexOf(state.playerTeam)+1;
+ if(stage==='r16'){
+   const opponentRanks=r<=8?new Set((comp.stages.playoff?.pairs||[]).map(p=>p.winner)):
+     new Set(ranking.slice(0,8));
+   const seeded=candidates.filter(t=>opponentRanks.has(t));
+   if(!seeded.length)return null;
+   return seeded[Math.floor(Math.random()*seeded.length)];
+ }
+ if(stage==='playoff'){
+   const targets=r<=16?{9:[23,24],10:[23,24],11:[21,22],12:[21,22],13:[19,20],14:[19,20],15:[17,18],16:[17,18]}:{17:[15,16],18:[15,16],19:[13,14],20:[13,14],21:[11,12],22:[11,12],23:[9,10],24:[9,10]};
+   const seeded=(targets[r]||[]).map(k=>ranking[k-1]).filter(t=>candidates.includes(t));
+   if(!seeded.length)return null;
+   return seeded[Math.floor(Math.random()*seeded.length)];
+ }
+ // In the r16 only actual playoff winners may face direct qualifiers.
+ // Later rounds use only winners of the immediately preceding round.
+ return candidates[Math.floor(Math.random()*candidates.length)];
+};
+// Correct a not-yet-played invalid opponent on an existing career save;
+// never alter a recorded match, points table, achievements, or completed fixture.
+const baseEnsure=llV2EnsureEurope;
+llV2EnsureEurope=function(){
+ const s=lexLeague.state,e=s?.europe;
+ if(e&&TYPES.includes(e.type)&&e.phase!=='league'&&e.phase!=='winner'&&e.phase!=='eliminated'&&leagueDone(e.type)){
+   const qualified=intendedTeams(e.type,e.phase,llV11SyncEuropeKnockout(e.type));
+   if(qualified&&e.tie?.stage===e.phase&&e.tie.opponent&&!qualified.includes(e.tie.opponent)&&!playedUser(e.type,e.phase)){
+     e.usedOpponents=(e.usedOpponents||[]).filter(t=>t!==e.tie.opponent);
+     e.tie=null;e.pending=null;
+     if(s.pendingFixture?.competition===e.type&&s.pendingFixture?.league==='euro-knockout')s.pendingFixture=null;
+   }
+ }
+ return baseEnsure.apply(this,arguments);
+};
+})();
+
+</script>
 </body>
 </html>
