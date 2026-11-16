@@ -109,7 +109,7 @@
     const competition=quiz.fixture?.competition||llPlayerFixture()?.competition||'league',reward=llFacilityReward(competition,lexLeague.state),baseAp=Number(quiz.correct||0)*reward.ap,recoveryAp=Number(quiz.recoveryBonus||0),ap=baseAp+recoveryAp;
     lexLeague.state.ap+=ap;
     const completed=!quiz.skipped&&quiz.index>=quiz.queue.length;let bonus='none';
-    if(completed&&quiz.correct===quiz.queue.length){bonus='perfect';lexLeague.state.lp+=10;}else if(completed&&quiz.correct===quiz.queue.length-1)bonus='reroll';
+    if(completed&&quiz.correct===quiz.queue.length){bonus='perfect';lexLeague.state.lp+=10;}else if(completed&&quiz.correct>=quiz.queue.length-(quiz.queue.length===12?2:1))bonus='reroll';
     quiz.baseApEarned=baseAp;quiz.recoveryApEarned=recoveryAp;quiz.apEarned=ap;quiz.reward=bonus;quiz.totalAnswered=Number.isFinite(quiz.totalAnswered)?quiz.totalAnswered:quiz.index;
     if(typeof llSave==='function')llSave();if(typeof llRenderQuizReward==='function')llRenderQuizReward();
   };
