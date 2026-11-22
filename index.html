@@ -3591,7 +3591,7 @@ function renderLexiconLeagueLanding(){
   llArea().innerHTML=`<div class="ll-shell"><div class="ll-panel">
     <div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">🎲⚽</div><div><div class="ll-title">Lexicon <em>League</em></div><div class="ll-muted">Kelime öğrenme + zar düellosu + menajerlik RPG</div></div></div><button class="ll-btn" onclick="llGoMainMenu()">← Ana Menü</button></div>
     <div class="ll-grid"><div class="ll-card"><div class="ll-card-title">Lig Anayasası</div>
-      <div class="ll-sub">18 takım, çift devreli 34 hafta. Her maç öncesi 12 kelime; doğru kelime başına 5 AP. Zarlar mevkileri temsil eder ve yıldız seviyesi yalnızca atış aralığını belirler.</div>
+      <div class="ll-sub">18 takım, çift devreli 34 hafta. Her maç öncesi 15 kelime; doğru kelime başına 5 AP. Zarlar mevkileri temsil eder ve yıldız seviyesi yalnızca atış aralığını belirler.</div>
       <div class="ll-metrics"><div class="ll-metric"><strong>18</strong><span>Takım</span></div><div class="ll-metric"><strong>34</strong><span>Hafta</span></div><div class="ll-metric"><strong>300</strong><span>Kart</span></div><div class="ll-metric"><strong>3</strong><span>Zar</span></div></div>
       <div class="ll-notice"><b>Ham zar aralıkları:</b> 1★ = 1-4, 2★ = 1-5, 3★ = 2-6, 4★ = 3-6, 5★ = 4-6. Sınav ve kart bonusları ham sonucu aralığın üzerine çıkarabilir. Takım gücünden kendiliğinden sanal gol gelmez.</div>
     </div><div class="ll-card"><div class="ll-card-title">Kariyer</div>
@@ -3662,11 +3662,11 @@ function llRenderDashboard(){
     <div class="ll-topbar"><div class="ll-brand"><div class="ll-brand-mark">${llTeamLogo(def,'brand')}</div><div><div class="ll-title">${llEscape(s.playerTeam)}</div><div class="ll-muted">Sezon ${s.season} · ${s.week}. Hafta / 34</div></div></div><div class="ll-actions"><button class="ll-btn" onclick="llRenderStandings()">📊 Lig Tablosu</button><button class="ll-btn" onclick="llGoMainMenu()">Ana Menü</button></div></div>
     <div class="ll-metrics"><div class="ll-metric"><strong>${s.ap}</strong><span>AP</span></div><div class="ll-metric"><strong>${s.lp}</strong><span>LP</span></div><div class="ll-metric"><strong>${llStars(team.stars)}</strong><span>Yıldız</span></div><div class="ll-metric"><strong>${llSortTable().findIndex(x=>x.team===s.playerTeam)+1}.</strong><span>Sıra</span></div></div>
     <div class="ll-grid"><div><div class="ll-card"><div class="ll-card-title">Sıradaki Maç</div><div class="ll-next-match"><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(def,'match')}</div><b>${llEscape(s.playerTeam)}</b><div class="ll-stars">${llStars(team.stars)}</div></div><div class="ll-vs">${fixture.neutral?'NÖTR':isHome?'EV':'DEP'}<br>VS</div><div class="ll-club"><div class="ll-club-icon">${llTeamLogo(oppDef,'match')}</div><b>${llEscape(opponentName)}</b><div class="ll-stars">${llStars(opp.stars)}</div>${llOpponentIcons(opponentName)}</div></div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="ll-btn primary" onclick="llStartMatchPreparation()">12 Kelimelik Maça Başla</button>${transferOpen?`<button class="ll-btn gold" onclick="llRenderShop()">🛒 ${s.week}. Hafta Transfer Merkezi</button>`:''}</div></div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="ll-btn primary" onclick="llStartMatchPreparation()">15 Kelimelik Maça Başla</button>${transferOpen?`<button class="ll-btn gold" onclick="llRenderShop()">🛒 ${s.week}. Hafta Transfer Merkezi</button>`:''}</div></div>
       <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Kadro ve Yetenekler</div><div class="ll-squad">${LL_POSITIONS.map(pos=>`<div class="ll-slot"><div class="ll-slot-head"><span class="ll-position">${LL_POSITION_ICONS[pos]} ${pos}</span><span class="ll-die-mini star${team.stars}">${llRangeText(team.stars)}</span></div>${llCardHtml(team.cards[pos],s.playerTeam)}</div>`).join('')}</div>
       <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px">${upgradeCost?`<button class="ll-btn" onclick="llUpgradeStars()">Yıldızı Yükselt · ${upgradeCost} LP</button><span class="ll-muted">${team.stars}★ → ${team.stars+1}★</span>`:`<span class="ll-notice">Takım maksimum 6 yıldıza ulaştı.</span>`}</div></div></div>
       <div><div class="ll-card"><div class="ll-card-title">Son Sonuçlar</div>${recent.length?`<div class="ll-result-list">${recent.map(r=>`<div class="ll-result-row"><span>${llEscape(r.home)}</span><b>${r.homeGoals}-${r.awayGoals}</b><span>${llEscape(r.away)}</span></div>`).join('')}</div>`:`<div class="ll-muted">Henüz maç oynanmadı.</div>`}</div>
-      <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Ekonomi</div><div class="ll-sub">Doğru kelime: <b>5 AP</b><br>Galibiyet: <b>50 LP</b><br>Beraberlik: <b>20 LP</b><br>Mağlubiyet: <b>5 LP</b><br>12/12: ayrıca <b>10 LP + maçlık +1</b><br>10/12 veya 11/12: <b>1 reroll</b></div></div></div></div>
+      <div class="ll-card" style="margin-top:16px"><div class="ll-card-title">Ekonomi</div><div class="ll-sub">Doğru kelime: <b>5 AP</b><br>Galibiyet: <b>50 LP</b><br>Beraberlik: <b>20 LP</b><br>Mağlubiyet: <b>5 LP</b><br>15/15: ayrıca <b>10 LP + maçlık +1 ve 1 reroll</b><br>13/15 veya 14/15: <b>1 reroll</b></div></div></div></div>
   </div></div>`;
 }
 function llUpgradeStars(){
@@ -3687,6 +3687,7 @@ function llRenderStandings(){
 // Yeni kelime öğrenme katmanı. Ana 533 kelimelik döngü korunur; yeni/yanlış
 // kelimeler kontrollü aralıklarla ek tekrar önceliği alır.
 const LL_CORE_RECENT_QUIZ_WORD_LIMIT=30;
+const LL_NORMAL_MATCH_WORD_COUNT=15;
 const LL_NEW_WORD_CORRECT_TARGET=5;
 const LL_NEW_WORD_REVIEW_GAPS=[20,30,45,60];
 const LL_MISTAKE_REVIEW_GAP=12;
@@ -3765,7 +3766,7 @@ function llMarkFirstExposure(word){
   }catch(error){try{globalThis.llQuizDiagnostic?.('first_exposure_save_error',{wordId:word.id||null,message:String(error?.message||error)});}catch{}}
   return true;
 }
-function llPickQuizWords(count=12){
+function llPickQuizWords(count=LL_NORMAL_MATCH_WORD_COUNT){
   const words=loadUserWords();if(!words.length)return [];
   const target=Math.min(count,words.length),state=lexLeague.state;
   if(!Array.isArray(state.usedWords))state.usedWords=[];
@@ -3774,10 +3775,11 @@ function llPickQuizWords(count=12){
   const sequence=llCurrentWordExposureSeq();
   const picked=new Set(),queue=[];
   const pending=llPriorityIntroductionOrder(words.filter(llNeedsPriorityIntroduction)).reverse();
-  // Kontenjan: 3 ilk tanıtım + 4 zamanı gelmiş tekrar + 5 normal döngü.
-  // İlk tanıtım kalmadığında 7 tekrar + 5 normal döngüye geçilir.
+  // Normal 15 soru: 3 ilk tanıtım + 7 zamanı gelmiş tekrar + 5 normal döngü.
+  // İlk tanıtım kalmadığında 10 tekrar + 5 normal döngüye geçilir.
+  // Bağımsız 12 soruluk özel sınavlar eski 3 + 4 + 5 dağılımını korur.
   // Tarihi gelmemiş kelimeleri sırf kontenjan dolsun diye erken tekrarlamayız.
-  const introQuota=target===12?Math.min(3,pending.length):0;
+  const introQuota=(target===LL_NORMAL_MATCH_WORD_COUNT||target===12)?Math.min(3,pending.length):0;
   const introWords=pending.slice(0,introQuota);
   const introIds=new Set(introWords.map(w=>w.id));
   const pendingIds=new Set(pending.map(w=>w.id));
@@ -3794,7 +3796,7 @@ function llPickQuizWords(count=12){
       if(A.dueAt!==B.dueAt)return A.dueAt-B.dueAt;
       return String(a.id).localeCompare(String(b.id));
     });
-  const reviewQuota=target===12?7-introQuota:0;
+  const reviewQuota=target===LL_NORMAL_MATCH_WORD_COUNT?10-introQuota:target===12?7-introQuota:0;
   const take=(pool,number,withRecentFallback=true)=>{
     const available=pool.filter(w=>!picked.has(w.id));
     const fresh=available.filter(w=>!recent.has(w.id));
@@ -3838,7 +3840,7 @@ function llPickQuizWords(count=12){
       mistakePriority:kind==='review'&&info.mistake,
       cycleStart:kind==='normal'&&normalResetIndices.has(index)};
   };
-  // 12 soru: ilk tanıtımları ve tekrarları sorular arasına serpiştir.
+  // İlk tanıtımları ve tekrarları seçilen soru sayısına eşit aralıklarla dağıt.
   const special=[...intros.map(w=>makeRef(w,'intro',0)),...reviews.map(w=>makeRef(w,'review',0))];
   const normalRefs=normal.map((w,i)=>makeRef(w,'normal',i));
   if(!special.length)return normalRefs.slice(0,target);
@@ -3864,8 +3866,8 @@ function llStartMatchPreparation(){
   fcQueue=[];
   const fixture=typeof llPlayerFixture==='function'?llPlayerFixture():null;
   if(!fixture){alert('Sıradaki maç bulunamadı. Dashboarda dönüp fikstürün yeniden oluşturulmasını bekle.');return;}
-  const queue=llPickQuizWords(12);
-  if(queue.length<12){alert(`Maç için en az 12 kelime gerekiyor. Kullanılabilir kelime: ${queue.length}. Ana menüden “Hata Kaydını İndir” dosyasını gönder.`);return;}
+  const queue=llPickQuizWords(LL_NORMAL_MATCH_WORD_COUNT);
+  if(queue.length<LL_NORMAL_MATCH_WORD_COUNT){alert(`Maç için en az ${LL_NORMAL_MATCH_WORD_COUNT} kelime gerekiyor. Kullanılabilir kelime: ${queue.length}. Ana menüden “Hata Kaydını İndir” dosyasını gönder.`);return;}
   lexLeague.quiz={queue,index:0,correct:0,revealed:false,committed:false,recoveredWords:0,recoveryBonus:0,skipped:false,wordTrackingVersion:2,fixture:{...fixture}};
   llRenderLeagueQuiz();
 }
@@ -3891,7 +3893,7 @@ function llRenderLeagueQuiz(){
   const exampleHtml=example?llExampleSentenceHtml(word,example,`league-${q.index}-${word.id}`):'';
   const questionHtml=ref.askTrToEn?llEscape(question):`<div class="pronounce-line"><span>${llEnglishWordHtml(word,question)}</span>${llPronounceButton(word.en)}</div>`;
   const answerHtml=ref.askTrToEn?`<div class="pronounce-line"><span>${llEnglishWordHtml(word,answer)}</span>${llPronounceButton(word.en)}</div>`:llEscape(answer);
-  // Normal 12 kelimelik sinavda ornek cumlede cevap gizlenmisse, cevap acilinca
+  // Normal 15 kelimelik sinavda ornek cumlede cevap gizlenmisse, cevap acilinca
   // kelimenin cumle icindeki tam Ingilizce kullanimini da goster.
   const answerExampleHtml=q.revealed?llFullExampleSentenceHtml(word):'';
   const pct=(q.index/q.queue.length)*100;
@@ -3963,7 +3965,7 @@ function llRateLeagueQuiz(correct){
 function llFinishLeagueQuiz(){
   const q=lexLeague.quiz;if(!q||q.committed)return;q.committed=true;
   const baseAp=q.correct*5,recoveryAp=Number(q.recoveryBonus||0),ap=baseAp+recoveryAp;lexLeague.state.ap+=ap;
-  const completed=!q.skipped&&q.index>=q.queue.length;let reward='none';if(completed&&q.correct===q.queue.length){reward='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct>=q.queue.length-(q.queue.length===12?2:1))reward='reroll';
+  const completed=!q.skipped&&q.index>=q.queue.length;let reward='none';if(completed&&q.correct===q.queue.length){reward='perfect';lexLeague.state.lp+=10;}else if(completed&&q.correct>=q.queue.length-((q.queue.length===LL_NORMAL_MATCH_WORD_COUNT||q.queue.length===12)?2:1))reward='reroll';
   q.baseApEarned=baseAp;q.recoveryApEarned=recoveryAp;q.apEarned=ap;q.reward=reward;llSave();llRenderQuizReward();
 }
 function llRenderQuizReward(){
@@ -5851,7 +5853,7 @@ function renderDiceUclLanding() {
         36 kulüpten biri rastgele atanır. Lig aşamasında her torbadan iki farklı rakiple, toplam sekiz maç oynarsın.
       </p>
       <div class="dice-rule-box">
-        Her lig maçı 12 kelimeyle başlar. Ardından üçer zar atılır ve istediğin tek zarı 5/5 kelime sınavıyla bir kez reroll edebilirsin. İlk 8 direkt Son 16'ya, 9–24 play-off'a yükselir; 25–36 elenir.
+        Her lig maçı 15 kelimeyle başlar. Ardından üçer zar atılır ve istediğin tek zarı 5/5 kelime sınavıyla bir kez reroll edebilirsin. İlk 8 direkt Son 16'ya, 9–24 play-off'a yükselir; 25–36 elenir.
       </div>
       <div class="ucl-pot-grid">${pots}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -6952,7 +6954,7 @@ document.addEventListener('keydown', e => {
 initDatabase();
 renderPreStart();
 </script>
-<script src="league-v2.js?v=20261116-reroll-10of12"></script>
+<script src="league-v2.js?v=20261123-15-word-normal"></script>
 <script src="save-backup-hardening.js?v=20260723-1"></script>
 <script src="manager-market.js?v=20261023-resume-signed-selection"></script>
 <script src="europe-knockout-center.js?v=20260916-bracket-integrity-v2"></script>
@@ -6965,12 +6967,12 @@ renderPreStart();
 <script src="multi-league-engine.js?v=20260906-reserve-save-repair-v2"></script>
 <script src="team-star-rebalance.js?v=20260729-1"></script>
 <script src="country-browser.js?v=20260803-2"></script>
-<script src="diagnostics.js?v=20261116-12-quiz-audit"></script>
+<script src="diagnostics.js?v=20261123-15-word-normal"></script>
 <script src="trophy-cinematic.js?v=20260916-financial-crisis-lock-v1"></script>
 <script src="competition-consistency.js?v=20260810-domestic-cup-country-source-1"></script>
 <script src="indexeddb-storage.js?v=20260811-season-bootstrap-v3"></script>
 <script src="die-upgrade-cinematic.js?v=20260916-financial-crisis-lock-v1"></script>
-<script src="club-facility-progression.js?v=20261116-reroll-10of12"></script>
+<script src="club-facility-progression.js?v=20261123-15-word-normal"></script>
 <script src="competition-badge-dice.js?v=20260810-club-owned-badge-1"></script>
 <script src="derby-achievements.js?v=20260831-reserve-promotion-v1"></script>
 <script src="achievement-cinematic.js?v=20260916-financial-crisis-lock-v1"></script>
@@ -6980,11 +6982,11 @@ renderPreStart();
 <script src="team-star-rise-report.js?v=20260806-1"></script>
 <script src="manager-job-market.js?v=20261023-persist-application-signing"></script>
 <script src="manager-profile-overview.js?v=20260804-2"></script>
-<script src="board-confidence-reputation.js?v=20261116-12-quiz-audit"></script>
+<script src="board-confidence-reputation.js?v=20261123-15-word-normal"></script>
 <script src="manager-offer-fit.js?v=20260831-reserve-promotion-v1"></script>
 <script src="europe-calendar-guard.js?v=20260905-national-europe-protection-v2"></script>
-<script src="legend-call.js?v=20261116-12-quiz-audit"></script>
-<script src="welcome-to-hell.js?v=20261116-12-quiz-audit"></script>
+<script src="legend-call.js?v=20261123-15-word-normal"></script>
+<script src="welcome-to-hell.js?v=20261123-15-word-normal"></script>
 <script src="season-vocabulary-stats.js?v=20260812-1"></script>
 <script src="relative-clause-quiz.js?v=20260906-no-ghost-word-v1"></script>
 <script src="gerund-infinitive-quiz.js?v=20260906-learning-no-ghost-v1"></script>

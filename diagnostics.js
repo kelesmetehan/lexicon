@@ -261,11 +261,13 @@ function llBuildStrictQuizQueue({normalPool,priorities,reviewRefs,target,usedIds
   }
   return {queue,blocked,simulatedUsed:[...simulatedUsed],simulatedRecent};
 }
-const llTwelveWordCorePicker=globalThis.llPickQuizWords;
-globalThis.llPickQuizWords=function(count=12){
-  if(Number(count)===12&&typeof llTwelveWordCorePicker==='function'){
-    const queue=llTwelveWordCorePicker(12);
-    llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:12,selected:queue.length,strictLoop:false,learningSchedule:true,ids:queue.map(ref=>ref.id),introPriorityCount:queue.filter(ref=>ref.introPriority).length,reviewPriorityCount:queue.filter(ref=>ref.learningPriority||ref.mistakePriority).length});
+const llScheduledCorePicker=globalThis.llPickQuizWords;
+globalThis.llPickQuizWords=function(count=15){
+  // Normal 15 soruluk maç sınavı ve bağımsız 12 soruluk özel sınavlar
+  // öğrenme/tekrar planlayıcısını kullanır; genel strict-loop motoruna düşmez.
+  if((Number(count)===15||Number(count)===12)&&typeof llScheduledCorePicker==='function'){
+    const queue=llScheduledCorePicker(Number(count));
+    llDiagnosticEvent('QUIZ_QUEUE_CREATED',{requested:Number(count),selected:queue.length,strictLoop:false,learningSchedule:true,ids:queue.map(ref=>ref.id),introPriorityCount:queue.filter(ref=>ref.introPriority).length,reviewPriorityCount:queue.filter(ref=>ref.learningPriority||ref.mistakePriority).length});
     return queue;
   }
   const words=typeof loadUserWords==='function'?loadUserWords():[];if(!words.length)return [];
