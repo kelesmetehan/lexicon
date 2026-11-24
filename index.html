@@ -2751,6 +2751,38 @@ for(const [base,forms] of Object.entries(LL_WORD_FAMILY_GROUPS)) {
 if(!NATIVE_USER_DATA.some(w=>llFamilyKey(w.en)==='admit'))NATIVE_USER_DATA.push({...LL_FAMILY_EXTRA_CONTENT.admit,repetitions:0,interval:0,reviewCount:0,state:'learning'});
 if(!NATIVE_USER_DATA.some(w=>llFamilyKey(w.en)==='clap'))NATIVE_USER_DATA.push({...LL_FAMILY_EXTRA_CONTENT.clap,repetitions:0,interval:0,reviewCount:0,state:'learning'});
 for(let i=NATIVE_USER_DATA.length-1;i>=0;i--)if(LL_WORD_FAMILY_ALIASES.has(llFamilyKey(NATIVE_USER_DATA[i].en)))NATIVE_USER_DATA.splice(i,1);
+
+// Related-word reference panels only: no vocabulary or progress migration.
+const LL_RELATED_WORD_GROUPS = [{"drawbacks": "Belirli bir dezavantaj", "downside": "Bir durumun olumsuz tarafı"}, {"rarely": "Nadiren", "seldom": "Nadiren; biraz daha resmî", "hardly ever": "Neredeyse hiç", "almost never": "Neredeyse hiçbir zaman"}, {"furthermore": "Ek bir argüman sunar", "moreover": "Ek ve destekleyici bir argüman sunar", "in addition": "Ek bilgi verir", "on top of that": "Üstelik; daha konuşma dilinde"}, {"consequently": "Bir olayın sonucu", "therefore": "Mantıksal sonuç", "as a result": "Bir olayın sonucunda"}, {"come across": "Tesadüfen rastlamak; kişi veya şey", "run into": "Genellikle bir kişiyle tesadüfen karşılaşmak", "stumble upon": "Beklenmedik biçimde bir şey keşfetmek"}, {"consist of": "Bileşenlerden oluşmak", "be made up of": "Bileşenlerden meydana gelmek"}, {"suitable": "Amaca uygun", "appropriate": "Duruma veya kurala uygun", "fit for": "Belirli bir amaç için elverişli"}, {"suggest": "Öneri sunmak veya ima etmek", "propose": "Daha belirgin veya resmî öneri sunmak"}, {"figure out": "Düşünerek çözmek veya anlamak", "find out": "Bilgi edinmek veya öğrenmek"}, {"carry on": "Devam etmek", "keep doing something": "Bir eylemi sürdürmek"}, {"flee": "Tehlikeden kaçmak", "run away": "Kaçıp uzaklaşmak"}, {"rely on": "Güvenmek veya bel bağlamak", "depend on": "Bağlı olmak veya güvenmek"}, {"rectify": "Bir hatayı düzeltmek", "work out": "Bir çözüm bulmak; başka anlamları da vardır"}, {"roughly": "Yaklaşık olarak", "basically": "Temelde, esasen; yaklaşık demek değildir"}, {"hilarious": "Çok komik", "mind-blowing": "Hayret verici; komik olmak zorunda değil"}, {"consecutively": "Kesintisiz art arda", "sequentially": "Belirli bir sırayla"}, {"however": "Ancak; karşıtlık", "nevertheless": "Buna rağmen", "though": "Her ne kadar veya gerçi"}, {"apart from that": "Bunun dışında", "besides": "Ayrıca veya bunun dışında"}, {"reach out": "İletişim başlatmak", "get back to someone": "Birine geri dönüş yapmak"}, {"look into": "Bir konuyu araştırmak", "examine": "Ayrıntılı incelemek"}, {"detect": "Tespit etmek", "notice": "Fark etmek"}, {"expose": "Gizli bir şeyi açığa çıkarmak veya maruz bırakmak", "revealed": "Ortaya çıkardı veya açıkladı", "uncovered": "Üstünü açtı veya ortaya çıkardı", "unearth": "Topraktan çıkarmak veya gizli bilgiyi ortaya çıkarmak"}, {"flaw": "Kusur veya zayıf nokta", "defect": "Ürün ya da sistemdeki kusur"}, {"hoax": "İnsanları kandıran uydurma olay", "scam": "Genellikle maddi çıkar amaçlı dolandırıcılık"}, {"bizarre": "Son derece tuhaf", "strange": "Garip veya alışılmadık", "awkward": "Rahatsız edici, beceriksiz veya elverişsiz"}, {"enigmatic": "Esrarengiz (sıfat)", "mystery": "Gizem (isim)"}, {"deceive": "Aldatmak", "contrive": "Bir şeyi planlayıp meydana getirmek; aldatma şart değil"}, {"convince": "İkna etmek", "encourage": "Cesaretlendirmek veya teşvik etmek"}, {"boost": "Artırmak veya güçlendirmek", "accelerate": "Hızlandırmak", "expand": "Genişletmek"}, {"cope with": "Zorlukla başa çıkmak", "deal with": "Bir konuyla ilgilenmek veya başa çıkmak"}, {"resilience": "Zorluktan sonra toparlanabilme", "robustness": "Olumsuz koşullarda sağlam kalabilme"}, {"constraint": "Kısıt veya sınır", "bottleneck": "Akışı yavaşlatan darboğaz"}, {"burden": "Taşınması zor yük", "responsibility": "Sorumluluk veya görev"}, {"allow": "İzin vermek (fiil)", "permission": "İzin (isim)"}, {"obligated": "Yükümlü", "be supposed to": "Yapması beklenmek veya gerekmek"}, {"harsh": "Sert veya ağır", "cruel": "Acımasız", "strict": "Kurallarda katı"}, {"insist": "Israr etmek", "require": "Gerektirmek veya şart koşmak"}, {"resemble": "Benzemek", "corresponding": "Karşılık gelen; benzer olmak şart değil"}, {"regret": "Pişmanlık duymak veya pişmanlık", "buyer's remorse": "Satın alma sonrası pişmanlık"}, {"anxiety": "Kaygı", "consternation": "Endişeyle karışık şaşkınlık"}, {"compliment": "İltifat etmek veya iltifat", "admire": "Hayranlık veya takdir duymak"}, {"insight": "Derin kavrayış", "intuition": "Sezgi"}, {"imply": "Dolaylı biçimde ima etmek", "suggest": "İma etmek veya öneride bulunmak"}, {"recap": "Özetlemek veya özet", "in short": "Kısacası; özet sunan ifade"}, {"overlook": "Gözden kaçırmak veya bazen görmezden gelmek", "turn a blind eye to": "Bilerek görmezden gelmek"}, {"ancient": "Çok eski veya antik", "prehistoric": "Yazılı tarih öncesine ait"}, {"ubiquitous": "Her yerde bulunan", "prevalent": "Yaygın, sık görülen"}, {"enclosure": "Çevrili alan veya yapı", "compound": "Çevrili yapı kompleksi (bu anlamıyla)"}, {"carve": "Oymak veya şekil vermek", "engrave": "Yüzeye yazı veya desen kazımak"}, {"purchase": "Satın almak veya satın alma", "pay": "Ödeme yapmak; satın almakla aynı eylem değildir"}];
+const LL_RELATED_WORD_INDEX = new Map();
+const LL_RELATED_WORD_CONTENT = new Map(NATIVE_USER_DATA.map(w=>[llFamilyKey(w.en),w]));
+for(const [key,w] of Object.entries({"ubiquitous": {"en": "ubiquitous", "tr": "her yerde bulunan / çok yaygın", "pos": "adj", "example": "The brand's logo has become ubiquitous in major cities.", "exampleTr": "Markanın logosu büyük şehirlerde her yerde görülür hâle geldi."}, "apart from that": {"en": "apart from that", "tr": "bunun dışında / onun dışında", "pos": "phrase", "example": "Apart from that, everything went well.", "exampleTr": "Bunun dışında her şey iyi gitti."}, "examine": {"en": "examine", "tr": "incelemek / muayene etmek", "pos": "v", "example": "The doctor examined my ankle after the match.", "exampleTr": "Doktor maçtan sonra ayak bileğimi muayene etti."}, "pay": {"en": "pay", "tr": "ödemek", "pos": "v", "example": "I paid for the tickets online.", "exampleTr": "Biletlerin ücretini internetten ödedim."}}))if(!LL_RELATED_WORD_CONTENT.has(key))LL_RELATED_WORD_CONTENT.set(key,w);
+for(const group of LL_RELATED_WORD_GROUPS){
+  for(const [key,note] of Object.entries(group)){
+    if(!LL_RELATED_WORD_INDEX.has(key))LL_RELATED_WORD_INDEX.set(key,[]);
+    LL_RELATED_WORD_INDEX.get(key).push(group);
+  }
+}
+function llRelatedWordHtml(card){
+  const key=llFamilyKey(card?.en);
+  const groups=LL_RELATED_WORD_INDEX.get(key)||[];
+  if(!groups.length)return '';
+  const others=new Map();
+  const ownNotes=new Set();
+  for(const group of groups){
+    ownNotes.add(group[key]);
+    for(const [other,note] of Object.entries(group))if(other!==key){
+      if(!others.has(other))others.set(other,new Set());
+      others.get(other).add(note);
+    }
+  }
+  const items=[...others].map(([other,notes])=>{
+    const w=LL_RELATED_WORD_CONTENT.get(other);
+    return `<div style="margin-top:8px"><b>${llEscape(w?.en||other)}</b>${w?.pos?` (${llEscape(w.pos)})`:''}${w?.tr?` — ${llEscape(w.tr)}`:''}<div>${llEscape([...notes].join(' / '))}</div>${w?.example?`<div class="ll-muted">${llEscape(w.example)}</div>`:''}${w?.exampleTr?`<div class="ll-muted">${llEscape(w.exampleTr)}</div>`:''}</div>`;
+  }).join('');
+  return `<div class="ll-answer-example"><span class="ll-answer-example-label">Benzer / ilişkili kelimeler</span><div><b>Kullanım farkı — ${llEscape(card.en)}:</b> ${llEscape([...ownNotes].join(' / '))}</div>${items}</div>`;
+}
+
 function llMergeWordFamilies(words){
   if(!Array.isArray(words))return [];
   const result=words.slice();
@@ -4976,7 +5008,7 @@ function llFullExampleSentenceHtml(card) {
   const details=family.filter(w=>llFamilyKey(w.en)!==llFamilyKey(card?.en));
   const clapDetails=llFamilyKey(card?.en)==='clap'?`<div class="ll-answer-example"><span class="ll-answer-example-label">Fiil çekimi</span><b>Clap – Clapped – Clapped</b></div><div class="ll-answer-example"><span class="ll-answer-example-label">Benzer kelime</span><b>Applaud</b> (v) — ${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.tr)}<div class="ll-muted">${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.example)}</div><div class="ll-muted">${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.exampleTr)}</div><div><b>Kullanım farkı:</b> Clap fiziksel alkışlama hareketidir; applaud alkışlamak veya bir davranışı takdir etmek anlamına gelir.</div></div>`:'';
   const familyHtml=clapDetails|| (details.length?`<div class="ll-answer-example"><span class="ll-answer-example-label">Kelime ailesi</span>${details.map(w=>`<div><b>${llEscape(w.en)}</b> (${llEscape(w.pos||'')}) — ${llEscape(w.tr)}${w.example?`<div class="ll-muted">${llEscape(w.example)}</div>`:''}${w.exampleTr?`<div class="ll-muted">${llEscape(w.exampleTr)}</div>`:''}</div>`).join('')}</div>`:'');
-  return (fullExample?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`:'')+familyHtml;
+  return (fullExample?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`:'')+familyHtml+llRelatedWordHtml(card);
 }
 function toggleExampleTranslation(event, panelId) {
   event?.preventDefault();
@@ -5246,6 +5278,7 @@ function renderWordList() {
           <div class="pronounce-line dictionary"><div class="word-en">${llEnglishWordHtml(w)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
           ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
           ${(LL_WORD_FAMILY_CONTENT.get(llFamilyKey(w.en))||[]).filter(f=>llFamilyKey(f.en)!==llFamilyKey(w.en)).map(f=>`<div class="word-tr">${llEscape(f.en)} (${llEscape(f.pos||'')}) — ${llEscape(f.tr)}</div>`).join('')}
+          ${llRelatedWordHtml(w)}
         </div>
         <div class="word-stats">
           <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
@@ -7066,7 +7099,7 @@ renderPreStart();
 <script src="interactive-penalty-quiz.js?v=20261023-national-word-penalties-v1"></script>
 <script src="standings-movement.js?v=20260830-restore-position-arrows-1"></script>
 <script src="season-opening-supercups.js?v=20260830-opening-supercups-v1"></script>
-<script src="europe-draw-cinematic.js?v=20260906-mandatory-career-draw-v1"></script>
+<script src="europe-draw-cinematic.js?v=20261124-related-words-v1"></script>
 <script src="national-draw-cinematic.js?v=20260911-full-example-sentence-v1"></script>
 <script src="financial-crisis.js?v=20260921-all-slotted-cards-v5"></script>
 <script src="team-league-navigation.js?v=20260916-team-league-nav-v1"></script>

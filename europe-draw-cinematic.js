@@ -311,7 +311,7 @@
             <div class="ll-position">${item.askTrToEn?'Türkçe → İngilizce':'İngilizce → Türkçe'}</div>
             <div class="ll-question-word">${qHtml}</div>
             ${exHtml}
-            ${item.revealed?`<div class="ll-answer">${aHtml}</div>${fullExample}`:`<div class="ll-muted" style="margin-top:14px">Önce cevabı göster, sonra kendini değerlendir.</div>`}
+            ${item.revealed?`<div class="ll-answer">${aHtml}</div>${fullExample}${typeof llRelatedWordHtml==='function'?llRelatedWordHtml(word):''}`:`<div class="ll-muted" style="margin-top:14px">Önce cevabı göster, sonra kendini değerlendir.</div>`}
           </div>
           <div class="ll-draw-actions">
             ${item.revealed
