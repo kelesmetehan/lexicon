@@ -2737,6 +2737,61 @@ function llInferWordPos(word){
 NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=word.exampleTr||NATIVE_EXAMPLE_TRANSLATIONS[index]||'';});
 NATIVE_USER_DATA.forEach(word=>{word.pos=llInferWordPos(word);});
 
+// Word-family consolidation v1: after positional translations are populated.
+const LL_WORD_FAMILY_GROUPS = {"carve": ["carved", "carving"], "bury": ["buried", "burial"], "abandon": ["abandoned"], "admit": ["admitted"], "struggle": ["struggling"], "prove": ["proven"], "lead to": ["led to"], "date back to": ["dates back"], "find out": ["be finding out"], "elaborate": ["elaborate on"], "excavate": ["excavation"], "settle": ["settler"], "mystery": ["mysterious"], "implement": ["implementation"], "consistent": ["consistency"], "assume": ["assumption"], "deliberate": ["deliberately"]};
+const LL_WORD_FAMILY_ALIASES = new Map(Object.entries(LL_WORD_FAMILY_GROUPS).flatMap(([base,forms])=>forms.map(form=>[form,base])));
+const llFamilyKey = value => String(value||'').trim().toLowerCase();
+const LL_WORD_FAMILY_CONTENT = new Map();
+const LL_FAMILY_EXTRA_CONTENT = {"admit": {"en": "admit", "tr": "itiraf etmek / kabul etmek", "example": "The manager admitted that the plan had failed.", "exampleTr": "Yönetici planın başarısız olduğunu kabul etti.", "pos": "v"}, "admitted": {"en": "admitted", "tr": "itiraf etti / kabul etti", "example": "He admitted making a mistake during the meeting.", "exampleTr": "Toplantı sırasında bir hata yaptığını itiraf etti.", "pos": "v"}};
+for(const [base,forms] of Object.entries(LL_WORD_FAMILY_GROUPS)) {
+  const entries=[base,...forms].map(en=>NATIVE_USER_DATA.find(w=>llFamilyKey(w.en)===en)||LL_FAMILY_EXTRA_CONTENT[en]).filter(Boolean);
+  LL_WORD_FAMILY_CONTENT.set(base,entries.map(({en,tr,example,exampleTr,pos})=>({en,tr,example,exampleTr,pos})));
+}
+// Admit was in user saves, not the builtin pool; keep it available for fresh installs.
+if(!NATIVE_USER_DATA.some(w=>llFamilyKey(w.en)==='admit'))NATIVE_USER_DATA.push({...LL_FAMILY_EXTRA_CONTENT.admit,repetitions:0,interval:0,reviewCount:0,state:'learning'});
+for(let i=NATIVE_USER_DATA.length-1;i>=0;i--)if(LL_WORD_FAMILY_ALIASES.has(llFamilyKey(NATIVE_USER_DATA[i].en)))NATIVE_USER_DATA.splice(i,1);
+function llMergeWordFamilies(words){
+  if(!Array.isArray(words))return [];
+  const result=words.slice();
+  const counterFields=['reviewCount','wrongCount','normalMatchCount','mistakeReviewCount','specialQuizCount','rerollCount','studyReviewCount','totalExposureCount','normalMatchExposureCount','mistakeExposureCount','specialQuizExposureCount','rerollExposureCount','studyExposureCount'];
+  for(const [base,forms] of Object.entries(LL_WORD_FAMILY_GROUPS)){
+    const members=result.filter(w=>w?.source==='user'&&[base,...forms].includes(llFamilyKey(w.en)));
+    if(!members.length)continue;
+    const primary=members.find(w=>llFamilyKey(w.en)===base)||members[0];
+    const native=NATIVE_USER_DATA.find(w=>llFamilyKey(w.en)===base);
+    let progress=wordProgress(primary);
+    if(members.length>1 && !Number.isFinite(Number(primary.newWordCorrectCount)))primary.newWordCorrectCount=progress;
+    const aliases=new Set(primary.mergedWordIds||[]);
+    const archive=Array.isArray(primary.mergedWordHistory)?primary.mergedWordHistory.slice():[];
+    for(const w of members){if(w===primary)continue; if(w.id===primary.id||aliases.has(w.id))continue;
+      archive.push({...w}); if(w.id)aliases.add(w.id); for(const id of w.mergedWordIds||[])aliases.add(id);
+      for(const f of counterFields)if(w[f]!=null||primary[f]!=null)primary[f]=(Number(primary[f])||0)+(Number(w[f])||0);
+      // The strongest verified learning level survives, but two partial cards do not automatically become mastered.
+      primary.newWordCorrectCount=Math.max(progress,wordProgress(w)); progress=primary.newWordCorrectCount;
+      for(const f of ['repetitions','interval','ef'])if(w[f]!=null)primary[f]=Math.min(Number(primary[f])||0,Number(w[f])||0);
+      for(const f of ['addedAt','firstExposureAt','statsTrackingStartedAt','nextReview'])if(w[f]&&(!primary[f]||w[f]<primary[f]))primary[f]=w[f];
+      for(const f of ['lastReviewed','lastAnswerAt','lastExposureAt'])if(w[f]&&(!primary[f]||w[f]>primary[f])){primary[f]=w[f];if(f==='lastAnswerAt')primary.lastAnswerSource=w.lastAnswerSource;if(f==='lastExposureAt'){primary.lastExposureSource=w.lastExposureSource;primary.lastExposureEventKey=w.lastExposureEventKey;}}
+      primary.isActiveMistake=!!(primary.isActiveMistake||w.isActiveMistake);
+      for(const [f,dir] of [['learningNextExposure','learningNextAskTrToEn'],['mistakeNextExposure','mistakeAskTrToEn']])if(w[f]!=null&&(primary[f]==null||Number(w[f])<Number(primary[f]))){primary[f]=w[f];primary[dir]=w[dir];}
+    }
+    function wordProgress(w){const x=w.newWordCorrectCount;return Math.max(0,Math.min(5,x!=null&&Number.isFinite(Number(x))?Number(x):Number(w.reviewCount)||0));}
+    if(progress>=5){delete primary.learningNextExposure;delete primary.learningNextAskTrToEn;}
+    if(!primary.isActiveMistake){delete primary.mistakeNextExposure;delete primary.mistakeAskTrToEn;}
+    primary.en=base;
+    if(native){for(const f of ['tr','example','exampleTr','pos'])primary[f]=native[f];}
+    if(aliases.size)primary.mergedWordIds=[...aliases];
+    if(archive.length)primary.mergedWordHistory=archive;
+    for(const w of members)if(w!==primary)result.splice(result.indexOf(w),1);
+  }
+  return result;
+}
+function llReconcileFamilyCycle(state,words){
+  if(!state)return;
+  const lookup=new Map();for(const w of words||[])for(const id of w.mergedWordIds||[])lookup.set(id,w.id);
+  for(const key of ['usedWords','recentQuizWords'])if(Array.isArray(state[key]))state[key]=[...new Set(state[key].map(id=>lookup.get(id)||id))];
+}
+
+
 // 2026 WORLD CUP TEAMS & GROUPS (Görsel referanslı 12 Grup)
 const WC_TEAMS = [
   { name: "Mexico", group: "A", stars: 2, flag: "🇲🇽" }, { name: "South Africa", group: "A", stars: 1, flag: "🇿🇦" }, { name: "South Korea", group: "A", stars: 2, flag: "🇰🇷" }, { name: "Czechia", group: "A", stars: 2, flag: "🇨🇿" },
@@ -4916,8 +4971,10 @@ function llExampleSentenceHtml(card, shownExample, token='', compact=false) {
 // bütün kelime quizlerinde aynı görünümle gösterir.
 function llFullExampleSentenceHtml(card) {
   const fullExample = String(card?.example || '').trim();
-  if (!fullExample) return '';
-  return `<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`;
+  const family=LL_WORD_FAMILY_CONTENT.get(llFamilyKey(card?.en))||[];
+  const details=family.filter(w=>llFamilyKey(w.en)!==llFamilyKey(card?.en));
+  const familyHtml=details.length?`<div class="ll-answer-example"><span class="ll-answer-example-label">Kelime ailesi</span>${details.map(w=>`<div><b>${llEscape(w.en)}</b> (${llEscape(w.pos||'')}) — ${llEscape(w.tr)}${w.example?`<div class="ll-muted">${llEscape(w.example)}</div>`:''}${w.exampleTr?`<div class="ll-muted">${llEscape(w.exampleTr)}</div>`:''}</div>`).join('')}</div>`:'';
+  return (fullExample?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`:'')+familyHtml;
 }
 function toggleExampleTranslation(event, panelId) {
   event?.preventDefault();
@@ -5012,6 +5069,7 @@ function initDatabase() {
       word.pos = llInferWordPos(word);
     });
 
+    existingWords = llMergeWordFamilies(existingWords);
     const synchronizedPool = NATIVE_USER_DATA.map((w, idx) => {
       const foundMatch = existingWords.find(ex => ex.en.toLowerCase() === w.en.toLowerCase() && ex.source === 'user');
       if (foundMatch) {
@@ -5045,7 +5103,13 @@ function loadUserWords() {
   try {
     const allWords = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
     const userWords = allWords.filter(w => w && w.source === 'user');
-    if (userWords.length >= 10) return userWords;
+    if (userWords.length >= 10) {
+      const needsMerge=userWords.some(w=>LL_WORD_FAMILY_ALIASES.has(llFamilyKey(w.en)));
+      const merged=needsMerge?llMergeWordFamilies(userWords):userWords;
+      if(needsMerge)localStorage.setItem(DB_KEY,JSON.stringify([...allWords.filter(w=>w?.source!=='user'),...merged]));
+      llReconcileFamilyCycle(lexLeague?.state,merged);
+      return merged;
+    }
   } catch (e) { console.error(e); }
   if (LL_RUNTIME_WORD_FALLBACK.length < 10) {
     initDatabase();
@@ -5066,7 +5130,7 @@ function saveWordsToStorage(updatedWords) {
       return updated ? updated : w;
     });
     updatedWords.forEach(uw => { if(!mergedWords.find(mw => mw.id === uw.id)) mergedWords.push(uw); });
-    localStorage.setItem(DB_KEY, JSON.stringify(mergedWords));
+    localStorage.setItem(DB_KEY, JSON.stringify(llMergeWordFamilies(mergedWords)));
   } catch (e) {}
 }
 
@@ -5179,6 +5243,7 @@ function renderWordList() {
         <div class="word-info">
           <div class="pronounce-line dictionary"><div class="word-en">${llEnglishWordHtml(w)}</div>${llPronounceButton(w.en,true)}</div><div class="word-tr">${llEscape(w.tr)}</div>
           ${w.example ? llExampleSentenceHtml(w,w.example,`dictionary-${w.id}`,true) : ''}
+          ${(LL_WORD_FAMILY_CONTENT.get(llFamilyKey(w.en))||[]).filter(f=>llFamilyKey(f.en)!==llFamilyKey(w.en)).map(f=>`<div class="word-tr">${llEscape(f.en)} (${llEscape(f.pos||'')}) — ${llEscape(f.tr)}</div>`).join('')}
         </div>
         <div class="word-stats">
           <div class="w-stat"><span class="w-stat-val">${wTotal}</span><span class="w-stat-lbl">Tekrar</span></div>
@@ -6702,6 +6767,7 @@ function showWCSummary() {
 // soğuma mesafeli seçim. Havuz 12'den küçükse zorunlu tekrar en sona bırakılır.
 function llTakeSpacedLoopWords(words, count, loopState, options = {}) {
   const pool = (Array.isArray(words) ? words : []).filter(word => word && word.id);
+  llReconcileFamilyCycle(loopState,pool);
   const target = Math.min(Math.max(0, Number(count) || 0), pool.length);
   if (!target || !loopState) return [];
   if (!Array.isArray(loopState.usedWords)) loopState.usedWords = [];
