@@ -2738,17 +2738,18 @@ NATIVE_USER_DATA.forEach((word,index)=>{word.exampleTr=word.exampleTr||NATIVE_EX
 NATIVE_USER_DATA.forEach(word=>{word.pos=llInferWordPos(word);});
 
 // Word-family consolidation v1: after positional translations are populated.
-const LL_WORD_FAMILY_GROUPS = {"carve": ["carved", "carving"], "bury": ["buried", "burial"], "abandon": ["abandoned"], "admit": ["admitted"], "struggle": ["struggling"], "prove": ["proven"], "lead to": ["led to"], "date back to": ["dates back"], "find out": ["be finding out"], "elaborate": ["elaborate on"], "excavate": ["excavation"], "settle": ["settler"], "mystery": ["mysterious"], "implement": ["implementation"], "consistent": ["consistency"], "assume": ["assumption"], "deliberate": ["deliberately"]};
+const LL_WORD_FAMILY_GROUPS = {"carve": ["carved", "carving"], "bury": ["buried", "burial"], "abandon": ["abandoned"], "admit": ["admitted"], "struggle": ["struggling"], "prove": ["proven"], "lead to": ["led to"], "date back to": ["dates back"], "find out": ["be finding out"], "elaborate": ["elaborate on"], "excavate": ["excavation"], "settle": ["settler"], "mystery": ["mysterious"], "implement": ["implementation"], "consistent": ["consistency"], "assume": ["assumption"], "deliberate": ["deliberately"], "clap": ["clapped", "applaud", "applauded"]};
 const LL_WORD_FAMILY_ALIASES = new Map(Object.entries(LL_WORD_FAMILY_GROUPS).flatMap(([base,forms])=>forms.map(form=>[form,base])));
 const llFamilyKey = value => String(value||'').trim().toLowerCase();
 const LL_WORD_FAMILY_CONTENT = new Map();
-const LL_FAMILY_EXTRA_CONTENT = {"admit": {"en": "admit", "tr": "itiraf etmek / kabul etmek", "example": "The manager admitted that the plan had failed.", "exampleTr": "Yönetici planın başarısız olduğunu kabul etti.", "pos": "v"}, "admitted": {"en": "admitted", "tr": "itiraf etti / kabul etti", "example": "He admitted making a mistake during the meeting.", "exampleTr": "Toplantı sırasında bir hata yaptığını itiraf etti.", "pos": "v"}};
+const LL_FAMILY_EXTRA_CONTENT = {"admit": {"en": "admit", "tr": "itiraf etmek / kabul etmek", "example": "The manager admitted that the plan had failed.", "exampleTr": "Yönetici planın başarısız olduğunu kabul etti.", "pos": "v"}, "admitted": {"en": "admitted", "tr": "itiraf etti / kabul etti", "example": "He admitted making a mistake during the meeting.", "exampleTr": "Toplantı sırasında bir hata yaptığını itiraf etti.", "pos": "v"}, "clap": {"en": "clap", "tr": "el çırpmak / alkışlamak", "example": "The audience clapped loudly at the end.", "exampleTr": "Seyirciler sonunda yüksek sesle alkışladı.", "pos": "v"}, "applaud": {"en": "applaud", "tr": "alkışlamak / takdir etmek / övmek", "example": "The fans applauded the players.", "exampleTr": "Taraftarlar oyuncuları alkışladı.", "pos": "v"}};
 for(const [base,forms] of Object.entries(LL_WORD_FAMILY_GROUPS)) {
   const entries=[base,...forms].map(en=>NATIVE_USER_DATA.find(w=>llFamilyKey(w.en)===en)||LL_FAMILY_EXTRA_CONTENT[en]).filter(Boolean);
   LL_WORD_FAMILY_CONTENT.set(base,entries.map(({en,tr,example,exampleTr,pos})=>({en,tr,example,exampleTr,pos})));
 }
 // Admit was in user saves, not the builtin pool; keep it available for fresh installs.
 if(!NATIVE_USER_DATA.some(w=>llFamilyKey(w.en)==='admit'))NATIVE_USER_DATA.push({...LL_FAMILY_EXTRA_CONTENT.admit,repetitions:0,interval:0,reviewCount:0,state:'learning'});
+if(!NATIVE_USER_DATA.some(w=>llFamilyKey(w.en)==='clap'))NATIVE_USER_DATA.push({...LL_FAMILY_EXTRA_CONTENT.clap,repetitions:0,interval:0,reviewCount:0,state:'learning'});
 for(let i=NATIVE_USER_DATA.length-1;i>=0;i--)if(LL_WORD_FAMILY_ALIASES.has(llFamilyKey(NATIVE_USER_DATA[i].en)))NATIVE_USER_DATA.splice(i,1);
 function llMergeWordFamilies(words){
   if(!Array.isArray(words))return [];
@@ -4973,7 +4974,8 @@ function llFullExampleSentenceHtml(card) {
   const fullExample = String(card?.example || '').trim();
   const family=LL_WORD_FAMILY_CONTENT.get(llFamilyKey(card?.en))||[];
   const details=family.filter(w=>llFamilyKey(w.en)!==llFamilyKey(card?.en));
-  const familyHtml=details.length?`<div class="ll-answer-example"><span class="ll-answer-example-label">Kelime ailesi</span>${details.map(w=>`<div><b>${llEscape(w.en)}</b> (${llEscape(w.pos||'')}) — ${llEscape(w.tr)}${w.example?`<div class="ll-muted">${llEscape(w.example)}</div>`:''}${w.exampleTr?`<div class="ll-muted">${llEscape(w.exampleTr)}</div>`:''}</div>`).join('')}</div>`:'';
+  const clapDetails=llFamilyKey(card?.en)==='clap'?`<div class="ll-answer-example"><span class="ll-answer-example-label">Fiil çekimi</span><b>Clap – Clapped – Clapped</b></div><div class="ll-answer-example"><span class="ll-answer-example-label">Benzer kelime</span><b>Applaud</b> (v) — ${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.tr)}<div class="ll-muted">${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.example)}</div><div class="ll-muted">${llEscape(LL_FAMILY_EXTRA_CONTENT.applaud.exampleTr)}</div><div><b>Kullanım farkı:</b> Clap fiziksel alkışlama hareketidir; applaud alkışlamak veya bir davranışı takdir etmek anlamına gelir.</div></div>`:'';
+  const familyHtml=clapDetails|| (details.length?`<div class="ll-answer-example"><span class="ll-answer-example-label">Kelime ailesi</span>${details.map(w=>`<div><b>${llEscape(w.en)}</b> (${llEscape(w.pos||'')}) — ${llEscape(w.tr)}${w.example?`<div class="ll-muted">${llEscape(w.example)}</div>`:''}${w.exampleTr?`<div class="ll-muted">${llEscape(w.exampleTr)}</div>`:''}</div>`).join('')}</div>`:'');
   return (fullExample?`<div class="ll-answer-example"><span class="ll-answer-example-label">Cümle içinde</span>“${llEscape(fullExample)}”</div>`:'')+familyHtml;
 }
 function toggleExampleTranslation(event, panelId) {
